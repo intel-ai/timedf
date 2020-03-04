@@ -209,7 +209,21 @@ def etl_cpu_pandas(df, df_meta):
     return df_meta
 
 
-def load_data_ibis():
+def load_data_ibis(
+    filename,
+    database_name,
+    omnisci_server_worker
+    delete_old_database,
+    create_new_table,
+):
+    import ibis
+    print(ibis.__version__)
+
+    time.sleep(2)
+    conn = omnisci_server_worker.connect_to_server()
+    omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
+    conn = omnisci_server_worker.connect_to_server()
+
     dtypes = OrderedDict({
         "object_id": "int32",
         "mjd": "float32",
@@ -218,52 +232,6 @@ def load_data_ibis():
         "flux_err": "float32",
         "detected": "int32",
     })
-
-    import ibis
-    print(ibis.__version__)
-    conn = ibis.omniscidb.connect(
-        host="localhost",
-        port="6274",
-        user="admin",
-        password="HyperInteractive",
-    )
-
-    database_name = "plasticc_database"
-    # conn.create_database(database_name)
-
-    schema = ibis.Schema(names=dtypes.keys(), types=dtypes.values())
-
-    # create table #1
-    training_file = "%s/training_set.csv" % PATH
-    try:
-        conn.drop_table(
-            table_name="training", database=database_name, force=True
-        )
-        conn.create_table(
-            table_name="training", schema=schema, database=database_name
-        )
-    except Exception as e:
-        print(e)
-
-    # create table #2
-    test_file = "%s/test_set_skiprows.csv" % PATH
-    try:
-        conn.drop_table(
-            table_name="test", database=database_name, force=True
-        )
-        conn.create_table(
-            table_name="test", schema=schema, database=database_name
-        )
-    except Exception as e:
-        print(e)
-
-    db = conn.database(database_name)
-    training_table = db.table("training")
-    test_table = db.table("test")
-
-    training_table.read_csv(training_file, header=True, quoted=False, delimiter=',')
-    test_table.read_csv(test_file, header=True, quoted=False, delimiter=',')
-
 
     # load metadata
     cols = [
@@ -283,41 +251,67 @@ def load_data_ibis():
     meta_dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
     meta_dtypes = OrderedDict({cols[i]: meta_dtypes[i] for i in range(len(meta_dtypes))})
 
-    meta_schema = ibis.Schema(names=meta_dtypes.keys(), types=meta_dtypes.values())
+    t0 = timer()
 
-    # create table #3
-    training_meta_file = "%s/training_set_metadata.csv" % PATH
-    try:
-        conn.drop_table(
-            table_name="training_meta", database=database_name, force=True
+    # Create tables and import data
+    if create_new_table:
+        # create table #1
+        training_file = "%s/training_set.csv" % PATH
+        t_import_pandas, t_import_ibis = omnisci_server_worker.import_data_by_ibis(
+            table_name="training",
+            data_files_names=training_file,
+            files_limit=1,
+            columns_names=dtypes.keys(),
+            columns_types=dtypes.values(),
+            header=0,
+            nrows=None,
         )
-        conn.create_table(
-            table_name="training_meta", schema=meta_schema, database=database_name
-        )
-    except Exception as e:
-        print(e)
 
-
-    del meta_dtypes["target"]
-    meta_schema = ibis.Schema(names=meta_dtypes.keys(), types=meta_dtypes.values())
-
-    # create table #4
-    test_meta_file = "%s/test_set_metadata.csv" % PATH
-    try:
-        conn.drop_table(
-            table_name="test_meta", database=database_name, force=True
+        # create table #2
+        test_file = "%s/test_set.csv" % PATH
+        t_import_pandas, t_import_ibis += omnisci_server_worker.import_data_by_ibis(
+            table_name="test",
+            data_files_names=test_file,
+            files_limit=1,
+            columns_names=dtypes.keys(),
+            columns_types=dtypes.values(),
+            header=0,
+            nrows=None,
         )
-        conn.create_table(
-            table_name="test_meta", schema=meta_schema, database=database_name
-        )
-    except Exception as e:
-        print(e)
+
+        # create table #3
+        training_meta_file = "%s/training_set_metadata.csv" % PATH
+        t_import_pandas, t_import_ibis += omnisci_server_worker.import_data_by_ibis(
+            table_name="training_meta",
+            data_files_names=training_meta_file,
+            files_limit=1,
+            columns_names=meta_dtypes.keys(),
+            columns_types=meta_dtypes.values(),
+            header=0,
+            nrows=None,
+        }
+
+        del meta_dtypes["target"]
+
+        # create table #4
+        test_meta_file = "%s/test_set_metadata.csv" % PATH
+        t_import_pandas, t_import_ibis += omnisci_server_worker.import_data_by_ibis(
+            table_name="test_meta",
+            data_files_names=test_meta_file,
+            files_limit=1,
+            columns_names=meta_dtypes.keys(),
+            columns_types=meta_dtypes.values(),
+            header=0,
+            nrows=None,
+        }
+
+    db = conn.database()
+
+    training_table = db.table("training")
+    test_table = db.table("test")
 
     training_meta_table = db.table("training_meta")
     test_meta_table = db.table("test_meta")
-
-    training_meta_table.read_csv(training_meta_file, header=True, quoted=False, delimiter=',')
-    test_meta_table.read_csv(test_meta_file, header=True, quoted=False, delimiter=',')
 
     return training_table, training_meta_table, test_table, test_meta_table
 
@@ -361,15 +355,26 @@ def load_data_pandas():
     return train, train_meta, test, test_meta
 
 
-def etl_all_ibis():
-    print("ibis_version")
+def etl_all_ibis(
+    filename,
+    database_name,
+    table_name,
+    omnisci_server_worker
+    delete_old_database,
+    create_new_table,
+):
     global t_readcsv, t_groupby_agg, t_sort_values, t_merge, t_drop, t_train_test_split
+
     t_etl_start = timer()
 
-    import pdb;pdb.set_trace()
-
     t0 = timer()
-    train, train_meta, test, test_meta = load_data_ibis()
+    train, train_meta, test, test_meta = load_data_ibis(
+        filename,
+        database_name,
+        omnisci_server_worker,
+        delete_old_database,
+        create_new_table,
+    )
     t_readcsv += timer() - t0
 
     train_final = etl_cpu_ibis(train, train_meta)
@@ -543,10 +548,185 @@ def ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights):
     print("validation cpu_loss:", cpu_loss)
 
 
-def main():
-    X_train, y_train, X_test, y_test, Xt, classes, class_weights = etl_all_ibis()
+def get_args():
+    parser = argparse.ArgumentParser(description="Run internal tests from ibis project")
+    optional = parser._action_groups.pop()
+    required = parser.add_argument_group("required arguments")
+    parser._action_groups.append(optional)
 
-    ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights)
+    required.add_argument(
+        "-f",
+        "--file",
+        dest="file",
+        required=True,
+        help="A datafile that should be loaded",
+    )
+    optional.add_argument("-dnd", action="store_true", help="Do not delete old table.")
+    optional.add_argument(
+        "-dni",
+        action="store_true",
+        help="Do not create new table and import any data from CSV files.",
+    )
+    optional.add_argument(
+        "-val",
+        action="store_true",
+        help="validate queries results (by comparison with Pandas queries results).",
+    )
+    # MySQL database parameters
+    optional.add_argument(
+        "-db-server",
+        dest="db_server",
+        default="localhost",
+        help="Host name of MySQL server.",
+    )
+    optional.add_argument(
+        "-db-port",
+        dest="db_port",
+        default=3306,
+        type=int,
+        help="Port number of MySQL server.",
+    )
+    optional.add_argument(
+        "-db-user",
+        dest="db_user",
+        default="",
+        help="Username to use to connect to MySQL database. "
+        "If user name is specified, script attempts to store results in MySQL "
+        "database using other -db-* parameters.",
+    )
+    optional.add_argument(
+        "-db-pass",
+        dest="db_password",
+        default="omniscidb",
+        help="Password to use to connect to MySQL database.",
+    )
+    optional.add_argument(
+        "-db-name",
+        dest="db_name",
+        default="omniscidb",
+        help="MySQL database to use to store benchmark results.",
+    )
+    optional.add_argument(
+        "-db-table",
+        dest="db_table",
+        help="Table to use to store results for this benchmark.",
+    )
+    # Omnisci server parameters
+    optional.add_argument(
+        "-e",
+        "--executable",
+        dest="omnisci_executable",
+        required=False,
+        help="Path to omnisci_server executable.",
+    )
+    optional.add_argument(
+        "-w",
+        "--workdir",
+        dest="omnisci_cwd",
+        help="Path to omnisci working directory. "
+        "By default parent directory of executable location is used. "
+        "Data directory is used in this location.",
+    )
+    optional.add_argument(
+        "-port",
+        "--omnisci_port",
+        dest="omnisci_port",
+        default=6274,
+        type=int,
+        help="TCP port number to run omnisci_server on.",
+    )
+    optional.add_argument(
+        "-u",
+        "--user",
+        dest="user",
+        default="admin",
+        help="User name to use on omniscidb server.",
+    )
+    optional.add_argument(
+        "-p",
+        "--password",
+        dest="password",
+        default="HyperInteractive",
+        help="User password to use on omniscidb server.",
+    )
+    optional.add_argument(
+        "-n",
+        "--name",
+        dest="name",
+        default="plasticc_database",
+        help="Database name to use in omniscidb server.",
+    )
+
+    optional.add_argument(
+        "-no_ibis",
+        action="store_true",
+        help="Do not run Ibis benchmark, run only Pandas (or Modin) version"
+    )
+    optional.add_argument(
+        "-no_ml",
+        action="store_true",
+        help="Do not run machine learning benchmark, only ETL part"
+    )
+
+    args = parser.parse_args()
+    args.file = args.file.replace("'", "")
+
+    return args
+
+
+def main():
+    omniscript_path = os.path.dirname(__file__)
+    args = None
+    omnisci_server = None
+
+    args = get_args()
+
+    try:
+        if not args.no_ibis:
+            if args.omnisci_executable is None:
+                parser.error("Omnisci executable should be specified with -e/--executable")
+
+            omnisci_server = OmnisciServer(
+                omnisci_executable=args.omnisci_executable,
+                omnisci_port=args.omnisci_port,
+                database_name=args.name,
+                user=args.user,
+                password=args.password,
+            )
+            omnisci_server.launch()
+
+            from server_worker import OmnisciServerWorker
+            omnisci_server_worker = OmnisciServerWorker(omnisci_server)
+
+            X_train_ibis, y_train, X_test, y_test, Xt, classes, class_weights = etl_all_ibis(
+                filename=args.file,
+                database_name=args.name,
+                omnisci_server_worker=omnisci_server_worker,
+                delete_old_database=not args.dnd,
+                create_new_table=not args.dni,
+            )
+
+            omnisci_server.terminate()
+            omnisci_server = None
+
+            if not args.no_ml:
+                ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights)
+
+
+        X_train_pandas, y_train, X_test, y_test, Xt, classes, class_weights = etl_all_pandas(args.file)
+
+        if not args.no_ml:
+            ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights)
+
+        if args.val:
+            compare_dataframes(ibis_df=(X_train_ibis, y_train_ibis), pandas_df=(X, y))
+
+    except Exception as err:
+        print("Failed: ", err)
+        sys.exit(1)
+    finally:
+        if omnisci_server:
+            omnisci_server.terminate()
 
 
 if __name__ == "__main__":
