@@ -274,9 +274,6 @@ def etl_ibis(
     etl_times["t_etl"] = timer() - t_etl_start
     print("DataFrame shape:", y.shape)
 
-    # ibis_df = table.execute()
-    # pd.testing.assert_frame_equal(ibis_df, df)
-
     return X, y, etl_times
 
 
