@@ -23,7 +23,7 @@ class OmnisciServerWorker:
         self._conn = None
 
     def _read_csv_datafile(self, file_name, columns_names, columns_types=None, header=None,
-                           compression_type='gzip', nrows=None):
+                           compression_type='gzip', nrows=None, skiprows=None):
         "Read csv by Pandas. Function returns Pandas DataFrame,\
         which can be used by ibis load_data function"
 
@@ -36,7 +36,7 @@ class OmnisciServerWorker:
                 return pd.read_csv(f, names=columns_names, dtype=types, nrows=nrows, header=header)
         return pd.read_csv(file_name, compression=compression_type, names=columns_names,
                            dtype=types,
-                           nrows=nrows, header=header)
+                           nrows=nrows, header=header, skiprows=skiprows)
 
     def import_data_by_pandas(self, data_files_names, files_limit, columns_names, nrows=None,
                               compression_type='gzip'):
@@ -105,7 +105,8 @@ class OmnisciServerWorker:
             print("Command returned", import_process.returncode)
 
     def import_data_by_ibis(self, table_name, data_files_names, files_limit, columns_names,
-                            columns_types, cast_dict=None, header=None, nrows=None):
+                            columns_types, cast_dict=None, header=None, nrows=None,
+                            compression_type='gzip', skiprows=None):
         "Import CSV files using Ibis load_data to the OmniSciDB from the Pandas.DataFrame"
 
         if columns_types:
@@ -115,7 +116,7 @@ class OmnisciServerWorker:
             pandas_df_from_each_file = (
                 self._read_csv_datafile(file_name, columns_names=columns_names,
                                         columns_types=columns_types_pd,
-                                        header=header, nrows=nrows)
+                                        header=header, nrows=nrows, compression_type=compression_type)
                 for file_name in data_files_names[:files_limit])
             self._imported_pd_df[table_name] = pd.concat(pandas_df_from_each_file,
                                                          ignore_index=True)
@@ -123,7 +124,9 @@ class OmnisciServerWorker:
             self._imported_pd_df[table_name] = self._read_csv_datafile(data_files_names,
                                                                        columns_names=columns_names,
                                                                        columns_types=columns_types_pd,
-                                                                       header=header, nrows=nrows)
+                                                                       header=header, nrows=nrows,
+                                                                       compression_type=compression_type,
+                                                                       skiprows=skiprows)
         t_import_pandas = time.time() - t0
         if cast_dict is not None:
             pandas_concatenated_df_casted = self._imported_pd_df[table_name].astype(dtype=cast_dict,

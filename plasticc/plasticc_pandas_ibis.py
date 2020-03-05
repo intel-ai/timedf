@@ -1,8 +1,10 @@
 import argparse
+import os
 import sys
+import time
+from collections import OrderedDict
 from functools import partial
 from timeit import default_timer as timer
-from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
@@ -11,7 +13,7 @@ from sklearn.preprocessing import LabelEncoder
 
 import xgboost as xgb
 
-parser = argparse.ArgumentParser(description="PlasTiCC benchmark")
+"""parser = argparse.ArgumentParser(description="PlasTiCC benchmark")
 parser.add_argument(
     "datapath",
     metavar="datapath",
@@ -32,6 +34,8 @@ print(args)
 
 PATH = args.datapath
 GPU_MEMORY = args.gpu_memory
+"""
+GPU_MEMORY = 16
 
 TEST_ROWS = 453653104
 OVERHEAD = 1.2
@@ -48,7 +52,6 @@ t_arithm = 0.0
 t_drop = 0.0
 t_merge = 0.0
 t_readcsv = 0.0
-t_sort_values = 0.0
 t_train_test_split = 0.0
 t_dmatrix = 0.0
 t_training = 0.0
@@ -62,27 +65,30 @@ def ravel_column_names(cols):
 
 
 def skew_workaround(table):
-    n = table['flux_count']
-    m = table['flux_mean']
-    s1 = table['flux_sum1']
-    s2 = table['flux_sum2']
-    s3 = table['flux_sum3']
+    n = table["flux_count"]
+    m = table["flux_mean"]
+    s1 = table["flux_sum1"]
+    s2 = table["flux_sum2"]
+    s3 = table["flux_sum3"]
 
     # change column name: 'skew' -> 'flux_skew'
-    skew = (n * (n - 1).sqrt() / (n - 2) * (s3 - 3 * m *
-                                            s2 + 2 * m * m * s1) / (s2 - m * s1).pow(1.5)).name('flux_skew')
+    skew = (
+        n
+        * (n - 1).sqrt()
+        / (n - 2)
+        * (s3 - 3 * m * s2 + 2 * m * m * s1)
+        / (s2 - m * s1).pow(1.5)
+    ).name("flux_skew")
     table = table.mutate(skew)
 
     return table
 
 
-def etl_cpu_ibis(table, table_meta):
-    global t_arithm, t_groupby_agg, t_drop, t_merge
-
+def etl_cpu_ibis(table, table_meta, etl_times):
     t0 = timer()
-    table = table.mutate(flux_ratio_sq=(table['flux'] / table['flux_err']) ** 2)
-    table = table.mutate(flux_by_flux_ratio_sq=table['flux'] * table['flux_ratio_sq'])
-    t_arithm += timer() - t0
+    table = table.mutate(flux_ratio_sq=(table["flux"] / table["flux_err"]) ** 2)
+    table = table.mutate(flux_by_flux_ratio_sq=table["flux"] * table["flux_ratio_sq"])
+    etl_times["t_arithm"] += timer() - t0
 
     aggs = [
         table.passband.mean().name("passband_mean"),
@@ -106,35 +112,36 @@ def etl_cpu_ibis(table, table_meta):
 
     t0 = timer()
     table = table.groupby("object_id").aggregate(aggs)
-    t_groupby_agg += timer() - t0
-    
+    etl_times["t_groupby_agg"] += timer() - t0
+
     t0 = timer()
     table = table.mutate(flux_diff=table["flux_max"] - table["flux_min"])
-    table = table.mutate(flux_dif2=(table["flux_max"] - table["flux_min"]) / table["flux_mean"])
-    table = table.mutate(flux_w_mean=table["flux_by_flux_ratio_sq_sum"] / table["flux_ratio_sq_sum"])
-    table = table.mutate(flux_dif3=(table["flux_max"] - table["flux_min"]) / table["flux_w_mean"])
+    table = table.mutate(
+        flux_dif2=(table["flux_max"] - table["flux_min"]) / table["flux_mean"]
+    )
+    table = table.mutate(
+        flux_w_mean=table["flux_by_flux_ratio_sq_sum"] / table["flux_ratio_sq_sum"]
+    )
+    table = table.mutate(
+        flux_dif3=(table["flux_max"] - table["flux_min"]) / table["flux_w_mean"]
+    )
     table = table.mutate(mjd_diff=table["mjd_max"] - table["mjd_min"])
-
     # skew compute
     table = skew_workaround(table)
-
-    t_arithm += timer() - t0
-
-    t0 = timer()
-    table = table.drop(["mjd_max", "mjd_min"])
-
-    # drop temp columns using for skew computation 
-    table = table.drop(['flux_count', 'flux_sum1', 'flux_sum2', 'flux_sum3'])
-    t_drop += timer() - t0
+    etl_times["t_arithm"] += timer() - t0
 
     t0 = timer()
+    table = table.drop(
+        ["mjd_max", "mjd_min", "flux_count", "flux_sum1", "flux_sum2", "flux_sum3"]
+    )
+    etl_times["t_drop"] += timer() - t0
 
+    t0 = timer()
     # Problem type(table_meta) = <class 'ibis.omniscidb.client.OmniSciDBTable'>
     # which overrides the drop method (now it is used to delete the table) and
     # not for drop columns - use workaround table_meta[table_meta].drop(...)
     table_meta = table_meta[table_meta].drop(["ra", "decl", "gal_l", "gal_b"])
-
-    t_drop += timer() - t0
+    etl_times["t_drop"] += timer() - t0
 
     t0 = timer()
     # df_meta = df_meta.merge(agg_df, on="object_id", how="left")
@@ -157,17 +164,16 @@ def etl_cpu_ibis(table, table_meta):
         table.flux_dif3,
         table.mjd_diff,
     ]
-    t_merge += timer() - t0
+    etl_times["t_merge"] += timer() - t0
 
     return table_meta.execute()
 
-def etl_cpu_pandas(df, df_meta):
-    global t_arithm, t_groupby_agg, t_drop, t_merge
 
-    tl0 = timer()
+def etl_cpu_pandas(df, df_meta, etl_times):
+    t0 = timer()
     df["flux_ratio_sq"] = np.power(df["flux"] / df["flux_err"], 2.0)
     df["flux_by_flux_ratio_sq"] = df["flux"] * df["flux_ratio_sq"]
-    t_arithm += timer() - tl0
+    etl_times["t_arithm"] += timer() - t0
 
     aggs = {
         "passband": ["mean"],
@@ -178,60 +184,71 @@ def etl_cpu_pandas(df, df_meta):
         "flux_ratio_sq": ["sum"],
         "flux_by_flux_ratio_sq": ["sum"],
     }
-    tl0 = timer()
+    t0 = timer()
     agg_df = df.groupby("object_id").agg(aggs)
-    t_groupby_agg += timer() - tl0
+    etl_times["t_groupby_agg"] += timer() - t0
 
     agg_df.columns = ravel_column_names(agg_df.columns)
 
-    tl0 = timer()
+    t0 = timer()
     agg_df["flux_diff"] = agg_df["flux_max"] - agg_df["flux_min"]
-    agg_df["flux_dif2"] = (agg_df["flux_max"] - agg_df["flux_min"]) / agg_df["flux_mean"]
-    agg_df["flux_w_mean"] = (agg_df["flux_by_flux_ratio_sq_sum"] / agg_df["flux_ratio_sq_sum"])
-    agg_df["flux_dif3"] = (agg_df["flux_max"] - agg_df["flux_min"]) / agg_df["flux_w_mean"]
+    agg_df["flux_dif2"] = (agg_df["flux_max"] - agg_df["flux_min"]) / agg_df[
+        "flux_mean"
+    ]
+    agg_df["flux_w_mean"] = (
+        agg_df["flux_by_flux_ratio_sq_sum"] / agg_df["flux_ratio_sq_sum"]
+    )
+    agg_df["flux_dif3"] = (agg_df["flux_max"] - agg_df["flux_min"]) / agg_df[
+        "flux_w_mean"
+    ]
     agg_df["mjd_diff"] = agg_df["mjd_max"] - agg_df["mjd_min"]
-    t_arithm += timer() - tl0
+    etl_times["t_arithm"] += timer() - t0
 
-    tl0 = timer()
+    t0 = timer()
     agg_df = agg_df.drop(["mjd_max", "mjd_min"], axis=1)
-    t_drop += timer() - tl0
+    etl_times["t_drop"] += timer() - t0
 
     agg_df = agg_df.reset_index()
 
-    tl0 = timer()
+    t0 = timer()
     df_meta = df_meta.drop(["ra", "decl", "gal_l", "gal_b"], axis=1)
-    t_drop += timer() - tl0
+    etl_times["t_drop"] += timer() - t0
 
-    tl0 = timer()
+    t0 = timer()
     df_meta = df_meta.merge(agg_df, on="object_id", how="left")
-    t_merge += timer() - tl0
+    etl_times["t_merge"] += timer() - t0
 
     return df_meta
 
 
 def load_data_ibis(
-    filename,
+    dataset_path,
     database_name,
-    omnisci_server_worker
+    omnisci_server_worker,
     delete_old_database,
     create_new_table,
 ):
     import ibis
+
     print(ibis.__version__)
 
     time.sleep(2)
     conn = omnisci_server_worker.connect_to_server()
-    omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
+    omnisci_server_worker.create_database(
+        database_name, delete_if_exists=delete_old_database
+    )
     conn = omnisci_server_worker.connect_to_server()
 
-    dtypes = OrderedDict({
-        "object_id": "int32",
-        "mjd": "float32",
-        "passband": "int32",
-        "flux": "float32",
-        "flux_err": "float32",
-        "detected": "int32",
-    })
+    dtypes = OrderedDict(
+        {
+            "object_id": "int32",
+            "mjd": "float32",
+            "passband": "int32",
+            "flux": "float32",
+            "flux_err": "float32",
+            "detected": "int32",
+        }
+    )
 
     # load metadata
     cols = [
@@ -249,61 +266,79 @@ def load_data_ibis(
         "target",
     ]
     meta_dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
-    meta_dtypes = OrderedDict({cols[i]: meta_dtypes[i] for i in range(len(meta_dtypes))})
+    meta_dtypes = OrderedDict(
+        {cols[i]: meta_dtypes[i] for i in range(len(meta_dtypes))}
+    )
 
-    t0 = timer()
+    t_import_pandas, t_import_ibis = 0.0, 0.0
 
     # Create tables and import data
     if create_new_table:
         # create table #1
-        training_file = "%s/training_set.csv" % PATH
-        t_import_pandas, t_import_ibis = omnisci_server_worker.import_data_by_ibis(
+        training_file = "%s/training_set.csv" % dataset_path
+        t_import_pandas_1, t_import_ibis_1 = omnisci_server_worker.import_data_by_ibis(
             table_name="training",
             data_files_names=training_file,
             files_limit=1,
-            columns_names=dtypes.keys(),
+            columns_names=list(dtypes.keys()),
             columns_types=dtypes.values(),
             header=0,
             nrows=None,
+            compression_type=None,
         )
 
         # create table #2
-        test_file = "%s/test_set.csv" % PATH
-        t_import_pandas, t_import_ibis += omnisci_server_worker.import_data_by_ibis(
+        test_file = "%s/test_set.csv" % dataset_path
+        t_import_pandas_2, t_import_ibis_2 = omnisci_server_worker.import_data_by_ibis(
             table_name="test",
             data_files_names=test_file,
             files_limit=1,
-            columns_names=dtypes.keys(),
+            columns_names=list(dtypes.keys()),
             columns_types=dtypes.values(),
             header=0,
             nrows=None,
+            compression_type=None,
+            skiprows=range(1, 1 + SKIP_ROWS),
         )
 
         # create table #3
-        training_meta_file = "%s/training_set_metadata.csv" % PATH
-        t_import_pandas, t_import_ibis += omnisci_server_worker.import_data_by_ibis(
+        training_meta_file = "%s/training_set_metadata.csv" % dataset_path
+        t_import_pandas_3, t_import_ibis_3 = omnisci_server_worker.import_data_by_ibis(
             table_name="training_meta",
             data_files_names=training_meta_file,
             files_limit=1,
-            columns_names=meta_dtypes.keys(),
+            columns_names=list(meta_dtypes.keys()),
             columns_types=meta_dtypes.values(),
             header=0,
             nrows=None,
-        }
+            compression_type=None,
+        )
 
         del meta_dtypes["target"]
 
         # create table #4
-        test_meta_file = "%s/test_set_metadata.csv" % PATH
-        t_import_pandas, t_import_ibis += omnisci_server_worker.import_data_by_ibis(
+        test_meta_file = "%s/test_set_metadata.csv" % dataset_path
+        t_import_pandas_4, t_import_ibis_4 = omnisci_server_worker.import_data_by_ibis(
             table_name="test_meta",
             data_files_names=test_meta_file,
             files_limit=1,
-            columns_names=meta_dtypes.keys(),
+            columns_names=list(meta_dtypes.keys()),
             columns_types=meta_dtypes.values(),
             header=0,
             nrows=None,
-        }
+            compression_type=None,
+        )
+
+        t_import_pandas = (
+            t_import_pandas_1
+            + t_import_pandas_2
+            + t_import_pandas_3
+            + t_import_pandas_4
+        )
+        t_import_ibis = (
+            t_import_ibis_1 + t_import_ibis_2 + t_import_ibis_3 + t_import_ibis_4
+        )
+        print(f"import times: pandas - {t_import_pandas}s, ibis - {t_import_ibis}s")
 
     db = conn.database()
 
@@ -313,9 +348,16 @@ def load_data_ibis(
     training_meta_table = db.table("training_meta")
     test_meta_table = db.table("test_meta")
 
-    return training_table, training_meta_table, test_table, test_meta_table
+    return (
+        training_table,
+        training_meta_table,
+        test_table,
+        test_meta_table,
+        t_import_pandas + t_import_ibis,
+    )
 
-def load_data_pandas():
+
+def load_data_pandas(dataset_folder):
     dtypes = {
         "object_id": "int32",
         "mjd": "float32",
@@ -325,9 +367,12 @@ def load_data_pandas():
         "detected": "int32",
     }
 
-    train = pd.read_csv("%s/training_set.csv" % PATH, dtype=dtypes)
+    train = pd.read_csv("%s/training_set.csv" % dataset_folder, dtype=dtypes)
     test = pd.read_csv(
-        "%s/test_set_skiprows.csv" % PATH, dtype=dtypes
+        # this should be replaced on test_set_skiprows.csv
+        "%s/test_set.csv" % dataset_folder,
+        dtype=dtypes,
+        skiprows=range(1, 1 + SKIP_ROWS),
     )
 
     # load metadata
@@ -348,9 +393,11 @@ def load_data_pandas():
     dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
     dtypes = {cols[i]: dtypes[i] for i in range(len(dtypes))}
 
-    train_meta = pd.read_csv("%s/training_set_metadata.csv" % PATH, dtype=dtypes)
+    train_meta = pd.read_csv(
+        "%s/training_set_metadata.csv" % dataset_folder, dtype=dtypes
+    )
     del dtypes["target"]
-    test_meta = pd.read_csv("%s/test_set_metadata.csv" % PATH, dtype=dtypes)
+    test_meta = pd.read_csv("%s/test_set_metadata.csv" % dataset_folder, dtype=dtypes)
 
     return train, train_meta, test, test_meta
 
@@ -358,32 +405,40 @@ def load_data_pandas():
 def etl_all_ibis(
     filename,
     database_name,
-    table_name,
-    omnisci_server_worker
+    omnisci_server_worker,
     delete_old_database,
     create_new_table,
 ):
-    global t_readcsv, t_groupby_agg, t_sort_values, t_merge, t_drop, t_train_test_split
+    print("ibis version")
+    etl_times = {
+        "t_readcsv": 0.0,
+        "t_groupby_agg": 0.0,
+        "t_merge": 0.0,
+        "t_arithm": 0.0,
+        "t_drop": 0.0,
+        "t_train_test_split": 0.0,
+        "t_etl": 0.0,
+    }
 
     t_etl_start = timer()
 
-    t0 = timer()
-    train, train_meta, test, test_meta = load_data_ibis(
+    train, train_meta, test, test_meta, t_readcsv = load_data_ibis(
         filename,
         database_name,
         omnisci_server_worker,
         delete_old_database,
         create_new_table,
     )
-    t_readcsv += timer() - t0
+    etl_times["t_readcsv"] = t_readcsv
 
-    train_final = etl_cpu_ibis(train, train_meta)
-    test_final = etl_cpu_ibis(test, test_meta)
+    # update etl_times
+    train_final = etl_cpu_ibis(train, train_meta, etl_times)
+    test_final = etl_cpu_ibis(test, test_meta, etl_times)
 
     t0 = timer()
     X = train_final.drop(["object_id", "target"], axis=1).values
     Xt = test_final.drop(["object_id"], axis=1).values
-    t_drop += timer() - t0
+    etl_times["t_drop"] += timer() - t0
 
     y = train_final["target"]
     assert X.shape[1] == Xt.shape[1]
@@ -400,38 +455,39 @@ def etl_all_ibis(
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.1, stratify=y, random_state=126
     )
-    t_train_test_split += timer() - t0
+    etl_times["t_train_test_split"] += timer() - t0
 
-    t_etl_end = timer()
+    etl_times["t_etl"] = timer() - t_etl_start - t_readcsv
 
-    print("t_readcsv = ", t_readcsv)
-    print("t_ETL = ", t_etl_end - t_etl_start - t_readcsv)
-    print("  groupby_agg = ", t_groupby_agg)
-    print("  vector arithmetic = ", t_arithm)
-    print("  drop columns = ", t_drop)
-    print("  merge = ", t_merge)
-    print("  sort_values = ", t_sort_values)
-    print("  train_test_split = ", t_train_test_split)
-
-    return X_train, y_train, X_test, y_test, Xt, classes, class_weights
+    return X_train, y_train, X_test, y_test, Xt, classes, class_weights, etl_times
 
 
-def etl_all_pandas():
+def etl_all_pandas(dataset_folder):
     print("pandas version")
-    global t_readcsv, t_groupby_agg, t_sort_values, t_merge, t_drop, t_train_test_split
+    etl_times = {
+        "t_readcsv": 0.0,
+        "t_groupby_agg": 0.0,
+        "t_merge": 0.0,
+        "t_arithm": 0.0,
+        "t_drop": 0.0,
+        "t_train_test_split": 0.0,
+        "t_etl": 0.0,
+    }
+
     t_etl_start = timer()
 
     t0 = timer()
-    train, train_meta, test, test_meta = load_data_pandas()
-    t_readcsv += timer() - t0
+    train, train_meta, test, test_meta = load_data_pandas(dataset_folder)
+    etl_times["t_readcsv"] += timer() - t0
 
-    train_final = etl_cpu(train, train_meta)
-    test_final = etl_cpu(test, test_meta)
+    # update etl_times
+    train_final = etl_cpu_pandas(train, train_meta, etl_times)
+    test_final = etl_cpu_pandas(test, test_meta, etl_times)
 
     t0 = timer()
     X = train_final.drop(["object_id", "target"], axis=1).values
     Xt = test_final.drop(["object_id"], axis=1).values
-    t_drop += timer() - t0
+    etl_times["t_drop"] += timer() - t0
 
     y = train_final["target"]
     assert X.shape[1] == Xt.shape[1]
@@ -448,20 +504,11 @@ def etl_all_pandas():
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.1, stratify=y, random_state=126
     )
-    t_train_test_split += timer() - t0
+    etl_times["t_train_test_split"] += timer() - t0
 
-    t_etl_end = timer()
+    etl_times["t_etl"] += timer() - t_etl_start - t_readcsv
 
-    print("t_readcsv = ", t_readcsv)
-    print("t_ETL = ", t_etl_end - t_etl_start - t_readcsv)
-    print("  groupby_agg = ", t_groupby_agg)
-    print("  vector arithmetic = ", t_arithm)
-    print("  drop columns = ", t_drop)
-    print("  merge = ", t_merge)
-    print("  sort_values = ", t_sort_values)
-    print("  train_test_split = ", t_train_test_split)
-
-    return X_train, y_train, X_test, y_test, Xt, classes, class_weights
+    return X_train, y_train, X_test, y_test, Xt, classes, class_weights, etl_times
 
 
 def multi_weighted_logloss(y_true, y_preds, classes, class_weights):
@@ -555,11 +602,10 @@ def get_args():
     parser._action_groups.append(optional)
 
     required.add_argument(
-        "-f",
-        "--file",
-        dest="file",
+        "-dataset_path",
+        dest="dataset_path",
         required=True,
-        help="A datafile that should be loaded",
+        help="A folder with downloaded dataset' files",
     )
     optional.add_argument("-dnd", action="store_true", help="Do not delete old table.")
     optional.add_argument(
@@ -660,66 +706,102 @@ def get_args():
     optional.add_argument(
         "-no_ibis",
         action="store_true",
-        help="Do not run Ibis benchmark, run only Pandas (or Modin) version"
+        help="Do not run Ibis benchmark, run only Pandas (or Modin) version",
     )
     optional.add_argument(
         "-no_ml",
         action="store_true",
-        help="Do not run machine learning benchmark, only ETL part"
+        help="Do not run machine learning benchmark, only ETL part",
     )
 
     args = parser.parse_args()
-    args.file = args.file.replace("'", "")
+    args.dataset_path = args.dataset_path.replace("'", "")
 
-    return args
+    return parser, args
+
+
+def print_times(etl_times, name=None):
+    if name:
+        print(f"{name} times:")
+    for time_name, time in etl_times.items():
+        print("{} = {:.5f} s".format(time_name, time))
 
 
 def main():
-    omniscript_path = os.path.dirname(__file__)
     args = None
     omnisci_server = None
 
-    args = get_args()
+    parser, args = get_args()
 
     try:
         if not args.no_ibis:
+            sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+            from server import OmnisciServer
+
             if args.omnisci_executable is None:
-                parser.error("Omnisci executable should be specified with -e/--executable")
+                parser.error(
+                    "Omnisci executable should be specified with -e/--executable"
+                )
 
             omnisci_server = OmnisciServer(
                 omnisci_executable=args.omnisci_executable,
                 omnisci_port=args.omnisci_port,
                 database_name=args.name,
+                omnisci_cwd=args.omnisci_cwd,
                 user=args.user,
                 password=args.password,
             )
             omnisci_server.launch()
 
             from server_worker import OmnisciServerWorker
+
             omnisci_server_worker = OmnisciServerWorker(omnisci_server)
 
-            X_train_ibis, y_train, X_test, y_test, Xt, classes, class_weights = etl_all_ibis(
-                filename=args.file,
+            (
+                X_train,
+                y_train,
+                X_test,
+                y_test,
+                Xt,
+                classes,
+                class_weights,
+                etl_times,
+            ) = etl_all_ibis(
+                filename=args.dataset_path,
                 database_name=args.name,
                 omnisci_server_worker=omnisci_server_worker,
                 delete_old_database=not args.dnd,
                 create_new_table=not args.dni,
             )
+            print_times(etl_times)
 
             omnisci_server.terminate()
             omnisci_server = None
 
             if not args.no_ml:
+                print("using ml with dataframes from ibis")
                 ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights)
 
-
-        X_train_pandas, y_train, X_test, y_test, Xt, classes, class_weights = etl_all_pandas(args.file)
+        (
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+            Xt,
+            classes,
+            class_weights,
+            etl_times,
+        ) = etl_all_pandas(args.dataset_path)
+        print_times(etl_times)
 
         if not args.no_ml:
+            print("using ml with dataframes from pandas")
             ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights)
 
         if args.val:
-            compare_dataframes(ibis_df=(X_train_ibis, y_train_ibis), pandas_df=(X, y))
+            # this isn't work so easy
+            # compare_dataframes(ibis_df=(X_train_ibis, y_train_ibis), pandas_df=(X, y))
+            print("validate by ml results")
 
     except Exception as err:
         print("Failed: ", err)
