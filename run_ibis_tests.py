@@ -227,6 +227,8 @@ try:
                                 '-commit_omnisci', args.commit_omnisci,
                                 '-commit_ibis', args.commit_ibis]
 
+        benchmarks_cmd['census'] = census_bench_cmdline
+
         plasticc_bench_cmdline = ['python3',
                                   benchmarks[args.bench_name],
                                   '-e', args.omnisci_executable,
