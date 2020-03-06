@@ -47,16 +47,6 @@ TEST_ROWS_AFTER_SKIP = 189022127
 # test_set_skiprows.csv was be created via
 # `head -n 189022128 test_set.csv > test_set_skiprows.csv`
 
-t_groupby_agg = 0.0
-t_arithm = 0.0
-t_drop = 0.0
-t_merge = 0.0
-t_readcsv = 0.0
-t_train_test_split = 0.0
-t_dmatrix = 0.0
-t_training = 0.0
-t_infer = 0.0
-
 
 def ravel_column_names(cols):
     d0 = cols.get_level_values(0)
@@ -422,14 +412,13 @@ def etl_all_ibis(
 
     t_etl_start = timer()
 
-    train, train_meta, test, test_meta, t_readcsv = load_data_ibis(
+    train, train_meta, test, test_meta, etl_times["t_readcsv"] = load_data_ibis(
         filename,
         database_name,
         omnisci_server_worker,
         delete_old_database,
         create_new_table,
     )
-    etl_times["t_readcsv"] = t_readcsv
 
     # update etl_times
     train_final = etl_cpu_ibis(train, train_meta, etl_times)
@@ -457,7 +446,7 @@ def etl_all_ibis(
     )
     etl_times["t_train_test_split"] += timer() - t0
 
-    etl_times["t_etl"] = timer() - t_etl_start - t_readcsv
+    etl_times["t_etl"] = timer() - t_etl_start - etl_times["t_readcsv"]
 
     return X_train, y_train, X_test, y_test, Xt, classes, class_weights, etl_times
 
@@ -506,7 +495,7 @@ def etl_all_pandas(dataset_folder):
     )
     etl_times["t_train_test_split"] += timer() - t0
 
-    etl_times["t_etl"] += timer() - t_etl_start - t_readcsv
+    etl_times["t_etl"] += timer() - t_etl_start - etl_times["t_readcsv"]
 
     return X_train, y_train, X_test, y_test, Xt, classes, class_weights, etl_times
 
