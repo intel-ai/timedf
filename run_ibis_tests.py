@@ -18,7 +18,8 @@ parser._action_groups.append(optional)
 possible_tasks = ['build', 'test', 'benchmark']
 benchmarks = {'ny_taxi': os.path.join(omniscript_path, "taxi", "taxibench_ibis.py"),
               'santander': os.path.join(omniscript_path, "santander", "santander_ibis.py"),
-              'census': os.path.join(omniscript_path, "census", "census_pandas_ibis.py")}
+              'census': os.path.join(omniscript_path, "census", "census_pandas_ibis.py"),
+              'plasticc': os.path.join(omniscript_path, "plasticc", "plasticc_pandas_ibis.py")}
 # Task
 required.add_argument("-t", "--task", dest="task", required=True,
                       help=f"Task for execute {possible_tasks}. Use , separator for multiple tasks")
@@ -226,7 +227,25 @@ try:
                                 '-commit_omnisci', args.commit_omnisci,
                                 '-commit_ibis', args.commit_ibis]
 
-        benchmarks_cmd['census'] = census_bench_cmdline
+        plasticc_bench_cmdline = ['python3',
+                                  benchmarks[args.bench_name],
+                                  '-e', args.omnisci_executable,
+                                  '-port', str(args.omnisci_port),
+                                  '-db-port', str(args.db_port),
+                                  '-dataset_path', f"'{args.dpattern}'",
+                                  '-u', args.user,
+                                  '-p', args.password,
+                                  '-db-server', args.db_server,
+                                  '-n', args.name,
+                                  f'-db-user={args.db_user}',
+                                  '-db-pass', args.db_password,
+                                  '-db-name', args.db_name,
+                                  '-db-table',
+                                  args.db_table if args.db_table else 'plasticc',
+                                  '-commit_omnisci', args.commit_omnisci,
+                                  '-commit_ibis', args.commit_ibis]
+
+        benchmarks_cmd['plasticc'] = plasticc_bench_cmdline
 
     conda_env = CondaEnvironment(args.env_name)
 
