@@ -527,7 +527,12 @@ def xgb_multi_weighted_logloss(y_predicted, y_true, classes, class_weights):
 
 
 def ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights):
-    global t_dmatrix, t_training, t_infer
+    ml_times = {
+        "t_dmatrix": 0.0,
+        "t_training": 0.0,
+        "t_infer": 0.0,
+        "t_ml": 0.0,
+    }
 
     cpu_params = {
         "objective": "multi:softprob",
@@ -548,7 +553,7 @@ def ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights):
     dtrain = xgb.DMatrix(data=X_train, label=y_train)
     dvalid = xgb.DMatrix(data=X_test, label=y_test)
     dtest = xgb.DMatrix(data=Xt)
-    t_dmatrix += timer() - t_ml_start
+    ml_times["t_dmatrix"] += timer() - t_ml_start
 
     watchlist = [(dvalid, "eval"), (dtrain, "train")]
 
@@ -562,30 +567,26 @@ def ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights):
         early_stopping_rounds=10,
         verbose_eval=1000,
     )
-    t_training += timer() - t0
+    ml_times["t_training"] += timer() - t0
 
     t0 = timer()
     yp = clf.predict(dvalid)
-    t_infer += timer() - t0
+    ml_times["t_infer"] += timer() - t0
 
     cpu_loss = multi_weighted_logloss(y_test, yp, classes, class_weights)
 
     t0 = timer()
     ysub = clf.predict(dtest)
-    t_infer += timer() - t0
+    ml_times["t_infer"] += timer() - t0
 
-    t_ml_end = timer()
-
-    print("t_ML:", t_ml_end - t_ml_start)
-    print("  t_dmatrix = ", t_dmatrix)
-    print("  t_train =", t_training)
-    print("  t_pred = ", t_infer)
+    ml_times["t_ml"] = timer() - t_ml_start
 
     print("validation cpu_loss:", cpu_loss)
 
+    return ml_times
 
 def get_args():
-    parser = argparse.ArgumentParser(description="Run internal tests from ibis project")
+    parser = argparse.ArgumentParser(description="PlasTiCC benchmark")
     optional = parser._action_groups.pop()
     required = parser.add_argument_group("required arguments")
     parser._action_groups.append(optional)
@@ -769,7 +770,8 @@ def main():
 
             if not args.no_ml:
                 print("using ml with dataframes from ibis")
-                ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights)
+                ml_times = ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights)
+                print_times(ml_times)
 
         (
             X_train,
@@ -785,7 +787,8 @@ def main():
 
         if not args.no_ml:
             print("using ml with dataframes from pandas")
-            ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights)
+            ml_times = ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights)
+            print_times(ml_times)
 
         if args.val:
             # this isn't work so easy
