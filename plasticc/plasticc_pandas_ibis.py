@@ -13,40 +13,6 @@ from sklearn.preprocessing import LabelEncoder
 
 import xgboost as xgb
 
-"""parser = argparse.ArgumentParser(description="PlasTiCC benchmark")
-parser.add_argument(
-    "datapath",
-    metavar="datapath",
-    type=str,
-    help="data folder path. It should contain training_set.csv and test_set.csv",
-)
-parser.add_argument(
-    "--gpu-memory-g",
-    dest="gpu_memory",
-    type=int,
-    help="specify the memory of your gpu, default 16. (This controls the lines to be used. Also work for CPU version. )",
-    default=16,
-)
-args = parser.parse_args()
-print(args)
-
-# PARAMETERS
-
-PATH = args.datapath
-GPU_MEMORY = args.gpu_memory
-"""
-GPU_MEMORY = 16
-
-TEST_ROWS = 453653104
-OVERHEAD = 1.2
-SKIP_ROWS = int((1 - GPU_MEMORY / (32.0 * OVERHEAD)) * TEST_ROWS)
-
-# without header
-TEST_ROWS_AFTER_SKIP = 189022127
-
-# test_set_skiprows.csv was be created via
-# `head -n 189022128 test_set.csv > test_set_skiprows.csv`
-
 
 def ravel_column_names(cols):
     d0 = cols.get_level_values(0)
@@ -217,6 +183,7 @@ def load_data_ibis(
     omnisci_server_worker,
     delete_old_database,
     create_new_table,
+    skip_rows,
 ):
     import ibis
 
@@ -288,7 +255,7 @@ def load_data_ibis(
             header=0,
             nrows=None,
             compression_type=None,
-            skiprows=range(1, 1 + SKIP_ROWS),
+            skiprows=range(1, 1 + skip_rows),
         )
 
         # create table #3
@@ -349,7 +316,7 @@ def load_data_ibis(
     )
 
 
-def load_data_pandas(dataset_folder):
+def load_data_pandas(dataset_folder, skip_rows):
     dtypes = {
         "object_id": "int32",
         "mjd": "float32",
@@ -364,7 +331,7 @@ def load_data_pandas(dataset_folder):
         # this should be replaced on test_set_skiprows.csv
         "%s/test_set.csv" % dataset_folder,
         dtype=dtypes,
-        skiprows=range(1, 1 + SKIP_ROWS),
+        skiprows=range(1, 1 + skip_rows),
     )
 
     # load metadata
@@ -400,6 +367,7 @@ def etl_all_ibis(
     omnisci_server_worker,
     delete_old_database,
     create_new_table,
+    skip_rows,
 ):
     print("ibis version")
     etl_times = {
@@ -420,6 +388,7 @@ def etl_all_ibis(
         omnisci_server_worker,
         delete_old_database,
         create_new_table,
+        skip_rows,
     )
 
     # update etl_times
@@ -587,6 +556,20 @@ def ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights):
 
     return ml_times
 
+def compute_skip_rows(gpu_memory):
+    # count rows inside test_set.csv
+    test_rows = 453653104
+
+    # if you want to use ibis' read_csv then you need to manually create
+    # test_set_skiprows.csv (for example, via next command:
+    # `head -n 189022128 test_set.csv > test_set_skiprows.csv`)
+    #
+    # for gpu_memory=16 - skip_rows=189022127 (+1 for header)
+
+    overhead = 1.2
+    skip_rows = int((1 - gpu_memory / (32.0 * overhead)) * test_rows)
+    return skip_rows
+
 def get_args():
     parser = argparse.ArgumentParser(description="PlasTiCC benchmark")
     optional = parser._action_groups.pop()
@@ -598,6 +581,13 @@ def get_args():
         dest="dataset_path",
         required=True,
         help="A folder with downloaded dataset' files",
+    )
+    optional.add_argument(
+        "--gpu-memory-g",
+        dest="gpu_memory",
+        type=int,
+        help="specify the memory of your gpu, default 16. (This controls the lines to be used. Also work for CPU version. )",
+        default=16,
     )
     optional.add_argument("-dnd", action="store_true", help="Do not delete old table.")
     optional.add_argument(
@@ -709,7 +699,7 @@ def get_args():
     args = parser.parse_args()
     args.dataset_path = args.dataset_path.replace("'", "")
 
-    return parser, args
+    return parser, args, compute_skip_rows(args.gpu_memory)
 
 
 def print_times(etl_times, name=None):
@@ -723,7 +713,7 @@ def main():
     args = None
     omnisci_server = None
 
-    parser, args = get_args()
+    parser, args, skip_rows = get_args()
 
     try:
         if not args.no_ibis:
@@ -764,6 +754,7 @@ def main():
                 omnisci_server_worker=omnisci_server_worker,
                 delete_old_database=not args.dnd,
                 create_new_table=not args.dni,
+                skip_rows=skip_rows,
             )
             print_times(etl_times)
 
@@ -784,7 +775,7 @@ def main():
             classes,
             class_weights,
             etl_times,
-        ) = etl_all_pandas(args.dataset_path)
+        ) = etl_all_pandas(args.dataset_path, skip_rows)
         print_times(etl_times)
 
         if not args.no_ml:
