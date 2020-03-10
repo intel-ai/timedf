@@ -422,7 +422,7 @@ def etl_all_ibis(
     return X_train, y_train, X_test, y_test, Xt, classes, class_weights, etl_times
 
 
-def etl_all_pandas(dataset_folder):
+def etl_all_pandas(dataset_folder, skip_rows):
     print("pandas version")
     etl_times = {
         "t_readcsv": 0.0,
@@ -435,7 +435,7 @@ def etl_all_pandas(dataset_folder):
     }
 
     t0 = timer()
-    train, train_meta, test, test_meta = load_data_pandas(dataset_folder)
+    train, train_meta, test, test_meta = load_data_pandas(dataset_folder, skip_rows)
     etl_times["t_readcsv"] += timer() - t0
 
     t_etl_start = timer()
