@@ -380,8 +380,6 @@ def etl_all_ibis(
         "t_etl": 0.0,
     }
 
-    t_etl_start = timer()
-
     train, train_meta, test, test_meta, etl_times["t_readcsv"] = load_data_ibis(
         filename,
         database_name,
@@ -390,6 +388,8 @@ def etl_all_ibis(
         create_new_table,
         skip_rows,
     )
+
+    t_etl_start = timer()
 
     # update etl_times
     train_final = etl_cpu_ibis(train, train_meta, etl_times)
@@ -417,7 +417,7 @@ def etl_all_ibis(
     )
     etl_times["t_train_test_split"] += timer() - t0
 
-    etl_times["t_etl"] = timer() - t_etl_start - etl_times["t_readcsv"]
+    etl_times["t_etl"] = timer() - t_etl_start
 
     return X_train, y_train, X_test, y_test, Xt, classes, class_weights, etl_times
 
@@ -434,11 +434,11 @@ def etl_all_pandas(dataset_folder):
         "t_etl": 0.0,
     }
 
-    t_etl_start = timer()
-
     t0 = timer()
     train, train_meta, test, test_meta = load_data_pandas(dataset_folder)
     etl_times["t_readcsv"] += timer() - t0
+
+    t_etl_start = timer()
 
     # update etl_times
     train_final = etl_cpu_pandas(train, train_meta, etl_times)
@@ -466,7 +466,7 @@ def etl_all_pandas(dataset_folder):
     )
     etl_times["t_train_test_split"] += timer() - t0
 
-    etl_times["t_etl"] += timer() - t_etl_start - etl_times["t_readcsv"]
+    etl_times["t_etl"] += timer() - t_etl_start
 
     return X_train, y_train, X_test, y_test, Xt, classes, class_weights, etl_times
 
