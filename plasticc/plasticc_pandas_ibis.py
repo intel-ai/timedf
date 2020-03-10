@@ -684,7 +684,18 @@ def get_args():
         default="plasticc_database",
         help="Database name to use in omniscidb server.",
     )
-
+    optional.add_argument(
+        "-commit_omnisci",
+        dest="commit_omnisci",
+        default="1234567890123456789012345678901234567890",
+        help="Omnisci commit hash to use for benchmark.",
+    )
+    optional.add_argument(
+        "-commit_ibis",
+        dest="commit_ibis",
+        default="1234567890123456789012345678901234567890",
+        help="Ibis commit hash to use for benchmark.",
+    )
     optional.add_argument(
         "-no_ibis",
         action="store_true",
