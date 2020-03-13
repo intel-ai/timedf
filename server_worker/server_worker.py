@@ -68,7 +68,7 @@ class OmnisciServerWorker:
 
         self._conn = ibis.omniscidb.connect(host="localhost", port=self.omnisci_server.server_port,
                                             user=self.omnisci_server.user,
-                                            password=self.omnisci_server.password, execution_type=1)
+                                            password=self.omnisci_server.password, ipc=True)
         return self._conn
 
     def terminate(self):
