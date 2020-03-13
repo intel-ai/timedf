@@ -143,6 +143,7 @@ class OmnisciServerWorker:
             df["id"] = [x for x in range(df[df.columns[0]].count())]
             columns_names = ["id"] + columns_names
             columns_types = ["int32"] + columns_types
+            self._imported_pd_df[table_name] = df
 
 
         if cast_dict is not None:
