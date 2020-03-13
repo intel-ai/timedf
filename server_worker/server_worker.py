@@ -136,6 +136,11 @@ class OmnisciServerWorker:
                                                                        compression_type=compression_type,
                                                                        skiprows=skiprows)
         t_import_pandas = time.time() - t0
+
+        validation = True
+        if validation:
+            self._imported_pd_df[table_name]["id"] = [x for x in range(df[df.columns[0]].count())]
+
         if cast_dict is not None:
             pandas_concatenated_df_casted = self._imported_pd_df[table_name].astype(dtype=cast_dict,
                                                                                     copy=True)
