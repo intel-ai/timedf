@@ -224,6 +224,7 @@ try:
                                 args.db_table if args.db_table else 'census',
                                 f'-o={args.optimizer}',
                                 '-val',
+                                '--iters', str(args.iters),
                                 '-commit_omnisci', args.commit_omnisci,
                                 '-commit_ibis', args.commit_ibis]
 

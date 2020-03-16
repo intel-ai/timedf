@@ -44,8 +44,7 @@ def load_data(
     return pd.read_csv(filename, names=columns_names, nrows=nrows, header=header, dtype=types,
                        compression='gzip' if use_gzip else None)
 
-
-def etl_pandas(filename, columns_names, columns_types):
+def etl_pandas(filename, columns_names, columns_types, p4=None, p5=None, p6=None, p7=None, p8=None):
     etl_times = {
         "t_readcsv": 0.0,
         "t_where": 0.0,
@@ -278,20 +277,67 @@ def etl_ibis(
     return X, y, etl_times
 
 
-def print_times(etl_times, backend, db_reporter=None):
+def print_and_store_all_times(t_first, t_aver, t_best, t_worst, t_total, backend, db_rep=None):
+    print(f"{backend} times:")
+    for key in t_first.keys():
+        print("{} = {:.5f}, {:.5f}, {:.5f}, {:.5f} , {:.5f} s".format(key, t_first[key], t_aver[key], t_best[key], t_worst[key], t_total[key]))
+        if db_rep is not None:
+            db_rep.submit({
+                'QueryName': key,
+                'FirstExecTimeMS': t_first[key] * 1000,
+                'WorstExecTimeMS': t_worst[key] * 1000,
+                'BestExecTimeMS': t_best[key] * 1000,
+                'AverageExecTimeMS': t_aver[key] * 1000,
+                'TotalTimeMS': t_total[key] * 1000,
+                'BackEnd': backend
+            })
+
+def print_one_times(etl_times, backend):
     print(f"{backend} times:")
     for time_name, time in etl_times.items():
         print("{} = {:.5f} s".format(time_name, time))
-        if db_reporter is not None:
-            db_reporter.submit({
-                'QueryName': time_name,
-                'FirstExecTimeMS': time*1000,
-                'WorstExecTimeMS': time*1000,
-                'BestExecTimeMS': time*1000,
-                'AverageExecTimeMS': time*1000,
-                'TotalTimeMS': time*1000,
-                'BackEnd': backend
-            })
+
+def run_itterations(be, itter_num, db, func, p1, p2, p3, p4=None, p5=None, p6=None, p7=None, p8=None):
+    print("ETL runs/itterations: ", itter_num)
+    # etl_times_first = {
+    #     "t_readcsv": float("inf"), "t_where": float("inf"), "t_arithm": float("inf"), "t_fillna": float("inf"), "t_drop": float("inf"), "t_typeconvert": float("inf"), "t_etl": float("inf"),
+    # }
+    etl_times_best = {
+        "t_readcsv": float("inf"), "t_where": float("inf"), "t_arithm": float("inf"), "t_fillna": float("inf"), "t_drop": float("inf"), "t_typeconvert": float("inf"), "t_etl": float("inf"),
+    }
+    etl_times_worst = {
+        "t_readcsv": 0.0, "t_where": 0.0, "t_arithm": 0.0, "t_fillna": 0.0, "t_drop": 0.0, "t_typeconvert": 0.0, "t_etl": 0.0,
+    }
+    etl_times_average = {
+        "t_readcsv": 0.0, "t_where": 0.0, "t_arithm": 0.0, "t_fillna": 0.0, "t_drop": 0.0, "t_typeconvert": 0.0, "t_etl": 0.0,
+    }
+    # etl_times_total = {
+    #     "t_readcsv": 0.0, "t_where": 0.0, "t_arithm": 0.0, "t_fillna": 0.0, "t_drop": 0.0, "t_typeconvert": 0.0, "t_etl": 0.0,
+    # }
+    for iteration in range(1, itter_num+1):
+        X_ibis, y_ibis, etl_times_tmp = func(p1, p2, p3, p4, p5, p6, p7, p8)
+        if iteration == 1:
+            etl_times_first = etl_times_tmp.copy()
+            etl_times_total = etl_times_tmp.copy()
+        else:
+            for key in etl_times_tmp.keys():
+                etl_times_average[key] += etl_times_tmp[key]
+                etl_times_total[key] += etl_times_tmp[key]
+                if etl_times_best[key] > etl_times_tmp[key]:
+                    etl_times_best[key] = etl_times_tmp[key]
+                if etl_times_worst[key] < etl_times_tmp[key]:
+                    etl_times_worst[key] = etl_times_tmp[key]
+    if itter_num == 1:
+        etl_times_average = etl_times_tmp.copy()
+        etl_times_best = etl_times_tmp.copy()
+        etl_times_worst = etl_times_tmp.copy()
+    else:
+        for key in etl_times_tmp.keys():
+            etl_times_average[key] /= (itter_num - 1)
+
+    print_and_store_all_times(etl_times_first, etl_times_average, etl_times_best, etl_times_worst, etl_times_total, be, db)
+
+    return X_ibis, y_ibis, etl_times_tmp
 
 def mse(y_test, y_pred):
     return ((y_test - y_pred) ** 2).mean()
@@ -377,6 +423,14 @@ def main():
         help="A datafile that should be loaded",
     )
     optional.add_argument("-dnd", action="store_true", help="Do not delete old table.")
+    optional.add_argument(
+        "-it",
+        "--iters",
+        dest="i",
+        default=5,
+        type=int,
+        help="Number of iterations to run every query.",
+    )
     optional.add_argument(
         "-dni",
         action="store_true",
@@ -630,6 +684,9 @@ def main():
     ]
 
     try:
+        if args.i < 1:
+            print("Bad number of iterations specified", args.i)
+
         if not args.no_ibis:
             if args.omnisci_executable is None:
                 parser.error("Omnisci executable should be specified with -e/--executable")
@@ -664,40 +721,50 @@ def main():
                     'IbisCommitHash': args.commit_ibis
                 })
                 
-            X_ibis, y_ibis, etl_times_ibis = etl_ibis(
-                filename=args.file,
-                columns_names=columns_names,
-                columns_types=columns_types,
-                database_name=args.name,
-                table_name=args.table,
-                omnisci_server_worker=omnisci_server_worker,
-                delete_old_database=not args.dnd,
-                create_new_table=not args.dni,
+            X_ibis, y_ibis, etl_times_tmp = run_itterations(
+                'Ibis',
+                args.i,
+                db_reporter,
+                etl_ibis,
+                args.file,
+                columns_names,
+                columns_types,
+                args.name,
+                args.table,
+                omnisci_server_worker,
+                not args.dnd,
+                not args.dni
             )
+
             omnisci_server.terminate()
             omnisci_server = None
-            print_times(etl_times_ibis, 'Ibis', db_reporter)
 
             if not args.no_ml:
                 mse_mean, cod_mean, mse_dev, cod_dev, ml_times = ml(
                     X_ibis, y_ibis, RANDOM_STATE, N_RUNS, TRAIN_SIZE, args.optimizer
                 )
-                print_times(ml_times, 'Ibis')
+                print_one_times(ml_times, 'Ibis')
                 print("mean MSE ± deviation: {:.9f} ± {:.9f}".format(mse_mean, mse_dev))
                 print("mean COD ± deviation: {:.9f} ± {:.9f}".format(cod_mean, cod_dev))
 
         import_pandas_into_module_namespace(main.__globals__,
                                             args.pandas_mode, args.ray_tmpdir, args.ray_memory)
-        X, y, etl_times = etl_pandas(
-            args.file, columns_names=columns_names, columns_types=columns_types
+
+        X_ibis, y_ibis, etl_times_tmp = run_itterations(
+            args.pandas_mode,
+            args.i,
+            db_reporter,
+            etl_pandas,
+            args.file,
+            columns_names,
+            columns_types
         )
-        print_times(etl_times, args.pandas_mode, db_reporter)
 
         if not args.no_ml:
             mse_mean, cod_mean, mse_dev, cod_dev, ml_times = ml(
                 X, y, RANDOM_STATE, N_RUNS, TRAIN_SIZE, args.optimizer
             )
-            print_times(ml_times, args.pandas_mode)
+            print_one_times(ml_times, args.pandas_mode)
             print("mean MSE ± deviation: {:.9f} ± {:.9f}".format(mse_mean, mse_dev))
             print("mean COD ± deviation: {:.9f} ± {:.9f}".format(cod_mean, cod_dev))
 
