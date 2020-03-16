@@ -141,8 +141,8 @@ class OmnisciServerWorker:
         df = self._imported_pd_df[table_name]
         if validation:
             df["id"] = [x+1 for x in range(df[df.columns[0]].count())]
-            columns_names = ["id"] + columns_names
-            columns_types = ["int32"] + columns_types
+            columns_names = columns_names + ["id"]
+            columns_types = columns_types + ["int32"]
             self._imported_pd_df[table_name] = df
 
 
