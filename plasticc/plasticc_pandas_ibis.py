@@ -108,6 +108,7 @@ def etl_cpu_ibis(table, table_meta, etl_times):
         table.flux_min,
         table.flux_max,
         table.flux_mean,
+        table.flux_skew,
         table.flux_err_min,
         table.flux_err_max,
         table.flux_err_mean,
