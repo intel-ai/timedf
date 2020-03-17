@@ -297,8 +297,8 @@ def print_one_times(etl_times, backend):
     for time_name, time in etl_times.items():
         print("{} = {:.5f} s".format(time_name, time))
 
-def run_itterations(be, itter_num, db, func, p1, p2, p3, p4=None, p5=None, p6=None, p7=None, p8=None):
-    print("ETL runs/itterations: ", itter_num)
+def run_iterations(be, iter_num, db, func, p1, p2, p3, p4=None, p5=None, p6=None, p7=None, p8=None):
+    print("ETL runs/iterations: ", iter_num)
     # etl_times_first = {
     #     "t_readcsv": float("inf"), "t_where": float("inf"), "t_arithm": float("inf"), "t_fillna": float("inf"), "t_drop": float("inf"), "t_typeconvert": float("inf"), "t_etl": float("inf"),
     # }
@@ -314,7 +314,7 @@ def run_itterations(be, itter_num, db, func, p1, p2, p3, p4=None, p5=None, p6=No
     # etl_times_total = {
     #     "t_readcsv": 0.0, "t_where": 0.0, "t_arithm": 0.0, "t_fillna": 0.0, "t_drop": 0.0, "t_typeconvert": 0.0, "t_etl": 0.0,
     # }
-    for iteration in range(1, itter_num+1):
+    for iteration in range(1, iter_num+1):
         X_ibis, y_ibis, etl_times_tmp = func(p1, p2, p3, p4, p5, p6, p7, p8)
         if iteration == 1:
             etl_times_first = etl_times_tmp.copy()
@@ -327,13 +327,13 @@ def run_itterations(be, itter_num, db, func, p1, p2, p3, p4=None, p5=None, p6=No
                     etl_times_best[key] = etl_times_tmp[key]
                 if etl_times_worst[key] < etl_times_tmp[key]:
                     etl_times_worst[key] = etl_times_tmp[key]
-    if itter_num == 1:
+    if iter_num == 1:
         etl_times_average = etl_times_tmp.copy()
         etl_times_best = etl_times_tmp.copy()
         etl_times_worst = etl_times_tmp.copy()
     else:
         for key in etl_times_tmp.keys():
-            etl_times_average[key] /= (itter_num - 1)
+            etl_times_average[key] /= (iter_num - 1)
 
     print_and_store_all_times(etl_times_first, etl_times_average, etl_times_best, etl_times_worst, etl_times_total, be, db)
 
@@ -721,7 +721,7 @@ def main():
                     'IbisCommitHash': args.commit_ibis
                 })
                 
-            X_ibis, y_ibis, etl_times_tmp = run_itterations(
+            X_ibis, y_ibis, etl_times_tmp = run_iterations(
                 'Ibis',
                 args.i,
                 db_reporter,
@@ -750,7 +750,7 @@ def main():
         import_pandas_into_module_namespace(main.__globals__,
                                             args.pandas_mode, args.ray_tmpdir, args.ray_memory)
 
-        X_ibis, y_ibis, etl_times_tmp = run_itterations(
+        X_ibis, y_ibis, etl_times_tmp = run_iterations(
             args.pandas_mode,
             args.i,
             db_reporter,
