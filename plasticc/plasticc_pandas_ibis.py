@@ -21,12 +21,16 @@ def compare_dataframes(ibis_dfs, pandas_dfs):
     prepared_dfs = []
 
     # preparing step
-    for df in ibis_dfs:
+    for idx, df in enumerate(ibis_dfs):
         prepared_dfs.append(df.sort_values(by="id", axis=0).reset_index(drop=True).drop(["id"], axis=1))
+
+        # cast types for some columns
+        for col_name in ["flux_skew", "flux_mean", "flux_err_mean", "flux_dif2"]:
+            prepared_dfs[idx][col_name] = prepared_dfs[idx][col_name].astype("float32")
 
     # comparing step
     for ibis_df, pandas_df in zip(prepared_dfs, pandas_dfs):
-        pd.testing.assert_frame_equal(ibis_df, pandas_df, check_less_precise=3)
+        pd.testing.assert_frame_equal(ibis_df, pandas_df, check_less_precise=2)
 
     print("dataframes are equal")
 
@@ -799,7 +803,7 @@ def main():
 
         if args.val and (not train_final is None) and (not test_final is None):
             print("validating result ...")
-            compare_dataframes(ibis_df=(train_final, test_final), pandas_df=(ptrain_final, ptest_final))
+            compare_dataframes((train_final, test_final), (ptrain_final, ptest_final))
 
     except Exception as err:
         print("Failed: ", err)
