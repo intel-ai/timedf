@@ -14,7 +14,7 @@ from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
 
 
-def сompare_dataframes(ibis_dfs, pandas_dfs):
+def compare_dataframes(ibis_dfs, pandas_dfs):
     train_df_ibis, test_df_ibis = ibis_dfs
     train_df_pd, test_df_pd = pandas_dfs
 
@@ -799,7 +799,7 @@ def main():
 
         if args.val and (not train_final is None) and (not test_final is None):
             print("validating result ...")
-            сompare_dataframes(ibis_df=(train_final, test_final), pandas_df=(ptrain_final, ptest_final))
+            compare_dataframes(ibis_df=(train_final, test_final), pandas_df=(ptrain_final, ptest_final))
 
     except Exception as err:
         print("Failed: ", err)
