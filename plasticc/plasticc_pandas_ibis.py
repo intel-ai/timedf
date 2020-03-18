@@ -93,10 +93,7 @@ def etl_cpu_ibis(table, table_meta, etl_times):
     etl_times["t_drop"] += timer() - t0
 
     t0 = timer()
-    # Problem type(table_meta) = <class 'ibis.omniscidb.client.OmniSciDBTable'>
-    # which overrides the drop method (now it is used to delete the table) and
-    # not for drop columns - use workaround table_meta[table_meta].drop(...)
-    table_meta = table_meta[table_meta].drop(["ra", "decl", "gal_l", "gal_b"])
+    table_meta = table_meta.drop(["ra", "decl", "gal_l", "gal_b"])
     etl_times["t_drop"] += timer() - t0
 
     t0 = timer()
