@@ -114,7 +114,7 @@ class OmnisciServerWorker:
 
     def import_data_by_ibis(self, table_name, data_files_names, files_limit, columns_names,
                             columns_types, cast_dict=None, header=None, nrows=None,
-                            compression_type='gzip', skiprows=None):
+                            compression_type='gzip', skiprows=None, validation=None):
         "Import CSV files using Ibis load_data to the OmniSciDB from the Pandas.DataFrame"
 
         if columns_types:
@@ -137,9 +137,8 @@ class OmnisciServerWorker:
                                                                        skiprows=skiprows)
         t_import_pandas = time.time() - t0
 
-        validation = True
-        df = self._imported_pd_df[table_name]
         if validation:
+            df = self._imported_pd_df[table_name]
             df["id"] = [x+1 for x in range(df[df.columns[0]].count())]
             columns_names = columns_names + ["id"]
             columns_types = columns_types + ["int32"]
