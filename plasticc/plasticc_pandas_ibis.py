@@ -280,7 +280,7 @@ def load_data_ibis(
             header=0,
             nrows=None,
             compression_type=None,
-            skiprows=range(1, 1 + skip_rows),
+            skiprows=skip_rows,
             validation=validation,
         )
 
@@ -738,7 +738,7 @@ def print_times(etl_times, name=None):
 
 def main():
     args = None
-    omnisci_server = None
+    omnisci_server_worker = None
     train_final, test_final = None, None
 
     parser, args, skip_rows = get_args()
@@ -779,8 +779,9 @@ def main():
             ml_data, etl_times = split_step(train_final, test_final, etl_times)
             print_times(etl_times)
 
-            omnisci_server.terminate()
-            omnisci_server = None
+
+            omnisci_server_worker.terminate()
+            omnisci_server_worker = None
 
             if not args.no_ml:
                 print("using ml with dataframes from ibis")
@@ -804,8 +805,8 @@ def main():
         print("Failed: ", err)
         sys.exit(1)
     finally:
-        if omnisci_server:
-            omnisci_server.terminate()
+        if omnisci_server_worker:
+            omnisci_server_worker.terminate()
 
 
 if __name__ == "__main__":

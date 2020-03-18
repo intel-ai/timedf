@@ -72,6 +72,7 @@ class OmnisciServerWorker:
         return self._conn
 
     def terminate(self):
+        self._conn.close()
         self.omnisci_server.terminate()
 
     def import_data(self, table_name, data_files_names, files_limit, columns_names, columns_types,
