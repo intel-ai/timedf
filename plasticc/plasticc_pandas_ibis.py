@@ -33,7 +33,7 @@ def compare_dataframes(ibis_dfs, pandas_dfs):
         # (1 - float#1/float#2) < epsilon
         for col_name in special_compare:
             temp = prepared_dfs[idx][col_name] - pandas_dfs[idx][col_name]
-            if temp[temp > 1e-3].count() != 0:
+            if temp[temp > 5e-2].count() != 0:
                 raise AssertionError(f"column: {col_name} is different")
 
     # drop already compared columns
