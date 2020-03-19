@@ -187,11 +187,11 @@ def etl_cpu_pandas(df, df_meta, etl_times):
 
     t0 = timer()
     agg_df["flux_diff"] = agg_df["flux_max"] - agg_df["flux_min"]
-    agg_df["flux_dif2"] = agg_df["flux_dif"] / agg_df["flux_mean"]
+    agg_df["flux_dif2"] = agg_df["flux_diff"] / agg_df["flux_mean"]
     agg_df["flux_w_mean"] = (
         agg_df["flux_by_flux_ratio_sq_sum"] / agg_df["flux_ratio_sq_sum"]
     )
-    agg_df["flux_dif3"] = agg_df["flux_dif"] / agg_df["flux_w_mean"]
+    agg_df["flux_dif3"] = agg_df["flux_diff"] / agg_df["flux_w_mean"]
     agg_df["mjd_diff"] = agg_df["mjd_max"] - agg_df["mjd_min"]
     etl_times["t_arithm"] += timer() - t0
 
