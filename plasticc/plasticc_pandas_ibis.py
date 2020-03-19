@@ -25,7 +25,7 @@ def compare_dataframes(ibis_dfs, pandas_dfs):
         prepared_dfs.append(df.sort_values(by="id", axis=0).reset_index(drop=True).drop(["id"], axis=1))
 
         # cast types for some columns
-        for col_name in ["flux_skew", "flux_mean", "flux_err_mean", "flux_dif2"]:
+        for col_name in ["flux_mean", "flux_err_mean", "flux_dif2"]:
             prepared_dfs[idx][col_name] = prepared_dfs[idx][col_name].astype("float32")
 
     # comparing step
