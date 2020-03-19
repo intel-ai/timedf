@@ -19,6 +19,7 @@ def compare_dataframes(ibis_dfs, pandas_dfs):
     train_df_pd, test_df_pd = pandas_dfs
 
     prepared_dfs = []
+    special_compare = ["flux_skew", "flux_mean", "flux_err_mean", "flux_dif2"]
 
     # preparing step
     for idx, df in enumerate(ibis_dfs):
@@ -27,6 +28,17 @@ def compare_dataframes(ibis_dfs, pandas_dfs):
         # cast types for some columns
         for col_name in ["flux_mean", "flux_err_mean", "flux_dif2"]:
             prepared_dfs[idx][col_name] = prepared_dfs[idx][col_name].astype("float32")
+
+        # more accuracy; assert_frame_equal works as follows:
+        # (1 - float#1/float#2) < epsilon
+        for col_name in special_compare:
+            temp = prepared_dfs[idx][col_name] - pandas_dfs[idx][col_name]
+            if temp[temp > 1e-3].count() != 0:
+                raise AssertionError(f"column: {col_name} is different")
+
+    # drop already compared columns
+    prepared_dfs[idx] = prepared_dfs[idx].drop(special_compare, axis=1)
+    pandas_dfs[idx] = pandas_dfs[idx].drop(special_compare, axis=1)
 
     # comparing step
     for ibis_df, pandas_df in zip(prepared_dfs, pandas_dfs):
