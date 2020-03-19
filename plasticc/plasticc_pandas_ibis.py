@@ -371,7 +371,7 @@ def load_data_pandas(dataset_folder, skip_rows):
         # this should be replaced on test_set_skiprows.csv
         "%s/test_set.csv" % dataset_folder,
         dtype=dtypes,
-        skiprows=range(1, 1 + skip_rows),
+        skiprows=skip_rows,
     )
 
     # load metadata
