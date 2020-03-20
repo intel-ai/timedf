@@ -15,7 +15,7 @@ import xgboost as xgb
 
 
 def get_percentage(error_message):
-    return float(test.split('values are different ')[1][1:-2])
+    return float(error_message.split('values are different ')[1].split("%)")[0][1:])
 
 
 def compare_dataframes(ibis_dfs, pandas_dfs):
