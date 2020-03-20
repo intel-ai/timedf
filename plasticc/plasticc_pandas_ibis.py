@@ -392,7 +392,9 @@ def load_data_pandas(dataset_folder, skip_rows):
         "target",
     ]
     dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
-    dtypes = [(cols[i], dtypes[i]) for i in range(len(dtypes))]
+    dtypes = OrderedDict(
+        [(cols[i], dtypes[i]) for i in range(len(dtypes))]
+    )
 
     train_meta = pd.read_csv(
         "%s/training_set_metadata.csv" % dataset_folder, dtype=dtypes
