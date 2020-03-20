@@ -486,8 +486,6 @@ def etl_all_pandas(dataset_folder, skip_rows):
     train, train_meta, test, test_meta = load_data_pandas(dataset_folder, skip_rows)
     etl_times["t_readcsv"] += timer() - t0
 
-    t_etl_start = timer()
-
     # update etl_times
     train_final = etl_cpu_pandas(train, train_meta, etl_times)
     test_final = etl_cpu_pandas(test, test_meta, etl_times)
@@ -815,9 +813,6 @@ def main():
             print("validating result ...")
             compare_dataframes((train_final, test_final), (ptrain_final, ptest_final))
 
-    except Exception as err:
-        print("Failed: ", err)
-        sys.exit(1)
     finally:
         if omnisci_server_worker:
             omnisci_server_worker.terminate()
