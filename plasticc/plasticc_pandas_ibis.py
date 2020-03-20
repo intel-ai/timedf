@@ -357,20 +357,23 @@ def load_data_ibis(
 
 
 def load_data_pandas(dataset_folder, skip_rows):
-    dtypes = {
-        "object_id": "int32",
-        "mjd": "float32",
-        "passband": "int32",
-        "flux": "float32",
-        "flux_err": "float32",
-        "detected": "int32",
-    }
+    dtypes = OrderedDict(
+        {
+            "object_id": "int32",
+            "mjd": "float32",
+            "passband": "int32",
+            "flux": "float32",
+            "flux_err": "float32",
+            "detected": "int32",
+        }
+    )
 
     train = pd.read_csv("%s/training_set.csv" % dataset_folder, dtype=dtypes)
     test = pd.read_csv(
         # this should be replaced on test_set_skiprows.csv
         "%s/test_set.csv" % dataset_folder,
-        dtype=dtypes,
+        names=list(dtypes.keys()),
+        dtype=list(dtypes.values()),
         skiprows=skip_rows,
     )
 
