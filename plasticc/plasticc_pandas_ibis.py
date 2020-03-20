@@ -232,14 +232,14 @@ def load_data_ibis(
     conn = omnisci_server_worker.connect_to_server()
 
     dtypes = OrderedDict(
-        {
-            "object_id": "int32",
-            "mjd": "float32",
-            "passband": "int32",
-            "flux": "float32",
-            "flux_err": "float32",
-            "detected": "int32",
-        }
+        [
+            ("object_id", "int32"),
+            ("mjd", "float32"),
+            ("passband", "int32"),
+            ("flux", "float32"),
+            ("flux_err", "float32"),
+            ("detected", "int32"),
+        ]
     )
 
     # load metadata
@@ -259,7 +259,7 @@ def load_data_ibis(
     ]
     meta_dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
     meta_dtypes = OrderedDict(
-        {cols[i]: meta_dtypes[i] for i in range(len(meta_dtypes))}
+        [(cols[i], meta_dtypes[i]) for i in range(len(meta_dtypes))]
     )
 
     t_import_pandas, t_import_ibis = 0.0, 0.0
@@ -357,14 +357,14 @@ def load_data_ibis(
 
 def load_data_pandas(dataset_folder, skip_rows):
     dtypes = OrderedDict(
-        {
-            "object_id": "int32",
-            "mjd": "float32",
-            "passband": "int32",
-            "flux": "float32",
-            "flux_err": "float32",
-            "detected": "int32",
-        }
+        [
+            ("object_id", "int32"),
+            ("mjd", "float32"),
+            ("passband", "int32"),
+            ("flux", "float32"),
+            ("flux_err", "float32"),
+            ("detected", "int32"),
+        ]
     )
 
     train = pd.read_csv("%s/training_set.csv" % dataset_folder, dtype=dtypes)
@@ -372,7 +372,7 @@ def load_data_pandas(dataset_folder, skip_rows):
         # this should be replaced on test_set_skiprows.csv
         "%s/test_set.csv" % dataset_folder,
         names=list(dtypes.keys()),
-        dtype=list(dtypes.values()),
+        dtype=dtypes,
         skiprows=skip_rows,
     )
 
@@ -392,7 +392,7 @@ def load_data_pandas(dataset_folder, skip_rows):
         "target",
     ]
     dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
-    dtypes = {cols[i]: dtypes[i] for i in range(len(dtypes))}
+    dtypes = [(cols[i], dtypes[i]) for i in range(len(dtypes))]
 
     train_meta = pd.read_csv(
         "%s/training_set_metadata.csv" % dataset_folder, dtype=dtypes
