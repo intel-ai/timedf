@@ -1,6 +1,5 @@
 import argparse
 import os
-import re
 import sys
 import time
 from collections import OrderedDict
@@ -16,7 +15,7 @@ import xgboost as xgb
 
 
 def get_percentage(error_message):
-    return re.search(r"(\d+(\.\d+)?)%", error_message).group(1)
+    return float(test.split('values are different ')[1][1:-2])
 
 
 def compare_dataframes(ibis_dfs, pandas_dfs):
@@ -39,10 +38,14 @@ def compare_dataframes(ibis_dfs, pandas_dfs):
     for ibis_df, pandas_df in zip(prepared_dfs, pandas_dfs):
         try:
             pd.testing.assert_frame_equal(ibis_df, pandas_df, check_less_precise=2)
-        except AssertionError as er:
-            print(f"not fatal: {er}")
-            if get_percentage(str(er)) > max_error:
-                raise er
+        except AssertionError as assert_err:
+            try:
+                current_error = get_percentage(str(assert_err))
+                if current_error > max_error:
+                    print(f"Max acceptable difference: {max_error}%; current difference: {current_error}%")
+                    raise assert_err
+            except Exception:
+                raise assert_err
 
     print("dataframes are equal")
 
