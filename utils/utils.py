@@ -43,7 +43,6 @@ def execute_process(cmdline, cwd=None, shell=False, daemon=False, print_output=T
 
 def convertTypeIbis2Pandas(types):
     types = ['string_' if (x == 'string') else x for x in types]
-    types = ['float32' if (x.startswith('decimal')) else x for x in types]
     return types
 
 def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir, ray_memory):
