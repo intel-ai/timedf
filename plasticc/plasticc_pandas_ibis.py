@@ -36,11 +36,11 @@ def compare_dataframes(ibis_dfs, pandas_dfs):
         assert ibis_df.shape == pandas_df.shape
         for column_name in ibis_df.columns:
             try:
-                pd.testing.assert_series_equal(
-                    ibis_df[column_name],
-                    pandas_df[column_name],
+                pd.testing.assert_frame_equal(
+                    ibis_df[[column_name]],
+                    pandas_df[[column_name]],
                     check_less_precise=2,
-                    check_series_type=False,
+                    check_dtype=False,
                 )
             except AssertionError as assert_err:
                 if str(ibis_df.dtypes[column_name]).startswith('float'):
