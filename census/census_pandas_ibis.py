@@ -111,13 +111,13 @@ def etl_pandas_modified(filename, columns_names, columns_types):
         df[column] = df[column].astype("float64")
         etl_times["t_typeconvert"] += timer() - t0
 
-    etl_times["t_etl"] = timer() - t_etl_start
- 
     t0 = timer()
+    df.drop(columns=["CPI99"], inplace=True)
     y = df["EDUC"]
     X = df.drop(columns=["EDUC"])
     etl_times["t_drop"] += timer() - t0
 
+    etl_times["t_etl"] = timer() - t_etl_start
     print("DataFrame shape:", df.shape)
 
     return X, y, etl_times
@@ -328,15 +328,15 @@ def etl_ibis(
     table = table.mutate(cols)
 
     df = table.execute()
-    etl_times["t_etl"] = timer() - t_etl_start
+
     # here we use pandas to split table
     t0 = timer()
+    df = df.drop(['CPI99'], axis=1)
     y = df['EDUC']
     X = df.drop(['EDUC'], axis=1)
     etl_times['t_pandas_drop'] = timer() - t0
 
-
-    #etl_times["t_etl"] = timer() - t_etl_start
+    etl_times["t_etl"] = timer() - t_etl_start
     print("DataFrame shape:", y.shape)
 
     return X, y, etl_times
