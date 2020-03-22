@@ -234,14 +234,11 @@ def load_data_ibis(
     skip_rows,
     validation,
 ):
-    import ibis
-
-    time.sleep(2)
-    conn = omnisci_server_worker.connect_to_server()
+    omnisci_server_worker.connect_to_server()
     omnisci_server_worker.create_database(
         database_name, delete_if_exists=delete_old_database
     )
-    conn = omnisci_server_worker.connect_to_server()
+    omnisci_server_worker.connect_to_server()
 
     dtypes = OrderedDict(
         [
