@@ -24,29 +24,36 @@ def compare_dataframes(ibis_dfs, pandas_dfs):
     train_df_pd, test_df_pd = pandas_dfs
 
     prepared_dfs = []
-    # in percentage - 0.5 %
-    max_error = 0.5
+    # in percentage - 0.05 %
+    max_error = 0.05
 
     # preparing step
     for idx, df in enumerate(ibis_dfs):
         prepared_dfs.append(df.sort_values(by="id", axis=0).reset_index(drop=True).drop(["id"], axis=1))
 
-        # cast types for some columns
-        for col_name in ["flux_mean", "flux_err_mean", "flux_dif2"]:
-            prepared_dfs[idx][col_name] = prepared_dfs[idx][col_name].astype("float32")
-
     # comparing step
     for ibis_df, pandas_df in zip(prepared_dfs, pandas_dfs):
-        try:
-            pd.testing.assert_frame_equal(ibis_df, pandas_df, check_less_precise=2)
-        except AssertionError as assert_err:
+        assert ibis_df.shape == pandas_df.shape
+        for column_name in ibis_df.columns:
             try:
-                current_error = get_percentage(str(assert_err))
-                if current_error > max_error:
-                    print(f"Max acceptable difference: {max_error}%; current difference: {current_error}%")
+                pd.testing.assert_series_equal(
+                    ibis_df[column_name],
+                    pandas_df[column_name],
+                    check_less_precise=2,
+                    check_series_type=False,
+                )
+            except AssertionError as assert_err:
+                if str(ibis_df.dtypes[column_name]).startswith('float'):
+                    try:
+                        current_error = get_percentage(str(assert_err))
+                        if current_error > max_error:
+                            print(f"Max acceptable difference: {max_error}%; current difference: {current_error}%")
+                            raise assert_err
+                    # for catch exceptions from `get_percentage`
+                    except Exception:
+                        raise assert_err
+                else:
                     raise assert_err
-            except Exception:
-                raise assert_err
 
     print("dataframes are equal")
 
