@@ -69,10 +69,11 @@ class OmnisciServerWorker:
 
         self._conn = ibis.omniscidb.connect(host="localhost", port=self.omnisci_server.server_port,
                                             user=self.omnisci_server.user,
-                                            password=self.omnisci_server.password, execution_type=1)
+                                            password=self.omnisci_server.password, ipc=True)
         return self._conn
 
     def terminate(self):
+        del self._conn
         self.omnisci_server.terminate()
 
     def import_data(self, table_name, data_files_names, files_limit, columns_names, columns_types,
@@ -115,7 +116,7 @@ class OmnisciServerWorker:
 
     def import_data_by_ibis(self, table_name, data_files_names, files_limit, columns_names,
                             columns_types, cast_dict=None, header=None, nrows=None,
-                            compression_type='gzip', skiprows=None):
+                            compression_type='gzip', skiprows=None, validation=None):
         "Import CSV files using Ibis load_data to the OmniSciDB from the Pandas.DataFrame"
 
         compression_type = None
@@ -140,6 +141,15 @@ class OmnisciServerWorker:
                                                                        compression_type=compression_type,
                                                                        skiprows=skiprows)
         t_import_pandas = time.time() - t0
+
+        if validation:
+            df = self._imported_pd_df[table_name]
+            df["id"] = [x+1 for x in range(df[df.columns[0]].count())]
+            columns_names = columns_names + ["id"]
+            columns_types = columns_types + ["int32"]
+            self._imported_pd_df[table_name] = df
+
+
         if cast_dict is not None:
             pandas_concatenated_df_casted = self._imported_pd_df[table_name].astype(dtype=cast_dict,
                                                                                     copy=True)

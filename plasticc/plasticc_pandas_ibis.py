@@ -1,7 +1,6 @@
 import argparse
 import os
 import sys
-import time
 from collections import OrderedDict
 from functools import partial
 from timeit import default_timer as timer
@@ -12,6 +11,50 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 import xgboost as xgb
+
+
+def get_percentage(error_message):
+    # parsing message like: lalalalal values are different (xxxxx%) lalalalal
+    return float(error_message.split('values are different ')[1].split("%)")[0][1:])
+
+
+def compare_dataframes(ibis_dfs, pandas_dfs):
+    train_df_ibis, test_df_ibis = ibis_dfs
+    train_df_pd, test_df_pd = pandas_dfs
+
+    prepared_dfs = []
+    # in percentage - 0.05 %
+    max_error = 0.05
+
+    # preparing step
+    for idx, df in enumerate(ibis_dfs):
+        prepared_dfs.append(df.sort_values(by="id", axis=0).reset_index(drop=True).drop(["id"], axis=1))
+
+    # comparing step
+    for ibis_df, pandas_df in zip(prepared_dfs, pandas_dfs):
+        assert ibis_df.shape == pandas_df.shape
+        for column_name in ibis_df.columns:
+            try:
+                pd.testing.assert_frame_equal(
+                    ibis_df[[column_name]],
+                    pandas_df[[column_name]],
+                    check_less_precise=2,
+                    check_dtype=False,
+                )
+            except AssertionError as assert_err:
+                if str(ibis_df.dtypes[column_name]).startswith('float'):
+                    try:
+                        current_error = get_percentage(str(assert_err))
+                        if current_error > max_error:
+                            print(f"Max acceptable difference: {max_error}%; current difference: {current_error}%")
+                            raise assert_err
+                    # for catch exceptions from `get_percentage`
+                    except Exception:
+                        raise assert_err
+                else:
+                    raise assert_err
+
+    print("dataframes are equal")
 
 
 def ravel_column_names(cols):
@@ -41,6 +84,8 @@ def skew_workaround(table):
 
 
 def etl_cpu_ibis(table, table_meta, etl_times):
+    t_etl_start = timer()
+
     t0 = timer()
     table = table.mutate(flux_ratio_sq=(table["flux"] / table["flux_err"]) ** 2)
     table = table.mutate(flux_by_flux_ratio_sq=table["flux"] * table["flux_ratio_sq"])
@@ -73,13 +118,13 @@ def etl_cpu_ibis(table, table_meta, etl_times):
     t0 = timer()
     table = table.mutate(flux_diff=table["flux_max"] - table["flux_min"])
     table = table.mutate(
-        flux_dif2=(table["flux_max"] - table["flux_min"]) / table["flux_mean"]
+        flux_dif2=table["flux_diff"] / table["flux_mean"]
     )
     table = table.mutate(
         flux_w_mean=table["flux_by_flux_ratio_sq_sum"] / table["flux_ratio_sq_sum"]
     )
     table = table.mutate(
-        flux_dif3=(table["flux_max"] - table["flux_min"]) / table["flux_w_mean"]
+        flux_dif3=table["flux_diff"] / table["flux_w_mean"]
     )
     table = table.mutate(mjd_diff=table["mjd_max"] - table["mjd_min"])
     # skew compute
@@ -93,10 +138,7 @@ def etl_cpu_ibis(table, table_meta, etl_times):
     etl_times["t_drop"] += timer() - t0
 
     t0 = timer()
-    # Problem type(table_meta) = <class 'ibis.omniscidb.client.OmniSciDBTable'>
-    # which overrides the drop method (now it is used to delete the table) and
-    # not for drop columns - use workaround table_meta[table_meta].drop(...)
-    table_meta = table_meta[table_meta].drop(["ra", "decl", "gal_l", "gal_b"])
+    table_meta = table_meta.drop(["ra", "decl", "gal_l", "gal_b"])
     etl_times["t_drop"] += timer() - t0
 
     t0 = timer()
@@ -123,10 +165,16 @@ def etl_cpu_ibis(table, table_meta, etl_times):
     ]
     etl_times["t_merge"] += timer() - t0
 
-    return table_meta.execute()
+    df = table_meta.execute()
+
+    etl_times["t_etl"] += timer() - t_etl_start
+
+    return df
 
 
 def etl_cpu_pandas(df, df_meta, etl_times):
+    t_etl_start = timer()
+
     t0 = timer()
     df["flux_ratio_sq"] = np.power(df["flux"] / df["flux_err"], 2.0)
     df["flux_by_flux_ratio_sq"] = df["flux"] * df["flux_ratio_sq"]
@@ -149,15 +197,11 @@ def etl_cpu_pandas(df, df_meta, etl_times):
 
     t0 = timer()
     agg_df["flux_diff"] = agg_df["flux_max"] - agg_df["flux_min"]
-    agg_df["flux_dif2"] = (agg_df["flux_max"] - agg_df["flux_min"]) / agg_df[
-        "flux_mean"
-    ]
+    agg_df["flux_dif2"] = agg_df["flux_diff"] / agg_df["flux_mean"]
     agg_df["flux_w_mean"] = (
         agg_df["flux_by_flux_ratio_sq_sum"] / agg_df["flux_ratio_sq_sum"]
     )
-    agg_df["flux_dif3"] = (agg_df["flux_max"] - agg_df["flux_min"]) / agg_df[
-        "flux_w_mean"
-    ]
+    agg_df["flux_dif3"] = agg_df["flux_diff"] / agg_df["flux_w_mean"]
     agg_df["mjd_diff"] = agg_df["mjd_max"] - agg_df["mjd_min"]
     etl_times["t_arithm"] += timer() - t0
 
@@ -175,6 +219,8 @@ def etl_cpu_pandas(df, df_meta, etl_times):
     df_meta = df_meta.merge(agg_df, on="object_id", how="left")
     etl_times["t_merge"] += timer() - t0
 
+    etl_times["t_etl"] += timer() - t_etl_start
+
     return df_meta
 
 
@@ -185,27 +231,23 @@ def load_data_ibis(
     delete_old_database,
     create_new_table,
     skip_rows,
+    validation,
 ):
-    import ibis
-
-    print(ibis.__version__)
-
-    time.sleep(2)
-    conn = omnisci_server_worker.connect_to_server()
+    omnisci_server_worker.connect_to_server()
     omnisci_server_worker.create_database(
         database_name, delete_if_exists=delete_old_database
     )
-    conn = omnisci_server_worker.connect_to_server()
+    omnisci_server_worker.connect_to_server()
 
     dtypes = OrderedDict(
-        {
-            "object_id": "int32",
-            "mjd": "float32",
-            "passband": "int32",
-            "flux": "float32",
-            "flux_err": "float32",
-            "detected": "int32",
-        }
+        [
+            ("object_id", "int32"),
+            ("mjd", "float32"),
+            ("passband", "int32"),
+            ("flux", "float32"),
+            ("flux_err", "float32"),
+            ("detected", "int32"),
+        ]
     )
 
     # load metadata
@@ -225,7 +267,7 @@ def load_data_ibis(
     ]
     meta_dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
     meta_dtypes = OrderedDict(
-        {cols[i]: meta_dtypes[i] for i in range(len(meta_dtypes))}
+        [(cols[i], meta_dtypes[i]) for i in range(len(meta_dtypes))]
     )
 
     t_import_pandas, t_import_ibis = 0.0, 0.0
@@ -239,10 +281,11 @@ def load_data_ibis(
             data_files_names=training_file,
             files_limit=1,
             columns_names=list(dtypes.keys()),
-            columns_types=dtypes.values(),
+            columns_types=list(dtypes.values()),
             header=0,
             nrows=None,
             compression_type=None,
+            validation=validation,
         )
 
         # create table #2
@@ -252,11 +295,12 @@ def load_data_ibis(
             data_files_names=test_file,
             files_limit=1,
             columns_names=list(dtypes.keys()),
-            columns_types=dtypes.values(),
+            columns_types=list(dtypes.values()),
             header=0,
             nrows=None,
             compression_type=None,
-            skiprows=range(1, 1 + skip_rows),
+            skiprows=skip_rows,
+            validation=validation,
         )
 
         # create table #3
@@ -266,10 +310,11 @@ def load_data_ibis(
             data_files_names=training_meta_file,
             files_limit=1,
             columns_names=list(meta_dtypes.keys()),
-            columns_types=meta_dtypes.values(),
+            columns_types=list(meta_dtypes.values()),
             header=0,
             nrows=None,
             compression_type=None,
+            validation=validation,
         )
 
         del meta_dtypes["target"]
@@ -281,10 +326,11 @@ def load_data_ibis(
             data_files_names=test_meta_file,
             files_limit=1,
             columns_names=list(meta_dtypes.keys()),
-            columns_types=meta_dtypes.values(),
+            columns_types=list(meta_dtypes.values()),
             header=0,
             nrows=None,
             compression_type=None,
+            validation=validation,
         )
 
         t_import_pandas = (
@@ -318,21 +364,24 @@ def load_data_ibis(
 
 
 def load_data_pandas(dataset_folder, skip_rows):
-    dtypes = {
-        "object_id": "int32",
-        "mjd": "float32",
-        "passband": "int32",
-        "flux": "float32",
-        "flux_err": "float32",
-        "detected": "int32",
-    }
+    dtypes = OrderedDict(
+        [
+            ("object_id", "int32"),
+            ("mjd", "float32"),
+            ("passband", "int32"),
+            ("flux", "float32"),
+            ("flux_err", "float32"),
+            ("detected", "int32"),
+        ]
+    )
 
     train = pd.read_csv("%s/training_set.csv" % dataset_folder, dtype=dtypes)
     test = pd.read_csv(
         # this should be replaced on test_set_skiprows.csv
         "%s/test_set.csv" % dataset_folder,
+        names=list(dtypes.keys()),
         dtype=dtypes,
-        skiprows=range(1, 1 + skip_rows),
+        skiprows=skip_rows,
     )
 
     # load metadata
@@ -351,7 +400,9 @@ def load_data_pandas(dataset_folder, skip_rows):
         "target",
     ]
     dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
-    dtypes = {cols[i]: dtypes[i] for i in range(len(dtypes))}
+    dtypes = OrderedDict(
+        [(cols[i], dtypes[i]) for i in range(len(dtypes))]
+    )
 
     train_meta = pd.read_csv(
         "%s/training_set_metadata.csv" % dataset_folder, dtype=dtypes
@@ -362,88 +413,8 @@ def load_data_pandas(dataset_folder, skip_rows):
     return train, train_meta, test, test_meta
 
 
-def etl_all_ibis(
-    filename,
-    database_name,
-    omnisci_server_worker,
-    delete_old_database,
-    create_new_table,
-    skip_rows,
-):
-    print("ibis version")
-    etl_times = {
-        "t_readcsv": 0.0,
-        "t_groupby_agg": 0.0,
-        "t_merge": 0.0,
-        "t_arithm": 0.0,
-        "t_drop": 0.0,
-        "t_train_test_split": 0.0,
-        "t_etl": 0.0,
-    }
-
-    train, train_meta, test, test_meta, etl_times["t_readcsv"] = load_data_ibis(
-        filename,
-        database_name,
-        omnisci_server_worker,
-        delete_old_database,
-        create_new_table,
-        skip_rows,
-    )
-
+def split_step(train_final, test_final, etl_times):
     t_etl_start = timer()
-
-    # update etl_times
-    train_final = etl_cpu_ibis(train, train_meta, etl_times)
-    test_final = etl_cpu_ibis(test, test_meta, etl_times)
-
-    t0 = timer()
-    X = train_final.drop(["object_id", "target"], axis=1).values
-    Xt = test_final.drop(["object_id"], axis=1).values
-    etl_times["t_drop"] += timer() - t0
-
-    y = train_final["target"]
-    assert X.shape[1] == Xt.shape[1]
-    classes = sorted(y.unique())
-
-    class_weights = {c: 1 for c in classes}
-    class_weights.update({c: 2 for c in [64, 15]})
-
-    lbl = LabelEncoder()
-    y = lbl.fit_transform(y)
-    # print(lbl.classes_)
-
-    t0 = timer()
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.1, stratify=y, random_state=126
-    )
-    etl_times["t_train_test_split"] += timer() - t0
-
-    etl_times["t_etl"] = timer() - t_etl_start
-
-    return X_train, y_train, X_test, y_test, Xt, classes, class_weights, etl_times
-
-
-def etl_all_pandas(dataset_folder, skip_rows):
-    print("pandas version")
-    etl_times = {
-        "t_readcsv": 0.0,
-        "t_groupby_agg": 0.0,
-        "t_merge": 0.0,
-        "t_arithm": 0.0,
-        "t_drop": 0.0,
-        "t_train_test_split": 0.0,
-        "t_etl": 0.0,
-    }
-
-    t0 = timer()
-    train, train_meta, test, test_meta = load_data_pandas(dataset_folder, skip_rows)
-    etl_times["t_readcsv"] += timer() - t0
-
-    t_etl_start = timer()
-
-    # update etl_times
-    train_final = etl_cpu_pandas(train, train_meta, etl_times)
-    test_final = etl_cpu_pandas(test, test_meta, etl_times)
 
     t0 = timer()
     X = train_final.drop(["object_id", "target"], axis=1).values
@@ -469,7 +440,67 @@ def etl_all_pandas(dataset_folder, skip_rows):
 
     etl_times["t_etl"] += timer() - t_etl_start
 
-    return X_train, y_train, X_test, y_test, Xt, classes, class_weights, etl_times
+    return (X_train, y_train, X_test, y_test, Xt, classes, class_weights), etl_times
+
+
+def etl_all_ibis(
+    filename,
+    database_name,
+    omnisci_server_worker,
+    delete_old_database,
+    create_new_table,
+    skip_rows,
+    validation,
+):
+    print("ibis version")
+    etl_times = {
+        "t_readcsv": 0.0,
+        "t_groupby_agg": 0.0,
+        "t_merge": 0.0,
+        "t_arithm": 0.0,
+        "t_drop": 0.0,
+        "t_train_test_split": 0.0,
+        "t_etl": 0.0,
+    }
+
+    train, train_meta, test, test_meta, etl_times["t_readcsv"] = load_data_ibis(
+        filename,
+        database_name,
+        omnisci_server_worker,
+        delete_old_database,
+        create_new_table,
+        skip_rows,
+        validation,
+    )
+
+    # update etl_times
+    train_final = etl_cpu_ibis(train, train_meta, etl_times)
+    test_final = etl_cpu_ibis(test, test_meta, etl_times)
+
+    return train_final, test_final, etl_times
+
+
+def etl_all_pandas(dataset_folder, skip_rows):
+    print("pandas version")
+    etl_times = {
+        "t_readcsv": 0.0,
+        "t_groupby_agg": 0.0,
+        "t_merge": 0.0,
+        "t_arithm": 0.0,
+        "t_drop": 0.0,
+        "t_train_test_split": 0.0,
+        "t_etl": 0.0,
+    }
+
+    t0 = timer()
+    train, train_meta, test, test_meta = load_data_pandas(dataset_folder, skip_rows)
+    etl_times["t_readcsv"] += timer() - t0
+
+    # update etl_times
+    train_final = etl_cpu_pandas(train, train_meta, etl_times)
+    test_final = etl_cpu_pandas(test, test_meta, etl_times)
+
+    return train_final, test_final, etl_times
 
 
 def multi_weighted_logloss(y_true, y_preds, classes, class_weights):
@@ -498,7 +529,11 @@ def xgb_multi_weighted_logloss(y_predicted, y_true, classes, class_weights):
     return "wloss", loss
 
 
-def ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights):
+def ml(ml_data):
+    # unpacking
+    X_train, y_train, X_test, y_test, Xt, classes, class_weights = ml_data
+
+
     ml_times = {
         "t_dmatrix": 0.0,
         "t_training": 0.0,
@@ -557,6 +592,7 @@ def ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights):
 
     return ml_times
 
+
 def compute_skip_rows(gpu_memory):
     # count rows inside test_set.csv
     test_rows = 453653104
@@ -570,6 +606,7 @@ def compute_skip_rows(gpu_memory):
     overhead = 1.2
     skip_rows = int((1 - gpu_memory / (32.0 * overhead)) * test_rows)
     return skip_rows
+
 
 def get_args():
     parser = argparse.ArgumentParser(description="PlasTiCC benchmark")
@@ -723,7 +760,8 @@ def print_times(etl_times, name=None):
 
 def main():
     args = None
-    omnisci_server = None
+    omnisci_server_worker = None
+    train_final, test_final = None, None
 
     parser, args, skip_rows = get_args()
 
@@ -751,61 +789,43 @@ def main():
 
             omnisci_server_worker = OmnisciServerWorker(omnisci_server)
 
-            (
-                X_train,
-                y_train,
-                X_test,
-                y_test,
-                Xt,
-                classes,
-                class_weights,
-                etl_times,
-            ) = etl_all_ibis(
+            train_final, test_final, etl_times = etl_all_ibis(
                 filename=args.dataset_path,
                 database_name=args.name,
                 omnisci_server_worker=omnisci_server_worker,
                 delete_old_database=not args.dnd,
                 create_new_table=not args.dni,
                 skip_rows=skip_rows,
+                validation=args.val,
             )
+            ml_data, etl_times = split_step(train_final, test_final, etl_times)
             print_times(etl_times)
 
-            omnisci_server.terminate()
-            omnisci_server = None
+
+            omnisci_server_worker.terminate()
+            omnisci_server_worker = None
 
             if not args.no_ml:
                 print("using ml with dataframes from ibis")
-                ml_times = ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights)
+                ml_times = ml(ml_data)
                 print_times(ml_times)
 
-        (
-            X_train,
-            y_train,
-            X_test,
-            y_test,
-            Xt,
-            classes,
-            class_weights,
-            etl_times,
-        ) = etl_all_pandas(args.dataset_path, skip_rows)
-        print_times(etl_times)
+        ptrain_final, ptest_final, petl_times = etl_all_pandas(args.dataset_path, skip_rows)
+        ml_data, petl_times = split_step(ptrain_final, ptest_final, petl_times)
+        print_times(petl_times)
 
         if not args.no_ml:
             print("using ml with dataframes from pandas")
-            ml_times = ml(X_train, y_train, X_test, y_test, Xt, classes, class_weights)
+            ml_times = ml(ml_data)
             print_times(ml_times)
 
-        if args.val:
-            # this isn't work so easy
-            # compare_dataframes(ibis_df=(X_train_ibis, y_train_ibis), pandas_df=(X, y))
-            print("validate by ml results")
+        if args.val and (not train_final is None) and (not test_final is None):
+            print("validating result ...")
+            compare_dataframes((train_final, test_final), (ptrain_final, ptest_final))
 
-    except Exception as err:
-        print("Failed: ", err)
-        sys.exit(1)
     finally:
-        if omnisci_server:
-            omnisci_server.terminate()
+        if omnisci_server_worker:
+            omnisci_server_worker.terminate()
 
 
 if __name__ == "__main__":
