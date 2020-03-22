@@ -695,6 +695,8 @@ def main():
         "float64",
     ]
 
+    db_reporter = None
+
     try:
         if not args.no_ibis:
             if args.omnisci_executable is None:
@@ -710,7 +712,6 @@ def main():
             from server_worker import OmnisciServerWorker
             omnisci_server_worker = OmnisciServerWorker(omnisci_server)
 
-            db_reporter = None
             if args.db_user is not "":
                 print("Connecting to database")
                 db = mysql.connector.connect(host=args.db_server, port=args.db_port, user=args.db_user,
