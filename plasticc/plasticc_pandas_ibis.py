@@ -1,7 +1,6 @@
 import argparse
 import os
 import sys
-import time
 from collections import OrderedDict
 from functools import partial
 from timeit import default_timer as timer
