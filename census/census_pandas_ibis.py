@@ -5,7 +5,7 @@ import argparse
 import warnings
 import time
 import gzip
-#import mysql.connector
+import mysql.connector
 from timeit import default_timer as timer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -44,7 +44,7 @@ def load_data(
     return pd.read_csv(filename, names=columns_names, nrows=nrows, header=header, dtype=types,
                        compression='gzip' if use_gzip else None)
 
-def etl_pandas_modified(filename, columns_names, columns_types):
+def etl_pandas(filename, columns_names, columns_types):
     etl_times = {
         "t_readcsv": 0.0,
         "t_where": 0.0,
@@ -114,104 +114,6 @@ def etl_pandas_modified(filename, columns_names, columns_types):
     t0 = timer()
     y = df["EDUC"]
     X = df.drop(columns=["EDUC", "CPI99"])
-    etl_times["t_drop"] += timer() - t0
-
-    etl_times["t_etl"] = timer() - t_etl_start
-    print("DataFrame shape:", X.shape)
-
-    return X, y, etl_times
-
-def etl_pandas(filename, columns_names, columns_types):
-    etl_times = {
-        "t_readcsv": 0.0,
-        "t_where": 0.0,
-        "t_arithm": 0.0,
-        "t_fillna": 0.0,
-        "t_drop": 0.0,
-        "t_typeconvert": 0.0,
-        "t_etl": 0.0,
-    }
-
-    t0 = timer()
-    df = load_data(filename=filename, columns_names=columns_names, columns_types=columns_types,
-                   header=0, nrows=None, use_gzip=filename.endswith(".gz"))
-    etl_times["t_readcsv"] = timer() - t0
-
-    t_etl_start = timer()
-    df = df.query("INCTOT != 9999999")
-    etl_times["t_where"] += timer() - t_etl_start
-
-    t0 = timer()
-    df["INCTOT"] = df["INCTOT"] * df["CPI99"]
-    etl_times["t_arithm"] += timer() - t0
-
-    suspect = [
-        "CBSERIAL",
-        "EDUC",
-        "EDUCD",
-        "EDUC_HEAD",
-        "EDUC_POP",
-        "EDUC_MOM",
-        "EDUCD_MOM2",
-        "EDUCD_POP2",
-        "INCTOT_MOM",
-        "INCTOT_POP",
-        "INCTOT_MOM2",
-        "INCTOT_POP2",
-        "INCTOT_HEAD",
-    ]
-    for column in suspect:
-        t0 = timer()
-        df[column] = df[column].fillna(-1)
-        etl_times["t_fillna"] += timer() - t0
-
-    totincome = ["EDUC", "EDUCD"]
-    for column in totincome:
-        t0 = timer()
-        df = df.query(column + " != -1")
-        etl_times["t_where"] += timer() - t0
-
-    keep_cols = [
-        "YEAR0",
-        "DATANUM",
-        "SERIAL",
-        "CBSERIAL",
-        "HHWT",
-        "GQ",
-        "PERNUM",
-        "SEX",
-        "AGE",
-        "INCTOT",
-        "EDUC",
-        "EDUCD",
-        "EDUC_HEAD",
-        "EDUC_POP",
-        "EDUC_MOM",
-        "EDUCD_MOM2",
-        "EDUCD_POP2",
-        "INCTOT_MOM",
-        "INCTOT_POP",
-        "INCTOT_MOM2",
-        "INCTOT_POP2",
-        "INCTOT_HEAD",
-        "SEX_HEAD",
-    ]
-    t0 = timer()
-    df = df[keep_cols]
-    etl_times["t_drop"] += timer() - t0
-
-    for column in keep_cols:
-        t0 = timer()
-        df[column] = df[column].fillna(-1)
-        etl_times["t_fillna"] += timer() - t0
-
-        t0 = timer()
-        df[column] = df[column].astype("float64")
-        etl_times["t_typeconvert"] += timer() - t0
-
-    t0 = timer()
-    y = df["EDUC"]
-    X = df.drop(columns=["EDUC"])
     etl_times["t_drop"] += timer() - t0
 
     etl_times["t_etl"] = timer() - t_etl_start
@@ -753,7 +655,7 @@ def main():
 
         import_pandas_into_module_namespace(main.__globals__,
                                             args.pandas_mode, args.ray_tmpdir, args.ray_memory)
-        X, y, etl_times = etl_pandas_modified(
+        X, y, etl_times = etl_pandas(
             args.file, columns_names=columns_names, columns_types=columns_types
         )
         print_times(etl_times, args.pandas_mode, db_reporter)
