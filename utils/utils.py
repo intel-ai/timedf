@@ -3,6 +3,7 @@ import subprocess
 import re
 import hiyapyco
 import os
+import pandas as pd
 
 def str_arg_to_bool(v):
     if isinstance(v, bool):
