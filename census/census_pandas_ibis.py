@@ -114,6 +114,7 @@ def etl_ibis(
     omnisci_server_worker,
     delete_old_database,
     create_new_table,
+    validation,
 ):
 
     etl_times = {
@@ -151,6 +152,7 @@ def etl_ibis(
             header=0,
             nrows=None,
             compression_type=None,
+            validation,
         )
 
     etl_times["t_readcsv"] = t_import_pandas + t_import_ibis
@@ -624,6 +626,7 @@ def main():
                 omnisci_server_worker=omnisci_server_worker,
                 delete_old_database=not args.dnd,
                 create_new_table=not args.dni,
+                validation=args.val,
             )
             omnisci_server.terminate()
             omnisci_server = None

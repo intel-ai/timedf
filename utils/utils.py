@@ -74,6 +74,12 @@ def equal_dfs(ibis_dfs, pandas_dfs):
             return False
     return True
 
+
+def get_percentage(error_message):
+    # parsing message like: lalalalal values are different (xxxxx%) lalalalal
+    return float(error_message.split('values are different ')[1].split("%)")[0][1:])
+
+
 def compare_dataframes(ibis_dfs, pandas_dfs):
     prepared_dfs = []
     # in percentage - 0.05 %
