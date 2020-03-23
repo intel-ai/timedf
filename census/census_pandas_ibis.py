@@ -209,13 +209,13 @@ def etl_pandas(filename, columns_names, columns_types):
         df[column] = df[column].astype("float64")
         etl_times["t_typeconvert"] += timer() - t0
 
-    y = df["EDUC"]
     t0 = timer()
+    y = df["EDUC"]
     X = df.drop(columns=["EDUC"])
     etl_times["t_drop"] += timer() - t0
 
     etl_times["t_etl"] = timer() - t_etl_start
-    print("DataFrame shape:", df.shape)
+    print("DataFrame shape:", X.shape)
 
     return X, y, etl_times
 
