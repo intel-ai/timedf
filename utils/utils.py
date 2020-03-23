@@ -66,3 +66,50 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir, ray_memory)
             raise ValueError(f"Unknown pandas mode {mode}")
         import modin.pandas as pd
     namespace['pd'] = pd
+
+
+def equal_dfs(ibis_dfs, pandas_dfs):
+    for ibis_df, pandas_df in zip(ibis_dfs, pandas_dfs):
+        if not ibis_df.equals(pandas_df):
+            return False
+    return True
+
+def compare_dataframes(ibis_dfs, pandas_dfs):
+    prepared_dfs = []
+    # in percentage - 0.05 %
+    max_error = 0.05
+
+    # preparing step
+    for idx, df in enumerate(ibis_dfs):
+        prepared_dfs.append(df.sort_values(by="id", axis=0).reset_index(drop=True).drop(["id"], axis=1))
+
+    # fast check
+    if equal_dfs(ibis_dfs, pandas_dfs):
+        print("dataframes are equal")
+        return
+
+    # comparing step
+    for ibis_df, pandas_df in zip(prepared_dfs, pandas_dfs):
+        assert ibis_df.shape == pandas_df.shape
+        for column_name in ibis_df.columns:
+            try:
+                pd.testing.assert_frame_equal(
+                    ibis_df[[column_name]],
+                    pandas_df[[column_name]],
+                    check_less_precise=2,
+                    check_dtype=False,
+                )
+            except AssertionError as assert_err:
+                if str(ibis_df.dtypes[column_name]).startswith('float'):
+                    try:
+                        current_error = get_percentage(str(assert_err))
+                        if current_error > max_error:
+                            print(f"Max acceptable difference: {max_error}%; current difference: {current_error}%")
+                            raise assert_err
+                    # for catch exceptions from `get_percentage`
+                    except Exception:
+                        raise assert_err
+                else:
+                    raise assert_err
+
+    print("dataframes are equal")

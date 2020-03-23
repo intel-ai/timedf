@@ -11,26 +11,9 @@ from timeit import default_timer as timer
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from server import OmnisciServer
 from report import DbReport
-from utils import import_pandas_into_module_namespace
+from utils import compare_dataframes, import_pandas_into_module_namespace
 
 warnings.filterwarnings("ignore")
-
-
-def compare_dataframes(ibis_df, pandas_df):
-
-    ibis_df[0].index = pandas_df[0].index
-    ibis_df[1].index = pandas_df[1].index
-    if ibis_df[0].equals(pandas_df[0]) and ibis_df[1].equals(pandas_df[1]):
-        print("\nTables are equal")
-        return True
-    else:
-        print("\nTables are not equal, table1:")
-        print(ibis_df[0].info())
-        print("\ntable2:")
-        print(pandas_df[0].info())
-        pd.testing.assert_frame_equal(ibis_df[0], pandas_df[0])
-        pd.testing.assert_frame_equal(ibis_df[1], pandas_df[1])
-        return False
 
 
 # Dataset link
@@ -670,7 +653,7 @@ def main():
             print("mean COD ± deviation: {:.9f} ± {:.9f}".format(cod_mean, cod_dev))
 
         if args.val:
-            compare_dataframes(ibis_df=(X_ibis, y_ibis), pandas_df=(X, y))
+            compare_dataframes((X_ibis, y_ibis), (X, y))
     except Exception as err:
         print("Failed: ", err)
         sys.exit(1)
