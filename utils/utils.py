@@ -86,9 +86,16 @@ def compare_dataframes(ibis_dfs, pandas_dfs):
     # in percentage - 0.05 %
     max_error = 0.05
 
+    assert len(ibis_dfs) == len(pandas_dfs)
+
     # preparing step
-    for idx, df in enumerate(ibis_dfs):
-        prepared_dfs.append(df.sort_values(by="id", axis=0).reset_index(drop=True).drop(["id"], axis=1))
+    for idx in range(len(ibis_dfs)):
+        # prepare ibis part
+        ibis_dfs[idx].sort_values(by="id", axis=0, inplace=True)
+        ibis_dfs[idx].reset_index(drop=True, inplace=True)
+        ibis_dfs[idx].drop(["id"], axis=1, inplace=True)
+        # prepare pandas part
+        pandas_dfs[idx].reset_index(drop=True, inplace=True)
 
     # fast check
     if equal_dfs(ibis_dfs, pandas_dfs):
@@ -96,7 +103,7 @@ def compare_dataframes(ibis_dfs, pandas_dfs):
         return
 
     # comparing step
-    for ibis_df, pandas_df in zip(prepared_dfs, pandas_dfs):
+    for ibis_df, pandas_df in zip(ibis_dfs, pandas_dfs):
         assert ibis_df.shape == pandas_df.shape
         for column_name in ibis_df.columns:
             try:
