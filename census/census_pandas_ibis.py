@@ -190,6 +190,10 @@ def etl_ibis(
         'INCTOT_HEAD',
         'SEX_HEAD',
     ]
+
+    if validation:
+        keep_cols.append('id')
+
     table = table[keep_cols]
     etl_times["t_drop"] += timer() - t_etl_start    
 
