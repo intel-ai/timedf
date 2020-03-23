@@ -152,7 +152,7 @@ def etl_ibis(
             header=0,
             nrows=None,
             compression_type=None,
-            validation,
+            validation=validation,
         )
 
     etl_times["t_readcsv"] = t_import_pandas + t_import_ibis
