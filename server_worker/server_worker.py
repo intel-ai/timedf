@@ -35,7 +35,8 @@ class OmnisciServerWorker:
         if compression_type == 'gzip':
             with gzip.open(file_name) as f:
                 return pd.read_csv(f, names=columns_names, dtype=types, nrows=nrows, header=header)
-        return pd.read_csv(file_name, compression=None, names=columns_names,
+
+        return pd.read_csv(file_name, compression=compression_type, names=columns_names,
                            dtype=types,
                            nrows=nrows, header=header, skiprows=skiprows)
 
@@ -119,7 +120,6 @@ class OmnisciServerWorker:
                             compression_type='gzip', skiprows=None, validation=None):
         "Import CSV files using Ibis load_data to the OmniSciDB from the Pandas.DataFrame"
 
-        compression_type = None
         if columns_types:
             columns_types_pd = convertTypeIbis2Pandas(columns_types)
         t0 = time.time()
@@ -132,8 +132,6 @@ class OmnisciServerWorker:
             self._imported_pd_df[table_name] = pd.concat(pandas_df_from_each_file,
                                                          ignore_index=True)
         else:
-            if data_files_names.endswith('.gz'):
-                compression_type = 'gzip'
             self._imported_pd_df[table_name] = self._read_csv_datafile(data_files_names,
                                                                        columns_names=columns_names,
                                                                        columns_types=columns_types_pd,

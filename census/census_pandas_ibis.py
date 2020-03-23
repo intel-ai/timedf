@@ -57,7 +57,7 @@ def etl_pandas(filename, columns_names, columns_types):
 
     t0 = timer()
     df = load_data(filename=filename, columns_names=columns_names, columns_types=columns_types,
-                   header=0, nrows=None, use_gzip=filename.endswith(".gz"))
+                   header=0, nrows=None)
     etl_times["t_readcsv"] = timer() - t0
 
     t_etl_start = timer()
@@ -167,6 +167,7 @@ def etl_ibis(
             columns_types=columns_types,
             header=0,
             nrows=None,
+            compression_type=None,
         )
 
     etl_times["t_readcsv"] = t_import_pandas + t_import_ibis
