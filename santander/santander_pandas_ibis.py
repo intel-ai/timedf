@@ -11,13 +11,13 @@ import pandas as pd
 
 import ibis
 import mysql.connector
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from report import DbReport
 from server import OmnisciServer
 from server_worker import OmnisciServerWorker
 from utils import (execute_process, import_pandas_into_module_namespace,
                    str_arg_to_bool)
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 warnings.filterwarnings("ignore")
 

@@ -8,11 +8,11 @@ import warnings
 from timeit import default_timer as timer
 
 import mysql.connector
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from report import DbReport
 from server import OmnisciServer
 from utils import import_pandas_into_module_namespace
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 warnings.filterwarnings("ignore")
 

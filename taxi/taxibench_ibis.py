@@ -8,11 +8,11 @@ import pandas as pd
 
 import mysql.connector
 from braceexpand import braceexpand
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from report import DbReport
 from server import OmnisciServer
 from server_worker import OmnisciServerWorker
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 
 def compare_tables(table1, table2):
