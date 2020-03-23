@@ -1,16 +1,17 @@
 # coding: utf-8
+import argparse
+import gzip
 import os
 import sys
-import argparse
-import warnings
 import time
-import gzip
-import mysql.connector
+import warnings
 from timeit import default_timer as timer
 
+import mysql.connector
+
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from server import OmnisciServer
 from report import DbReport
+from server import OmnisciServer
 from utils import compare_dataframes, import_pandas_into_module_namespace
 
 warnings.filterwarnings("ignore")

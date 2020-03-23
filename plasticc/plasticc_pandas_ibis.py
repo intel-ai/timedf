@@ -75,15 +75,11 @@ def etl_cpu_ibis(table, table_meta, etl_times):
 
     t0 = timer()
     table = table.mutate(flux_diff=table["flux_max"] - table["flux_min"])
-    table = table.mutate(
-        flux_dif2=table["flux_diff"] / table["flux_mean"]
-    )
+    table = table.mutate(flux_dif2=table["flux_diff"] / table["flux_mean"])
     table = table.mutate(
         flux_w_mean=table["flux_by_flux_ratio_sq_sum"] / table["flux_ratio_sq_sum"]
     )
-    table = table.mutate(
-        flux_dif3=table["flux_diff"] / table["flux_w_mean"]
-    )
+    table = table.mutate(flux_dif3=table["flux_diff"] / table["flux_w_mean"])
     table = table.mutate(mjd_diff=table["mjd_max"] - table["mjd_min"])
     # skew compute
     table = skew_workaround(table)
@@ -358,9 +354,7 @@ def load_data_pandas(dataset_folder, skip_rows):
         "target",
     ]
     dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
-    dtypes = OrderedDict(
-        [(cols[i], dtypes[i]) for i in range(len(dtypes))]
-    )
+    dtypes = OrderedDict([(cols[i], dtypes[i]) for i in range(len(dtypes))])
 
     train_meta = pd.read_csv(
         "%s/training_set_metadata.csv" % dataset_folder, dtype=dtypes
@@ -490,7 +484,6 @@ def xgb_multi_weighted_logloss(y_predicted, y_true, classes, class_weights):
 def ml(ml_data):
     # unpacking
     X_train, y_train, X_test, y_test, Xt, classes, class_weights = ml_data
-
 
     ml_times = {
         "t_dmatrix": 0.0,
@@ -759,7 +752,6 @@ def main():
             ml_data, etl_times = split_step(train_final, test_final, etl_times)
             print_times(etl_times)
 
-
             omnisci_server_worker.terminate()
             omnisci_server_worker = None
 
@@ -768,7 +760,9 @@ def main():
                 ml_times = ml(ml_data)
                 print_times(ml_times)
 
-        ptrain_final, ptest_final, petl_times = etl_all_pandas(args.dataset_path, skip_rows)
+        ptrain_final, ptest_final, petl_times = etl_all_pandas(
+            args.dataset_path, skip_rows
+        )
         ml_data, petl_times = split_step(ptrain_final, ptest_final, petl_times)
         print_times(petl_times)
 

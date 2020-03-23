@@ -191,7 +191,7 @@ try:
                                    '-e', args.omnisci_executable,
                                    '-port', str(args.omnisci_port),
                                    '-db-port', str(args.db_port),
-                                   '-dp', f"'{args.dpattern}'",
+                                   '-f', f"'{args.dpattern}'",
                                    '-i', str(args.iters),
                                    '-u', args.user,
                                    '-p', args.password,
@@ -201,7 +201,9 @@ try:
                                    '-db-pass', args.db_password,
                                    '-db-name', args.db_name,
                                    '-db-table',
-                                   args.db_table if args.db_table else 'santander_ibis',
+                                   args.db_table if args.db_table else 'santander',
+                                   '-val',
+                                   '--enable-columnar-output',
                                    '-commit_omnisci', args.commit_omnisci,
                                    '-commit_ibis', args.commit_ibis]
 

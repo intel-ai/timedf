@@ -16,7 +16,8 @@ class OmnisciServer:
     def __init__(self, omnisci_executable, omnisci_port, database_name,
                  omnisci_cwd=None, user="admin", password="HyperInteractive", http_port=62278,
                  calcite_port=62279, max_session_duration=86400,
-                 idle_session_duration=120, debug_timer=False): # default values of max_session_duration=43200 idle_session_duration=60
+                 idle_session_duration=120, debug_timer=False, 
+                 columnar_output=True, lazy_fetch=None): # default values of max_session_duration=43200 idle_session_duration=60
         self.omnisci_executable = omnisci_executable
         self.server_port = omnisci_port
         self.user = user
@@ -26,6 +27,20 @@ class OmnisciServer:
         self._calcite_port = calcite_port
         self._max_session_duration = max_session_duration
         self._idle_session_duration = idle_session_duration
+        
+        if columnar_output == True:
+            self._columnar_output_cmd = '--enable-columnar-output=true'
+        elif columnar_output == False:
+            self._columnar_output_cmd = '--enable-columnar-output=false'
+        else:
+            self._columnar_output_cmd = ''
+        
+        if lazy_fetch == True:
+            self._lazy_fetch_cmd = '--enable-lazy-fetch=true'
+        elif lazy_fetch == False:
+            self._lazy_fetch_cmd = '--enable-lazy-fetch=false'
+        else:
+            self._lazy_fetch_cmd = ''
 
         if omnisci_cwd is not None:
             self._server_cwd = omnisci_cwd
@@ -56,6 +71,12 @@ class OmnisciServer:
                                       '--idle-session-duration', str(self._idle_session_duration)]
         if debug_timer:
             self._server_start_cmdline.append('--enable-debug-timer')
+            
+        if columnar_output is not None:
+            self._server_start_cmdline.append(self._columnar_output_cmd)
+            
+        if lazy_fetch is not None:
+            self._server_start_cmdline.append(self._lazy_fetch_cmd)
 
     def launch(self):
         "Launch OmniSciDB server"

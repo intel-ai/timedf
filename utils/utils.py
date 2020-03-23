@@ -8,9 +8,9 @@ import pandas as pd
 def str_arg_to_bool(v):
     if isinstance(v, bool):
         return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    if v.lower() in ('yes', 'true', 'True', 't', 'y', '1'):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif v.lower() in ('no', 'false', 'False', 'f', 'n', '0'):
         return False
     else:
         raise argparse.ArgumentTypeError('Cannot recognize boolean value.')
@@ -44,6 +44,8 @@ def execute_process(cmdline, cwd=None, shell=False, daemon=False, print_output=T
 
 def convertTypeIbis2Pandas(types):
     types = ['string_' if (x == 'string') else x for x in types]
+    types = ['float64' if (x.startswith('decimal')) else x for x in types] # since there is no explicit decimal type in Pandas /
+    # Ibis decimal type should be converted to float64 type
     return types
 
 def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir, ray_memory):
