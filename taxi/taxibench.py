@@ -8,12 +8,10 @@ import subprocess
 import sys
 
 import mysql.connector
-import report
 
 # Load database reporting functions
-pathToReportDir = os.path.join(pathlib.Path(__file__).parent, "..", "report")
-print(pathToReportDir)
-sys.path.insert(1, pathToReportDir)
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+import report
 
 omnisciExecutable = "build/bin/omnisql"
 taxiTripsDirectory = "/localdisk/work/trips_x*.csv"
