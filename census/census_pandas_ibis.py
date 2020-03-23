@@ -19,13 +19,25 @@ warnings.filterwarnings("ignore")
 # Dataset link
 # https://rapidsai-data.s3.us-east-2.amazonaws.com/datasets/ipums_education2income_1970-2010.csv.gz
 def load_data(
-        filename, columns_names=None, columns_types=None, header=None, nrows=None, use_gzip=False
+    filename,
+    columns_names=None,
+    columns_types=None,
+    header=None,
+    nrows=None,
+    use_gzip=False,
 ):
     types = None
     if columns_types:
         types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
-    return pd.read_csv(filename, names=columns_names, nrows=nrows, header=header, dtype=types,
-                       compression='gzip' if use_gzip else None)
+    return pd.read_csv(
+        filename,
+        names=columns_names,
+        nrows=nrows,
+        header=header,
+        dtype=types,
+        compression="gzip" if use_gzip else None,
+    )
+
 
 def etl_pandas(filename, columns_names, columns_types):
     etl_times = {
@@ -39,8 +51,13 @@ def etl_pandas(filename, columns_names, columns_types):
     }
 
     t0 = timer()
-    df = load_data(filename=filename, columns_names=columns_names, columns_types=columns_types,
-                   header=0, nrows=None)
+    df = load_data(
+        filename=filename,
+        columns_names=columns_names,
+        columns_types=columns_types,
+        header=0,
+        nrows=None,
+    )
     etl_times["t_readcsv"] = timer() - t0
 
     t_etl_start = timer()
@@ -51,7 +68,7 @@ def etl_pandas(filename, columns_names, columns_types):
         "SERIAL",
         "CBSERIAL",
         "HHWT",
-        'CPI99',
+        "CPI99",
         "GQ",
         "PERNUM",
         "SEX",
@@ -165,55 +182,61 @@ def etl_ibis(
     t_etl_start = timer()
 
     keep_cols = [
-        'YEAR0',
-        'DATANUM',
-        'SERIAL',
-        'CBSERIAL',
-        'HHWT',
-        'CPI99',
-        'GQ',
-        'PERNUM',
-        'SEX',
-        'AGE',
-        'INCTOT',
-        'EDUC',
-        'EDUCD',
-        'EDUC_HEAD',
-        'EDUC_POP',
-        'EDUC_MOM',
-        'EDUCD_MOM2',
-        'EDUCD_POP2',
-        'INCTOT_MOM',
-        'INCTOT_POP',
-        'INCTOT_MOM2',
-        'INCTOT_POP2',
-        'INCTOT_HEAD',
-        'SEX_HEAD',
+        "YEAR0",
+        "DATANUM",
+        "SERIAL",
+        "CBSERIAL",
+        "HHWT",
+        "CPI99",
+        "GQ",
+        "PERNUM",
+        "SEX",
+        "AGE",
+        "INCTOT",
+        "EDUC",
+        "EDUCD",
+        "EDUC_HEAD",
+        "EDUC_POP",
+        "EDUC_MOM",
+        "EDUCD_MOM2",
+        "EDUCD_POP2",
+        "INCTOT_MOM",
+        "INCTOT_POP",
+        "INCTOT_MOM2",
+        "INCTOT_POP2",
+        "INCTOT_HEAD",
+        "SEX_HEAD",
     ]
 
     if validation:
-        keep_cols.append('id')
+        keep_cols.append("id")
 
     table = table[keep_cols]
-    etl_times["t_drop"] += timer() - t_etl_start    
+    etl_times["t_drop"] += timer() - t_etl_start
 
     # first, we do all filters and eliminate redundant fillna operations for EDUC and EDUCD
     t0 = timer()
     table = table[table.INCTOT != 9999999]
-    table = table[table['EDUC'].notnull()]
-    table = table[table['EDUCD'].notnull()]      
+    table = table[table["EDUC"].notnull()]
+    table = table[table["EDUCD"].notnull()]
     etl_times["t_where"] += timer() - t0
 
     t0 = timer()
     table = table.set_column("INCTOT", table["INCTOT"] * table["CPI99"])
     etl_times["t_arithm"] += timer() - t0
 
-  
     cols = []
     # final fillna and casting for necessary columns
     for column in keep_cols:
         t0 = timer()
-        cols.append(ibis.case().when(table[column].notnull(),table[column]).else_(-1).end().cast("float64").name(column))
+        cols.append(
+            ibis.case()
+            .when(table[column].notnull(), table[column])
+            .else_(-1)
+            .end()
+            .cast("float64")
+            .name(column)
+        )
         etl_times["t_fillna"] += timer() - t0
 
     table = table.mutate(cols)
@@ -222,9 +245,9 @@ def etl_ibis(
 
     # here we use pandas to split table
     t0 = timer()
-    y = df['EDUC']
-    X = df.drop(['EDUC', 'CPI99'], axis=1)
-    etl_times['t_pandas_drop'] = timer() - t0
+    y = df["EDUC"]
+    X = df.drop(["EDUC", "CPI99"], axis=1)
+    etl_times["t_pandas_drop"] = timer() - t0
 
     etl_times["t_etl"] = timer() - t_etl_start
     print("DataFrame shape:", X.shape)
@@ -237,15 +260,18 @@ def print_times(etl_times, backend, db_reporter=None):
     for time_name, time in etl_times.items():
         print("{} = {:.5f} s".format(time_name, time))
         if db_reporter is not None:
-            db_reporter.submit({
-                'QueryName': time_name,
-                'FirstExecTimeMS': time*1000,
-                'WorstExecTimeMS': time*1000,
-                'BestExecTimeMS': time*1000,
-                'AverageExecTimeMS': time*1000,
-                'TotalTimeMS': time*1000,
-                'BackEnd': backend
-            })
+            db_reporter.submit(
+                {
+                    "QueryName": time_name,
+                    "FirstExecTimeMS": time * 1000,
+                    "WorstExecTimeMS": time * 1000,
+                    "BestExecTimeMS": time * 1000,
+                    "AverageExecTimeMS": time * 1000,
+                    "TotalTimeMS": time * 1000,
+                    "BackEnd": backend,
+                }
+            )
+
 
 def mse(y_test, y_pred):
     return ((y_test - y_pred) ** 2).mean()
@@ -276,7 +302,7 @@ def ml(X, y, random_state, n_runs, train_size, optimizer):
     clf = lm.Ridge()
 
     mse_values, cod_values = [], []
-    ml_times = {"t_split":0.0, "t_ML": 0.0, "t_train": 0.0, "t_inference": 0.0}
+    ml_times = {"t_split": 0.0, "t_ML": 0.0, "t_train": 0.0, "t_inference": 0.0}
 
     print("ML runs: ", n_runs)
     for i in range(n_runs):
@@ -314,6 +340,7 @@ def ml(X, y, random_state, n_runs, train_size, optimizer):
     )
 
     return mse_mean, cod_mean, mse_dev, cod_dev, ml_times
+
 
 def main():
     omniscript_path = os.path.dirname(__file__)
@@ -458,28 +485,28 @@ def main():
     optional.add_argument(
         "-no_ibis",
         action="store_true",
-        help="Do not run Ibis benchmark, run only Pandas (or Modin) version"
+        help="Do not run Ibis benchmark, run only Pandas (or Modin) version",
     )
     optional.add_argument(
         "-pandas_mode",
         choices=["pandas", "modin_on_ray", "modin_on_dask"],
         default="pandas",
-        help="Specifies which version of Pandas to use: plain Pandas, Modin runing on Ray or on Dask"
+        help="Specifies which version of Pandas to use: plain Pandas, Modin runing on Ray or on Dask",
     )
     optional.add_argument(
         "-ray_tmpdir",
         default="/tmp",
-        help="Location where to keep Ray plasma store. It should have enough space to keep -ray_memory"
+        help="Location where to keep Ray plasma store. It should have enough space to keep -ray_memory",
     )
     optional.add_argument(
         "-ray_memory",
-        default=200*1024*1024*1024,
-        help="Size of memory to allocate for Ray plasma store"
+        default=200 * 1024 * 1024 * 1024,
+        help="Size of memory to allocate for Ray plasma store",
     )
     optional.add_argument(
         "-no_ml",
         action="store_true",
-        help="Do not run machine learning benchmark, only ETL part"
+        help="Do not run machine learning benchmark, only ETL part",
     )
 
     args = parser.parse_args()
@@ -590,7 +617,9 @@ def main():
     try:
         if not args.no_ibis:
             if args.omnisci_executable is None:
-                parser.error("Omnisci executable should be specified with -e/--executable")
+                parser.error(
+                    "Omnisci executable should be specified with -e/--executable"
+                )
             omnisci_server = OmnisciServer(
                 omnisci_executable=args.omnisci_executable,
                 omnisci_port=args.omnisci_port,
@@ -600,27 +629,38 @@ def main():
             )
             omnisci_server.launch()
             from server_worker import OmnisciServerWorker
+
             omnisci_server_worker = OmnisciServerWorker(omnisci_server)
 
             if args.db_user is not "":
                 print("Connecting to database")
-                db = mysql.connector.connect(host=args.db_server, port=args.db_port, user=args.db_user,
-                                             passwd=args.db_pass, db=args.db_name)
-                db_reporter = DbReport(db, args.db_table, {
-                    'QueryName': 'VARCHAR(500) NOT NULL',
-                    'FirstExecTimeMS': 'BIGINT UNSIGNED',
-                    'WorstExecTimeMS': 'BIGINT UNSIGNED',
-                    'BestExecTimeMS': 'BIGINT UNSIGNED',
-                    'AverageExecTimeMS': 'BIGINT UNSIGNED',
-                    'TotalTimeMS': 'BIGINT UNSIGNED',
-                    'IbisCommitHash': 'VARCHAR(500) NOT NULL',
-                    'BackEnd': 'VARCHAR(100) NOT NULL'
-                }, {
-                    'ScriptName': 'census_pandas_ibis.py',
-                    'CommitHash': args.commit_omnisci,
-                    'IbisCommitHash': args.commit_ibis
-                })
-                
+                db = mysql.connector.connect(
+                    host=args.db_server,
+                    port=args.db_port,
+                    user=args.db_user,
+                    passwd=args.db_pass,
+                    db=args.db_name,
+                )
+                db_reporter = DbReport(
+                    db,
+                    args.db_table,
+                    {
+                        "QueryName": "VARCHAR(500) NOT NULL",
+                        "FirstExecTimeMS": "BIGINT UNSIGNED",
+                        "WorstExecTimeMS": "BIGINT UNSIGNED",
+                        "BestExecTimeMS": "BIGINT UNSIGNED",
+                        "AverageExecTimeMS": "BIGINT UNSIGNED",
+                        "TotalTimeMS": "BIGINT UNSIGNED",
+                        "IbisCommitHash": "VARCHAR(500) NOT NULL",
+                        "BackEnd": "VARCHAR(100) NOT NULL",
+                    },
+                    {
+                        "ScriptName": "census_pandas_ibis.py",
+                        "CommitHash": args.commit_omnisci,
+                        "IbisCommitHash": args.commit_ibis,
+                    },
+                )
+
             df_ibis, X_ibis, y_ibis, etl_times_ibis = etl_ibis(
                 filename=args.file,
                 columns_names=columns_names,
@@ -634,18 +674,19 @@ def main():
             )
             omnisci_server.terminate()
             omnisci_server = None
-            print_times(etl_times_ibis, 'Ibis', db_reporter)
+            print_times(etl_times_ibis, "Ibis", db_reporter)
 
             if not args.no_ml:
                 mse_mean, cod_mean, mse_dev, cod_dev, ml_times = ml(
                     X_ibis, y_ibis, RANDOM_STATE, N_RUNS, TRAIN_SIZE, args.optimizer
                 )
-                print_times(ml_times, 'Ibis')
+                print_times(ml_times, "Ibis")
                 print("mean MSE ± deviation: {:.9f} ± {:.9f}".format(mse_mean, mse_dev))
                 print("mean COD ± deviation: {:.9f} ± {:.9f}".format(cod_mean, cod_dev))
 
-        import_pandas_into_module_namespace(main.__globals__,
-                                            args.pandas_mode, args.ray_tmpdir, args.ray_memory)
+        import_pandas_into_module_namespace(
+            main.__globals__, args.pandas_mode, args.ray_tmpdir, args.ray_memory
+        )
         df, X, y, etl_times = etl_pandas(
             args.file, columns_names=columns_names, columns_types=columns_types
         )
