@@ -102,7 +102,7 @@ def etl_pandas(filename, columns_names, columns_types):
     etl_times["t_etl"] = timer() - t_etl_start
     print("DataFrame shape:", X.shape)
 
-    return X, y, etl_times
+    return df, X, y, etl_times
 
 
 def etl_ibis(
@@ -229,7 +229,7 @@ def etl_ibis(
     etl_times["t_etl"] = timer() - t_etl_start
     print("DataFrame shape:", X.shape)
 
-    return X, y, etl_times
+    return df, X, y, etl_times
 
 
 def print_times(etl_times, backend, db_reporter=None):
@@ -621,7 +621,7 @@ def main():
                     'IbisCommitHash': args.commit_ibis
                 })
                 
-            X_ibis, y_ibis, etl_times_ibis = etl_ibis(
+            df_ibis, X_ibis, y_ibis, etl_times_ibis = etl_ibis(
                 filename=args.file,
                 columns_names=columns_names,
                 columns_types=columns_types,
@@ -646,7 +646,7 @@ def main():
 
         import_pandas_into_module_namespace(main.__globals__,
                                             args.pandas_mode, args.ray_tmpdir, args.ray_memory)
-        X, y, etl_times = etl_pandas(
+        df, X, y, etl_times = etl_pandas(
             args.file, columns_names=columns_names, columns_types=columns_types
         )
         print_times(etl_times, args.pandas_mode, db_reporter)
@@ -660,7 +660,7 @@ def main():
             print("mean COD ± deviation: {:.9f} ± {:.9f}".format(cod_mean, cod_dev))
 
         if args.val:
-            compare_dataframes((X_ibis, y_ibis), (X, y))
+            compare_dataframes((df_ibis,), (df,))
     except Exception as err:
         print("Failed: ", err)
         sys.exit(1)
