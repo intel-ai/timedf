@@ -1,6 +1,3 @@
-from .utils import str_arg_to_bool
-from .utils import combinate_requirements
-from .utils import execute_process
-from .utils import convertTypeIbis2Pandas
-from .utils import import_pandas_into_module_namespace
-from .utils import compare_dataframes
+from .utils import (combinate_requirements, compare_dataframes,
+                    convertTypeIbis2Pandas, execute_process,
+                    import_pandas_into_module_namespace, str_arg_to_bool)
