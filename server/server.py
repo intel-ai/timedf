@@ -4,8 +4,10 @@ import signal
 import sys
 import threading
 import time
+
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import execute_process
+
 
 class OmnisciServer:
     "Manage interactions with OmniSciDB server (launch/termination, connection establishing, etc.)"
@@ -13,11 +15,22 @@ class OmnisciServer:
     server_process = None
     _header_santander_train = False
 
-    def __init__(self, omnisci_executable, omnisci_port, database_name,
-                 omnisci_cwd=None, user="admin", password="HyperInteractive", http_port=62278,
-                 calcite_port=62279, max_session_duration=86400,
-                 idle_session_duration=120, debug_timer=False, 
-                 columnar_output=True, lazy_fetch=None): # default values of max_session_duration=43200 idle_session_duration=60
+    def __init__(
+        self,
+        omnisci_executable,
+        omnisci_port,
+        database_name,
+        omnisci_cwd=None,
+        user="admin",
+        password="HyperInteractive",
+        http_port=62278,
+        calcite_port=62279,
+        max_session_duration=86400,
+        idle_session_duration=120,
+        debug_timer=False,
+        columnar_output=True,
+        lazy_fetch=None,
+    ):  # default values of max_session_duration=43200 idle_session_duration=60
         self.omnisci_executable = omnisci_executable
         self.server_port = omnisci_port
         self.user = user
@@ -27,20 +40,20 @@ class OmnisciServer:
         self._calcite_port = calcite_port
         self._max_session_duration = max_session_duration
         self._idle_session_duration = idle_session_duration
-        
+
         if columnar_output == True:
-            self._columnar_output_cmd = '--enable-columnar-output=true'
+            self._columnar_output_cmd = "--enable-columnar-output=true"
         elif columnar_output == False:
-            self._columnar_output_cmd = '--enable-columnar-output=false'
+            self._columnar_output_cmd = "--enable-columnar-output=false"
         else:
-            self._columnar_output_cmd = ''
-        
+            self._columnar_output_cmd = ""
+
         if lazy_fetch == True:
-            self._lazy_fetch_cmd = '--enable-lazy-fetch=true'
+            self._lazy_fetch_cmd = "--enable-lazy-fetch=true"
         elif lazy_fetch == False:
-            self._lazy_fetch_cmd = '--enable-lazy-fetch=false'
+            self._lazy_fetch_cmd = "--enable-lazy-fetch=false"
         else:
-            self._lazy_fetch_cmd = ''
+            self._lazy_fetch_cmd = ""
 
         if omnisci_cwd is not None:
             self._server_cwd = omnisci_cwd
@@ -53,28 +66,38 @@ class OmnisciServer:
             os.makedirs(self._data_dir)
         if not os.path.isdir(os.path.join(self._data_dir, "mapd_data")):
             print("INITIALIZING DATA DIR", self._data_dir)
-            self._initdb_executable = os.path.join(pathlib.Path(self.omnisci_executable).parent,
-                                                   "initdb")
-            execute_process([self._initdb_executable, '-f', '--data', self._data_dir])
+            self._initdb_executable = os.path.join(
+                pathlib.Path(self.omnisci_executable).parent, "initdb"
+            )
+            execute_process([self._initdb_executable, "-f", "--data", self._data_dir])
 
-        self.omnisci_sql_executable = os.path.join(pathlib.Path(self.omnisci_executable).parent,
-                                                   "omnisql")
-        self._server_start_cmdline = [self.omnisci_executable,
-                                      "data",
-                                      '--port', str(omnisci_port),
-                                      '--http-port', str(self._http_port),
-                                      '--calcite-port', str(self._calcite_port),
-                                      '--config', "omnisci.conf",
-                                      '--enable-watchdog=false',
-                                      '--allow-cpu-retry',
-                                      '--max-session-duration', str(self._max_session_duration),
-                                      '--idle-session-duration', str(self._idle_session_duration)]
+        self.omnisci_sql_executable = os.path.join(
+            pathlib.Path(self.omnisci_executable).parent, "omnisql"
+        )
+        self._server_start_cmdline = [
+            self.omnisci_executable,
+            "data",
+            "--port",
+            str(omnisci_port),
+            "--http-port",
+            str(self._http_port),
+            "--calcite-port",
+            str(self._calcite_port),
+            "--config",
+            "omnisci.conf",
+            "--enable-watchdog=false",
+            "--allow-cpu-retry",
+            "--max-session-duration",
+            str(self._max_session_duration),
+            "--idle-session-duration",
+            str(self._idle_session_duration),
+        ]
         if debug_timer:
-            self._server_start_cmdline.append('--enable-debug-timer')
-            
+            self._server_start_cmdline.append("--enable-debug-timer")
+
         if columnar_output is not None:
             self._server_start_cmdline.append(self._columnar_output_cmd)
-            
+
         if lazy_fetch is not None:
             self._server_start_cmdline.append(self._lazy_fetch_cmd)
 
@@ -82,12 +105,16 @@ class OmnisciServer:
         "Launch OmniSciDB server"
 
         print("Launching server ...")
-        self.server_process, _ = execute_process(self._server_start_cmdline, cwd=self._server_cwd,
-                                                 daemon=True)
+        self.server_process, _ = execute_process(
+            self._server_start_cmdline, cwd=self._server_cwd, daemon=True
+        )
         print("Server is launched")
         try:
-            pt = threading.Thread(target=self._print_omnisci_output,
-                                  args=(self.server_process.stdout,), daemon=True)
+            pt = threading.Thread(
+                target=self._print_omnisci_output,
+                args=(self.server_process.stdout,),
+                daemon=True,
+            )
             pt.start()
 
             # Allow server to start up. It has to open TCP port and start
@@ -98,7 +125,7 @@ class OmnisciServer:
             sys.exit(1)
 
     def _print_omnisci_output(self, stdout):
-        for line in iter(stdout.readline, b''):
+        for line in iter(stdout.readline, b""):
             print("OMNISCI>>", line.decode().strip())
 
     def terminate(self):
