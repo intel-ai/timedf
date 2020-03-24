@@ -9,6 +9,7 @@ dependencies:
   - numpy>=1.11
   - pandas>=1.0.0
   - pymapd>=0.20.0
+  - conda
   - xgboost
   - daal4py
   - scikit-learn
