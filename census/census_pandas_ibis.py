@@ -176,7 +176,8 @@ def etl_ibis(
     etl_times["t_readcsv"] = t_import_pandas + t_import_ibis
 
     # Second connection - this is ibis's ipc connection for DML
-    conn_ipc = omnisci_server_worker.ipc_connect_to_server()
+    omnisci_server_worker.ipc_connect_to_server()
+    conn_ipc = omnisci_server_worker.get_conn()
     db = conn_ipc.database(database_name)
     table = db.table(table_name)
 

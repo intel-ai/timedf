@@ -107,7 +107,6 @@ class OmnisciServerWorker:
             user=self.omnisci_server.user,
             password=self.omnisci_server.password,
         )
-        return self._conn
 
     def ipc_connect_to_server(self):
         "Connect to Omnisci server using Ibis framework"
@@ -120,6 +119,8 @@ class OmnisciServerWorker:
             password=self.omnisci_server.password,
             ipc=True,
         )
+
+    def get_conn(self):
         return self._conn
 
     def terminate(self):
