@@ -295,7 +295,7 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
             fragment_size=args.fragment_size,
         )
 
-        table_import = conn.database(database_name).table(table_name)
+        table_import = omnisci_server_worker.get_conn().database(database_name).table(table_name)
         table_import.read_csv(filename, delimiter=",")
 
     if args.server_conn_type == "regular":
