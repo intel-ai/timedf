@@ -263,7 +263,7 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
             fragment_size=args.fragment_size,
         )
 
-        table_import_query = omnisci_server_worker.get_conn().database(database_name).table(tmp_table_name)
+        table_import_query = omnisci_server_worker.database(database_name).table(tmp_table_name)
         t0 = timer()
         table_import_query.read_csv(filename, delimiter=",")
         etl_times["t_readcsv_by_ibis"] = timer() - t0
@@ -295,7 +295,7 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
             fragment_size=args.fragment_size,
         )
 
-        table_import = omnisci_server_worker.get_conn().database(database_name).table(table_name)
+        table_import = omnisci_server_worker.database(database_name).table(table_name)
         table_import.read_csv(filename, delimiter=",")
 
     if args.server_conn_type == "regular":
@@ -306,7 +306,7 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
         print("Wrong connection type is specified!")
         sys.exit(0)
 
-    db = omnisci_server_worker.get_conn().database(database_name)
+    db = omnisci_server_worker.database(database_name)
     table = db.table(table_name)
 
     # group_by/count, merge (join) and filtration queries

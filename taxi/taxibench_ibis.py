@@ -543,7 +543,7 @@ try:
         )
 
     try:
-        db = omnisci_server_worker.get_conn().database(database_name)
+        db = omnisci_server_worker.database(database_name)
     except Exception as err:
         print("Failed to connect to database:", err)
 

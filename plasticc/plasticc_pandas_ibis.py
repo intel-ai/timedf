@@ -300,7 +300,7 @@ def load_data_ibis(
 
     # Second connection - this is ibis's ipc connection for DML
     omnisci_server_worker.ipc_connect_to_server()
-    db = omnisci_server_worker.get_conn().database(database_name)
+    db = omnisci_server_worker.database(database_name)
 
     training_table = db.table("training")
     test_table = db.table("test")

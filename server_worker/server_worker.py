@@ -125,6 +125,9 @@ class OmnisciServerWorker:
     def get_conn(self):
         return self._conn
 
+    def database(self, name):
+        return self._conn.database(name)
+
     def terminate(self):
         if self._conn:
             self._conn.close()
