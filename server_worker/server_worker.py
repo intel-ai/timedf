@@ -280,7 +280,7 @@ class OmnisciServerWorker:
         try:
             self._conn.drop_database(database_name, force=force)
             time.sleep(2)
-            self._conn = self.connect_to_server()
+            self.connect_to_server()
         except Exception as err:
             print("Failed to delete ", database_name, "database: ", err)
 
