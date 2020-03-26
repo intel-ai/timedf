@@ -365,7 +365,7 @@ try:
     omnisci_server_worker = OmnisciServerWorker(omnisci_server)
 
     time.sleep(2)
-    conn = omnisci_server_worker.connect_to_server()
+    omnisci_server_worker.connect_to_server()
 
     taxibench_columns_names = [
         "trip_id",
@@ -506,9 +506,9 @@ try:
     if not args.dnd:
         print("Deleting", database_name, "old database")
         try:
-            conn.drop_database(database_name, force=True)
+            omnisci_server_worker.get_conn().drop_database(database_name, force=True)
             time.sleep(2)
-            conn = omnisci_server_worker.connect_to_server()
+            omnisci_server_worker.connect_to_server()
         except Exception as err:
             print("Failed to delete", database_name, "old database: ", err)
 
@@ -520,7 +520,7 @@ try:
 
     try:
         print("Creating", database_name, "new database")
-        conn.create_database(
+        omnisci_server_worker.get_conn().create_database(
             database_name
         )  # Ibis list_databases method is not supported yet
     except Exception as err:
@@ -543,7 +543,7 @@ try:
         )
 
     try:
-        db = conn.database(database_name)
+        db = omnisci_server_worker.get_conn().database(database_name)
     except Exception as err:
         print("Failed to connect to database:", err)
 

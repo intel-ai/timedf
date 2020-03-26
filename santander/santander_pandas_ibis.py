@@ -213,7 +213,7 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
     )
 
     time.sleep(2)
-    conn = omnisci_server_worker.connect_to_server()
+    omnisci_server_worker.connect_to_server()
 
     if run_import_queries:
         # SQL statemnts preparation for data file import queries
@@ -256,14 +256,14 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
         schema_table_import = ibis.Schema(
             names=columns_names, types=columns_types_import_query
         )
-        conn.create_table(
+        omnisci_server_worker.get_conn().create_table(
             table_name=tmp_table_name,
             schema=schema_table_import,
             database=database_name,
             fragment_size=args.fragment_size,
         )
 
-        table_import_query = conn.database(database_name).table(tmp_table_name)
+        table_import_query = omnisci_server_worker.get_conn().database(database_name).table(tmp_table_name)
         t0 = timer()
         table_import_query.read_csv(filename, delimiter=",")
         etl_times["t_readcsv_by_ibis"] = timer() - t0
@@ -288,7 +288,7 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
     if create_new_table:
         # Create table and import data for ETL queries
         schema_table = ibis.Schema(names=columns_names, types=columns_types)
-        conn.create_table(
+        omnisci_server_worker.get_conn().create_table(
             table_name=table_name,
             schema=schema_table,
             database=database_name,
@@ -299,14 +299,14 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
         table_import.read_csv(filename, delimiter=",")
 
     if args.server_conn_type == "regular":
-        conn = omnisci_server_worker.connect_to_server()
+        omnisci_server_worker.connect_to_server()
     elif args.server_conn_type == "ipc":
-        conn = omnisci_server_worker.ipc_connect_to_server()
+        omnisci_server_worker.ipc_connect_to_server()
     else:
         print("Wrong connection type is specified!")
         sys.exit(0)
 
-    db = conn.database(database_name)
+    db = omnisci_server_worker.get_conn().database(database_name)
     table = db.table(table_name)
 
     # group_by/count, merge (join) and filtration queries

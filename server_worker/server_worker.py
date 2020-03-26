@@ -122,8 +122,8 @@ class OmnisciServerWorker:
             ipc=True,
         )
 
-    def database(self, name):
-        return self._conn.database(name)
+    def get_conn(self):
+        return self._conn
 
     def terminate(self):
         if self._conn:
