@@ -100,7 +100,8 @@ class OmnisciServerWorker:
     def connect_to_server(self):
         "Connect to Omnisci server using Ibis framework"
 
-        self._conn.close()
+        if self._conn:
+            self._conn.close()
         self._conn = ibis.omniscidb.connect(
             host="localhost",
             port=self.omnisci_server.server_port,
@@ -111,7 +112,8 @@ class OmnisciServerWorker:
     def ipc_connect_to_server(self):
         "Connect to Omnisci server using Ibis framework"
 
-        self._conn.close()
+        if self._conn:
+            self._conn.close()
         self._conn = ibis.omniscidb.connect(
             host="localhost",
             port=self.omnisci_server.server_port,
@@ -124,7 +126,8 @@ class OmnisciServerWorker:
         return self._conn.database(name)
 
     def terminate(self):
-        self._conn.close()
+        if self._conn:
+            self._conn.close()
         self.omnisci_server.terminate()
 
     def import_data(
