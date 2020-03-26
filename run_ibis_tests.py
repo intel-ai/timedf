@@ -17,7 +17,7 @@ parser._action_groups.append(optional)
 
 possible_tasks = ['build', 'test', 'benchmark']
 benchmarks = {'ny_taxi': os.path.join(omniscript_path, "taxi", "taxibench_ibis.py"),
-              'santander': os.path.join(omniscript_path, "santander", "santander_pandas_ibis.py.py"),
+              'santander': os.path.join(omniscript_path, "santander", "santander_pandas_ibis.py"),
               'census': os.path.join(omniscript_path, "census", "census_pandas_ibis.py"),
               'plasticc': os.path.join(omniscript_path, "plasticc", "plasticc_pandas_ibis.py")}
 # Task
