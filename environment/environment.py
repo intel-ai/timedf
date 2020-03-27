@@ -71,9 +71,10 @@ class CondaEnvironment:
     def run(self, cmdline, name=None, cwd=None, print_output=True):
         env_name = name if name else self.name
 
-        cmd_print_list = ["conda", "list", "-n", env_name]
-        print("PRINTING LIST OF PACKAGES")
-        execute_process(cmd_print_list, print_output=True)
+        if print_output:
+            cmd_print_list = ["conda", "list", "-n", env_name]
+            print("PRINTING LIST OF PACKAGES")
+            execute_process(cmd_print_list, print_output=True)
 
         if cwd:
             # run_command doesn't have cwd
