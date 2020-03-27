@@ -207,7 +207,9 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
     )
     omnisci_server.launch()
 
+    import ibis
     from server_worker import OmnisciServerWorker
+
     omnisci_server_worker = OmnisciServerWorker(omnisci_server)
     omnisci_server_worker.create_database(
         database_name, delete_if_exists=delete_old_database
@@ -773,7 +775,6 @@ def main():
             })
 
         if not args.no_ibis:
-            import ibis
             if args.omnisci_executable is None:
                 parser.error("Omnisci executable should be specified with -e/--executable")
 
