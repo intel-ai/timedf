@@ -359,8 +359,7 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
     x_valid = validation_part.drop(['target0'],axis=1)
     y_valid = validation_part['target0']
     
-    omnisci_server.terminate()
-    omnisci_server = None
+    omnisci_server_worker.terminate()
 
     return x_train, y_train, x_valid, y_valid, etl_times
 
