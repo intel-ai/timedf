@@ -108,6 +108,7 @@ class OmnisciServerWorker:
             user=self.omnisci_server.user,
             password=self.omnisci_server.password,
         )
+        time.sleep(2)
 
     def ipc_connect_to_server(self):
         "Connect to Omnisci server using Ibis framework"
@@ -121,6 +122,7 @@ class OmnisciServerWorker:
             password=self.omnisci_server.password,
             ipc=True,
         )
+        time.sleep(2)
 
     def get_conn(self):
         return self._conn
@@ -285,10 +287,10 @@ class OmnisciServerWorker:
         print("Deleting ", database_name, " database")
         try:
             self._conn.drop_database(database_name, force=force)
-            time.sleep(2)
-            self.connect_to_server()
         except Exception as err:
             print("Failed to delete ", database_name, "database: ", err)
+
+        self.connect_to_server()
 
     def create_database(self, database_name, delete_if_exists=True):
         "Create database by database_name using Ibis framework"
@@ -301,7 +303,6 @@ class OmnisciServerWorker:
         print("Creating ", database_name, " database")
         try:
             self._conn.create_database(database_name)
-            time.sleep(2)
         except Exception as err:
             print("Failed to create ", database_name, " database: ", err)
 

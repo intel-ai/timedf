@@ -211,12 +211,10 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
     from server_worker import OmnisciServerWorker
 
     omnisci_server_worker = OmnisciServerWorker(omnisci_server)
+    omnisci_server_worker.connect_to_server()
     omnisci_server_worker.create_database(
         database_name, delete_if_exists=delete_old_database
     )
-
-    time.sleep(2)
-    omnisci_server_worker.connect_to_server()
 
     if run_import_queries:
         # SQL statemnts preparation for data file import queries
@@ -359,8 +357,7 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
     x_valid = validation_part.drop(['target0'],axis=1)
     y_valid = validation_part['target0']
     
-    omnisci_server.terminate()
-    omnisci_server = None
+    omnisci_server_worker.terminate()
 
     return x_train, y_train, x_valid, y_valid, etl_times
 
