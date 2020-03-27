@@ -1,7 +1,7 @@
 if __name__ == "__main__":
     from braceexpand import braceexpand
 
-    # import mysql.connector
+    import mysql.connector
     import modin.pandas as pd
     import numpy as np
     import argparse
