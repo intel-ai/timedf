@@ -130,6 +130,10 @@ class OmnisciServerWorker:
     def database(self, name):
         return self._conn.database(name)
 
+    def create_table(self, *arg, **kwargs):
+        "Wrapper for OmniSciDBClient.create_table"
+        self._conn.create_table(*arg, **kwargs)
+
     def terminate(self):
         if self._conn:
             self._conn.close()

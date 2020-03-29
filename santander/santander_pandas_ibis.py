@@ -257,7 +257,7 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
             schema_table_import = ibis.Schema(
                 names=columns_names, types=columns_types_import_query
             )
-            omnisci_server_worker.get_conn().create_table(
+            omnisci_server_worker.create_table(
                 table_name=tmp_table_name,
                 schema=schema_table_import,
                 database=database_name,
@@ -289,7 +289,7 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
         if create_new_table:
             # Create table and import data for ETL queries
             schema_table = ibis.Schema(names=columns_names, types=columns_types)
-            omnisci_server_worker.get_conn().create_table(
+            omnisci_server_worker.create_table(
                 table_name=table_name,
                 schema=schema_table,
                 database=database_name,
