@@ -210,154 +210,154 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
     import ibis
     from server_worker import OmnisciServerWorker
 
-    omnisci_server_worker = OmnisciServerWorker(omnisci_server)
-    omnisci_server_worker.connect_to_server()
-    omnisci_server_worker.create_database(
-        database_name, delete_if_exists=delete_old_database
-    )
-
-    if run_import_queries:
-        # SQL statemnts preparation for data file import queries
-        connect_to_db_sql_template = "\c {0} admin HyperInteractive"
-        create_table_sql_template = """
-        CREATE TABLE {0} ({1});
-        """
-        import_by_COPY_sql_template = """
-        COPY {0} FROM '{1}' WITH (header='{2}');
-        """
-        import_by_FSI_sql_template = """
-        CREATE TEMPORARY TABLE {0} ({1}) WITH (storage_type='CSV:{2}');
-        """
-        drop_table_sql_template = """
-        DROP TABLE IF EXISTS {0};
-        """
-
-        import_query_cols_list = (
-            ["ID_code TEXT ENCODING NONE, \n", "target SMALLINT, \n"]
-            + ["var_%s DOUBLE, \n" % i for i in range(199)]
-            + ["var_199 DOUBLE"]
-        )
-        import_query_cols_str = "".join(import_query_cols_list)
-
-        connect_to_db_sql = connect_to_db_sql_template.format(database_name)
-        create_table_sql = create_table_sql_template.format(
-            tmp_table_name, import_query_cols_str
-        )
-        import_by_COPY_sql = import_by_COPY_sql_template.format(
-            tmp_table_name, filename, "true"
-        )
-        import_by_FSI_sql = import_by_FSI_sql_template.format(
-            tmp_table_name, import_query_cols_str, filename
-        )
-
-        # data file import by ibis
-        columns_types_import_query = ["string", "int64"] + [
-            "float64" for _ in range(200)
-        ]
-        schema_table_import = ibis.Schema(
-            names=columns_names, types=columns_types_import_query
-        )
-        omnisci_server_worker.get_conn().create_table(
-            table_name=tmp_table_name,
-            schema=schema_table_import,
-            database=database_name,
-            fragment_size=args.fragment_size,
-        )
-
-        table_import_query = omnisci_server_worker.database(database_name).table(tmp_table_name)
-        t0 = timer()
-        table_import_query.read_csv(filename, delimiter=",")
-        etl_times["t_readcsv_by_ibis"] = timer() - t0
-
-        # data file import by FSI
-        omnisci_server_worker.drop_table(tmp_table_name)
-        t0 = timer()
-        omnisci_server_worker.execute_sql_query(import_by_FSI_sql)
-        etl_times["t_readcsv_by_FSI"] = timer() - t0
-
-        omnisci_server_worker.drop_table(tmp_table_name)
-
-        # data file import by SQL COPY statement
-        omnisci_server_worker.execute_sql_query(create_table_sql)
-
-        t0 = timer()
-        omnisci_server_worker.execute_sql_query(import_by_COPY_sql)
-        etl_times["t_readcsv_by_COPY"] = timer() - t0
-
-        omnisci_server_worker.drop_table(tmp_table_name)
-
-    if create_new_table:
-        # Create table and import data for ETL queries
-        schema_table = ibis.Schema(names=columns_names, types=columns_types)
-        omnisci_server_worker.get_conn().create_table(
-            table_name=table_name,
-            schema=schema_table,
-            database=database_name,
-            fragment_size=args.fragment_size,
-        )
-
-        table_import = omnisci_server_worker.database(database_name).table(table_name)
-        table_import.read_csv(filename, delimiter=",")
-
-    if args.server_conn_type == "regular":
+    with OmnisciServerWorker(omnisci_server) as omnisci_server_worker:
         omnisci_server_worker.connect_to_server()
-    elif args.server_conn_type == "ipc":
-        omnisci_server_worker.ipc_connect_to_server()
-    else:
-        print("Wrong connection type is specified!")
-        sys.exit(0)
-
-    db = omnisci_server_worker.database(database_name)
-    table = db.table(table_name)
-
-    # group_by/count, merge (join) and filtration queries
-    # We are making 400 columns and then insert them into original table thus avoiding
-    # nested sql requests
-    t0 = timer()
-    count_cols = []
-    orig_cols = ["ID_code", "target"] + ['var_%s'%i for i in range(200)]
-    cast_cols = []
-    cast_cols.append(table["target"].cast("int64").name("target0"))
-    gt1_cols = []
-    for i in range(200):
-        col = "var_%d" % i
-        col_count = "var_%d_count" % i
-        col_gt1 = "var_%d_gt1" % i
-        w = ibis.window(group_by=col)
-        count_cols.append(table[col].count().over(w).name(col_count))
-        gt1_cols.append(
-            ibis.case()
-            .when(
-                table[col].count().over(w).name(col_count) > 1,
-                table[col].cast("float32"),
-            )
-            .else_(ibis.null())
-            .end()
-            .name("var_%d_gt1" % i)
+        omnisci_server_worker.create_database(
+            database_name, delete_if_exists=delete_old_database
         )
-        cast_cols.append(table[col].cast("float32").name(col))
 
-    table = table.mutate(count_cols)
-    table = table.drop(orig_cols)
-    table = table.mutate(gt1_cols)
-    table = table.mutate(cast_cols)
+        if run_import_queries:
+            # SQL statemnts preparation for data file import queries
+            connect_to_db_sql_template = "\c {0} admin HyperInteractive"
+            create_table_sql_template = """
+            CREATE TABLE {0} ({1});
+            """
+            import_by_COPY_sql_template = """
+            COPY {0} FROM '{1}' WITH (header='{2}');
+            """
+            import_by_FSI_sql_template = """
+            CREATE TEMPORARY TABLE {0} ({1}) WITH (storage_type='CSV:{2}');
+            """
+            drop_table_sql_template = """
+            DROP TABLE IF EXISTS {0};
+            """
 
-    table_df = table.execute()
-    etl_times["t_groupby_merge_where"] = timer() - t0
+            import_query_cols_list = (
+                ["ID_code TEXT ENCODING NONE, \n", "target SMALLINT, \n"]
+                + ["var_%s DOUBLE, \n" % i for i in range(199)]
+                + ["var_199 DOUBLE"]
+            )
+            import_query_cols_str = "".join(import_query_cols_list)
 
-    # rows split query
-    t0 = timer()
-    training_part, validation_part = table_df[:-10000], table_df[-10000:]
-    etl_times["t_train_test_split"] = timer() - t0
-    
-    etl_times["t_etl"] = etl_times["t_groupby_merge_where"] + etl_times["t_train_test_split"]
-    
-    x_train = training_part.drop(['target0'],axis=1)
-    y_train = training_part['target0']
-    x_valid = validation_part.drop(['target0'],axis=1)
-    y_valid = validation_part['target0']
-    
-    omnisci_server_worker.terminate()
+            connect_to_db_sql = connect_to_db_sql_template.format(database_name)
+            create_table_sql = create_table_sql_template.format(
+                tmp_table_name, import_query_cols_str
+            )
+            import_by_COPY_sql = import_by_COPY_sql_template.format(
+                tmp_table_name, filename, "true"
+            )
+            import_by_FSI_sql = import_by_FSI_sql_template.format(
+                tmp_table_name, import_query_cols_str, filename
+            )
+
+            # data file import by ibis
+            columns_types_import_query = ["string", "int64"] + [
+                "float64" for _ in range(200)
+            ]
+            schema_table_import = ibis.Schema(
+                names=columns_names, types=columns_types_import_query
+            )
+            omnisci_server_worker.get_conn().create_table(
+                table_name=tmp_table_name,
+                schema=schema_table_import,
+                database=database_name,
+                fragment_size=args.fragment_size,
+            )
+
+            table_import_query = omnisci_server_worker.database(database_name).table(tmp_table_name)
+            t0 = timer()
+            table_import_query.read_csv(filename, delimiter=",")
+            etl_times["t_readcsv_by_ibis"] = timer() - t0
+
+            # data file import by FSI
+            omnisci_server_worker.drop_table(tmp_table_name)
+            t0 = timer()
+            omnisci_server_worker.execute_sql_query(import_by_FSI_sql)
+            etl_times["t_readcsv_by_FSI"] = timer() - t0
+
+            omnisci_server_worker.drop_table(tmp_table_name)
+
+            # data file import by SQL COPY statement
+            omnisci_server_worker.execute_sql_query(create_table_sql)
+
+            t0 = timer()
+            omnisci_server_worker.execute_sql_query(import_by_COPY_sql)
+            etl_times["t_readcsv_by_COPY"] = timer() - t0
+
+            omnisci_server_worker.drop_table(tmp_table_name)
+
+        if create_new_table:
+            # Create table and import data for ETL queries
+            schema_table = ibis.Schema(names=columns_names, types=columns_types)
+            omnisci_server_worker.get_conn().create_table(
+                table_name=table_name,
+                schema=schema_table,
+                database=database_name,
+                fragment_size=args.fragment_size,
+            )
+
+            table_import = omnisci_server_worker.database(database_name).table(table_name)
+            table_import.read_csv(filename, delimiter=",")
+
+        if args.server_conn_type == "regular":
+            omnisci_server_worker.connect_to_server()
+        elif args.server_conn_type == "ipc":
+            omnisci_server_worker.ipc_connect_to_server()
+        else:
+            print("Wrong connection type is specified!")
+            sys.exit(0)
+
+        db = omnisci_server_worker.database(database_name)
+        table = db.table(table_name)
+
+        # group_by/count, merge (join) and filtration queries
+        # We are making 400 columns and then insert them into original table thus avoiding
+        # nested sql requests
+        t0 = timer()
+        count_cols = []
+        orig_cols = ["ID_code", "target"] + ['var_%s' % i for i in range(200)]
+        cast_cols = []
+        cast_cols.append(table["target"].cast("int64").name("target0"))
+        gt1_cols = []
+        for i in range(200):
+            col = "var_%d" % i
+            col_count = "var_%d_count" % i
+            col_gt1 = "var_%d_gt1" % i
+            w = ibis.window(group_by=col)
+            count_cols.append(table[col].count().over(w).name(col_count))
+            gt1_cols.append(
+                ibis.case()
+                .when(
+                    table[col].count().over(w).name(col_count) > 1,
+                    table[col].cast("float32"),
+                )
+                .else_(ibis.null())
+                .end()
+                .name("var_%d_gt1" % i)
+            )
+            cast_cols.append(table[col].cast("float32").name(col))
+
+        table = table.mutate(count_cols)
+        table = table.drop(orig_cols)
+        table = table.mutate(gt1_cols)
+        table = table.mutate(cast_cols)
+
+        table_df = table.execute()
+        etl_times["t_groupby_merge_where"] = timer() - t0
+
+        # rows split query
+        t0 = timer()
+        training_part, validation_part = table_df[:-10000], table_df[-10000:]
+        etl_times["t_train_test_split"] = timer() - t0
+
+        etl_times["t_etl"] = etl_times["t_groupby_merge_where"] + etl_times["t_train_test_split"]
+
+        x_train = training_part.drop(['target0'], axis=1)
+        y_train = training_part['target0']
+        x_valid = validation_part.drop(['target0'], axis=1)
+        y_valid = validation_part['target0']
+
+    omnisci_server.terminate()
 
     return x_train, y_train, x_valid, y_valid, etl_times
 
