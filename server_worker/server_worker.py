@@ -357,3 +357,15 @@ class OmnisciServerWorker:
         )
 
         return self._conn.database(self.omnisci_server.database_name).table(table_name)
+
+    def __enter__(self):
+        print('enter')
+        return self
+
+    def __exit__(self, exception_type, exception_val, trace):
+        print('exit')
+        try:
+            self.terminate()
+        except Exception as err:
+            print('terminate is not successful')
+            raise err
