@@ -740,7 +740,7 @@ def main():
         csv_data_file = data_file_name
         if not os.path.exists(data_file_name):
             execute_process(
-                cmdline=["tar", "-xvf", args.dp, "--strip", "1"],
+                cmdline=["tar", "-xvf", args.f, "--strip", "1"],
                 cwd=pathlib.Path(args.file).parent,
             )
 
