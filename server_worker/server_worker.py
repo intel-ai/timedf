@@ -135,7 +135,6 @@ class OmnisciServerWorker:
     def terminate(self):
         if self._conn:
             self._conn.close()
-        self.omnisci_server.terminate()
 
     def import_data(
         self,
