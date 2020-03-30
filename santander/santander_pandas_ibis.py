@@ -306,8 +306,7 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
             print("Wrong connection type is specified!")
             sys.exit(0)
 
-        db = omnisci_server_worker.database(database_name)
-        table = db.table(table_name)
+        table = omnisci_server_worker.database(database_name).table(table_name)
 
         # group_by/count, merge (join) and filtration queries
         # We are making 400 columns and then insert them into original table thus avoiding
