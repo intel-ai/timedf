@@ -148,16 +148,11 @@ def etl_ibis(
 
     import ibis
 
-    time.sleep(2)
-    omnisci_server_worker.connect_to_server()
-
     omnisci_server_worker.create_database(
         database_name, delete_if_exists=delete_old_database
     )
 
     t0 = timer()
-
-    omnisci_server_worker.connect_to_server()
     # Create table and import data
     if create_new_table:
         # Datafiles import
@@ -172,13 +167,11 @@ def etl_ibis(
             compression_type=None,
             validation=validation,
         )
-
     etl_times["t_readcsv"] = t_import_pandas + t_import_ibis
 
     # Second connection - this is ibis's ipc connection for DML
-    omnisci_server_worker.ipc_connect_to_server()
-    db = omnisci_server_worker.database(database_name)
-    table = db.table(table_name)
+    omnisci_server_worker.connect_to_server(database_name, ipc=True)
+    table = omnisci_server_worker.database(database_name).table(table_name)
 
     t_etl_start = timer()
 
