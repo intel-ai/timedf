@@ -187,11 +187,9 @@ def load_data_ibis(
     skip_rows,
     validation,
 ):
-    omnisci_server_worker.connect_to_server()
     omnisci_server_worker.create_database(
         database_name, delete_if_exists=delete_old_database
     )
-    omnisci_server_worker.connect_to_server()
 
     dtypes = OrderedDict(
         [
@@ -299,7 +297,7 @@ def load_data_ibis(
         print(f"import times: pandas - {t_import_pandas}s, ibis - {t_import_ibis}s")
 
     # Second connection - this is ibis's ipc connection for DML
-    omnisci_server_worker.ipc_connect_to_server()
+    omnisci_server_worker.connect_to_server(database_name, ipc=True)
     db = omnisci_server_worker.database(database_name)
 
     training_table = db.table("training")
