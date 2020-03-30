@@ -211,7 +211,6 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
     from server_worker import OmnisciServerWorker
 
     with OmnisciServerWorker(omnisci_server) as omnisci_server_worker:
-        omnisci_server_worker.connect_to_server()
         omnisci_server_worker.create_database(
             database_name, delete_if_exists=delete_old_database
         )
@@ -300,9 +299,9 @@ def etl_ibis(args, run_import_queries, columns_names, columns_types, validation=
             table_import.read_csv(filename, delimiter=",")
 
         if args.server_conn_type == "regular":
-            omnisci_server_worker.connect_to_server()
+            omnisci_server_worker.connect_to_server(database_name)
         elif args.server_conn_type == "ipc":
-            omnisci_server_worker.ipc_connect_to_server()
+            omnisci_server_worker.connect_to_server(database_name, ipc=True)
         else:
             print("Wrong connection type is specified!")
             sys.exit(0)

@@ -97,7 +97,7 @@ class OmnisciServerWorker:
             )
             return pd.concat(df_from_each_file, ignore_index=True)
 
-    def connect_to_server(self):
+    def connect_to_server(self, database=None, ipc=None):
         "Connect to Omnisci server using Ibis framework"
 
         if self._conn:
@@ -107,19 +107,8 @@ class OmnisciServerWorker:
             port=self.omnisci_server.server_port,
             user=self.omnisci_server.user,
             password=self.omnisci_server.password,
-        )
-
-    def ipc_connect_to_server(self):
-        "Connect to Omnisci server using Ibis framework"
-
-        if self._conn:
-            self._conn.close()
-        self._conn = ibis.omniscidb.connect(
-            host="localhost",
-            port=self.omnisci_server.server_port,
-            user=self.omnisci_server.user,
-            password=self.omnisci_server.password,
-            ipc=True,
+            database=database,
+            ipc=ipc,
         )
 
     def get_conn(self):
@@ -304,6 +293,7 @@ class OmnisciServerWorker:
         print("Creating ", database_name, " database")
         try:
             self._conn.create_database(database_name)
+            self._conn.set_database(database_name)
         except Exception as err:
             print("Failed to create ", database_name, " database: ", err)
 
