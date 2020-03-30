@@ -709,7 +709,7 @@ def print_times(etl_times, name=None):
 
 def main():
     args = None
-    omnisci_server_worker = None
+    omnisci_server = None
     train_final, test_final = None, None
 
     parser, args, skip_rows = get_args()
@@ -735,7 +735,6 @@ def main():
             omnisci_server.launch()
 
             from server_worker import OmnisciServerWorker
-
             omnisci_server_worker = OmnisciServerWorker(omnisci_server)
 
             train_final, test_final, etl_times = etl_all_ibis(
@@ -751,7 +750,8 @@ def main():
             print_times(etl_times)
 
             omnisci_server_worker.terminate()
-            omnisci_server_worker = None
+            omnisci_server.terminate()
+
 
             if not args.no_ml:
                 print("using ml with dataframes from ibis")
@@ -774,8 +774,8 @@ def main():
             compare_dataframes((train_final, test_final), (ptrain_final, ptest_final))
 
     finally:
-        if omnisci_server_worker:
-            omnisci_server_worker.terminate()
+        if omnisci_server:
+            omnisci_server.terminate()
 
 
 if __name__ == "__main__":
