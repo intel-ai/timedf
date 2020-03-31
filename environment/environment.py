@@ -3,7 +3,10 @@ import re
 import subprocess
 import sys
 
-from conda.cli.python_api import Commands, run_command
+try:
+    from conda.cli.python_api import Commands, run_command
+except ImportError:
+    sys.exit('Please run the script from (base) conda environment')
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import execute_process
@@ -70,6 +73,12 @@ class CondaEnvironment:
 
     def run(self, cmdline, name=None, cwd=None, print_output=True):
         env_name = name if name else self.name
+
+        if print_output:
+            cmd_print_list = ["conda", "list", "-n", env_name]
+            print("PRINTING LIST OF PACKAGES")
+            execute_process(cmd_print_list, print_output=True)
+
         if cwd:
             # run_command doesn't have cwd
             execute_process(
