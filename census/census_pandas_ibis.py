@@ -101,6 +101,7 @@ def etl_ibis(
     ipc_connection,
     validation,
     etl_keys,
+    run_import_queries,
 ):
     import ibis
 
@@ -109,6 +110,39 @@ def etl_ibis(
     omnisci_server_worker.create_database(
         database_name, delete_if_exists=delete_old_database
     )
+
+    if run_import_queries:
+        etl_times_import = {
+            "t_readcsv_by_COPY": 0.0,
+            "t_readcsv_by_FSI": 0.0,
+        }
+
+        # Create table and import data for ETL queries
+        schema_table = ibis.Schema(names=columns_names, types=columns_types)
+        omnisci_server_worker.create_table(
+            table_name=table_name,
+            schema=schema_table,
+            database=database_name,
+        )
+        table_import = omnisci_server_worker.database(database_name).table(table_name)
+
+        t0 = timer()
+        table_import.read_csv(filename, header=True, quotechar="", delimiter=",")
+        etl_times["t_readcsv_by_COPY"] = timer() - t0
+        omnisci_server_worker.drop_table(table_name)
+
+        # fsi setup
+        # TODO
+        import_query_cols_str =
+
+        # measure fsi
+        etl_times["t_readcsv_by_FSI"] = omnisci_server_worker.fsi_read_csv(
+            table_name, import_query_cols_str, filename
+        )
+        omnisci_server_worker.drop_table(table_name)
+
+        print_times(times=etl_times_import)
+
 
     # Create table and import data
     if create_new_table:
@@ -395,6 +429,7 @@ def run_benchmark(parameters):
                 ipc_connection=parameters["ipc_connection"],
                 validation=parameters["validation"],
                 etl_keys=etl_keys,
+                run_import_queries=parameters["run_import_queries"],
             )
 
             print_times(times=etl_times_ibis, backend="Ibis")

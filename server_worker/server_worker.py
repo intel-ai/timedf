@@ -6,6 +6,7 @@ import time
 
 import ibis
 import pandas as pd
+from timeit import default_timer as timer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import convert_type_ibis2pandas
@@ -362,3 +363,18 @@ class OmnisciServerWorker:
         except Exception as err:
             print('terminate is not successful')
             raise err
+
+    def fsi_read_csv(self, table_name, import_query_cols, filename):
+        import_by_FSI_sql_template = """
+        CREATE TEMPORARY TABLE {0} ({1}) WITH (storage_type='CSV:{2}');
+        """
+
+        import_query_cols_str = "".join(import_query_cols)
+
+        import_by_FSI_sql = import_by_FSI_sql_template.format(
+            table_name, import_query_cols_str, filename
+        )
+
+        t0 = timer()
+        self._conn._execute(import_by_FSI_sql)
+        return timer() - t0
