@@ -179,6 +179,15 @@ def load_data_ibis(
 
     # Create tables and import data
     if create_new_table:
+        options = {
+            "files_limit": 1,
+            "columns_names": list(dtypes.keys()),
+            "columns_types": list(dtypes.values()),
+            "header": 0,
+            "nrows": None,
+            "compression_type": None,
+            "validation": validation,
+        }
         # create table #1
         training_file = "%s/training_set.csv" % dataset_path
         t_import_pandas_1, t_import_ibis_1 = omnisci_server_worker.import_data_by_ibis(

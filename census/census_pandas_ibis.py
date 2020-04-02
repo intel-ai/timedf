@@ -471,8 +471,8 @@ def run_benchmark(parameters):
             print_times(times=ml_scores, backend=parameters["pandas_mode"])
             ml_scores["Backend"] = parameters["pandas_mode"]
 
-        if parameters["validation"]:
-            # this should work
+        if parameters["pandas_mode"] and parameters["validation"]:
+            # this should work only for pandas mode
             compare_dataframes(
                 ibis_dfs=(X_ibis, y_ibis),
                 pandas_dfs=(X, y),
