@@ -198,11 +198,10 @@ def main():
         help="validate queries results (by comparison with Pandas queries results).",
     )
     benchmark.add_argument(
-        "-run_import_queries",
+        "-import_mode",
         dest="run_import_queries",
-        default=False,
-        type=str_arg_to_bool,
-        help="measure ibis' 'COPY FROM' import, FSI import",
+        default="copy-from",
+        help="measure 'COPY FROM' import, FSI import, import through pandas",
     )
     benchmark.add_argument(
         "-optimizer",
@@ -459,7 +458,7 @@ def main():
                 "table",
                 "commit_omnisci",
                 "commit_ibis",
-                "run_import_queries",
+                "import_mode",
             ]
             args_dict = vars(args)
             args_dict["data_file"] = f"'{args_dict['data_file']}'"
