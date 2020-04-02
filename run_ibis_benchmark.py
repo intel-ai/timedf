@@ -284,6 +284,7 @@ def main():
             parameters["dnd"] = args.dnd
             parameters["dni"] = args.dni
             parameters["validation"] = args.validation
+            parameters["import_mode"] = args.import_mode
 
         etl_results = []
         ml_results = []
