@@ -145,7 +145,7 @@ def etl_ibis(
         elif import_mode == "fsi":
             # fsi setup
             # TODO
-            import_query_cols_str =
+            import_query_cols_str = None
 
             # measure fsi
             etl_times["t_readcsv"] = omnisci_server_worker.fsi_read_csv(
