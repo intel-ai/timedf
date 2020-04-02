@@ -61,7 +61,7 @@ def main():
         type=str_arg_to_bool,
         help="validate queries results (by comparison with Pandas queries results).",
     )
-    benchmark.add_argument(
+    optional.add_argument(
         "-import_mode",
         dest="import_mode",
         default="copy-from",
