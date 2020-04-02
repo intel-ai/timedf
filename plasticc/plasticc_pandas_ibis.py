@@ -283,7 +283,9 @@ def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes):
         "%s/training_set_metadata.csv" % dataset_path, dtype=meta_dtypes
     )
     target = meta_dtypes.pop("target")
-    test_meta = pd.read_csv("%s/test_set_metadata.csv" % dataset_path, dtype=meta_dtypes)
+    test_meta = pd.read_csv(
+        "%s/test_set_metadata.csv" % dataset_path, dtype=meta_dtypes
+    )
     meta_dtypes["target"] = target
 
     return train, train_meta, test, test_meta
@@ -304,7 +306,9 @@ def split_step(train_final, test_final):
     lbl = LabelEncoder()
     y = lbl.fit_transform(y)
 
-    (X_train, y_train, X_test, y_test), split_time = split(X, y, test_size=0.1, random_state=126)
+    (X_train, y_train, X_test, y_test), split_time = split(
+        X, y, test_size=0.1, random_state=126
+    )
 
     return (X_train, y_train, X_test, y_test, Xt, classes, class_weights), split_time
 
@@ -394,8 +398,10 @@ def xgb_multi_weighted_logloss(y_predicted, y_true, classes, class_weights):
 def ml(train_final, test_final, ml_keys):
     ml_times = {key: 0.0 for key in ml_keys}
 
-    (X_train, y_train, X_test, y_test, Xt, classes, class_weights), ml_times["t_train_test_split"] \
-        = split_step(train_final, test_final)
+    (
+        (X_train, y_train, X_test, y_test, Xt, classes, class_weights),
+        ml_times["t_train_test_split"],
+    ) = split_step(train_final, test_final)
 
     cpu_params = {
         "objective": "multi:softprob",
@@ -558,8 +564,10 @@ def run_benchmark(parameters):
             ml_times["Backend"] = parameters["pandas_mode"]
 
         if parameters["validation"]:
-            #TODO use compare_dataframes
-            exit(1)
+            compare_dataframes(
+                ibis_dfs=[train_final_ibis, test_final_ibis],
+                pandas_dfs=[train_final, test_final],
+            )
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
     except Exception:
