@@ -149,8 +149,8 @@ def etl_ibis(
 
             # measure fsi
             t0 = timer()
-            omnisci_server_worker.create_table_from_csv(
-                table_name, schema_table, filename
+            omnisci_server_worker._conn.create_table_from_csv(
+                table_name, filename, schema_table
             )
             etl_times["t_readcsv"] = timer() - t0
 
