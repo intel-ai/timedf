@@ -61,6 +61,12 @@ def main():
         type=str_arg_to_bool,
         help="validate queries results (by comparison with Pandas queries results).",
     )
+    benchmark.add_argument(
+        "-import_mode",
+        dest="import_mode",
+        default="copy-from",
+        help="measure 'COPY FROM' import, FSI import, import through pandas",
+    )
     optional.add_argument(
         "-optimizer",
         choices=["intel", "stock"],

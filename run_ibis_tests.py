@@ -199,7 +199,7 @@ def main():
     )
     benchmark.add_argument(
         "-import_mode",
-        dest="run_import_queries",
+        dest="import_mode",
         default="copy-from",
         help="measure 'COPY FROM' import, FSI import, import through pandas",
     )
