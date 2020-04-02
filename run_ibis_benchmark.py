@@ -264,6 +264,7 @@ def main():
         }
 
         omnisci_server_worker = None
+        omnisci_server = None
         if not args.no_ibis:
             if args.executable is None:
                 parser.error(
@@ -363,6 +364,8 @@ def main():
     finally:
         if omnisci_server_worker:
             omnisci_server_worker.terminate()
+        if omnisci_server:
+            omnisci_server.terminate()
 
 
 if __name__ == "__main__":
