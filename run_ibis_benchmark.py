@@ -297,6 +297,7 @@ def main():
             result = run_benchmark(parameters)
 
             if not args.no_ibis:
+                omnisci_server_worker.terminate()
                 omnisci_server.terminate()
 
             for backend_res in result["ETL"]:
