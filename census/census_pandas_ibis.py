@@ -113,9 +113,9 @@ def etl_ibis(
 
     # Create table and import data
     if create_new_table:
+        schema_table = ibis.Schema(names=columns_names, types=columns_types)
         if import_mode == "copy-from":
             # Create table and import data for ETL queries
-            schema_table = ibis.Schema(names=columns_names, types=columns_types)
             omnisci_server_worker.create_table(
                 table_name=table_name,
                 schema=schema_table,
@@ -148,9 +148,12 @@ def etl_ibis(
             import_query_cols_str = None
 
             # measure fsi
-            etl_times["t_readcsv"] = omnisci_server_worker.fsi_read_csv(
-                table_name, import_query_cols_str, filename
+            t0 = timer()
+            omnisci_server_worker.create_table_from_csv(
+                table_name, schema_table, filename
             )
+            etl_times["t_readcsv"] = timer() - t0
+
             print_times(times=etl_times)
             print("temporary table was be created; DML not working for the table so exit without etl part")
             exit(1)
