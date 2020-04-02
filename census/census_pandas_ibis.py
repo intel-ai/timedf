@@ -143,11 +143,6 @@ def etl_ibis(
             etl_times["t_readcsv"] = t_import_pandas + t_import_ibis
 
         elif import_mode == "fsi":
-            # fsi setup
-            # TODO
-            import_query_cols_str = None
-
-            # measure fsi
             t0 = timer()
             omnisci_server_worker._conn.create_table_from_csv(
                 table_name, filename, schema_table
