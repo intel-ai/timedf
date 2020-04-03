@@ -179,107 +179,76 @@ def load_data_ibis(
 
     # Create tables and import data
     if create_new_table:
-        training_file = "%s/training_set.csv" % dataset_path,
-        test_file = "%s/test_set.csv" % dataset_path
-        training_meta_file = "%s/training_set_metadata.csv" % dataset_path
-        test_meta_table = "%s/test_set_metadata.csv" % dataset_path
+        # create table #1
+        training_file = "%s/training_set.csv" % dataset_path
+        t_import_pandas_1, t_import_ibis_1 = omnisci_server_worker.import_data_by_ibis(
+            table_name="training",
+            data_files_names=training_file,
+            files_limit=1,
+            columns_names=list(dtypes.keys()),
+            columns_types=list(dtypes.values()),
+            header=0,
+            nrows=None,
+            compression_type=None,
+            validation=validation,
+        )
 
-        schema_table = ibis.Schema(names=dtypes.keys(), types=dtypes.values())
-        meta_schema = ibis.Schema(names=meta_dtypes.keys(), types=meta_dtypes.values())
+        # create table #2
+        test_file = "%s/test_set.csv" % dataset_path
+        t_import_pandas_2, t_import_ibis_2 = omnisci_server_worker.import_data_by_ibis(
+            table_name="test",
+            data_files_names=test_file,
+            files_limit=1,
+            columns_names=list(dtypes.keys()),
+            columns_types=list(dtypes.values()),
+            header=0,
+            nrows=None,
+            compression_type=None,
+            skiprows=skip_rows,
+            validation=validation,
+        )
+
+        # create table #3
+        training_meta_file = "%s/training_set_metadata.csv" % dataset_path
+        t_import_pandas_3, t_import_ibis_3 = omnisci_server_worker.import_data_by_ibis(
+            table_name="training_meta",
+            data_files_names=training_meta_file,
+            files_limit=1,
+            columns_names=list(meta_dtypes.keys()),
+            columns_types=list(meta_dtypes.values()),
+            header=0,
+            nrows=None,
+            compression_type=None,
+            validation=validation,
+        )
 
         target = meta_dtypes.pop("target")
-        meta_schema_without_target = ibis.Schema(names=meta_dtypes.keys(), types=meta_dtypes.values())
+
+        # create table #4
+        test_meta_file = "%s/test_set_metadata.csv" % dataset_path
+        t_import_pandas_4, t_import_ibis_4 = omnisci_server_worker.import_data_by_ibis(
+            table_name="test_meta",
+            data_files_names=test_meta_file,
+            files_limit=1,
+            columns_names=list(meta_dtypes.keys()),
+            columns_types=list(meta_dtypes.values()),
+            header=0,
+            nrows=None,
+            compression_type=None,
+            validation=validation,
+        )
         meta_dtypes["target"] = target
 
-        if import_mode == "copy-from":
-            # create tables
-            omnisci_server_worker.create_table(
-                table_name="training", schema=schema, database=database_name
-            )
-            omnisci_server_worker.create_table(
-                table_name="test", schema=schema, database=database_name
-            )
-            omnisci_server_worker.create_table(
-                table_name="training_meta", schema=meta_schema, database=database_name
-            )
-            omnisci_server_worker.create_table(
-                table_name="test_meta", schema=meta_schema_without_target, database=database_name
-            )
- 
-            # get tables
-            db = omnisci_server_worker.database(database_name)
-            training_table = db.table("training")
-            test_table = db.table("test")
-            training_meta_table = db.table("training_meta")
-            test_meta_table = db.table("test_meta")
-
-            # measuring time of reading
-            t0 = timer()
-            training_table.read_csv(training_file, header=True, quotechar="", delimiter=",")
-            test_table.read_csv(test_file, header=True, quotechar="", delimiter=',')
-            training_meta_table.read_csv(training_meta_file, header=True, quotechar="", delimiter=',')
-            test_meta_table.read_csv(test_meta_file, header=True, quotechar="", delimiter=',')
-            etl_times["t_readcsv"] = timer() - t0
-
-        elif import_mode == "pandas":
-            general_options = {
-                "files_limit": 1,
-                "columns_names": list(dtypes.keys()),
-                "columns_types": list(dtypes.values()),
-                "header": 0,
-                "nrows": None,
-                "compression_type": None,
-                "validation": validation,
-            }
-
-            # create table #1
-            t_import_pandas_1, t_import_ibis_1 = omnisci_server_worker.import_data_by_ibis(
-                table_name="training",
-                data_files_names="%s/training_set.csv" % dataset_path,
-                **general_options,
-            )
-
-            # create table #2
-            t_import_pandas_2, t_import_ibis_2 = omnisci_server_worker.import_data_by_ibis(
-                table_name="test",
-                data_files_names="%s/test_set.csv" % dataset_path,
-                skiprows=skip_rows,
-                **general_options,
-            )
-
-            # create table #3
-            t_import_pandas_3, t_import_ibis_3 = omnisci_server_worker.import_data_by_ibis(
-                table_name="training_meta",
-                data_files_names="%s/training_set_metadata.csv" % dataset_path,
-                **general_options,
-            )
-
-            target = meta_dtypes.pop("target")
-            general_options["columns_names"] = list(meta_dtypes.keys())
-            general_options["columns_types"] = list(meta_dtypes.values())
-
-            # create table #4
-            t_import_pandas_4, t_import_ibis_4 = omnisci_server_worker.import_data_by_ibis(
-                table_name="test_meta",
-                data_files_names="%s/test_set_metadata.csv" % dataset_path,
-                **general_options,
-            )
-            meta_dtypes["target"] = target
-
-            t_import_pandas = (
-                t_import_pandas_1
-                + t_import_pandas_2
-                + t_import_pandas_3
-                + t_import_pandas_4
-            )
-            t_import_ibis = (
-                t_import_ibis_1 + t_import_ibis_2 + t_import_ibis_3 + t_import_ibis_4
-            )
-            print(f"import times: pandas - {t_import_pandas}s, ibis - {t_import_ibis}s")
-
-        elif import_mode == "fsi":
-            # TODO - add fsi read
-            exit(1)
+        t_import_pandas = (
+            t_import_pandas_1
+            + t_import_pandas_2
+            + t_import_pandas_3
+            + t_import_pandas_4
+        )
+        t_import_ibis = (
+            t_import_ibis_1 + t_import_ibis_2 + t_import_ibis_3 + t_import_ibis_4
+        )
+        print(f"import times: pandas - {t_import_pandas}s, ibis - {t_import_ibis}s")
 
     # Second connection - this is ibis's ipc connection for DML
     omnisci_server_worker.connect_to_server(database_name, ipc=ipc_connection)
