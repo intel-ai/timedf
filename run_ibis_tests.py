@@ -201,7 +201,7 @@ def main():
         "-import_mode",
         dest="import_mode",
         default="copy-from",
-        help="measure 'COPY FROM' import, FSI import, import through pandas",
+        help="you can choose: {copy-from, pandas, fsi}",
     )
     benchmark.add_argument(
         "-optimizer",
