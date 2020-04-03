@@ -137,7 +137,7 @@ def etl_ibis(
                 columns_types=columns_types,
                 header=0,
                 nrows=None,
-                compression_type="gzip",
+                compression_type="gzip" if filename.endswith("gz") else None,
                 validation=validation,
             )
             etl_times["t_readcsv"] = t_import_pandas + t_import_ibis
