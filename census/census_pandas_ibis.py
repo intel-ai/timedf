@@ -143,22 +143,25 @@ def etl_ibis(
             etl_times["t_readcsv"] = t_import_pandas + t_import_ibis
 
         elif import_mode == "fsi":
-            import gzip
-            unzip_name = '/tmp/test-fsi.csv'
             try:
-                with gzip.open(filename) as gz_input:
-                    with open(unzip_name, 'w') as output:
-                        output.write(gz_input)
+                if filename.endswith("gz"):
+                    import gzip
+                    unzip_name = '/tmp/test-fsi.csv'
+
+                    with gzip.open(filename) as gz_input:
+                        with open(unzip_name, 'w') as output:
+                            output.write(gz_input)
 
                 t0 = timer()
                 omnisci_server_worker._conn.create_table_from_csv(
-                    table_name, filename, schema_table
+                    table_name, unzip_name, schema_table
                 )
                 etl_times["t_readcsv"] = timer() - t0
 
             finally:
-                import os
-                os.remove(unzip_name)
+                if filename.endswith("gz"):
+                    import os
+                    os.remove(unzip_name)
 
     # Second connection - this is ibis's ipc connection for DML
     omnisci_server_worker.connect_to_server(database_name, ipc=ipc_connection)
