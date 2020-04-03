@@ -121,7 +121,7 @@ def compare_dataframes(ibis_dfs, pandas_dfs, sort_cols=["id"], drop_cols=["id"])
     # preparing step
     for idx in range(len(ibis_dfs)):
         # prepare ibis part
-        if len(sort_cols) is not 0:
+        if len(sort_cols):
             ibis_dfs[idx].sort_values(by=sort_cols, axis=0, inplace=True)
         ibis_dfs[idx].reset_index(drop=True, inplace=True)
         if len(drop_cols) is not 0:
