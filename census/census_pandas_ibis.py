@@ -471,14 +471,12 @@ def run_benchmark(parameters):
             print_results(results=ml_scores, backend=parameters["pandas_mode"])
             ml_scores["Backend"] = parameters["pandas_mode"]
 
-        if parameters["pandas_mode"] and parameters["validation"]:
+        if parameters["validation"]:
             # this should work only for pandas mode
-            # TODO fix validation
-            # compare_dataframes(
-            #     ibis_dfs=(X_ibis, y_ibis),
-            #     pandas_dfs=(X, y),
-            # )
-            print("WARNING: validation for CENSUS not working now")
+            compare_dataframes(
+                ibis_dfs=(X_ibis, y_ibis),
+                pandas_dfs=(X, y),
+            )
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
     except Exception:
