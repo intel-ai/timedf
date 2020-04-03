@@ -211,7 +211,7 @@ def etl_ibis(
     df = table.execute()
 
     if validation:
-        df.index = df['id']
+        df.index = df['id'].values
 
     # here we use pandas to split table
     y = df["EDUC"]
