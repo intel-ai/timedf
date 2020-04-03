@@ -182,7 +182,7 @@ def etl_ibis(
         "SEX_HEAD",
     ]
 
-    if import_mode == "pandas" and validation:
+    if validation:
         keep_cols.append("id")
 
     table = table[keep_cols]
@@ -209,6 +209,9 @@ def etl_ibis(
     table = table.mutate(cols)
 
     df = table.execute()
+
+    if validation:
+        df.index = df['id']
 
     # here we use pandas to split table
     y = df["EDUC"]
@@ -402,6 +405,9 @@ def run_benchmark(parameters):
         ml_times_ibis = None
         etl_times = None
         ml_times = None
+
+        # FIXME: remove that line, when validation will work at all cases 
+        parameters["validation"] = parameters["validation"] and parameters["import_mode"] == "pandas"
         
         if not parameters["no_ibis"]:
             df_ibis, X_ibis, y_ibis, etl_times_ibis = etl_ibis(
