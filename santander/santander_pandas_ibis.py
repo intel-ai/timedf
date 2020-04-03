@@ -374,19 +374,14 @@ def run_benchmark(parameters):
         if parameters["validation"] and not parameters["no_ibis"]:
             print("Validation of ETL query results with ...")
             cols_to_sort = ['var_0', 'var_1', 'var_2', 'var_3', 'var_4']
-            ml_data_ibis = ml_data_ibis.sort_values(by=cols_to_sort)
+
+            ml_data_ibis = ml_data_ibis.rename(columns={"target0": "target"})
             ml_data = ml_data.sort_values(by=cols_to_sort)
 
-            print("Validating queries results (full table without target column) ...")
-            compare_result1 = compare_dataframes(ibis_dfs=[ml_data_ibis[var_cols + count_cols + gt1_cols]],
-                                                 pandas_dfs=[ml_data[var_cols + count_cols + gt1_cols]],
-                                                 sort_cols=[],
-                                                 drop_cols=[])
-            print("Validating queries results (target column) ...")
-            compare_result2 = compare_dataframes(ibis_dfs=[ml_data_ibis['target0']],
-                                                 pandas_dfs=[ml_data['target']],
-                                                 sort_cols=[],
-                                                 drop_cols=[])
+            compare_result = compare_dataframes(ibis_dfs=[ml_data_ibis],
+                                                pandas_dfs=[ml_data],
+                                                sort_cols=cols_to_sort,
+                                                drop_cols=[])
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
     except Exception:
