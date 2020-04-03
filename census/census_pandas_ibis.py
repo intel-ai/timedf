@@ -125,7 +125,7 @@ def etl_ibis(
 
             t0 = timer()
             table_import.read_csv(filename, header=True, quotechar="", delimiter=",")
-            etl_times["t_readcsv"] = timer() - t0
+            etl_times["t_readcsv"] = round((timer() - t0) * 1000)
 
         elif import_mode == "pandas":
             # Datafiles import
@@ -140,7 +140,7 @@ def etl_ibis(
                 compression_type="gzip" if filename.endswith("gz") else None,
                 validation=validation,
             )
-            etl_times["t_readcsv"] = t_import_pandas + t_import_ibis
+            etl_times["t_readcsv"] = round((t_import_pandas + t_import_ibis) * 1000)
 
         elif import_mode == "fsi":
             try:
@@ -157,7 +157,7 @@ def etl_ibis(
                 omnisci_server_worker._conn.create_table_from_csv(
                     table_name, unzip_name or filename, schema_table
                 )
-                etl_times["t_readcsv"] = timer() - t0
+                etl_times["t_readcsv"] = round((timer() - t0) * 1000)
 
             finally:
                 if filename.endswith("gz"):
