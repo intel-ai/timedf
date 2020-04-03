@@ -149,10 +149,6 @@ def etl_ibis(
             )
             etl_times["t_readcsv"] = timer() - t0
 
-            print_times(times=etl_times)
-            print("temporary table was be created; DML not working for the table so exit without etl part")
-            exit(1)
-
     # Second connection - this is ibis's ipc connection for DML
     omnisci_server_worker.connect_to_server(database_name, ipc=ipc_connection)
     table = omnisci_server_worker.database(database_name).table(table_name)
