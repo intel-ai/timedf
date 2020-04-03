@@ -376,7 +376,7 @@ def run_benchmark(parameters):
             cols_to_sort = ['var_0', 'var_1', 'var_2', 'var_3', 'var_4']
 
             ml_data_ibis = ml_data_ibis.rename(columns={"target0": "target"})
-            ml_data = ml_data.sort_values(by=cols_to_sort)
+            ml_data.sort_values(by=cols_to_sort, inplace=True)
 
             compare_result = compare_dataframes(ibis_dfs=[ml_data_ibis],
                                                 pandas_dfs=[ml_data],
