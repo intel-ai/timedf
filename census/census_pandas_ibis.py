@@ -137,17 +137,32 @@ def etl_ibis(
                 columns_types=columns_types,
                 header=0,
                 nrows=None,
-                compression_type="gzip",
+                compression_type="gzip" if filename.endswith("gz") else None,
                 validation=validation,
             )
             etl_times["t_readcsv"] = t_import_pandas + t_import_ibis
 
         elif import_mode == "fsi":
-            t0 = timer()
-            omnisci_server_worker._conn.create_table_from_csv(
-                table_name, filename, schema_table
-            )
-            etl_times["t_readcsv"] = timer() - t0
+            try:
+                unzip_name = None
+                if filename.endswith("gz"):
+                    import gzip
+                    unzip_name = '/tmp/census-fsi.csv'
+
+                    with gzip.open(filename, "rb") as gz_input:
+                        with open(unzip_name, 'wb') as output:
+                            output.write(gz_input.read())
+
+                t0 = timer()
+                omnisci_server_worker._conn.create_table_from_csv(
+                    table_name, unzip_name or filename, schema_table
+                )
+                etl_times["t_readcsv"] = timer() - t0
+
+            finally:
+                if filename.endswith("gz"):
+                    import os
+                    os.remove(unzip_name)
 
     # Second connection - this is ibis's ipc connection for DML
     omnisci_server_worker.connect_to_server(database_name, ipc=ipc_connection)
@@ -182,7 +197,7 @@ def etl_ibis(
         "SEX_HEAD",
     ]
 
-    if validation:
+    if import_mode == "pandas" and validation:
         keep_cols.append("id")
 
     table = table[keep_cols]
@@ -210,7 +225,7 @@ def etl_ibis(
 
     df = table.execute()
 
-    if validation:
+    if import_mode == "pandas" and validation:
         df.index = df['id'].values
 
     # here we use pandas to split table
@@ -406,8 +421,9 @@ def run_benchmark(parameters):
         etl_times = None
         ml_times = None
 
-        # FIXME: remove that line, when validation will work at all cases 
-        parameters["validation"] = parameters["validation"] and parameters["import_mode"] == "pandas"
+        print("WARNING: validation for CENSUS not working now")
+        if not parameters["pandas_mode"] and parameters["validation"]:
+            print("WARNING: validation working only for '-import_mode pandas'")
         
         if not parameters["no_ibis"]:
             df_ibis, X_ibis, y_ibis, etl_times_ibis = etl_ibis(
@@ -471,12 +487,13 @@ def run_benchmark(parameters):
             print_results(results=ml_scores, backend=parameters["pandas_mode"])
             ml_scores["Backend"] = parameters["pandas_mode"]
 
-        if parameters["validation"]:
+        if parameters["pandas_mode"] and parameters["validation"]:
             # this should work only for pandas mode
             compare_dataframes(
                 ibis_dfs=(X_ibis, y_ibis),
                 pandas_dfs=(X, y),
             )
+            
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
     except Exception:
