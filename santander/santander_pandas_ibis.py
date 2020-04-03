@@ -388,14 +388,6 @@ def run_benchmark(parameters):
                                                  sort_cols=[],
                                                  drop_cols=[])
 
-            if not parameters["no_ml"]:
-                for score in ml_scores:
-                    if ml_scores[score] == ml_scores_ibis[score]:
-                        print(f"{score} are equal")
-                    else:
-                        print(
-                            f"{score} aren't equal: Ibis={ml_scores_ibis[score]}, Pandas={ml_scores[score]}")
-
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
     except Exception:
         traceback.print_exc(file=sys.stdout)
