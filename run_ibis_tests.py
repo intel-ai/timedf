@@ -25,6 +25,7 @@ def main():
 
     possible_tasks = ["build", "test", "benchmark"]
     benchmarks = ["ny_taxi", "santander", "census", "plasticc"]
+
     # Task
     required.add_argument(
         "-task",
@@ -72,6 +73,7 @@ def main():
         default="3.7",
         help="File with ci requirements for conda env.",
     )
+
     # Ibis
     required.add_argument(
         "-i",
@@ -80,6 +82,7 @@ def main():
         required=True,
         help="Path to ibis directory.",
     )
+
     # Ibis tests
     optional.add_argument(
         "-expression",
@@ -89,6 +92,7 @@ def main():
         "classes. Example: 'test_other', while 'not test_method' matches those "
         "that don't contain 'test_method' in their names.",
     )
+
     # Omnisci server parameters
     omnisci.add_argument(
         "-executable",
@@ -155,6 +159,7 @@ def main():
         type=str_arg_to_bool,
         help="Table name name to use in omniscidb server.",
     )
+
     # Benchmark parameters
     benchmark.add_argument(
         "-bench_name", dest="bench_name", choices=benchmarks, help="Benchmark name.",
@@ -191,6 +196,12 @@ def main():
         default=False,
         type=str_arg_to_bool,
         help="validate queries results (by comparison with Pandas queries results).",
+    )
+    benchmark.add_argument(
+        "-import_mode",
+        dest="import_mode",
+        default="copy-from",
+        help="you can choose: {copy-from, pandas, fsi}",
     )
     benchmark.add_argument(
         "-optimizer",
@@ -447,6 +458,7 @@ def main():
                 "table",
                 "commit_omnisci",
                 "commit_ibis",
+                "import_mode",
             ]
             args_dict = vars(args)
             args_dict["data_file"] = f"'{args_dict['data_file']}'"

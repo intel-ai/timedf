@@ -63,6 +63,12 @@ def main():
         help="validate queries results (by comparison with Pandas queries results).",
     )
     optional.add_argument(
+        "-import_mode",
+        dest="import_mode",
+        default="copy-from",
+        help="measure 'COPY FROM' import, FSI import, import through pandas",
+    )
+    optional.add_argument(
         "-optimizer",
         choices=["intel", "stock"],
         dest="optimizer",
@@ -280,6 +286,7 @@ def main():
             parameters["table"] = args.table
             parameters["dnd"] = args.dnd
             parameters["dni"] = args.dni
+            parameters["import_mode"] = args.import_mode
 
         etl_results = []
         ml_results = []
