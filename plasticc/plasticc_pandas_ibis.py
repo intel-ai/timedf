@@ -522,6 +522,9 @@ def run_benchmark(parameters):
 
         etl_times_ibis = None
         ml_times_ibis = None
+        etl_times = None
+        ml_times = None
+        
         if not parameters["no_ibis"]:
             train_final_ibis, test_final_ibis, etl_times_ibis = etl_all_ibis(
                 dataset_path=parameters["data_file"],

@@ -121,9 +121,15 @@ def compare_dataframes(ibis_dfs, pandas_dfs):
     # preparing step
     for idx in range(len(ibis_dfs)):
         # prepare ibis part
-        ibis_dfs[idx].sort_values(by="id", axis=0, inplace=True)
+        if (isinstance(ibis_dfs[idx], pd.Series)):
+            # that means, that indexes in Series must be the same
+            # as 'id' column in source dataframe
+            ibis_dfs[idx].sort_index(axis=0, inplace=True)
+        else:
+            ibis_dfs[idx].sort_values(by="id", axis=0, inplace=True)
+            ibis_dfs[idx].drop(["id"], axis=1, inplace=True)
+        
         ibis_dfs[idx].reset_index(drop=True, inplace=True)
-        ibis_dfs[idx].drop(["id"], axis=1, inplace=True)
         # prepare pandas part
         pandas_dfs[idx].reset_index(drop=True, inplace=True)
 
