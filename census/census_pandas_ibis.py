@@ -402,6 +402,10 @@ def run_benchmark(parameters):
         ml_times_ibis = None
         etl_times = None
         ml_times = None
+
+        print("WARNING: validation for CENSUS not working now")
+        if not parameters["pandas_mode"] and parameters["validation"]:
+            print("WARNING: validation working only for '-import_mode pandas'")
         
         if not parameters["no_ibis"]:
             df_ibis, X_ibis, y_ibis, etl_times_ibis = etl_ibis(
@@ -472,7 +476,7 @@ def run_benchmark(parameters):
             #     ibis_dfs=(X_ibis, y_ibis),
             #     pandas_dfs=(X, y),
             # )
-            print("WARNING: validation for CENSUS not working now")
+            pass
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
     except Exception:
