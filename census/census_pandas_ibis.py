@@ -144,6 +144,7 @@ def etl_ibis(
 
         elif import_mode == "fsi":
             try:
+                unzip_name = None
                 if filename.endswith("gz"):
                     import gzip
                     unzip_name = '/tmp/census-fsi.csv'
@@ -154,7 +155,7 @@ def etl_ibis(
 
                 t0 = timer()
                 omnisci_server_worker._conn.create_table_from_csv(
-                    table_name, unzip_name, schema_table
+                    table_name, unzip_name or filename, schema_table
                 )
                 etl_times["t_readcsv"] = timer() - t0
 
