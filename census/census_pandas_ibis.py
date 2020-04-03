@@ -13,7 +13,7 @@ from utils import (
     import_pandas_into_module_namespace,
     load_data_pandas,
     mse,
-    print_times,
+    print_results,
     split,
 )
 
@@ -37,7 +37,7 @@ def etl_pandas(filename, columns_names, columns_types, etl_keys):
         use_gzip=filename.endswith(".gz"),
         pd=run_benchmark.__globals__["pd"],
     )
-    etl_times["t_readcsv"] = timer() - t0
+    etl_times["t_readcsv"] = round((timer() - t0) * 1000)
 
     t_etl_start = timer()
 
@@ -83,7 +83,7 @@ def etl_pandas(filename, columns_names, columns_types, etl_keys):
     y = df["EDUC"]
     X = df.drop(columns=["EDUC", "CPI99"])
 
-    etl_times["t_etl"] = timer() - t_etl_start
+    etl_times["t_etl"] = round((timer() - t_etl_start) * 1000)
     print("DataFrame shape:", X.shape)
 
     return df, X, y, etl_times
@@ -214,7 +214,7 @@ def etl_ibis(
     y = df["EDUC"]
     X = df.drop(["EDUC", "CPI99"], axis=1)
 
-    etl_times["t_etl"] = timer() - t_etl_start
+    etl_times["t_etl"] = round((timer() - t_etl_start) * 1000)
     print("DataFrame shape:", X.shape)
 
     return df, X, y, etl_times
@@ -223,11 +223,9 @@ def etl_ibis(
 def ml(X, y, random_state, n_runs, test_size, optimizer, ml_keys, ml_score_keys):
     if optimizer == "intel":
         print("Intel optimized sklearn is used")
-        from daal4py.sklearn.model_selection import train_test_split
         import daal4py.sklearn.linear_model as lm
-    if optimizer == "stock":
+    elif optimizer == "stock":
         print("Stock sklearn is used")
-        from sklearn.model_selection import train_test_split
         import sklearn.linear_model as lm
     else:
         print(
@@ -251,11 +249,11 @@ def ml(X, y, random_state, n_runs, test_size, optimizer, ml_keys, ml_score_keys)
 
         t0 = timer()
         model = clf.fit(X_train, y_train)
-        ml_times["t_train"] += timer() - t0
+        ml_times["t_train"] += round((timer() - t0) * 1000)
 
         t0 = timer()
         y_pred = model.predict(X_test)
-        ml_times["t_inference"] += timer() - t0
+        ml_times["t_inference"] += round((timer() - t0) * 1000)
 
         mse_values.append(mse(y_test, y_pred))
         cod_values.append(cod(y_test, y_pred))
@@ -421,7 +419,7 @@ def run_benchmark(parameters):
                 import_mode=parameters["import_mode"],
             )
 
-            print_times(times=etl_times_ibis, backend="Ibis")
+            print_results(results=etl_times_ibis, backend="Ibis", unit='ms')
             etl_times_ibis["Backend"] = "Ibis"
 
             if not parameters["no_ml"]:
@@ -435,9 +433,9 @@ def run_benchmark(parameters):
                     ml_keys=ml_keys,
                     ml_score_keys=ml_score_keys,
                 )
-                print_times(times=ml_times_ibis, backend="Ibis")
+                print_results(results=ml_times_ibis, backend="Ibis", unit='ms')
                 ml_times_ibis["Backend"] = "Ibis"
-                print_times(times=ml_scores_ibis, backend="Ibis")
+                print_results(results=ml_scores_ibis, backend="Ibis")
                 ml_scores_ibis["Backend"] = "Ibis"
 
         df, X, y, etl_times = etl_pandas(
@@ -447,7 +445,7 @@ def run_benchmark(parameters):
             etl_keys=etl_keys,
         )
 
-        print_times(times=etl_times, backend=parameters["pandas_mode"])
+        print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
         etl_times["Backend"] = parameters["pandas_mode"]
 
         if not parameters["no_ml"]:
@@ -462,9 +460,9 @@ def run_benchmark(parameters):
                 ml_score_keys=ml_score_keys,
 
             )
-            print_times(times=ml_times, backend=parameters["pandas_mode"])
+            print_results(results=ml_times, backend=parameters["pandas_mode"], unit='ms')
             ml_times["Backend"] = parameters["pandas_mode"]
-            print_times(times=ml_scores, backend=parameters["pandas_mode"])
+            print_results(results=ml_scores, backend=parameters["pandas_mode"])
             ml_scores["Backend"] = parameters["pandas_mode"]
 
         if parameters["pandas_mode"] and parameters["validation"]:

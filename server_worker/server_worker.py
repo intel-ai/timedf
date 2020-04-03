@@ -269,9 +269,9 @@ class OmnisciServerWorker:
         if self._conn.exists_table(
             name=table_name, database=self.omnisci_server.database_name
         ):
-            db = self._conn.database(self.omnisci_server.database_name)
-            df = db.table(table_name)
-            df.drop()
+            self._conn.drop_table(table_name,
+                                database=self.omnisci_server.database_name,
+                                force=True)
             if table_name in self._imported_pd_df:
                 del self._imported_pd_df[table_name]
         else:

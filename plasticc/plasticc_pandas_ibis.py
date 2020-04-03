@@ -16,7 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
     compare_dataframes,
     import_pandas_into_module_namespace,
-    print_times,
+    print_results,
     split,
 )
 
@@ -114,7 +114,7 @@ def etl_cpu_ibis(table, table_meta, etl_times):
 
     df = table_meta.execute()
 
-    etl_times["t_etl"] += timer() - t_etl_start
+    etl_times["t_etl"] += round((timer() - t_etl_start) * 1000)
 
     return df
 
@@ -154,7 +154,7 @@ def etl_cpu_pandas(df, df_meta, etl_times):
 
     df_meta = df_meta.merge(agg_df, on="object_id", how="left")
 
-    etl_times["t_etl"] += timer() - t_etl_start
+    etl_times["t_etl"] += round((timer() - t_etl_start) * 1000)
 
     return df_meta
 
@@ -387,7 +387,7 @@ def etl_all_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys):
         dtypes=dtypes,
         meta_dtypes=meta_dtypes,
     )
-    etl_times["t_readcsv"] += timer() - t0
+    etl_times["t_readcsv"] += round((timer() - t0) * 1000)
 
     # update etl_times
     train_final = etl_cpu_pandas(train, train_meta, etl_times)
@@ -461,19 +461,19 @@ def ml(train_final, test_final, ml_keys):
         early_stopping_rounds=10,
         verbose_eval=1000,
     )
-    ml_times["t_training"] += timer() - t0
+    ml_times["t_training"] += round((timer() - t0) * 1000)
 
     t0 = timer()
     yp = clf.predict(dvalid)
-    ml_times["t_infer"] += timer() - t0
+    ml_times["t_infer"] += round((timer() - t0) * 1000)
 
     cpu_loss = multi_weighted_logloss(y_test, yp, classes, class_weights)
 
     t0 = timer()
     ysub = clf.predict(dtest)
-    ml_times["t_infer"] += timer() - t0
+    ml_times["t_infer"] += round((timer() - t0) * 1000)
 
-    ml_times["t_ml"] = timer() - t_ml_start
+    ml_times["t_ml"] = round((timer() - t_ml_start) * 1000)
 
     print("validation cpu_loss:", cpu_loss)
 
@@ -562,13 +562,13 @@ def run_benchmark(parameters):
                 etl_keys=etl_keys,
             )
 
-            print_times(times=etl_times_ibis, backend="Ibis")
+            print_results(results=etl_times_ibis, backend="Ibis", unit='ms')
             etl_times_ibis["Backend"] = "Ibis"
 
             if not parameters["no_ml"]:
                 print("using ml with dataframes from Ibis")
                 ml_times_ibis = ml(train_final_ibis, test_final_ibis, ml_keys)
-                print_times(times=ml_times_ibis, backend="Ibis")
+                print_results(results=ml_times_ibis, backend="Ibis", unit='ms')
                 ml_times_ibis["Backend"] = "Ibis"
 
         train_final, test_final, etl_times = etl_all_pandas(
@@ -579,13 +579,13 @@ def run_benchmark(parameters):
             etl_keys=etl_keys,
         )
 
-        print_times(times=etl_times, backend=parameters["pandas_mode"])
+        print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
         etl_times["Backend"] = parameters["pandas_mode"]
 
         if not parameters["no_ml"]:
             print("using ml with dataframes from Pandas")
             ml_times = ml(train_final, test_final, ml_keys)
-            print_times(times=ml_times, backend=parameters["pandas_mode"])
+            print_results(results=ml_times, backend=parameters["pandas_mode"], unit='ms')
             ml_times["Backend"] = parameters["pandas_mode"]
 
         if parameters["validation"]:

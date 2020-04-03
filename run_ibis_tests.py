@@ -177,7 +177,7 @@ def main():
     benchmark.add_argument(
         "-iterations",
         dest="iterations",
-        default=5,
+        default=1,
         type=int,
         help="Number of iterations to run every query. Best result is selected.",
     )

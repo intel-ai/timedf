@@ -71,12 +71,13 @@ def import_pandas_into_module_namespace(
                 ray_tmpdir = "/tmp"
             if not ray_memory:
                 ray_memory = 200 * 1024 * 1024 * 1024
-            ray.init(
-                huge_pages=False,
-                plasma_directory=ray_tmpdir,
-                memory=ray_memory,
-                object_store_memory=ray_memory,
-            )
+            if not ray.is_initialized():
+                ray.init(
+                    huge_pages=False,
+                    plasma_directory=ray_tmpdir,
+                    memory=ray_memory,
+                    object_store_memory=ray_memory,
+                )
             os.environ["MODIN_ENGINE"] = "ray"
             print(
                 "Running on Modin on Ray with tmp directory",
@@ -171,7 +172,7 @@ def load_data_pandas(
     pd=None,
 ):
     if not pd:
-        import_pandas_into_module_namespace(namespace=main.__globals__, mode="Pandas")
+        import_pandas_into_module_namespace(namespace=load_data_pandas.__globals__, mode="Pandas")
     types = None
     if columns_types:
         types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
@@ -199,6 +200,11 @@ def print_times(times, backend=None):
     for time_name, time in times.items():
         print("{} = {:.5f} s".format(time_name, time))
 
+def print_results(results, backend=None, unit=''):
+    if backend:
+        print(f"{backend} results:")
+    for result_name, result in results.items():
+        print("    {} = {} {}".format(result_name, result, unit))
 
 def mse(y_test, y_pred):
     return ((y_test - y_pred) ** 2).mean()
@@ -241,3 +247,6 @@ def split(X, y, test_size=0.1, random_state=None):
     split_time = timer() - t0
 
     return (X_train, y_train, X_test, y_test), split_time
+
+def timer_ms():
+    return round(timer() * 1000)
