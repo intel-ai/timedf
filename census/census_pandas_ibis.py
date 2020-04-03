@@ -421,7 +421,6 @@ def run_benchmark(parameters):
         etl_times = None
         ml_times = None
 
-        print("WARNING: validation for CENSUS not working now")
         if not parameters["pandas_mode"] and parameters["validation"]:
             print("WARNING: validation working only for '-import_mode pandas'")
         
