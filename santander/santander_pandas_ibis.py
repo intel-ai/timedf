@@ -79,6 +79,7 @@ def etl_ibis(
         validation,
         run_import_queries,
         etl_keys,
+        import_mode,
 ):
     tmp_table_name = "tmp_table"
 
@@ -167,17 +168,57 @@ def etl_ibis(
     if create_new_table:
         # Create table and import data for ETL queries
         schema_table = ibis.Schema(names=columns_names, types=columns_types)
-        omnisci_server_worker.create_table(
-            table_name=table_name,
-            schema=schema_table,
-            database=database_name,
-        )
+        if import_mode == "copy-from":
+            omnisci_server_worker.create_table(
+                table_name=table_name,
+                schema=schema_table,
+                database=database_name,
+            )
+            table_import = omnisci_server_worker.database(database_name).table(table_name)
 
-        table_import = omnisci_server_worker.database(database_name).table(table_name)
-        t0 = timer()
-        table_import.read_csv(filename, delimiter=",")
-        etl_times["t_readcsv"] = round((timer() - t0) * 1000)
+            t0 = timer()
+            table_import.read_csv(filename, header=True, quotechar="", delimiter=",")
+            etl_times["t_readcsv"] = round((timer() - t0) * 1000)
 
+        elif import_mode == "pandas":
+            # Datafiles import
+            columns_types_converted = ["float64" if (x.startswith("decimal")) else x for x in columns_types]
+            t_import_pandas, t_import_ibis = omnisci_server_worker.import_data_by_ibis(
+                table_name=table_name,
+                data_files_names=filename,
+                files_limit=1,
+                columns_names=columns_names,
+                columns_types=columns_types_converted,
+                header=0,
+                nrows=None,
+                compression_type="gzip" if filename.endswith("gz") else None,
+                validation=validation,
+            )
+            etl_times["t_readcsv"] = round((t_import_pandas + t_import_ibis) * 1000)
+
+        elif import_mode == "fsi":
+            try:
+                unzip_name = None
+                if filename.endswith("gz"):
+                    import gzip
+                    unzip_name = '/tmp/census-fsi.csv'
+
+                    with gzip.open(filename, "rb") as gz_input:
+                        with open(unzip_name, 'wb') as output:
+                            output.write(gz_input.read())
+
+                t0 = timer()
+                omnisci_server_worker._conn.create_table_from_csv(
+                    table_name, unzip_name or filename, schema_table
+                )
+                etl_times["t_readcsv"] = round((timer() - t0) * 1000)
+
+            finally:
+                if filename.endswith("gz"):
+                    import os
+                    os.remove(unzip_name)
+
+    # Second connection - this is ibis's ipc connection for DML
     omnisci_server_worker.connect_to_server(database_name, ipc=ipc_connection)
     table = omnisci_server_worker.database(database_name).table(table_name)
 
@@ -332,6 +373,7 @@ def run_benchmark(parameters):
                 ipc_connection=parameters["ipc_connection"],
                 validation=parameters["validation"],
                 etl_keys=etl_keys,
+                import_mode=parameters["import_mode"],
             )
 
             print_results(results=etl_times_ibis, backend="Ibis", unit='ms')
