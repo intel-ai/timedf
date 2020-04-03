@@ -11,7 +11,7 @@ import ibis
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
     cod,
-    # compare_dataframes,
+    compare_dataframes,
     import_pandas_into_module_namespace,
     load_data_pandas,
     mse,
@@ -371,41 +371,33 @@ def run_benchmark(parameters):
                 ml_scores_ibis["Backend"] = "Ibis"
 
         # Results validation block (comparison of etl_ibis and etl_pandas outputs)
-        #if parameters["validation"] and not parameters["no_ibis"]:
-            # print("Validation of ETL query results with original input table ...")
-            # cols_to_sort = ['var_0', 'var_1', 'var_2', 'var_3', 'var_4']
-            #
-            # x_ibis = pd.concat([x_train_ibis, x_test_ibis])
-            # y_ibis = pd.concat([y_train_ibis, y_test_ibis])
-            # etl_ibis_res = pd.concat([x_ibis, y_ibis], axis=1)
-            # etl_ibis_res = etl_ibis_res.sort_values(by=cols_to_sort)
-            # x = pd.concat([x_train, x_test])
-            # y = pd.concat([y_train, y_test])
-            # etl_pandas_res = pd.concat([x, y], axis=1)
-            # etl_pandas_res = etl_pandas_res.sort_values(by=cols_to_sort)
+        if parameters["validation"] and not parameters["no_ibis"]:
+            print("Validation of ETL query results with ...")
+            cols_to_sort = ['var_0', 'var_1', 'var_2', 'var_3', 'var_4']
+            ml_data_ibis = ml_data_ibis.sort_values(by=cols_to_sort)
+            ml_data = ml_data.sort_values(by=cols_to_sort)
 
-            # print("Validating queries results (var_xx columns) ...")
-            # compare_result1 = compare_dataframes(ibis_df=[etl_ibis_res[var_cols]],
-            #                                      pandas_df=[etl_pandas_res[var_cols]])
-            # print("Validating queries results (var_xx_count columns) ...")
-            # compare_result2 = compare_dataframes(ibis_df=[etl_ibis_res[count_cols]],
-            #                                      pandas_df=[etl_pandas_res[count_cols]])
-            # print("Validating queries results (var_xx_gt1 columns) ...")
-            # compare_result3 = compare_dataframes(ibis_df=[etl_ibis_res[gt1_cols]],
-            #                                      pandas_df=[etl_pandas_res[gt1_cols]])
-            # print("Validating queries results (target column) ...")
-            # compare_result4 = compare_dataframes(ibis_df=[etl_ibis_res['target0']],
-            #                                      pandas_df=[etl_pandas_res['target']])
+            print("Validating queries results (full table without target column) ...")
+            compare_result1 = compare_dataframes(ibis_dfs=[ml_data_ibis[var_cols + count_cols + gt1_cols]],
+                                                 pandas_dfs=[ml_data[var_cols + count_cols + gt1_cols]],
+                                                 sort_cols=[],
+                                                 drop_cols=[])
+            print("Validating queries results (target column) ...")
+            compare_result2 = compare_dataframes(ibis_dfs=[ml_data_ibis['target0']],
+                                                 pandas_dfs=[ml_data['target']],
+                                                 sort_cols=[],
+                                                 drop_cols=[])
 
-            # for score in ml_scores:
-            #     if ml_scores[score] == ml_scores_ibis[score]:
-            #         print(f"{score} are equal")
-            #     else:
-            #         print(
-            #             f"{score} aren't equal: Ibis={ml_scores_ibis[score]}, Pandas={ml_scores[score]}")
+            if not parameters["no_ml"]:
+                for score in ml_scores:
+                    if ml_scores[score] == ml_scores_ibis[score]:
+                        print(f"{score} are equal")
+                    else:
+                        print(
+                            f"{score} aren't equal: Ibis={ml_scores_ibis[score]}, Pandas={ml_scores[score]}")
 
+        return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
     except Exception:
         traceback.print_exc(file=sys.stdout)
         sys.exit(1)
 
-    return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
