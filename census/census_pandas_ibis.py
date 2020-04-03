@@ -146,7 +146,7 @@ def etl_ibis(
             try:
                 if filename.endswith("gz"):
                     import gzip
-                    unzip_name = '/tmp/test-fsi.csv'
+                    unzip_name = '/tmp/census-fsi.csv'
 
                     with gzip.open(filename, "rb") as gz_input:
                         with open(unzip_name, 'wb') as output:
