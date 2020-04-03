@@ -148,9 +148,9 @@ def etl_ibis(
                     import gzip
                     unzip_name = '/tmp/test-fsi.csv'
 
-                    with gzip.open(filename) as gz_input:
-                        with open(unzip_name, 'w') as output:
-                            output.write(gz_input)
+                    with gzip.open(filename, "rb") as gz_input:
+                        with open(unzip_name, 'wb') as output:
+                            output.write(gz_input.read())
 
                 t0 = timer()
                 omnisci_server_worker._conn.create_table_from_csv(
