@@ -216,6 +216,35 @@ def main():
         type=str_arg_to_bool,
         help="Table name name to use in omniscidb server.",
     )
+    optional.add_argument(
+        "-debug_timer",
+        dest="debug_timer",
+        default=False,
+        type=str_arg_to_bool,
+        help="Enable fine-grained query execution timers for debug.",
+    )
+    optional.add_argument(
+        "-columnar_output",
+        dest="columnar_output",
+        default=True,
+        type=str_arg_to_bool,
+        help="Allows OmniSci Core to directly materialize intermediate projections \
+            and the final ResultSet in Columnar format where appropriate.",
+    )
+    optional.add_argument(
+        "-lazy_fetch",
+        dest="lazy_fetch",
+        default=None,
+        type=str_arg_to_bool,
+        help="[lazy_fetch help message]",
+    )
+    optional.add_argument(
+        "-multifrag_rs",
+        dest="multifrag_rs",
+        default=None,
+        type=str_arg_to_bool,
+        help="[multifrag_rs help message]",
+    )
     # Additional information
     optional.add_argument(
         "-commit_omnisci",
@@ -280,6 +309,10 @@ def main():
                 database_name=args.database_name,
                 user=args.user,
                 password=args.password,
+                debug_timer=args.debug_timer,
+                columnar_output=args.columnar_output,
+                lazy_fetch=args.lazy_fetch,
+                multifrag_rs=args.multifrag_rs,
             )
 
             parameters["database_name"] = args.database_name

@@ -492,6 +492,10 @@ def main():
                 "commit_omnisci",
                 "commit_ibis",
                 "import_mode",
+                "debug_timer",
+                "columnar_output",
+                "lazy_fetch",
+                "multifrag_rs",
             ]
             args_dict = vars(args)
             args_dict["data_file"] = f"'{args_dict['data_file']}'"
