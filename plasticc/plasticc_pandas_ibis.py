@@ -280,6 +280,9 @@ def load_data_ibis(
                 **general_options,
             )
 
+            general_options["columns_names"] = list(meta_dtypes.keys())
+            general_options["columns_types"] = list(meta_dtypes.values())
+
             # create table #3
             (
                 t_import_pandas_3,
