@@ -278,7 +278,7 @@ def main():
             "ray_memory": args.ray_memory,
             "gpu_memory": args.gpu_memory,
             "validation": False if args.no_ibis or args.ibis_only else args.validation,
-            "only_ibis": args.ibis_only,
+            "ibis_only": args.ibis_only,
         }
 
         if not args.no_ibis:
