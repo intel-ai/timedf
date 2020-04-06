@@ -27,10 +27,17 @@ def main():
     parser._action_groups.append(optional)
 
     required.add_argument(
-        "-bench_name", dest="bench_name", choices=benchmarks, help="Benchmark name.", required=True,
+        "-bench_name",
+        dest="bench_name",
+        choices=benchmarks,
+        help="Benchmark name.",
+        required=True,
     )
     required.add_argument(
-        "-data_file", dest="data_file", help="A datafile that should be loaded.", required=True,
+        "-data_file",
+        dest="data_file",
+        help="A datafile that should be loaded.",
+        required=True,
     )
     optional.add_argument(
         "-dfiles_num",
@@ -293,7 +300,9 @@ def main():
             parameters["table"] = args.table
             parameters["dnd"] = args.dnd
             parameters["dni"] = args.dni
-            parameters["import_mode"] = "copy-from" if parameters["ibis_only"] else args.import_mode
+            parameters["import_mode"] = (
+                "copy-from" if parameters["ibis_only"] else args.import_mode
+            )
 
         etl_results = []
         ml_results = []
@@ -336,31 +345,40 @@ def main():
                         db=args.db_name,
                     )
 
-                    reporting_init_fields = {"OmnisciCommitHash":args.commit_omnisci,
-                                             "IbisCommitHash": args.commit_ibis
-                                            }
+                    reporting_init_fields = {
+                        "OmnisciCommitHash": args.commit_omnisci,
+                        "IbisCommitHash": args.commit_ibis,
+                    }
 
-                    reporting_fields_benchmark_etl = {x: "VARCHAR(500) NOT NULL" for x in etl_results[0]}
+                    reporting_fields_benchmark_etl = {
+                        x: "VARCHAR(500) NOT NULL" for x in etl_results[0]
+                    }
                     if len(etl_results) is not 1:
-                        reporting_fields_benchmark_etl.update({x: "VARCHAR(500) NOT NULL" for x in etl_results[1]})
+                        reporting_fields_benchmark_etl.update(
+                            {x: "VARCHAR(500) NOT NULL" for x in etl_results[1]}
+                        )
 
                     db_reporter_etl = DbReport(
                         db,
                         args.db_table_etl,
                         reporting_fields_benchmark_etl,
-                        reporting_init_fields
+                        reporting_init_fields,
                     )
 
                     if len(ml_results) is not 0:
-                        reporting_fields_benchmark_ml = {x: "VARCHAR(500) NOT NULL" for x in ml_results[0]}
+                        reporting_fields_benchmark_ml = {
+                            x: "VARCHAR(500) NOT NULL" for x in ml_results[0]
+                        }
                         if len(ml_results) is not 1:
-                            reporting_fields_benchmark_ml.update({x: "VARCHAR(500) NOT NULL" for x in ml_results[1]})
+                            reporting_fields_benchmark_ml.update(
+                                {x: "VARCHAR(500) NOT NULL" for x in ml_results[1]}
+                            )
 
                         db_reporter_ml = DbReport(
                             db,
                             args.db_table_ml,
                             reporting_fields_benchmark_ml,
-                            reporting_init_fields
+                            reporting_init_fields,
                         )
 
                 for result_etl in etl_results:

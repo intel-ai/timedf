@@ -7,9 +7,13 @@ import warnings
 import numpy as np
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils import (compare_dataframes, files_names_from_pattern,
-                   import_pandas_into_module_namespace, load_data_pandas,
-                   print_results)
+from utils import (
+    compare_dataframes,
+    files_names_from_pattern,
+    import_pandas_into_module_namespace,
+    load_data_pandas,
+    print_results,
+)
 
 
 def validation_prereqs(
@@ -579,7 +583,7 @@ def run_benchmark(parameters):
                 validation=parameters["validation"],
             )
 
-            print_results(results=etl_times_ibis, backend="Ibis", unit='ms')
+            print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
             etl_times_ibis["Backend"] = "Ibis"
 
         if not parameters["ibis_only"]:
@@ -594,7 +598,9 @@ def run_benchmark(parameters):
                 columns_types=columns_types,
             )
 
-            print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
+            print_results(
+                results=etl_times, backend=parameters["pandas_mode"], unit="ms"
+            )
             etl_times["Backend"] = parameters["pandas_mode"]
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": []}

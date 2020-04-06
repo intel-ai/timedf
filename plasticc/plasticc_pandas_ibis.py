@@ -192,29 +192,39 @@ def load_data_ibis(
         meta_schema = ibis.Schema(names=meta_dtypes.keys(), types=meta_dtypes.values())
 
         target = meta_dtypes.pop("target")
-        meta_schema_without_target = ibis.Schema(names=meta_dtypes.keys(), types=meta_dtypes.values())
+        meta_schema_without_target = ibis.Schema(
+            names=meta_dtypes.keys(), types=meta_dtypes.values()
+        )
         meta_dtypes["target"] = target
 
-        #TODO we should specify this through external command line option
-        fragment_size=32000000
+        # TODO we should specify this through external command line option
+        fragment_size = 32000000
 
         if import_mode == "copy-from":
             # create tables
             omnisci_server_worker.create_table(
-                table_name="training", schema=schema, database=database_name,
-                fragment_size=fragment_size
+                table_name="training",
+                schema=schema,
+                database=database_name,
+                fragment_size=fragment_size,
             )
             omnisci_server_worker.create_table(
-                table_name="test", schema=schema, database=database_name,
-                fragment_size=fragment_size
+                table_name="test",
+                schema=schema,
+                database=database_name,
+                fragment_size=fragment_size,
             )
             omnisci_server_worker.create_table(
-                table_name="training_meta", schema=meta_schema, database=database_name,
-                fragment_size=fragment_size
+                table_name="training_meta",
+                schema=meta_schema,
+                database=database_name,
+                fragment_size=fragment_size,
             )
             omnisci_server_worker.create_table(
-                table_name="test_meta", schema=meta_schema_without_target, database=database_name,
-                fragment_size=fragment_size
+                table_name="test_meta",
+                schema=meta_schema_without_target,
+                database=database_name,
+                fragment_size=fragment_size,
             )
 
             # get tables
@@ -226,10 +236,16 @@ def load_data_ibis(
 
             # measuring time of reading
             t0 = timer()
-            training_table.read_csv(training_file, header=True, quotechar="", delimiter=",")
-            test_table.read_csv(test_file, header=True, quotechar="", delimiter=',')
-            training_meta_table.read_csv(training_meta_file, header=True, quotechar="", delimiter=',')
-            test_meta_table.read_csv(test_meta_file, header=True, quotechar="", delimiter=',')
+            training_table.read_csv(
+                training_file, header=True, quotechar="", delimiter=","
+            )
+            test_table.read_csv(test_file, header=True, quotechar="", delimiter=",")
+            training_meta_table.read_csv(
+                training_meta_file, header=True, quotechar="", delimiter=","
+            )
+            test_meta_table.read_csv(
+                test_meta_file, header=True, quotechar="", delimiter=","
+            )
             t_readcsv = round((timer() - t0) * 1000)
 
         elif import_mode == "pandas":
@@ -244,14 +260,20 @@ def load_data_ibis(
             }
 
             # create table #1
-            t_import_pandas_1, t_import_ibis_1 = omnisci_server_worker.import_data_by_ibis(
+            (
+                t_import_pandas_1,
+                t_import_ibis_1,
+            ) = omnisci_server_worker.import_data_by_ibis(
                 table_name="training",
                 data_files_names="%s/training_set.csv" % dataset_path,
                 **general_options,
             )
 
             # create table #2
-            t_import_pandas_2, t_import_ibis_2 = omnisci_server_worker.import_data_by_ibis(
+            (
+                t_import_pandas_2,
+                t_import_ibis_2,
+            ) = omnisci_server_worker.import_data_by_ibis(
                 table_name="test",
                 data_files_names="%s/test_set.csv" % dataset_path,
                 skiprows=skip_rows,
@@ -259,7 +281,10 @@ def load_data_ibis(
             )
 
             # create table #3
-            t_import_pandas_3, t_import_ibis_3 = omnisci_server_worker.import_data_by_ibis(
+            (
+                t_import_pandas_3,
+                t_import_ibis_3,
+            ) = omnisci_server_worker.import_data_by_ibis(
                 table_name="training_meta",
                 data_files_names="%s/training_set_metadata.csv" % dataset_path,
                 **general_options,
@@ -270,7 +295,10 @@ def load_data_ibis(
             general_options["columns_types"] = list(meta_dtypes.values())
 
             # create table #4
-            t_import_pandas_4, t_import_ibis_4 = omnisci_server_worker.import_data_by_ibis(
+            (
+                t_import_pandas_4,
+                t_import_ibis_4,
+            ) = omnisci_server_worker.import_data_by_ibis(
                 table_name="test_meta",
                 data_files_names="%s/test_set_metadata.csv" % dataset_path,
                 **general_options,
@@ -294,9 +322,7 @@ def load_data_ibis(
             omnisci_server_worker._conn.create_table_from_csv(
                 "training", training_file, schema
             )
-            omnisci_server_worker._conn.create_table_from_csv(
-                "test", test_file, schema
-            )
+            omnisci_server_worker._conn.create_table_from_csv("test", test_file, schema)
             omnisci_server_worker._conn.create_table_from_csv(
                 "training_meta", training_meta_file, meta_schema
             )
@@ -585,7 +611,7 @@ def run_benchmark(parameters):
         ml_times_ibis = None
         etl_times = None
         ml_times = None
-        
+
         if not parameters["no_ibis"]:
             train_final_ibis, test_final_ibis, etl_times_ibis = etl_all_ibis(
                 dataset_path=parameters["data_file"],
@@ -602,13 +628,13 @@ def run_benchmark(parameters):
                 import_mode=parameters["import_mode"],
             )
 
-            print_results(results=etl_times_ibis, backend="Ibis", unit='ms')
+            print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
             etl_times_ibis["Backend"] = "Ibis"
 
             if not parameters["no_ml"]:
                 print("using ml with dataframes from Ibis")
                 ml_times_ibis = ml(train_final_ibis, test_final_ibis, ml_keys)
-                print_results(results=ml_times_ibis, backend="Ibis", unit='ms')
+                print_results(results=ml_times_ibis, backend="Ibis", unit="ms")
                 ml_times_ibis["Backend"] = "Ibis"
 
         if not parameters["ibis_only"]:
@@ -620,13 +646,17 @@ def run_benchmark(parameters):
                 etl_keys=etl_keys,
             )
 
-            print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
+            print_results(
+                results=etl_times, backend=parameters["pandas_mode"], unit="ms"
+            )
             etl_times["Backend"] = parameters["pandas_mode"]
 
             if not parameters["no_ml"]:
                 print("using ml with dataframes from Pandas")
                 ml_times = ml(train_final, test_final, ml_keys)
-                print_results(results=ml_times, backend=parameters["pandas_mode"], unit='ms')
+                print_results(
+                    results=ml_times, backend=parameters["pandas_mode"], unit="ms"
+                )
                 ml_times["Backend"] = parameters["pandas_mode"]
 
         if parameters["validation"]:

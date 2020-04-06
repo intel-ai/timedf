@@ -67,19 +67,19 @@ def etl_pandas(filename, columns_names, columns_types, etl_keys):
 
 
 def etl_ibis(
-        filename,
-        columns_names,
-        columns_types,
-        database_name,
-        table_name,
-        omnisci_server_worker,
-        delete_old_database,
-        create_new_table,
-        ipc_connection,
-        validation,
-        run_import_queries,
-        etl_keys,
-        import_mode,
+    filename,
+    columns_names,
+    columns_types,
+    database_name,
+    table_name,
+    omnisci_server_worker,
+    delete_old_database,
+    create_new_table,
+    ipc_connection,
+    validation,
+    run_import_queries,
+    etl_keys,
+    import_mode,
 ):
     tmp_table_name = "tmp_table"
 
@@ -112,9 +112,9 @@ def etl_ibis(
         """
 
         import_query_cols_list = (
-                ["ID_code TEXT ENCODING NONE, \n", "target SMALLINT, \n"]
-                + ["var_%s DOUBLE, \n" % i for i in range(199)]
-                + ["var_199 DOUBLE"]
+            ["ID_code TEXT ENCODING NONE, \n", "target SMALLINT, \n"]
+            + ["var_%s DOUBLE, \n" % i for i in range(199)]
+            + ["var_199 DOUBLE"]
         )
         import_query_cols_str = "".join(import_query_cols_list)
 
@@ -141,7 +141,9 @@ def etl_ibis(
             database=database_name,
         )
 
-        table_import_query = omnisci_server_worker.database(database_name).table(tmp_table_name)
+        table_import_query = omnisci_server_worker.database(database_name).table(
+            tmp_table_name
+        )
         t0 = timer()
         table_import_query.read_csv(filename, delimiter=",")
         etl_times_import["t_readcsv_by_ibis"] = round((timer() - t0) * 1000)
@@ -170,11 +172,11 @@ def etl_ibis(
         schema_table = ibis.Schema(names=columns_names, types=columns_types)
         if import_mode == "copy-from":
             omnisci_server_worker.create_table(
-                table_name=table_name,
-                schema=schema_table,
-                database=database_name,
+                table_name=table_name, schema=schema_table, database=database_name,
             )
-            table_import = omnisci_server_worker.database(database_name).table(table_name)
+            table_import = omnisci_server_worker.database(database_name).table(
+                table_name
+            )
 
             t0 = timer()
             table_import.read_csv(filename, header=True, quotechar="", delimiter=",")
@@ -182,7 +184,9 @@ def etl_ibis(
 
         elif import_mode == "pandas":
             # Datafiles import
-            columns_types_converted = ["float64" if (x.startswith("decimal")) else x for x in columns_types]
+            columns_types_converted = [
+                "float64" if (x.startswith("decimal")) else x for x in columns_types
+            ]
             t_import_pandas, t_import_ibis = omnisci_server_worker.import_data_by_ibis(
                 table_name=table_name,
                 data_files_names=filename,
@@ -201,10 +205,11 @@ def etl_ibis(
                 unzip_name = None
                 if filename.endswith("gz"):
                     import gzip
-                    unzip_name = '/tmp/santander-fsi.csv'
+
+                    unzip_name = "/tmp/santander-fsi.csv"
 
                     with gzip.open(filename, "rb") as gz_input:
-                        with open(unzip_name, 'wb') as output:
+                        with open(unzip_name, "wb") as output:
                             output.write(gz_input.read())
 
                 t0 = timer()
@@ -216,6 +221,7 @@ def etl_ibis(
             finally:
                 if filename.endswith("gz"):
                     import os
+
                     os.remove(unzip_name)
 
     # Second connection - this is ibis's ipc connection for DML
@@ -227,7 +233,7 @@ def etl_ibis(
     # nested sql requests
     t_etl_start = timer()
     count_cols = []
-    orig_cols = ["ID_code", "target"] + ['var_%s' % i for i in range(200)]
+    orig_cols = ["ID_code", "target"] + ["var_%s" % i for i in range(200)]
     cast_cols = []
     cast_cols.append(table["target"].cast("int64").name("target0"))
     gt1_cols = []
@@ -239,13 +245,13 @@ def etl_ibis(
         count_cols.append(table[col].count().over(w).name(col_count))
         gt1_cols.append(
             ibis.case()
-                .when(
+            .when(
                 table[col].count().over(w).name(col_count) > 1,
                 table[col].cast("float32"),
             )
-                .else_(ibis.null())
-                .end()
-                .name("var_%d_gt1" % i)
+            .else_(ibis.null())
+            .end()
+            .name("var_%d_gt1" % i)
         )
         cast_cols.append(table[col].cast("float32").name(col))
 
@@ -282,7 +288,9 @@ def ml(ml_data, target, ml_keys, ml_score_keys):
     ml_times = {key: 0.0 for key in ml_keys}
     ml_scores = {key: 0.0 for key in ml_score_keys}
 
-    (x_train, y_train, x_test, y_test), ml_times["t_train_test_split"] = split_step(ml_data, target)
+    (x_train, y_train, x_test, y_test), ml_times["t_train_test_split"] = split_step(
+        ml_data, target
+    )
 
     t0 = timer()
     training_dmat_part = xgboost.DMatrix(data=x_train, label=y_train)
@@ -376,7 +384,7 @@ def run_benchmark(parameters):
                 import_mode=parameters["import_mode"],
             )
 
-            print_results(results=etl_times_ibis, backend="Ibis", unit='ms')
+            print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
             etl_times_ibis["Backend"] = "Ibis"
 
         if not parameters["ibis_only"]:
@@ -386,7 +394,9 @@ def run_benchmark(parameters):
                 columns_types=columns_types_pd,
                 etl_keys=etl_keys,
             )
-            print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
+            print_results(
+                results=etl_times, backend=parameters["pandas_mode"], unit="ms"
+            )
             etl_times["Backend"] = parameters["pandas_mode"]
 
         if not parameters["no_ml"]:
@@ -397,7 +407,9 @@ def run_benchmark(parameters):
                     ml_keys=ml_keys,
                     ml_score_keys=ml_score_keys,
                 )
-                print_results(results=ml_times, backend=parameters["pandas_mode"], unit='ms')
+                print_results(
+                    results=ml_times, backend=parameters["pandas_mode"], unit="ms"
+                )
                 ml_times["Backend"] = parameters["pandas_mode"]
                 print_results(results=ml_scores, backend=parameters["pandas_mode"])
                 ml_scores["Backend"] = parameters["pandas_mode"]
@@ -409,7 +421,7 @@ def run_benchmark(parameters):
                     ml_keys=ml_keys,
                     ml_score_keys=ml_score_keys,
                 )
-                print_results(results=ml_times_ibis, backend="Ibis", unit='ms')
+                print_results(results=ml_times_ibis, backend="Ibis", unit="ms")
                 ml_times_ibis["Backend"] = "Ibis"
                 print_results(results=ml_scores_ibis, backend="Ibis")
                 ml_scores_ibis["Backend"] = "Ibis"
@@ -417,19 +429,20 @@ def run_benchmark(parameters):
         # Results validation block (comparison of etl_ibis and etl_pandas outputs)
         if parameters["validation"]:
             print("Validation of ETL query results with ...")
-            cols_to_sort = ['var_0', 'var_1', 'var_2', 'var_3', 'var_4']
+            cols_to_sort = ["var_0", "var_1", "var_2", "var_3", "var_4"]
 
             ml_data_ibis = ml_data_ibis.rename(columns={"target0": "target"})
             # compare_dataframes doesn't sort pandas dataframes
             ml_data.sort_values(by=cols_to_sort, inplace=True)
 
-            compare_dataframes(ibis_dfs=[ml_data_ibis],
-                                pandas_dfs=[ml_data],
-                                sort_cols=cols_to_sort,
-                                drop_cols=[])
+            compare_dataframes(
+                ibis_dfs=[ml_data_ibis],
+                pandas_dfs=[ml_data],
+                sort_cols=cols_to_sort,
+                drop_cols=[],
+            )
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
     except Exception:
         traceback.print_exc(file=sys.stdout)
         sys.exit(1)
-

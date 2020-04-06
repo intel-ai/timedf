@@ -117,11 +117,11 @@ def etl_ibis(
         if import_mode == "copy-from":
             # Create table and import data for ETL queries
             omnisci_server_worker.create_table(
-                table_name=table_name,
-                schema=schema_table,
-                database=database_name,
+                table_name=table_name, schema=schema_table, database=database_name,
             )
-            table_import = omnisci_server_worker.database(database_name).table(table_name)
+            table_import = omnisci_server_worker.database(database_name).table(
+                table_name
+            )
 
             t0 = timer()
             table_import.read_csv(filename, header=True, quotechar="", delimiter=",")
@@ -147,10 +147,11 @@ def etl_ibis(
                 unzip_name = None
                 if filename.endswith("gz"):
                     import gzip
-                    unzip_name = '/tmp/census-fsi.csv'
+
+                    unzip_name = "/tmp/census-fsi.csv"
 
                     with gzip.open(filename, "rb") as gz_input:
-                        with open(unzip_name, 'wb') as output:
+                        with open(unzip_name, "wb") as output:
                             output.write(gz_input.read())
 
                 t0 = timer()
@@ -162,6 +163,7 @@ def etl_ibis(
             finally:
                 if filename.endswith("gz"):
                     import os
+
                     os.remove(unzip_name)
 
     # Second connection - this is ibis's ipc connection for DML
@@ -226,7 +228,7 @@ def etl_ibis(
     df = table.execute()
 
     if import_mode == "pandas" and validation:
-        df.index = df['id'].values
+        df.index = df["id"].values
 
     # here we use pandas to split table
     y = df["EDUC"]
@@ -424,7 +426,7 @@ def run_benchmark(parameters):
 
         if not parameters["import_mode"] == "pandas" and parameters["validation"]:
             print("WARNING: validation working only for '-import_mode pandas'")
-        
+
         if not parameters["no_ibis"]:
             df_ibis, X_ibis, y_ibis, etl_times_ibis = etl_ibis(
                 filename=parameters["data_file"],
@@ -441,7 +443,7 @@ def run_benchmark(parameters):
                 import_mode=parameters["import_mode"],
             )
 
-            print_results(results=etl_times_ibis, backend="Ibis", unit='ms')
+            print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
             etl_times_ibis["Backend"] = "Ibis"
 
             if not parameters["no_ml"]:
@@ -455,7 +457,7 @@ def run_benchmark(parameters):
                     ml_keys=ml_keys,
                     ml_score_keys=ml_score_keys,
                 )
-                print_results(results=ml_times_ibis, backend="Ibis", unit='ms')
+                print_results(results=ml_times_ibis, backend="Ibis", unit="ms")
                 ml_times_ibis["Backend"] = "Ibis"
                 print_results(results=ml_scores_ibis, backend="Ibis")
                 ml_scores_ibis["Backend"] = "Ibis"
@@ -468,7 +470,9 @@ def run_benchmark(parameters):
                 etl_keys=etl_keys,
             )
 
-            print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
+            print_results(
+                results=etl_times, backend=parameters["pandas_mode"], unit="ms"
+            )
             etl_times["Backend"] = parameters["pandas_mode"]
 
             if not parameters["no_ml"]:
@@ -481,9 +485,10 @@ def run_benchmark(parameters):
                     optimizer=parameters["optimizer"],
                     ml_keys=ml_keys,
                     ml_score_keys=ml_score_keys,
-
                 )
-                print_results(results=ml_times, backend=parameters["pandas_mode"], unit='ms')
+                print_results(
+                    results=ml_times, backend=parameters["pandas_mode"], unit="ms"
+                )
                 ml_times["Backend"] = parameters["pandas_mode"]
                 print_results(results=ml_scores, backend=parameters["pandas_mode"])
                 ml_scores["Backend"] = parameters["pandas_mode"]
@@ -491,10 +496,8 @@ def run_benchmark(parameters):
         if parameters["import_mode"] == "pandas" and parameters["validation"]:
             # this should work only for pandas mode
             compare_dataframes(
-                ibis_dfs=(X_ibis, y_ibis),
-                pandas_dfs=(X, y),
+                ibis_dfs=(X_ibis, y_ibis), pandas_dfs=(X, y),
             )
-            
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
     except Exception:
