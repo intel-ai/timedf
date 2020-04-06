@@ -555,12 +555,13 @@ def run_benchmark(parameters):
         print("Bad number of data files specified: ", parameters["dfiles_num"])
         sys.exit(1)
     try:
-        import_pandas_into_module_namespace(
-            namespace=run_benchmark.__globals__,
-            mode=parameters["pandas_mode"],
-            ray_tmpdir=parameters["ray_tmpdir"],
-            ray_memory=parameters["ray_memory"],
-        )
+        if not parameters["ibis_only"]:
+            import_pandas_into_module_namespace(
+                namespace=run_benchmark.__globals__,
+                mode=parameters["pandas_mode"],
+                ray_tmpdir=parameters["ray_tmpdir"],
+                ray_memory=parameters["ray_memory"],
+            )
 
         etl_times_ibis = None
         if not parameters["no_ibis"]:
@@ -581,19 +582,20 @@ def run_benchmark(parameters):
             print_results(results=etl_times_ibis, backend="Ibis", unit='ms')
             etl_times_ibis["Backend"] = "Ibis"
 
-        pandas_files_limit = parameters["dfiles_num"]
-        filename = files_names_from_pattern(parameters["data_file"])[
-            :pandas_files_limit
-        ]
-        etl_times = etl_pandas(
-            filename=filename,
-            files_limit=pandas_files_limit,
-            columns_names=columns_names,
-            columns_types=columns_types,
-        )
+        if not parameters["ibis_only"]:
+            pandas_files_limit = parameters["dfiles_num"]
+            filename = files_names_from_pattern(parameters["data_file"])[
+                :pandas_files_limit
+            ]
+            etl_times = etl_pandas(
+                filename=filename,
+                files_limit=pandas_files_limit,
+                columns_names=columns_names,
+                columns_types=columns_types,
+            )
 
-        print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
-        etl_times["Backend"] = parameters["pandas_mode"]
+            print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
+            etl_times["Backend"] = parameters["pandas_mode"]
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": []}
     except Exception:

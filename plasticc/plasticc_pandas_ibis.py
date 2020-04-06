@@ -573,12 +573,13 @@ def run_benchmark(parameters):
     etl_keys = ["t_readcsv", "t_etl"]
     ml_keys = ["t_train_test_split", "t_dmatrix", "t_training", "t_infer", "t_ml"]
     try:
-        import_pandas_into_module_namespace(
-            namespace=run_benchmark.__globals__,
-            mode=parameters["pandas_mode"],
-            ray_tmpdir=parameters["ray_tmpdir"],
-            ray_memory=parameters["ray_memory"],
-        )
+        if not parameters["ibis_only"]:
+            import_pandas_into_module_namespace(
+                namespace=run_benchmark.__globals__,
+                mode=parameters["pandas_mode"],
+                ray_tmpdir=parameters["ray_tmpdir"],
+                ray_memory=parameters["ray_memory"],
+            )
 
         etl_times_ibis = None
         ml_times_ibis = None
@@ -610,22 +611,23 @@ def run_benchmark(parameters):
                 print_results(results=ml_times_ibis, backend="Ibis", unit='ms')
                 ml_times_ibis["Backend"] = "Ibis"
 
-        train_final, test_final, etl_times = etl_all_pandas(
-            dataset_path=parameters["data_file"],
-            skip_rows=skip_rows,
-            dtypes=dtypes,
-            meta_dtypes=meta_dtypes,
-            etl_keys=etl_keys,
-        )
+        if not parameters["ibis_only"]:
+            train_final, test_final, etl_times = etl_all_pandas(
+                dataset_path=parameters["data_file"],
+                skip_rows=skip_rows,
+                dtypes=dtypes,
+                meta_dtypes=meta_dtypes,
+                etl_keys=etl_keys,
+            )
 
-        print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
-        etl_times["Backend"] = parameters["pandas_mode"]
+            print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
+            etl_times["Backend"] = parameters["pandas_mode"]
 
-        if not parameters["no_ml"]:
-            print("using ml with dataframes from Pandas")
-            ml_times = ml(train_final, test_final, ml_keys)
-            print_results(results=ml_times, backend=parameters["pandas_mode"], unit='ms')
-            ml_times["Backend"] = parameters["pandas_mode"]
+            if not parameters["no_ml"]:
+                print("using ml with dataframes from Pandas")
+                ml_times = ml(train_final, test_final, ml_keys)
+                print_results(results=ml_times, backend=parameters["pandas_mode"], unit='ms')
+                ml_times["Backend"] = parameters["pandas_mode"]
 
         if parameters["validation"]:
             compare_dataframes(

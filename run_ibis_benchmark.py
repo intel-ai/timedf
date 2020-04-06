@@ -82,6 +82,12 @@ def main():
         help="Do not run Ibis benchmark, run only Pandas (or Modin) version",
     )
     optional.add_argument(
+        "-ibis_only",
+        default=False,
+        type=str_arg_to_bool,
+        help="Run only Ibis benchmark",
+    )
+    optional.add_argument(
         "-pandas_mode",
         choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python"],
         default="Pandas",
@@ -264,7 +270,8 @@ def main():
             "ray_tmpdir": args.ray_tmpdir,
             "ray_memory": args.ray_memory,
             "gpu_memory": args.gpu_memory,
-            "validation": False if args.no_ibis else args.validation,
+            "validation": False if args.no_ibis or args.ibis_only else args.validation,
+            "only_ibis": args.ibis_only,
         }
 
         if not args.no_ibis:
@@ -286,7 +293,7 @@ def main():
             parameters["table"] = args.table
             parameters["dnd"] = args.dnd
             parameters["dni"] = args.dni
-            parameters["import_mode"] = args.import_mode
+            parameters["import_mode"] = "copy-from" if parameters["ibis_only"] else args.import_mode
 
         etl_results = []
         ml_results = []

@@ -409,19 +409,20 @@ def run_benchmark(parameters):
     ml_score_keys = ["mse_mean", "cod_mean", "mse_dev", "cod_dev"]
 
     try:
-        import_pandas_into_module_namespace(
-            namespace=run_benchmark.__globals__,
-            mode=parameters["pandas_mode"],
-            ray_tmpdir=parameters["ray_tmpdir"],
-            ray_memory=parameters["ray_memory"],
-        )
+        if not parameters["ibis_only"]:
+            import_pandas_into_module_namespace(
+                namespace=run_benchmark.__globals__,
+                mode=parameters["pandas_mode"],
+                ray_tmpdir=parameters["ray_tmpdir"],
+                ray_memory=parameters["ray_memory"],
+            )
 
         etl_times_ibis = None
         ml_times_ibis = None
         etl_times = None
         ml_times = None
 
-        if not parameters["pandas_mode"] and parameters["validation"]:
+        if not parameters["import_mode"] == "pandas" and parameters["validation"]:
             print("WARNING: validation working only for '-import_mode pandas'")
         
         if not parameters["no_ibis"]:
@@ -459,34 +460,35 @@ def run_benchmark(parameters):
                 print_results(results=ml_scores_ibis, backend="Ibis")
                 ml_scores_ibis["Backend"] = "Ibis"
 
-        df, X, y, etl_times = etl_pandas(
-            parameters["data_file"],
-            columns_names=columns_names,
-            columns_types=columns_types,
-            etl_keys=etl_keys,
-        )
-
-        print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
-        etl_times["Backend"] = parameters["pandas_mode"]
-
-        if not parameters["no_ml"]:
-            ml_scores, ml_times = ml(
-                X=X,
-                y=y,
-                random_state=RANDOM_STATE,
-                n_runs=N_RUNS,
-                test_size=TEST_SIZE,
-                optimizer=parameters["optimizer"],
-                ml_keys=ml_keys,
-                ml_score_keys=ml_score_keys,
-
+        if not parameters["ibis_only"]:
+            df, X, y, etl_times = etl_pandas(
+                parameters["data_file"],
+                columns_names=columns_names,
+                columns_types=columns_types,
+                etl_keys=etl_keys,
             )
-            print_results(results=ml_times, backend=parameters["pandas_mode"], unit='ms')
-            ml_times["Backend"] = parameters["pandas_mode"]
-            print_results(results=ml_scores, backend=parameters["pandas_mode"])
-            ml_scores["Backend"] = parameters["pandas_mode"]
 
-        if parameters["pandas_mode"] and parameters["validation"]:
+            print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
+            etl_times["Backend"] = parameters["pandas_mode"]
+
+            if not parameters["no_ml"]:
+                ml_scores, ml_times = ml(
+                    X=X,
+                    y=y,
+                    random_state=RANDOM_STATE,
+                    n_runs=N_RUNS,
+                    test_size=TEST_SIZE,
+                    optimizer=parameters["optimizer"],
+                    ml_keys=ml_keys,
+                    ml_score_keys=ml_score_keys,
+
+                )
+                print_results(results=ml_times, backend=parameters["pandas_mode"], unit='ms')
+                ml_times["Backend"] = parameters["pandas_mode"]
+                print_results(results=ml_scores, backend=parameters["pandas_mode"])
+                ml_scores["Backend"] = parameters["pandas_mode"]
+
+        if parameters["import_mode"] == "pandas" and parameters["validation"]:
             # this should work only for pandas mode
             compare_dataframes(
                 ibis_dfs=(X_ibis, y_ibis),
