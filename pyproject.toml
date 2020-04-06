@@ -1,7 +1,5 @@
 [tool.black]
-line-length = 99
-
+    line-length = 90
 
 [flake8]
-max_line_length = 99
-ignore = F
+    max_line_length = 99
