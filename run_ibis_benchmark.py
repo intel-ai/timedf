@@ -300,9 +300,10 @@ def main():
             parameters["table"] = args.table
             parameters["dnd"] = args.dnd
             parameters["dni"] = args.dni
-            parameters["import_mode"] = (
-                "copy-from" if parameters["ibis_only"] else args.import_mode
-            )
+            parameters["import_mode"] = "copy-from" if args.import_mode == "pandas" and args.ibis_only else args.import_mode
+
+            if args.import_mode == "pandas" and args.ibis_only:
+                print("WARNING: '-import_mode pandas' is not valid for '-ibis_only True' flag, import mode changed to 'copy-from'")
 
         etl_results = []
         ml_results = []
