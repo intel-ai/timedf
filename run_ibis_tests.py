@@ -76,11 +76,7 @@ def main():
 
     # Ibis
     required.add_argument(
-        "-i",
-        "--ibis_path",
-        dest="ibis_path",
-        required=True,
-        help="Path to ibis directory.",
+        "-i", "--ibis_path", dest="ibis_path", required=True, help="Path to ibis directory.",
     )
 
     # Ibis tests
@@ -95,10 +91,7 @@ def main():
 
     # Omnisci server parameters
     omnisci.add_argument(
-        "-executable",
-        dest="executable",
-        required=True,
-        help="Path to omnisci_server executable.",
+        "-executable", dest="executable", required=True, help="Path to omnisci_server executable.",
     )
     omnisci.add_argument(
         "--omnisci_cwd",
@@ -129,10 +122,7 @@ def main():
         help="Calcite port number to run omnisci_server on.",
     )
     omnisci.add_argument(
-        "-user",
-        dest="user",
-        default="admin",
-        help="User name to use on omniscidb server.",
+        "-user", dest="user", default="admin", help="User name to use on omniscidb server.",
     )
     omnisci.add_argument(
         "-password",
@@ -221,13 +211,13 @@ def main():
         choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python"],
         default="Pandas",
         help="Specifies which version of Pandas to use: "
-             "plain Pandas, Modin runing on Ray or on Dask",
+        "plain Pandas, Modin runing on Ray or on Dask",
     )
     benchmark.add_argument(
         "-ray_tmpdir",
         default="/tmp",
         help="Location where to keep Ray plasma store. "
-             "It should have enough space to keep -ray_memory",
+        "It should have enough space to keep -ray_memory",
     )
     benchmark.add_argument(
         "-ray_memory",
@@ -245,22 +235,15 @@ def main():
         dest="gpu_memory",
         type=int,
         help="specify the memory of your gpu, default 16. "
-             "(This controls the lines to be used. Also work for CPU version. )",
+        "(This controls the lines to be used. Also work for CPU version. )",
         default=16,
     )
     # MySQL database parameters
     mysql.add_argument(
-        "-db_server",
-        dest="db_server",
-        default="localhost",
-        help="Host name of MySQL server.",
+        "-db_server", dest="db_server", default="localhost", help="Host name of MySQL server.",
     )
     mysql.add_argument(
-        "-db_port",
-        dest="db_port",
-        default=3306,
-        type=int,
-        help="Port number of MySQL server.",
+        "-db_port", dest="db_port", default=3306, type=int, help="Port number of MySQL server.",
     )
     mysql.add_argument(
         "-db_user",
@@ -346,9 +329,7 @@ def main():
         conda_env = CondaEnvironment(args.env_name)
 
         print("PREPARING ENVIRONMENT")
-        combinate_requirements(
-            ibis_requirements, args.ci_requirements, requirements_file
-        )
+        combinate_requirements(ibis_requirements, args.ci_requirements, requirements_file)
         conda_env.create(args.env_check, requirements_file=requirements_file)
 
         if tasks["build"]:
@@ -369,9 +350,7 @@ def main():
                 "--database",
                 args.database_name,
             ]
-            report_file_name = (
-                f"report-{args.commit_ibis[:8]}-{args.commit_omnisci[:8]}.html"
-            )
+            report_file_name = f"report-{args.commit_ibis[:8]}-{args.commit_omnisci[:8]}.html"
             if not os.path.isdir(args.report_path):
                 os.makedirs(args.report_path)
             report_file_path = os.path.join(args.report_path, report_file_name)
@@ -418,9 +397,7 @@ def main():
                 )
                 sys.exit(1)
 
-            benchmark_script_path = os.path.join(
-                omniscript_path, "run_ibis_benchmark.py"
-            )
+            benchmark_script_path = os.path.join(omniscript_path, "run_ibis_benchmark.py")
 
             benchmark_cmd = ["python3", benchmark_script_path]
 

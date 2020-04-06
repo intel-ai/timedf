@@ -227,9 +227,7 @@ this is a test3
     sys.exit()
 
 
-parser = argparse.ArgumentParser(
-    description="Run NY Taxi benchmark using omnisql client"
-)
+parser = argparse.ArgumentParser(description="Run NY Taxi benchmark using omnisql client")
 
 parser.add_argument(
     "-fs",
@@ -237,24 +235,17 @@ parser.add_argument(
     type=int,
     help="Fragment size to use for created table. Multiple values are allowed and encouraged.",
 )
-parser.add_argument(
-    "-e", default=omnisciExecutable, help='Path to executable "omnisql"'
-)
+parser.add_argument("-e", default=omnisciExecutable, help='Path to executable "omnisql"')
 parser.add_argument(
     "-ct",
     action="store_true",
     help="Use CREATE TABLE WITH (STORAGE_TYPE='CSV:trips.csv'). KEEP IN MIND that currently it is possible to load JUST ONE CSV file with this statement, so join all data into one big file, so -df value has no effect.",
 )
 parser.add_argument(
-    "-df",
-    default=1,
-    type=int,
-    help="Number of datafiles to input into database for processing",
+    "-df", default=1, type=int, help="Number of datafiles to input into database for processing",
 )
 parser.add_argument(
-    "-dp",
-    default=taxiTripsDirectory,
-    help="Wildcard pattern of datafiles that should be loaded",
+    "-dp", default=taxiTripsDirectory, help="Wildcard pattern of datafiles that should be loaded",
 )
 parser.add_argument(
     "-dnd",
@@ -273,9 +264,7 @@ parser.add_argument(
     help="Number of times to run every benchmark. Best result is selected",
 )
 parser.add_argument(
-    "-sco",
-    action="store_true",
-    help="Show commands (that delete and create table) output",
+    "-sco", action="store_true", help="Show commands (that delete and create table) output",
 )
 parser.add_argument("-sbo", action="store_true", help="Show benchmarks output")
 parser.add_argument("-r", default="report.csv", help="Report file name")
@@ -288,9 +277,7 @@ parser.add_argument(
 )
 
 parser.add_argument("-db-server", default="localhost", help="Host name of MySQL server")
-parser.add_argument(
-    "-db-port", default=3306, type=int, help="Port number of MySQL server"
-)
+parser.add_argument("-db-port", default=3306, type=int, help="Port number of MySQL server")
 parser.add_argument(
     "-db-user",
     default="",
@@ -300,9 +287,7 @@ parser.add_argument(
     "-db-pass", default="omniscidb", help="Password to use to connect to MySQL database"
 )
 parser.add_argument(
-    "-db-name",
-    default="omniscidb",
-    help="MySQL database to use to store benchmark results",
+    "-db-name", default="omniscidb", help="MySQL database to use to store benchmark results",
 )
 
 parser.add_argument(
@@ -443,9 +428,7 @@ for fs in args.fs:
                 bestTotalTime = float("inf")
                 errstr = ""
                 for iii in range(1, args.t + 1):
-                    print(
-                        "Running benchmark number", benchNumber, "Iteration number", iii
-                    )
+                    print("Running benchmark number", benchNumber, "Iteration number", iii)
                     try:
                         process = subprocess.Popen(
                             omnisciCmdLine,
@@ -453,11 +436,7 @@ for fs in args.fs:
                             stderr=subprocess.STDOUT,
                             stdin=subprocess.PIPE,
                         )
-                        output = str(
-                            process.communicate(benchString.encode())[0]
-                            .strip()
-                            .decode()
-                        )
+                        output = str(process.communicate(benchString.encode())[0].strip().decode())
                     except OSError as err:
                         print("Failed to start", omnisciCmdLine, err)
                     if args.sbo:
@@ -471,12 +450,7 @@ for fs in args.fs:
                             execTime = int(matches[0])
                             totalTime = int(matches[1])
                             print(
-                                "Iteration",
-                                iii,
-                                "exec time",
-                                execTime,
-                                "total time",
-                                totalTime,
+                                "Iteration", iii, "exec time", execTime, "total time", totalTime,
                             )
                         else:
                             print("Failed to parse command output:", output)
