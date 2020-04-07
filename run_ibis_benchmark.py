@@ -4,6 +4,7 @@ import os
 import sys
 import traceback
 import time
+import warnings
 
 import mysql.connector
 
@@ -284,16 +285,15 @@ def main():
             parameters["table"] = args.table
             parameters["dnd"] = args.dnd
             parameters["dni"] = args.dni
-            parameters["import_mode"] = (
-                "copy-from"
-                if args.import_mode == "pandas" and args.ibis_only
-                else args.import_mode
-            )
+            parameters["import_mode"] = args.import_mode
 
             if args.import_mode == "pandas" and args.ibis_only:
-                print(
-                    "WARNING: '-import_mode pandas' is not valid for '-ibis_only True' flag, import mode changed to 'copy-from'"
+                parser.error(
+                    "'-import_mode pandas' is not valid for '-ibis_only True' flag, use another import mode"
                 )
+
+        if args.no_ibis and args.ibis_only:
+            warnings.warn("Inconsistent flags passed: `-no_ibis True` and `-only_ibis True`")
 
         etl_results = []
         ml_results = []
