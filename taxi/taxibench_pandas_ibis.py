@@ -7,18 +7,18 @@ import warnings
 import numpy as np
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils import (compare_dataframes, files_names_from_pattern,
-                   import_pandas_into_module_namespace, load_data_pandas,
-                   print_results)
+from utils import (
+    compare_dataframes,
+    files_names_from_pattern,
+    import_pandas_into_module_namespace,
+    load_data_pandas,
+    print_results,
+)
 
 
-def validation_prereqs(
-    omnisci_server_worker, data_files_names, files_limit, columns_names
-):
+def validation_prereqs(omnisci_server_worker, data_files_names, files_limit, columns_names):
     return omnisci_server_worker.import_data_by_pandas(
-        data_files_names=data_files_names,
-        files_limit=files_limit,
-        columns_names=columns_names,
+        data_files_names=data_files_names, files_limit=files_limit, columns_names=columns_names,
     )
 
 
@@ -32,16 +32,11 @@ def run_queries(queries, parameters, etl_times):
 
 
 # Queries definitions
-def q1_ibis(
-    table, df_pandas, queries_validation_results, queries_validation_flags, validation
-):
+def q1_ibis(table, df_pandas, queries_validation_results, queries_validation_flags, validation):
     t_query = 0
     t0 = time.time()
     q1_output_ibis = (
-        table.groupby("cab_type")
-        .count()
-        .sort_by("cab_type")["cab_type", "count"]
-        .execute()
+        table.groupby("cab_type").count().sort_by("cab_type")["cab_type", "count"].execute()
     )
     t_query += time.time() - t0
 
@@ -70,16 +65,12 @@ def q1_ibis(
     return t_query
 
 
-def q2_ibis(
-    table, df_pandas, queries_validation_results, queries_validation_flags, validation
-):
+def q2_ibis(table, df_pandas, queries_validation_results, queries_validation_flags, validation):
     t_query = 0
     t0 = time.time()
     q2_output_ibis = (
         table.groupby("passenger_count")
-        .aggregate(total_amount=table.total_amount.mean())[
-            ["passenger_count", "total_amount"]
-        ]
+        .aggregate(total_amount=table.total_amount.mean())[["passenger_count", "total_amount"]]
         .execute()
     )
     t_query += time.time() - t0
@@ -104,17 +95,12 @@ def q2_ibis(
     return t_query
 
 
-def q3_ibis(
-    table, df_pandas, queries_validation_results, queries_validation_flags, validation
-):
+def q3_ibis(table, df_pandas, queries_validation_results, queries_validation_flags, validation):
     t_query = 0
     t0 = time.time()
     q3_output_ibis = (
         table.groupby(
-            [
-                table.passenger_count,
-                table.pickup_datetime.year().name("pickup_datetime"),
-            ]
+            [table.passenger_count, table.pickup_datetime.year().name("pickup_datetime"),]
         )
         .aggregate(count=table.passenger_count.count())
         .execute()
@@ -140,12 +126,8 @@ def q3_ibis(
         # Ibis q3 output
         q3_output_pd_df = q3_output_pd.to_frame()
         count_df = q3_output_pd_df.loc[:, "passenger_count"].copy()
-        q3_output_pd_df["passenger_count"] = q3_output_pd.index.droplevel(
-            level="pickup_datetime"
-        )
-        q3_output_pd_df["pickup_datetime"] = q3_output_pd.index.droplevel(
-            level="passenger_count"
-        )
+        q3_output_pd_df["passenger_count"] = q3_output_pd.index.droplevel(level="pickup_datetime")
+        q3_output_pd_df["pickup_datetime"] = q3_output_pd.index.droplevel(level="passenger_count")
         q3_output_pd_df = q3_output_pd_df.astype({"pickup_datetime": "int32"})
         q3_output_pd_df.loc[:, "count"] = count_df
         q3_output_pd_df.index = [i for i in range(len(q3_output_pd_df))]
@@ -161,9 +143,7 @@ def q3_ibis(
     return t_query
 
 
-def q4_ibis(
-    table, df_pandas, queries_validation_results, queries_validation_flags, validation
-):
+def q4_ibis(table, df_pandas, queries_validation_results, queries_validation_flags, validation):
     t_query = 0
     t0 = time.time()
     q4_ibis_sized = table.groupby(
@@ -173,9 +153,7 @@ def q4_ibis(
             table.trip_distance.cast("int64").name("trip_distance"),
         ]
     ).size()
-    q4_output_ibis = q4_ibis_sized.sort_by(
-        [("pickup_datetime", True), ("count", False)]
-    ).execute()
+    q4_output_ibis = q4_ibis_sized.sort_by([("pickup_datetime", True), ("count", False)]).execute()
     t_query += time.time() - t0
 
     if validation and not queries_validation_flags["q4"]:
@@ -197,9 +175,7 @@ def q4_ibis(
             .reset_index()
         )
 
-        q4_output_pd = q4_pd_sized.sort_values(
-            by=["pickup_datetime", 0], ascending=[True, False]
-        )
+        q4_output_pd = q4_pd_sized.sort_values(by=["pickup_datetime", 0], ascending=[True, False])
 
         # Casting of Pandas q4 output to Pandas.DataFrame type, which is compartible with
         # Ibis q4 output
@@ -293,9 +269,7 @@ def etl_ibis(
         print("Could not find any data files matching ", filename)
         sys.exit(2)
 
-    omnisci_server_worker.create_database(
-        database_name, delete_if_exists=delete_old_database
-    )
+    omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
 
     if create_new_table:
         # TODO t_import_pandas, t_import_ibis = omnisci_server_worker.import_data_by_ibis
@@ -327,9 +301,7 @@ def etl_ibis(
         "queries_validation_flags": queries_validation_flags,
         "validation": validation,
     }
-    return run_queries(
-        queries=queries, parameters=queries_parameters, etl_times=etl_times
-    )
+    return run_queries(queries=queries, parameters=queries_parameters, etl_times=etl_times)
 
 
 # SELECT cab_type,
@@ -349,9 +321,7 @@ def q1_pandas(df):
 # GROUP BY passenger_count;
 def q2_pandas(df):
     t0 = time.time()
-    df.groupby("passenger_count", as_index=False).count()[
-        ["passenger_count", "total_amount"]
-    ]
+    df.groupby("passenger_count", as_index=False).count()[["passenger_count", "total_amount"]]
     return time.time() - t0
 
 
@@ -427,9 +397,7 @@ def etl_pandas(
     etl_times["t_readcsv"] = time.time() - t0
 
     queries_parameters = {"df": concatenated_df}
-    return run_queries(
-        queries=queries, parameters=queries_parameters, etl_times=etl_times
-    )
+    return run_queries(queries=queries, parameters=queries_parameters, etl_times=etl_times)
 
 
 def run_benchmark(parameters):
@@ -578,13 +546,11 @@ def run_benchmark(parameters):
                 validation=parameters["validation"],
             )
 
-            print_results(results=etl_times_ibis, backend="Ibis", unit='ms')
+            print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
             etl_times_ibis["Backend"] = "Ibis"
 
         pandas_files_limit = parameters["dfiles_num"]
-        filename = files_names_from_pattern(parameters["data_file"])[
-            :pandas_files_limit
-        ]
+        filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
         etl_times = etl_pandas(
             filename=filename,
             files_limit=pandas_files_limit,
@@ -592,7 +558,7 @@ def run_benchmark(parameters):
             columns_types=columns_types,
         )
 
-        print_results(results=etl_times, backend=parameters["pandas_mode"], unit='ms')
+        print_results(results=etl_times, backend=parameters["pandas_mode"], unit="ms")
         etl_times["Backend"] = parameters["pandas_mode"]
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": []}

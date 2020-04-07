@@ -33,8 +33,7 @@ class OmnisciServer:
         multifrag_rs=None,
     ):
         if not os.path.isdir(omnisci_executable) and not os.access(omnisci_executable, os.X_OK):
-            raise ValueError('Invalid omnisci executable given: ' + omnisci_executable)
-
+            raise ValueError("Invalid omnisci executable given: " + omnisci_executable)
         self.omnisci_executable = omnisci_executable
         self.server_port = omnisci_port
         self.user = user
@@ -113,9 +112,7 @@ class OmnisciServer:
         print("Server is launched")
         try:
             pt = threading.Thread(
-                target=self._print_omnisci_output,
-                args=(self.server_process.stdout,),
-                daemon=True,
+                target=self._print_omnisci_output, args=(self.server_process.stdout,), daemon=True,
             )
             pt.start()
 

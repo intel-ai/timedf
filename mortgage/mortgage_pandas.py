@@ -96,9 +96,7 @@ class MortgagePandasBenchmark:
         all_but_dates = {
             col: valtype for (col, valtype) in dtypes.items() if valtype != "datetime64"
         }
-        dates_only = [
-            col for (col, valtype) in dtypes.items() if valtype == "datetime64"
-        ]
+        dates_only = [col for (col, valtype) in dtypes.items() if valtype == "datetime64"]
         t0 = default_timer()
         df = pd.read_csv(fname, dtype=all_but_dates, parse_dates=dates_only, **kw)
         t1 = default_timer()
@@ -177,9 +175,7 @@ class MortgagePandasBenchmark:
         )
 
         print(performance_path)
-        return self._parse_dtyped_csv(
-            performance_path, dtypes, names=cols, delimiter="|"
-        )
+        return self._parse_dtyped_csv(performance_path, dtypes, names=cols, delimiter="|")
 
     def cpu_load_acquisition_csv(self, acquisition_path, **kwargs):
         cols = [
@@ -311,20 +307,11 @@ class MortgagePandasBenchmark:
         n_months = 12
         for y in range(1, n_months + 1):
             tmpdf = joined_df.loc[
-                :,
-                [
-                    "loan_id",
-                    "timestamp_year",
-                    "timestamp_month",
-                    "delinquency_12",
-                    "upb_12",
-                ],
+                :, ["loan_id", "timestamp_year", "timestamp_month", "delinquency_12", "upb_12",],
             ]
 
             t0 = default_timer()
-            tmpdf["josh_months"] = (
-                tmpdf["timestamp_year"] * 12 + tmpdf["timestamp_month"]
-            )
+            tmpdf["josh_months"] = tmpdf["timestamp_year"] * 12 + tmpdf["timestamp_month"]
             tmpdf["josh_mody_n"] = np.floor(
                 (tmpdf["josh_months"].astype("float64") - 24000 - y) / 12
             )
@@ -475,12 +462,8 @@ class MortgagePandasBenchmark:
         }
 
         t0 = default_timer()
-        y = np.ascontiguousarray(pd_df["delinquency_12"], dtype=np.float32).reshape(
-            len(pd_df), 1
-        )
-        x = np.ascontiguousarray(
-            pd_df.drop(["delinquency_12"], axis=1), dtype=np.float32
-        )
+        y = np.ascontiguousarray(pd_df["delinquency_12"], dtype=np.float32).reshape(len(pd_df), 1)
+        x = np.ascontiguousarray(pd_df.drop(["delinquency_12"], axis=1), dtype=np.float32)
         t1 = default_timer()
         self.t_dmatrix = t1 - t0
         # print("Convert x,y from 64 to 32:", t1-t0)
@@ -521,9 +504,7 @@ class MortgagePandasBenchmark:
         self.t_dmatrix = default_timer() - t1
 
         t0 = default_timer()
-        model_xgb = xgb.train(
-            dxgb_cpu_params, dtrain, num_boost_round=dxgb_cpu_params["nround"]
-        )
+        model_xgb = xgb.train(dxgb_cpu_params, dtrain, num_boost_round=dxgb_cpu_params["nround"])
         self.t_train = default_timer() - t0
 
         # calculate mse and cod
@@ -591,35 +572,23 @@ def main():
         help="Size of memory to allocate for Ray plasma store",
     )
     parser.add_argument(
-        "-no_ml",
-        action="store_true",
-        help="Do not run machine learning benchmark, only ETL part",
+        "-no_ml", action="store_true", help="Do not run machine learning benchmark, only ETL part",
     )
 
-    parser.add_argument(
-        "-db-server", default="localhost", help="Host name of MySQL server"
-    )
-    parser.add_argument(
-        "-db-port", default=3306, type=int, help="Port number of MySQL server"
-    )
+    parser.add_argument("-db-server", default="localhost", help="Host name of MySQL server")
+    parser.add_argument("-db-port", default=3306, type=int, help="Port number of MySQL server")
     parser.add_argument(
         "-db-user",
         default="",
         help="Username to use to connect to MySQL database. If user name is specified, script attempts to store results in MySQL database using other -db-* parameters.",
     )
     parser.add_argument(
-        "-db-pass",
-        default="omniscidb",
-        help="Password to use to connect to MySQL database",
+        "-db-pass", default="omniscidb", help="Password to use to connect to MySQL database",
     )
     parser.add_argument(
-        "-db-name",
-        default="omniscidb",
-        help="MySQL database to use to store benchmark results",
+        "-db-name", default="omniscidb", help="MySQL database to use to store benchmark results",
     )
-    parser.add_argument(
-        "-db-table", help="Table to use to store results for this benchmark."
-    )
+    parser.add_argument("-db-table", help="Table to use to store results for this benchmark.")
 
     parser.add_argument(
         "-commit",
@@ -695,9 +664,7 @@ def main():
             ]
             for f in files:
                 pd_dfs.append(
-                    mb.run_cpu_workflow(
-                        year=year, quarter=(quarter % 4 + 1), perf_file=str(f)
-                    )
+                    mb.run_cpu_workflow(year=year, quarter=(quarter % 4 + 1), perf_file=str(f))
                 )
             dataFilesNumber += 1
 
@@ -739,12 +706,7 @@ def main():
     try:
         with open(args.r, "w") as report:
             print(
-                "BENCHMARK",
-                benchName,
-                "EXEC TIME",
-                bestExecTime,
-                "TOTAL TIME",
-                bestTotalTime,
+                "BENCHMARK", benchName, "EXEC TIME", bestExecTime, "TOTAL TIME", bestTotalTime,
             )
             print(
                 "datafiles,fragment_size,query,query_exec_min,query_total_min,query_exec_max,query_total_max,query_exec_avg,query_total_avg,query_error_info",
