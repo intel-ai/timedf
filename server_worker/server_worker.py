@@ -52,14 +52,10 @@ class OmnisciServerWorker:
         print("Reading datafile", file_name)
         types = None
         if columns_types:
-            types = {
-                columns_names[i]: columns_types[i] for i in range(len(columns_names))
-            }
+            types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
         if compression_type == "gzip":
             with gzip.open(file_name) as f:
-                return pd.read_csv(
-                    f, names=columns_names, dtype=types, nrows=nrows, header=header
-                )
+                return pd.read_csv(f, names=columns_names, dtype=types, nrows=nrows, header=header)
 
         return pd.read_csv(
             file_name,
@@ -72,12 +68,7 @@ class OmnisciServerWorker:
         )
 
     def import_data_by_pandas(
-        self,
-        data_files_names,
-        files_limit,
-        columns_names,
-        nrows=None,
-        compression_type="gzip",
+        self, data_files_names, files_limit, columns_names, nrows=None, compression_type="gzip",
     ):
         "Import CSV files using Pandas read_csv to the Pandas.DataFrame"
 
@@ -266,9 +257,7 @@ class OmnisciServerWorker:
         "Drop table by table_name using Ibis framework"
 
         print("Deleting ", table_name, " table")
-        if self._conn.exists_table(
-            name=table_name, database=self.omnisci_server.database_name
-        ):
+        if self._conn.exists_table(name=table_name, database=self.omnisci_server.database_name):
             self._conn.drop_table(
                 table_name, database=self.omnisci_server.database_name, force=True
             )
@@ -309,9 +298,7 @@ class OmnisciServerWorker:
     def get_pd_df(self, table_name):
         "Get already imported Pandas DataFrame"
 
-        if self._conn.exists_table(
-            name=table_name, database=self.omnisci_server.database_name
-        ):
+        if self._conn.exists_table(name=table_name, database=self.omnisci_server.database_name):
             return self._imported_pd_df[table_name]
         else:
             print("Table", table_name, "doesn't exist!")

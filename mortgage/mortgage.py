@@ -284,10 +284,7 @@ CREATE TABLE names (
     create_table_names = create_table_names_temlate.replace(
         "##FRAGMENT_SIZE##", str(fragment_size)
     )
-    import_query = import_query_template % (
-        "names",
-        os.path.join(data_directory, "names.csv"),
-    )
+    import_query = import_query_template % ("names", os.path.join(data_directory, "names.csv"),)
 
     con.execute(create_table_names)
     con.execute(import_query)
@@ -401,9 +398,7 @@ def create_delinq_features():
     # delinq_merge = delinq_30.merge(delinq_90, how='left', on=['loan_id'])
     # UPDATE UFOs SET shape='ovate' where shape='eggish'; 23:59:59.999
     # con.execute(' EXTRACT MONTH FROM 2018-08-01;');
-    con.execute(
-        "UPDATE delinq_merge SET delinquency_90 = NULL WHERE delinquency_90 = NULL"
-    )
+    con.execute("UPDATE delinq_merge SET delinquency_90 = NULL WHERE delinquency_90 = NULL")
     # delinq_merge['delinquency_90'] = delinq_merge['delinquency_90'].fillna(np.dtype('datetime64[ms]').type('1970-01-01').astype('datetime64[ms]'))
     con.execute("DROP TABLE IF EXISTS delinq_mergetemp;")
     con.execute(
@@ -608,9 +603,7 @@ def final_performance_delinquency():
     # merged = pdf[['loan_id', 'monthly_reporting_period']]
     # everdf1 = pdf[['loan_id', 'current_loan_delinquency_status']]
     con.execute("DROP TABLE IF EXISTS mergedtemp;")
-    con.execute(
-        "CREATE TABLE mergedtemp AS (SELECT loan_id, monthly_reporting_period FROM perf);"
-    )
+    con.execute("CREATE TABLE mergedtemp AS (SELECT loan_id, monthly_reporting_period FROM perf);")
     # con.create_table('mergedtemp', merged)
     # merged['timestamp_month'] = merged['monthly_reporting_period'].dt.month
     # merged['timestamp_month'] = merged['timestamp_month'].astype('int8')
@@ -690,9 +683,7 @@ parser.add_argument(
 )
 
 parser.add_argument("-db-server", default="localhost", help="Host name of MySQL server")
-parser.add_argument(
-    "-db-port", default=3306, type=int, help="Port number of MySQL server"
-)
+parser.add_argument("-db-port", default=3306, type=int, help="Port number of MySQL server")
 parser.add_argument(
     "-db-user",
     default="",
@@ -702,13 +693,9 @@ parser.add_argument(
     "-db-pass", default="omniscidb", help="Password to use to connect to MySQL database"
 )
 parser.add_argument(
-    "-db-name",
-    default="omniscidb",
-    help="MySQL database to use to store benchmark results",
+    "-db-name", default="omniscidb", help="MySQL database to use to store benchmark results",
 )
-parser.add_argument(
-    "-db-table", help="Table to use to store results for this benchmark."
-)
+parser.add_argument("-db-table", help="Table to use to store results for this benchmark.")
 
 parser.add_argument(
     "-commit",
@@ -726,11 +713,7 @@ if args.iterations < 1:
     print("Bad number of iterations specified", args.t)
 
 con = connect(
-    user="admin",
-    password="HyperInteractive",
-    host="localhost",
-    dbname="omnisci",
-    port=args.port,
+    user="admin", password="HyperInteractive", host="localhost", dbname="omnisci", port=args.port,
 )
 
 db_reporter = None
@@ -789,10 +772,7 @@ for fs in args.fragment_size:
             ]
             for f in files:
                 dataframe, exec_time = run_pd_workflow(
-                    year=year,
-                    quarter=(quarter % 4 + 1),
-                    perf_file=str(f),
-                    fragment_size=fs,
+                    year=year, quarter=(quarter % 4 + 1), perf_file=str(f), fragment_size=fs,
                 )
                 exec_time_total += exec_time
             dataFilesNumber += 1
@@ -817,12 +797,7 @@ avgTotalTime /= args.iterations
 try:
     with open(args.r, "w") as report:
         print(
-            "BENCHMARK",
-            benchName,
-            "EXEC TIME",
-            bestExecTime,
-            "TOTAL TIME",
-            bestTotalTime,
+            "BENCHMARK", benchName, "EXEC TIME", bestExecTime, "TOTAL TIME", bestTotalTime,
         )
         print(
             "datafiles,fragment_size,query,query_exec_min,query_total_min,query_exec_max,query_total_max,query_exec_avg,query_total_avg,query_error_info",

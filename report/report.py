@@ -29,16 +29,13 @@ class DbReport:
         # System data from lscpu
         data = subprocess.Popen(["lscpu"], stdout=subprocess.PIPE)
         output = str(data.communicate()[0].strip().decode())
-        lscpu_values = {
-            t: match_and_assign(t, p) for (t, p) in self.__lscpu_patterns.items()
-        }
+        lscpu_values = {t: match_and_assign(t, p) for (t, p) in self.__lscpu_patterns.items()}
         self.__predefined_field_values.update(lscpu_values)
         # System data from /proc/meminfo
         with open("/proc/meminfo", "r") as proc_meminfo:
             output = proc_meminfo.read().strip()
             proc_meminfo_values = {
-                t: match_and_assign(t, p)
-                for (t, p) in self.__proc_meminfo_patterns.items()
+                t: match_and_assign(t, p) for (t, p) in self.__proc_meminfo_patterns.items()
             }
             self.__predefined_field_values.update(proc_meminfo_values)
         # Script specific values
@@ -46,9 +43,7 @@ class DbReport:
             self.__predefined_field_values.update(initial_values)
         print("self.__predefined_field_values = ", self.__predefined_field_values)
 
-    def __init__(
-        self, database, table_name, benchmark_specific_fields, initial_values=None
-    ):
+    def __init__(self, database, table_name, benchmark_specific_fields, initial_values=None):
 
         self.__predefined_fields = {
             "id": "BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT",

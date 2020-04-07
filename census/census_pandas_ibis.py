@@ -107,9 +107,7 @@ def etl_ibis(
 
     etl_times = {key: 0.0 for key in etl_keys}
 
-    omnisci_server_worker.create_database(
-        database_name, delete_if_exists=delete_old_database
-    )
+    omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
 
     # Create table and import data
     if create_new_table:
@@ -248,9 +246,7 @@ def ml(X, y, random_state, n_runs, test_size, optimizer, ml_keys, ml_score_keys)
         print("Stock sklearn is used")
         import sklearn.linear_model as lm
     else:
-        print(
-            f"Intel optimized and stock sklearn are supported. {optimizer} can't be recognized"
-        )
+        print(f"Intel optimized and stock sklearn are supported. {optimizer} can't be recognized")
         sys.exit(1)
 
     clf = lm.Ridge()

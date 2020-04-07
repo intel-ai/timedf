@@ -85,9 +85,7 @@ def etl_ibis(
 
     etl_times = {key: 0.0 for key in etl_keys}
 
-    omnisci_server_worker.create_database(
-        database_name, delete_if_exists=delete_old_database
-    )
+    omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
 
     if run_import_queries:
         etl_times_import = {
@@ -118,27 +116,17 @@ def etl_ibis(
         )
         import_query_cols_str = "".join(import_query_cols_list)
 
-        create_table_sql = create_table_sql_template.format(
-            tmp_table_name, import_query_cols_str
-        )
-        import_by_COPY_sql = import_by_COPY_sql_template.format(
-            tmp_table_name, filename, "true"
-        )
+        create_table_sql = create_table_sql_template.format(tmp_table_name, import_query_cols_str)
+        import_by_COPY_sql = import_by_COPY_sql_template.format(tmp_table_name, filename, "true")
         import_by_FSI_sql = import_by_FSI_sql_template.format(
             tmp_table_name, import_query_cols_str, filename
         )
 
         # data file import by ibis
-        columns_types_import_query = ["string", "int64"] + [
-            "float64" for _ in range(200)
-        ]
-        schema_table_import = ibis.Schema(
-            names=columns_names, types=columns_types_import_query
-        )
+        columns_types_import_query = ["string", "int64"] + ["float64" for _ in range(200)]
+        schema_table_import = ibis.Schema(names=columns_names, types=columns_types_import_query)
         omnisci_server_worker.create_table(
-            table_name=tmp_table_name,
-            schema=schema_table_import,
-            database=database_name,
+            table_name=tmp_table_name, schema=schema_table_import, database=database_name,
         )
 
         table_import_query = omnisci_server_worker.database(database_name).table(
@@ -245,10 +233,14 @@ def etl_ibis(
         count_cols.append(table[col].count().over(w).name(col_count))
         gt1_cols.append(
             ibis.case()
+<<<<<<< HEAD
             .when(
                 table[col].count().over(w).name(col_count) > 1,
                 table[col].cast("float32"),
             )
+=======
+            .when(table[col].count().over(w).name(col_count) > 1, table[col].cast("float32"),)
+>>>>>>> go/master
             .else_(ibis.null())
             .end()
             .name("var_%d_gt1" % i)
@@ -387,6 +379,7 @@ def run_benchmark(parameters):
             print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
             etl_times_ibis["Backend"] = "Ibis"
 
+<<<<<<< HEAD
         if not parameters["ibis_only"]:
             ml_data, etl_times = etl_pandas(
                 filename=parameters["data_file"],
@@ -413,6 +406,25 @@ def run_benchmark(parameters):
                 ml_times["Backend"] = parameters["pandas_mode"]
                 print_results(results=ml_scores, backend=parameters["pandas_mode"])
                 ml_scores["Backend"] = parameters["pandas_mode"]
+=======
+        ml_data, etl_times = etl_pandas(
+            filename=parameters["data_file"],
+            columns_names=columns_names,
+            columns_types=columns_types_pd,
+            etl_keys=etl_keys,
+        )
+        print_results(results=etl_times, backend=parameters["pandas_mode"], unit="ms")
+        etl_times["Backend"] = parameters["pandas_mode"]
+
+        if not parameters["no_ml"]:
+            ml_scores, ml_times = ml(
+                ml_data=ml_data, target="target", ml_keys=ml_keys, ml_score_keys=ml_score_keys,
+            )
+            print_results(results=ml_times, backend=parameters["pandas_mode"], unit="ms")
+            ml_times["Backend"] = parameters["pandas_mode"]
+            print_results(results=ml_scores, backend=parameters["pandas_mode"])
+            ml_scores["Backend"] = parameters["pandas_mode"]
+>>>>>>> go/master
 
             if not parameters["no_ibis"]:
                 ml_scores_ibis, ml_times_ibis = ml(
@@ -435,11 +447,16 @@ def run_benchmark(parameters):
             # compare_dataframes doesn't sort pandas dataframes
             ml_data.sort_values(by=cols_to_sort, inplace=True)
 
+<<<<<<< HEAD
             compare_dataframes(
                 ibis_dfs=[ml_data_ibis],
                 pandas_dfs=[ml_data],
                 sort_cols=cols_to_sort,
                 drop_cols=[],
+=======
+            compare_result = compare_dataframes(
+                ibis_dfs=[ml_data_ibis], pandas_dfs=[ml_data], sort_cols=cols_to_sort, drop_cols=[]
+>>>>>>> go/master
             )
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
