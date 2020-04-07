@@ -93,7 +93,9 @@ class DbReport:
             "MemAvailable": re.compile("^MemAvailable: +(.+)$", flags=re.MULTILINE),
             "SwapTotal": re.compile("^SwapTotal: +(.+)$", flags=re.MULTILINE),
             "SwapFree": re.compile("^SwapFree: +(.+)$", flags=re.MULTILINE),
-            "HugePages_Total": re.compile("^HugePages_Total: +(.+)$", flags=re.MULTILINE),
+            "HugePages_Total": re.compile(
+                "^HugePages_Total: +(.+)$", flags=re.MULTILINE
+            ),
             "HugePages_Free": re.compile("^HugePages_Free: +(.+)$", flags=re.MULTILINE),
             "Hugepagesize": re.compile("^Hugepagesize: +(.+)$", flags=re.MULTILINE),
         }

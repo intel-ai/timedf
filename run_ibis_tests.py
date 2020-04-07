@@ -221,13 +221,13 @@ def main():
         choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python"],
         default="Pandas",
         help="Specifies which version of Pandas to use: "
-             "plain Pandas, Modin runing on Ray or on Dask",
+        "plain Pandas, Modin runing on Ray or on Dask",
     )
     benchmark.add_argument(
         "-ray_tmpdir",
         default="/tmp",
         help="Location where to keep Ray plasma store. "
-             "It should have enough space to keep -ray_memory",
+        "It should have enough space to keep -ray_memory",
     )
     benchmark.add_argument(
         "-ray_memory",
@@ -245,7 +245,7 @@ def main():
         dest="gpu_memory",
         type=int,
         help="specify the memory of your gpu, default 16. "
-             "(This controls the lines to be used. Also work for CPU version. )",
+        "(This controls the lines to be used. Also work for CPU version. )",
         default=16,
     )
     # MySQL database parameters

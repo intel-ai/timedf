@@ -31,8 +31,10 @@ class OmnisciServer:
         columnar_output=None,
         lazy_fetch=None,
     ):  # default values of max_session_duration=43200 idle_session_duration=60
-        if not os.path.isdir(omnisci_executable) and not os.access(omnisci_executable, os.X_OK):
-            raise ValueError('Invalid omnisci executable given: ' + omnisci_executable)
+        if not os.path.isdir(omnisci_executable) and not os.access(
+            omnisci_executable, os.X_OK
+        ):
+            raise ValueError("Invalid omnisci executable given: " + omnisci_executable)
         self.omnisci_executable = omnisci_executable
         self.server_port = omnisci_port
         self.user = user
@@ -89,10 +91,10 @@ class OmnisciServer:
             "omnisci.conf",
             "--enable-watchdog=false",
             "--allow-cpu-retry",
-            #TODO: put these enable flags under external option
-            "--enable-columnar-output=true", # this flag speeds up ipc connection
-            #"--enable-multifrag-rs=true", # uncomment only if omnisci on develop branch
-            #"--enable-lazy-fetch=false", # uncomment only if omnisci on develop branch
+            # TODO: put these enable flags under external option
+            "--enable-columnar-output=true",  # this flag speeds up ipc connection
+            # "--enable-multifrag-rs=true", # uncomment only if omnisci on develop branch
+            # "--enable-lazy-fetch=false", # uncomment only if omnisci on develop branch
             "--max-session-duration",
             str(self._max_session_duration),
             "--idle-session-duration",

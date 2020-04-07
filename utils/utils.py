@@ -10,6 +10,7 @@ import hiyapyco
 
 returned_port_numbers = []
 
+
 def str_arg_to_bool(v):
     if isinstance(v, bool):
         return v
@@ -121,7 +122,7 @@ def compare_dataframes(ibis_dfs, pandas_dfs, sort_cols=["id"], drop_cols=["id"])
     # preparing step
     for idx in range(len(ibis_dfs)):
         # prepare ibis part
-        if (isinstance(ibis_dfs[idx], pd.Series)):
+        if isinstance(ibis_dfs[idx], pd.Series):
             # that means, that indexes in Series must be the same
             # as 'id' column in source dataframe
             ibis_dfs[idx].sort_index(axis=0, inplace=True)
@@ -130,7 +131,7 @@ def compare_dataframes(ibis_dfs, pandas_dfs, sort_cols=["id"], drop_cols=["id"])
                 ibis_dfs[idx].sort_values(by=sort_cols, axis=0, inplace=True)
             if len(drop_cols):
                 ibis_dfs[idx].drop(drop_cols, axis=1, inplace=True)
-        
+
         ibis_dfs[idx].reset_index(drop=True, inplace=True)
         # prepare pandas part
         pandas_dfs[idx].reset_index(drop=True, inplace=True)
@@ -180,7 +181,9 @@ def load_data_pandas(
     pd=None,
 ):
     if not pd:
-        import_pandas_into_module_namespace(namespace=load_data_pandas.__globals__, mode="Pandas")
+        import_pandas_into_module_namespace(
+            namespace=load_data_pandas.__globals__, mode="Pandas"
+        )
     types = None
     if columns_types:
         types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
@@ -197,6 +200,7 @@ def load_data_pandas(
 
 def files_names_from_pattern(filename):
     from braceexpand import braceexpand
+
     data_files_names = list(braceexpand(filename))
     data_files_names = sorted([x for f in data_files_names for x in glob.glob(f)])
     return data_files_names
@@ -208,11 +212,13 @@ def print_times(times, backend=None):
     for time_name, time in times.items():
         print("{} = {:.5f} s".format(time_name, time))
 
-def print_results(results, backend=None, unit=''):
+
+def print_results(results, backend=None, unit=""):
     if backend:
         print(f"{backend} results:")
     for result_name, result in results.items():
         print("    {} = {} {}".format(result_name, result, unit))
+
 
 def mse(y_test, y_pred):
     return ((y_test - y_pred) ** 2).mean()
@@ -227,9 +233,10 @@ def cod(y_test, y_pred):
 
 def check_port_availability(port_num):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = sock.connect_ex(('127.0.0.1', port_num))
+    result = sock.connect_ex(("127.0.0.1", port_num))
     sock.close()
     return result
+
 
 def find_free_port():
     min_port_num = 49152
@@ -239,7 +246,10 @@ def find_free_port():
     else:
         port_num = returned_port_numbers[-1]
     while port_num < max_port_num:
-        if check_port_availability(port_num) != 0 and port_num not in returned_port_numbers:
+        if (
+            check_port_availability(port_num) != 0
+            and port_num not in returned_port_numbers
+        ):
             returned_port_numbers.append(port_num)
             return port_num
         port_num += 1
@@ -248,6 +258,7 @@ def find_free_port():
 
 def split(X, y, test_size=0.1, random_state=None):
     from sklearn.model_selection import train_test_split
+
     t0 = timer()
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, stratify=y, random_state=random_state
@@ -255,6 +266,7 @@ def split(X, y, test_size=0.1, random_state=None):
     split_time = timer() - t0
 
     return (X_train, y_train, X_test, y_test), split_time
+
 
 def timer_ms():
     return round(timer() * 1000)

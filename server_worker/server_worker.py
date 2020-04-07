@@ -269,9 +269,9 @@ class OmnisciServerWorker:
         if self._conn.exists_table(
             name=table_name, database=self.omnisci_server.database_name
         ):
-            self._conn.drop_table(table_name,
-                                database=self.omnisci_server.database_name,
-                                force=True)
+            self._conn.drop_table(
+                table_name, database=self.omnisci_server.database_name, force=True
+            )
             if table_name in self._imported_pd_df:
                 del self._imported_pd_df[table_name]
         else:
@@ -360,5 +360,5 @@ class OmnisciServerWorker:
         try:
             self.terminate()
         except Exception as err:
-            print('terminate is not successful')
+            print("terminate is not successful")
             raise err
