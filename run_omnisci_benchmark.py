@@ -93,12 +93,7 @@ def execute_benchmark(
 
 
 parser = argparse.ArgumentParser(
-<<<<<<< HEAD
-    description="Run arbitrary omnisci benchmark and submit report "
-    "values to MySQL database"
-=======
     description="Run arbitrary omnisci benchmark and submit report " "values to MySQL database"
->>>>>>> go/master
 )
 optional = parser._action_groups.pop()
 required = parser.add_argument_group("required arguments")
@@ -137,14 +132,7 @@ required.add_argument(
     "-r", "--report", dest="report", default="report.csv", help="Report file name"
 )
 required.add_argument(
-<<<<<<< HEAD
-    "-path",
-    dest="benchmarks_path",
-    required=True,
-    help="Path to omniscidb/Benchmarks directory.",
-=======
     "-path", dest="benchmarks_path", required=True, help="Path to omniscidb/Benchmarks directory."
->>>>>>> go/master
 )
 # Omnisci server parameters
 required.add_argument(
@@ -202,13 +190,7 @@ required.add_argument(
     "before and after the import test.",
 )
 # Required by omnisci benchmark scripts
-<<<<<<< HEAD
-required.add_argument(
-    "-l", "--label", dest="label", required=True, help="Benchmark run label."
-)
-=======
 required.add_argument("-l", "--label", dest="label", required=True, help="Benchmark run label.")
->>>>>>> go/master
 required.add_argument(
     "-i",
     "--iterations",
@@ -282,28 +264,12 @@ optional.add_argument(
     help="Path to local file with CREATE TABLE sql statement for " "the import table.",
 )
 optional.add_argument(
-<<<<<<< HEAD
-    "-d",
-    "--queries-dir",
-    dest="queries_dir",
-    help="Absolute path to dir with query files.",
-)
-
-# MySQL database parameters
-optional.add_argument(
-    "-db-server", default="localhost", help="Host name of MySQL server."
-)
-optional.add_argument(
-    "-db-port", default=3306, type=int, help="Port number of MySQL server."
-)
-=======
     "-d", "--queries-dir", dest="queries_dir", help="Absolute path to dir with query files."
 )
 
 # MySQL database parameters
 optional.add_argument("-db-server", default="localhost", help="Host name of MySQL server.")
 optional.add_argument("-db-port", default=3306, type=int, help="Port number of MySQL server.")
->>>>>>> go/master
 optional.add_argument(
     "-db-user",
     default="",
@@ -312,27 +278,12 @@ optional.add_argument(
     "database using other -db-* parameters.",
 )
 optional.add_argument(
-<<<<<<< HEAD
-    "-db-pass",
-    default="omniscidb",
-    help="Password to use to connect to MySQL database.",
-)
-optional.add_argument(
-    "-db-name",
-    default="omniscidb",
-    help="MySQL database to use to store benchmark results.",
-)
-optional.add_argument(
-    "-db-table", help="Table to use to store results for this benchmark."
-)
-=======
     "-db-pass", default="omniscidb", help="Password to use to connect to MySQL database."
 )
 optional.add_argument(
     "-db-name", default="omniscidb", help="MySQL database to use to store benchmark results."
 )
 optional.add_argument("-db-table", help="Table to use to store results for this benchmark.")
->>>>>>> go/master
 
 optional.add_argument(
     "-commit",
@@ -462,15 +413,7 @@ if args.mode == "synthetic":
     import_cmdline = None
     benchmark_cmdline = synthetic_benchmark_cmdline
 else:
-<<<<<<< HEAD
-    if (
-        args.import_file is None
-        or args.table_schema_file is None
-        or args.queries_dir is None
-    ):
-=======
     if args.import_file is None or args.table_schema_file is None or args.queries_dir is None:
->>>>>>> go/master
         print(
             "For dataset type of benchmark the following parameters are mandatory: --import-file,"
             " --table-schema-file and --queries-dir and --fragment-size is optional."

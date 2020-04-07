@@ -117,9 +117,7 @@ def etl_ibis(
             omnisci_server_worker.create_table(
                 table_name=table_name, schema=schema_table, database=database_name,
             )
-            table_import = omnisci_server_worker.database(database_name).table(
-                table_name
-            )
+            table_import = omnisci_server_worker.database(database_name).table(table_name)
 
             t0 = timer()
             table_import.read_csv(filename, header=True, quotechar="", delimiter=",")
@@ -466,9 +464,7 @@ def run_benchmark(parameters):
                 etl_keys=etl_keys,
             )
 
-            print_results(
-                results=etl_times, backend=parameters["pandas_mode"], unit="ms"
-            )
+            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="ms")
             etl_times["Backend"] = parameters["pandas_mode"]
 
             if not parameters["no_ml"]:
@@ -482,9 +478,7 @@ def run_benchmark(parameters):
                     ml_keys=ml_keys,
                     ml_score_keys=ml_score_keys,
                 )
-                print_results(
-                    results=ml_times, backend=parameters["pandas_mode"], unit="ms"
-                )
+                print_results(results=ml_times, backend=parameters["pandas_mode"], unit="ms")
                 ml_times["Backend"] = parameters["pandas_mode"]
                 print_results(results=ml_scores, backend=parameters["pandas_mode"])
                 ml_scores["Backend"] = parameters["pandas_mode"]

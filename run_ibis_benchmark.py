@@ -34,10 +34,7 @@ def main():
         required=True,
     )
     required.add_argument(
-        "-data_file",
-        dest="data_file",
-        help="A datafile that should be loaded.",
-        required=True,
+        "-data_file", dest="data_file", help="A datafile that should be loaded.", required=True,
     )
     optional.add_argument(
         "-dfiles_num",
@@ -89,10 +86,7 @@ def main():
         help="Do not run Ibis benchmark, run only Pandas (or Modin) version",
     )
     optional.add_argument(
-        "-ibis_only",
-        default=False,
-        type=str_arg_to_bool,
-        help="Run only Ibis benchmark",
+        "-ibis_only", default=False, type=str_arg_to_bool, help="Run only Ibis benchmark",
     )
     optional.add_argument(
         "-pandas_mode",

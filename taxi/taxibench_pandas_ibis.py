@@ -552,9 +552,7 @@ def run_benchmark(parameters):
 
         if not parameters["ibis_only"]:
             pandas_files_limit = parameters["dfiles_num"]
-            filename = files_names_from_pattern(parameters["data_file"])[
-                :pandas_files_limit
-            ]
+            filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
             etl_times = etl_pandas(
                 filename=filename,
                 files_limit=pandas_files_limit,
@@ -562,9 +560,7 @@ def run_benchmark(parameters):
                 columns_types=columns_types,
             )
 
-            print_results(
-                results=etl_times, backend=parameters["pandas_mode"], unit="ms"
-            )
+            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="ms")
             etl_times["Backend"] = parameters["pandas_mode"]
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": []}

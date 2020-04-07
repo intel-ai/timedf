@@ -172,9 +172,7 @@ def load_data_pandas(
     pd=None,
 ):
     if not pd:
-        import_pandas_into_module_namespace(
-            namespace=load_data_pandas.__globals__, mode="Pandas"
-        )
+        import_pandas_into_module_namespace(namespace=load_data_pandas.__globals__, mode="Pandas")
     types = None
     if columns_types:
         types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
@@ -237,10 +235,7 @@ def find_free_port():
     else:
         port_num = returned_port_numbers[-1]
     while port_num < max_port_num:
-        if (
-            check_port_availability(port_num) != 0
-            and port_num not in returned_port_numbers
-        ):
+        if check_port_availability(port_num) != 0 and port_num not in returned_port_numbers:
             returned_port_numbers.append(port_num)
             return port_num
         port_num += 1
