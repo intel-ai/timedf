@@ -14,4 +14,5 @@ from .utils import (
     split,
     timer_ms,
     print_results,
+    check_args_compatibility,
 )

@@ -11,7 +11,7 @@ import mysql.connector
 from report import DbReport
 from server import OmnisciServer
 from server_worker import OmnisciServerWorker
-from utils import find_free_port, str_arg_to_bool
+from utils import find_free_port, str_arg_to_bool, check_args_compatibility
 
 
 def main():
@@ -21,6 +21,20 @@ def main():
     port_default_value = -1
 
     benchmarks = ["ny_taxi", "santander", "census", "plasticc"]
+
+    # you can write here a groups of incompatible arguments, for each group to a dict
+    # if two of these args in a dict will be equals to its values then '__behavior__' will performs
+    # (by default it's 'warning', but also 'terminate' is supported), or you can pass to '__behavior__' a
+    # function to execute, or you can pass extra func to '__finally__' that will be execute after 'behavior'
+    incompatible_args = [
+        {
+            "__behavior__": "warning",
+            "__finally__": lambda params: params.update({"validation": False}),
+            "validation": True,
+            "ibis_only": True,
+            "no_ibis": True,
+        }
+    ]
 
     parser = argparse.ArgumentParser(description="Run internal tests from ibis project")
     optional = parser._action_groups.pop()
@@ -262,7 +276,7 @@ def main():
             "ray_tmpdir": args.ray_tmpdir,
             "ray_memory": args.ray_memory,
             "gpu_memory": args.gpu_memory,
-            "validation": False if args.no_ibis or args.ibis_only else args.validation,
+            "validation": args.validation,
             "ibis_only": args.ibis_only,
         }
 
@@ -287,14 +301,7 @@ def main():
             parameters["dni"] = args.dni
             parameters["import_mode"] = args.import_mode
 
-            if args.import_mode == "pandas" and args.ibis_only:
-                parser.error(
-                    "'-import_mode pandas' is not valid for '-ibis_only True' flag, use another import mode"
-                )
-
-        if args.no_ibis and args.ibis_only:
-            warnings.warn("Inconsistent flags passed: `-no_ibis True` and `-only_ibis True`")
-
+        check_args_compatibility(parameters, incompatible_args)
         etl_results = []
         ml_results = []
         print(parameters)
