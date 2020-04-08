@@ -265,7 +265,7 @@ def check_args_compatibility(parameters, incompability):
 
     def end(msg, kind="warning"):
         if kind == "warning":
-            warnings.warn(msg)
+            print("WARNING: ", msg)
         elif kind == "terminate":
             print(msg)
             sys.exit(1)
