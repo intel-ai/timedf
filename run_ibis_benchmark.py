@@ -22,10 +22,10 @@ def main():
 
     benchmarks = ["ny_taxi", "santander", "census", "plasticc"]
 
-    # you can write here a groups of incompatible arguments, for each group to a dict
-    # if two of these args in a dict will be equals to its values then '__behavior__' will performs
-    # (by default it's 'warning', but also 'terminate' is supported), or you can pass to '__behavior__' a
-    # function to execute, or you can pass extra func to '__finally__' that will be execute after 'behavior'
+    # use that list to define incompatible groups of arguments,
+    # each element of a list is a dict, where you specify args values with which script can't perform properly
+    # there is also two optional keys: '__behavior__' which is 'warning' by default, but 'terminate' is also supported,
+    # and '__finally__' where you can pass a function that are going to be executed after 'behavior'
     incompatible_args = [
         {
             "__behavior__": "warning",
