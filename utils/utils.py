@@ -284,8 +284,8 @@ def check_args_compatibility(parameters, incompability):
             if parameters.get(arg) == incomp_dict.get(arg):
                 intersect[arg] = incomp_dict[arg]
                 if len(intersect) > 1:
-                    keys = intersect.keys()
-                    values = intersect.values()
+                    keys = list(intersect.keys())
+                    values = list(intersect.values())
                     executor(
                         "Incompatible args: '-{} {}' and '-{} {}'".format(
                             keys[0], values[0], keys[1], values[1]
