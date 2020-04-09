@@ -1,7 +1,7 @@
 # Benchmarking scripts that are used to run OmniSciDB benchmarks in automated way in TeamCity and for performance analyzes in development cycle.
 
 ## Requirements
-Scripts    require to be installed:
+Scripts     require to be installed:
 * the following python3 packages: pymapd, braceexpand, mysql-connector-python;
 * conda or miniconda for ibis tests and benchmarks.
 
