@@ -294,3 +294,12 @@ def check_args_compatibility(parameters, incompability):
                     if final is not None:
                         final(parameters)
                     break
+
+
+class KeyValueListParser(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        kwargs = {}
+        for kv in values.split(","):
+            k, v = kv.split("=")
+            kwargs[k] = v
+        setattr(namespace, self.dest, kwargs)

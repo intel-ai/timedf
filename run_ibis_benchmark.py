@@ -11,7 +11,7 @@ import mysql.connector
 from report import DbReport
 from server import OmnisciServer
 from server_worker import OmnisciServerWorker
-from utils import find_free_port, str_arg_to_bool, check_args_compatibility
+from utils import find_free_port, str_arg_to_bool, check_args_compatibility, KeyValueListParser
 
 
 def main():
@@ -228,6 +228,43 @@ def main():
         type=str_arg_to_bool,
         help="Table name name to use in omniscidb server.",
     )
+    optional.add_argument(
+        "-debug_timer",
+        dest="debug_timer",
+        default=False,
+        type=str_arg_to_bool,
+        help="Enable fine-grained query execution timers for debug.",
+    )
+    optional.add_argument(
+        "-columnar_output",
+        dest="columnar_output",
+        default=True,
+        type=str_arg_to_bool,
+        help="Allows OmniSci Core to directly materialize intermediate projections \
+            and the final ResultSet in Columnar format where appropriate.",
+    )
+    optional.add_argument(
+        "-lazy_fetch",
+        dest="lazy_fetch",
+        default=None,
+        type=str_arg_to_bool,
+        help="[lazy_fetch help message]",
+    )
+    optional.add_argument(
+        "-multifrag_rs",
+        dest="multifrag_rs",
+        default=None,
+        type=str_arg_to_bool,
+        help="[multifrag_rs help message]",
+    )
+    optional.add_argument(
+        "-omnisci_run_kwargs",
+        dest="omnisci_run_kwargs",
+        default={},
+        metavar="KEY1=VAL1,KEY2=VAL2...",
+        action=KeyValueListParser,
+        help="options to start omnisci server",
+    )
     # Additional information
     optional.add_argument(
         "-commit_omnisci",
@@ -293,6 +330,11 @@ def main():
                 database_name=args.database_name,
                 user=args.user,
                 password=args.password,
+                debug_timer=args.debug_timer,
+                columnar_output=args.columnar_output,
+                lazy_fetch=args.lazy_fetch,
+                multifrag_rs=args.multifrag_rs,
+                omnisci_run_kwargs=args.omnisci_run_kwargs,
             )
 
             parameters["database_name"] = args.database_name

@@ -7,6 +7,7 @@ from .utils import (
     files_names_from_pattern,
     find_free_port,
     import_pandas_into_module_namespace,
+    KeyValueListParser,
     load_data_pandas,
     mse,
     print_times,

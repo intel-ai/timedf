@@ -6,7 +6,7 @@ import traceback
 
 from environment import CondaEnvironment
 from server import OmnisciServer
-from utils import combinate_requirements, find_free_port, str_arg_to_bool
+from utils import combinate_requirements, find_free_port, KeyValueListParser, str_arg_to_bool
 
 
 def main():
@@ -147,7 +147,44 @@ def main():
         dest="ipc_connection",
         default=True,
         type=str_arg_to_bool,
-        help="Table name name to use in omniscidb server.",
+        help="Connection type for ETL operations",
+    )
+    omnisci.add_argument(
+        "-debug_timer",
+        dest="debug_timer",
+        default=False,
+        type=str_arg_to_bool,
+        help="Enable fine-grained query execution timers for debug.",
+    )
+    omnisci.add_argument(
+        "-columnar_output",
+        dest="columnar_output",
+        default=True,
+        type=str_arg_to_bool,
+        help="Allows OmniSci Core to directly materialize intermediate projections \
+            and the final ResultSet in Columnar format where appropriate.",
+    )
+    omnisci.add_argument(
+        "-lazy_fetch",
+        dest="lazy_fetch",
+        default=None,
+        type=str_arg_to_bool,
+        help="[lazy_fetch help message]",
+    )
+    omnisci.add_argument(
+        "-multifrag_rs",
+        dest="multifrag_rs",
+        default=None,
+        type=str_arg_to_bool,
+        help="[multifrag_rs help message]",
+    )
+    omnisci.add_argument(
+        "-omnisci_run_kwargs",
+        dest="omnisci_run_kwargs",
+        default={},
+        metavar="KEY1=VAL1,KEY2=VAL2...",
+        action=KeyValueListParser,
+        help="options to start omnisci server",
     )
 
     # Benchmark parameters
@@ -375,6 +412,11 @@ def main():
                 omnisci_cwd=args.omnisci_cwd,
                 user=args.user,
                 password=args.password,
+                debug_timer=args.debug_timer,
+                columnar_output=args.columnar_output,
+                lazy_fetch=args.lazy_fetch,
+                multifrag_rs=args.multifrag_rs,
+                omnisci_run_kwargs=args.omnisci_run_kwargs,
             )
             omnisci_server.launch()
 
@@ -436,6 +478,11 @@ def main():
                 "commit_omnisci",
                 "commit_ibis",
                 "import_mode",
+                "debug_timer",
+                "columnar_output",
+                "lazy_fetch",
+                "multifrag_rs",
+                "omnisci_run_kwargs",
             ]
             args_dict = vars(args)
             args_dict["data_file"] = f"'{args_dict['data_file']}'"
@@ -445,7 +492,17 @@ def main():
                     if pure_arg in possible_benchmark_args:
                         arg_value = args_dict[pure_arg]
                         if arg_value:
-                            benchmark_cmd.extend([arg_name, str(arg_value)])
+                            if type(arg_value) != dict:
+                                benchmark_cmd.extend([arg_name, str(arg_value)])
+                            else:
+                                benchmark_cmd.extend(
+                                    [
+                                        arg_name,
+                                        ",".join(
+                                            f"{key}={value}" for key, value in arg_value.items()
+                                        ),
+                                    ]
+                                )
                 except KeyError:
                     pass
 

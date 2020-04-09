@@ -258,7 +258,7 @@ def ml(X, y, random_state, n_runs, test_size, optimizer, ml_keys, ml_score_keys)
         (X_train, y_train, X_test, y_test), split_time = split(
             X, y, test_size=test_size, random_state=random_state
         )
-        ml_times["t_train_test_split"] = split_time
+        ml_times["t_train_test_split"] += split_time
         random_state += 777
 
         t0 = timer()
