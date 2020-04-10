@@ -222,13 +222,14 @@ def cod(y_test, y_pred):
 
 def check_port_availability(port_num):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = True
     try:
         sock.bind(("127.0.0.1", port_num))
     except Exception:
+        result = False
+    finally:
         sock.close()
-        return False
-    sock.close()
-    return True
+        return result
 
 
 def find_free_port():
