@@ -237,7 +237,7 @@ def find_free_port():
     if len(returned_port_numbers) == 0:
         port_num = min_port_num
     else:
-        port_num = returned_port_numbers[-1]
+        port_num = returned_port_numbers[-1] + 1
     while port_num < max_port_num:
         if check_port_availability(port_num) and port_num not in returned_port_numbers:
             returned_port_numbers.append(port_num)
