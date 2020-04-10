@@ -405,7 +405,7 @@ def run_benchmark(parameters):
     ml_score_keys = ["mse_mean", "cod_mean", "mse_dev", "cod_dev"]
 
     try:
-        if not parameters["ibis_only"]:
+        if not parameters["no_pandas"]:
             import_pandas_into_module_namespace(
                 namespace=run_benchmark.__globals__,
                 mode=parameters["pandas_mode"],
@@ -456,7 +456,7 @@ def run_benchmark(parameters):
                 print_results(results=ml_scores_ibis, backend="Ibis")
                 ml_scores_ibis["Backend"] = "Ibis"
 
-        if not parameters["ibis_only"]:
+        if not parameters["no_pandas"]:
             df, X, y, etl_times = etl_pandas(
                 parameters["data_file"],
                 columns_names=columns_names,

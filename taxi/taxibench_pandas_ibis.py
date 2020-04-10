@@ -523,7 +523,7 @@ def run_benchmark(parameters):
         print("Bad number of data files specified: ", parameters["dfiles_num"])
         sys.exit(1)
     try:
-        if not parameters["ibis_only"]:
+        if not parameters["no_pandas"]:
             import_pandas_into_module_namespace(
                 namespace=run_benchmark.__globals__,
                 mode=parameters["pandas_mode"],
@@ -550,7 +550,7 @@ def run_benchmark(parameters):
             print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
             etl_times_ibis["Backend"] = "Ibis"
 
-        if not parameters["ibis_only"]:
+        if not parameters["no_pandas"]:
             pandas_files_limit = parameters["dfiles_num"]
             filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
             etl_times = etl_pandas(

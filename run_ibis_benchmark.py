@@ -31,7 +31,7 @@ def main():
             "__behavior__": "warning",
             "__finally__": lambda params: params.update({"validation": False}),
             "validation": True,
-            "ibis_only": True,
+            "no_pandas": True,
             "no_ibis": True,
         }
     ]
@@ -101,7 +101,10 @@ def main():
         help="Do not run Ibis benchmark, run only Pandas (or Modin) version",
     )
     optional.add_argument(
-        "-ibis_only", default=False, type=str_arg_to_bool, help="Run only Ibis benchmark",
+        "-no_pandas",
+        default=False,
+        type=str_arg_to_bool,
+        help="Do not dun Pandas benchmar, only Ibis",
     )
     optional.add_argument(
         "-pandas_mode",
@@ -314,7 +317,7 @@ def main():
             "ray_memory": args.ray_memory,
             "gpu_memory": args.gpu_memory,
             "validation": args.validation,
-            "ibis_only": args.ibis_only,
+            "no_pandas": args.no_pandas,
         }
 
         if not args.no_ibis:

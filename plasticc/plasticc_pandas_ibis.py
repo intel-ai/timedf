@@ -556,7 +556,7 @@ def run_benchmark(parameters):
     etl_keys = ["t_readcsv", "t_etl"]
     ml_keys = ["t_train_test_split", "t_dmatrix", "t_training", "t_infer", "t_ml"]
     try:
-        if not parameters["ibis_only"]:
+        if not parameters["no_pandas"]:
             import_pandas_into_module_namespace(
                 namespace=run_benchmark.__globals__,
                 mode=parameters["pandas_mode"],
@@ -594,7 +594,7 @@ def run_benchmark(parameters):
                 print_results(results=ml_times_ibis, backend="Ibis", unit="ms")
                 ml_times_ibis["Backend"] = "Ibis"
 
-        if not parameters["ibis_only"]:
+        if not parameters["no_pandas"]:
             train_final, test_final, etl_times = etl_all_pandas(
                 dataset_path=parameters["data_file"],
                 skip_rows=skip_rows,
