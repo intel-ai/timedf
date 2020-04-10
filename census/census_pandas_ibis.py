@@ -418,8 +418,12 @@ def run_benchmark(parameters):
         etl_times = None
         ml_times = None
 
-        if parameters["validation"] and not parameters["import_mode"] == "pandas":
-            print("WARNING: validation working only for '-import_mode pandas'")
+        if parameters["validation"] and parameters["import_mode"] is not "pandas":
+            print(
+                "WARNING: validation can not be performed, it works only for 'pandas' import mode, '{}' passed".format(
+                    parameters["import_mode"]
+                )
+            )
 
         if not parameters["no_ibis"]:
             df_ibis, X_ibis, y_ibis, etl_times_ibis = etl_ibis(
@@ -483,7 +487,7 @@ def run_benchmark(parameters):
                 print_results(results=ml_scores, backend=parameters["pandas_mode"])
                 ml_scores["Backend"] = parameters["pandas_mode"]
 
-        if parameters["validation"] and parameters["import_mode"] == "pandas":
+        if parameters["validation"] and parameters["import_mode"] is "pandas":
             # this should work only for pandas mode
             compare_dataframes(
                 ibis_dfs=(X_ibis, y_ibis), pandas_dfs=(X, y),

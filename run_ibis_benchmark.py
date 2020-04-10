@@ -11,7 +11,7 @@ import mysql.connector
 from report import DbReport
 from server import OmnisciServer
 from server_worker import OmnisciServerWorker
-from utils import find_free_port, str_arg_to_bool, check_args_compatibility, KeyValueListParser
+from utils import find_free_port, str_arg_to_bool, KeyValueListParser
 
 
 def main():
@@ -90,7 +90,7 @@ def main():
         "-no_pandas",
         default=False,
         type=str_arg_to_bool,
-        help="Do not dun Pandas benchmar, only Ibis",
+        help="Do not run Pandas benchmark, only Ibis",
     )
     optional.add_argument(
         "-pandas_mode",
@@ -332,11 +332,7 @@ def main():
             parameters["dni"] = args.dni
             parameters["import_mode"] = args.import_mode
 
-        if parameters["validation"] and (
-            parameters["no_pandas"]
-            or parameters["no_ibis"]
-            or parameters.get("import_mode") is not "pandas"
-        ):
+        if parameters["validation"] and (parameters["no_pandas"] or parameters["no_ibis"]):
             parameters["validation"] = False
             print("WARNING: validation was turned off, because of incompatible flags.")
 
