@@ -22,20 +22,6 @@ def main():
 
     benchmarks = ["ny_taxi", "santander", "census", "plasticc"]
 
-    # use that list to define incompatible groups of arguments,
-    # each element of a list is a dict, where you specify args values with which script can't perform properly
-    # there is also two optional keys: '__behavior__' which is 'warning' by default, but 'terminate' is also supported,
-    # and '__finally__' where you can pass a function that are going to be executed after 'behavior'
-    incompatible_args = [
-        {
-            "__behavior__": "warning",
-            "__finally__": lambda params: params.update({"validation": False}),
-            "validation": True,
-            "no_pandas": True,
-            "no_ibis": True,
-        }
-    ]
-
     parser = argparse.ArgumentParser(description="Run internal tests from ibis project")
     optional = parser._action_groups.pop()
     required = parser.add_argument_group("required arguments")
@@ -346,7 +332,14 @@ def main():
             parameters["dni"] = args.dni
             parameters["import_mode"] = args.import_mode
 
-        check_args_compatibility(parameters, incompatible_args)
+        if parameters["validation"] and (
+            parameters["no_pandas"]
+            or parameters["no_ibis"]
+            or parameters.get("import_mode") is not "pandas"
+        ):
+            parameters["validation"] = False
+            print("WARNING: validation was turned off, because of incompatible flags.")
+
         etl_results = []
         ml_results = []
         print(parameters)
