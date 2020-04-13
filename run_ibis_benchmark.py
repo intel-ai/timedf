@@ -246,6 +246,13 @@ def main():
         help="[multifrag_rs help message]",
     )
     optional.add_argument(
+        "-fragments_size",
+        dest="fragments_size",
+        default=[],
+        nargs='*',
+        help="[fragments_size help message]",
+    )
+    optional.add_argument(
         "-omnisci_run_kwargs",
         dest="omnisci_run_kwargs",
         default={},
@@ -323,6 +330,7 @@ def main():
             parameters["dnd"] = args.dnd
             parameters["dni"] = args.dni
             parameters["import_mode"] = args.import_mode
+            parameters["fragments_size"] = args.fragments_size
 
         etl_results = []
         ml_results = []

@@ -163,7 +163,13 @@ def load_data_ibis(
     dtypes,
     meta_dtypes,
     import_mode,
+    fragments_size=[32000000]*4,
 ):
+    count_table = 4
+    if import_mode != "pandas" and len(fragments_size) != count_table:
+        raise ValueError(f"fragment size should be specified for each table; \
+            fragments size: {fragments_size}; count table: {count_table}")
+
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
 
     t_readcsv = 0.0
@@ -187,34 +193,31 @@ def load_data_ibis(
         )
         meta_dtypes["target"] = target
 
-        # TODO we should specify this through external command line option
-        fragment_size = 32000000
-
         if import_mode == "copy-from":
             # create tables
             omnisci_server_worker.create_table(
                 table_name="training",
                 schema=schema,
                 database=database_name,
-                fragment_size=fragment_size,
+                fragment_size=fragments_size[0],
             )
             omnisci_server_worker.create_table(
                 table_name="test",
                 schema=schema,
                 database=database_name,
-                fragment_size=fragment_size,
+                fragment_size=fragments_size[1],
             )
             omnisci_server_worker.create_table(
                 table_name="training_meta",
                 schema=meta_schema,
                 database=database_name,
-                fragment_size=fragment_size,
+                fragment_size=fragments_size[2],
             )
             omnisci_server_worker.create_table(
                 table_name="test_meta",
                 schema=meta_schema_without_target,
                 database=database_name,
-                fragment_size=fragment_size,
+                fragment_size=fragments_size[3],
             )
 
             # get tables
@@ -288,13 +291,17 @@ def load_data_ibis(
 
         elif import_mode == "fsi":
             t0 = timer()
-            omnisci_server_worker._conn.create_table_from_csv("training", training_file, schema)
-            omnisci_server_worker._conn.create_table_from_csv("test", test_file, schema)
             omnisci_server_worker._conn.create_table_from_csv(
-                "training_meta", training_meta_file, meta_schema
+                "training", training_file, schema, fragment_size=fragments_size[0],
             )
             omnisci_server_worker._conn.create_table_from_csv(
-                "test_meta", test_meta_file, meta_schema_without_target
+                "test", test_file, schema, fragment_size=fragments_size[1],
+            )
+            omnisci_server_worker._conn.create_table_from_csv(
+                "training_meta", training_meta_file, meta_schema, fragment_size=fragments_size[2],
+            )
+            omnisci_server_worker._conn.create_table_from_csv(
+                "test_meta", test_meta_file, meta_schema_without_target, fragment_size=fragments_size[3],
             )
             t_readcsv = round((timer() - t0) * 1000)
 
@@ -368,6 +375,7 @@ def etl_all_ibis(
     meta_dtypes,
     etl_keys,
     import_mode,
+    fragments_size,
 ):
     print("Ibis version")
     etl_times = {key: 0.0 for key in etl_keys}
@@ -385,6 +393,7 @@ def etl_all_ibis(
         dtypes=dtypes,
         meta_dtypes=meta_dtypes,
         import_mode=import_mode,
+        fragments_size=fragments_size,
     )
 
     # update etl_times
@@ -579,6 +588,7 @@ def run_benchmark(parameters):
                 meta_dtypes=meta_dtypes,
                 etl_keys=etl_keys,
                 import_mode=parameters["import_mode"],
+                fragments_size=parameters["fragments_size"],
             )
 
             print_results(results=etl_times_ibis, backend="Ibis", unit="ms")

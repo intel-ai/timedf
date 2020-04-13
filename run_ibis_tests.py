@@ -179,6 +179,13 @@ def main():
         help="[multifrag_rs help message]",
     )
     omnisci.add_argument(
+        "-fragments_size",
+        dest="fragments_size",
+        default=[],
+        nargs='*',
+        help="[fragments_size help message]",
+    )
+    omnisci.add_argument(
         "-omnisci_run_kwargs",
         dest="omnisci_run_kwargs",
         default={},
@@ -482,6 +489,7 @@ def main():
                 "columnar_output",
                 "lazy_fetch",
                 "multifrag_rs",
+                "fragments_size",
                 "omnisci_run_kwargs",
             ]
             args_dict = vars(args)
