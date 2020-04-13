@@ -250,6 +250,7 @@ def main():
         dest="fragments_size",
         default=[],
         nargs="*",
+        type=int,
         help="[fragments_size help message]",
     )
     optional.add_argument(

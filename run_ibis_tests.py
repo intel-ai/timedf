@@ -183,6 +183,7 @@ def main():
         dest="fragments_size",
         default=[],
         nargs="*",
+        type=int,
         help="[fragments_size help message]",
     )
     omnisci.add_argument(
