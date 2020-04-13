@@ -4,7 +4,6 @@ import os
 import sys
 import traceback
 import time
-import warnings
 
 import mysql.connector
 
