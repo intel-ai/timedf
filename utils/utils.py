@@ -88,7 +88,10 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
         else:
             raise ValueError(f"Unknown pandas mode {mode}")
         import modin.pandas as pd
-    namespace["pd"] = pd
+    if not isinstance(namespace, (list, tuple)):
+        namespace = [namespace]
+    for space in namespace:
+        space["pd"] = pd
 
 
 def equal_dfs(ibis_dfs, pandas_dfs):
@@ -224,9 +227,13 @@ def cod(y_test, y_pred):
 
 def check_port_availability(port_num):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = sock.connect_ex(("127.0.0.1", port_num))
-    sock.close()
-    return result
+    try:
+        sock.bind(("127.0.0.1", port_num))
+    except Exception:
+        return False
+    finally:
+        sock.close()
+    return True
 
 
 def find_free_port():
@@ -235,9 +242,9 @@ def find_free_port():
     if len(returned_port_numbers) == 0:
         port_num = min_port_num
     else:
-        port_num = returned_port_numbers[-1]
+        port_num = returned_port_numbers[-1] + 1
     while port_num < max_port_num:
-        if check_port_availability(port_num) != 0 and port_num not in returned_port_numbers:
+        if check_port_availability(port_num) and port_num not in returned_port_numbers:
             returned_port_numbers.append(port_num)
             return port_num
         port_num += 1

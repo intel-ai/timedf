@@ -3,16 +3,19 @@ import os
 import sys
 from collections import OrderedDict
 from pathlib import Path
-from timeit import default_timer
+from timeit import default_timer as timer
+import glob
 
 import numpy as np
 
 
 class MortgagePandasBenchmark:
-    def __init__(self, mortgage_path, algo):
+    def __init__(self, mortgage_path, algo, acq_fields=None, perf_fields=None):
         self.acq_data_path = mortgage_path + "/acq"
         self.perf_data_path = mortgage_path + "/perf"
         self.col_names_path = mortgage_path + "/names.csv"
+        self.acq_fields = acq_fields
+        self.perf_fields = perf_fields
 
         self.t_one_hot_encoding = 0
         self.t_read_csv = 0
@@ -32,50 +35,42 @@ class MortgagePandasBenchmark:
     def null_workaround(self, df, **kwargs):
         for column, data_type in df.dtypes.items():
 
-            t0 = default_timer()
+            t0 = timer()
             if str(data_type) == "category":
                 df[column] = df[column].cat.codes
-            t1 = default_timer()
+            t1 = timer()
             self.t_one_hot_encoding += t1 - t0
 
-            t0 = default_timer()
-            if str(data_type) in [
-                "int8",
-                "int16",
-                "int32",
-                "int64",
-                "float32",
-                "float64",
-            ]:
+            t0 = timer()
+            if str(data_type) in ["int8", "int16", "int32", "int64", "float32", "float64"]:
                 df[column] = df[column].fillna(np.dtype(data_type).type(-1))
-            t1 = default_timer()
+            t1 = timer()
             self.t_fillna += t1 - t0
 
         return df
 
+    def list_perf_files(self, quarter=1, year=2000):
+        return glob.glob(f"{self.perf_data_path}/Performance_{year}Q{quarter}.txt*")
+
     def run_cpu_workflow(self, quarter=1, year=2000, perf_file="", **kwargs):
         names = self.pd_load_names()
         acq_gdf = self.cpu_load_acquisition_csv(
-            acquisition_path=self.acq_data_path
-            + "/Acquisition_"
-            + str(year)
-            + "Q"
-            + str(quarter)
-            + ".txt"
+            acquisition_path=f"{self.acq_data_path}/Acquisition_{year}Q{quarter}.txt",
+            acq_fields=self.acq_fields,
         )
-        t0 = default_timer()
+        t0 = timer()
         acq_gdf = acq_gdf.merge(names, how="left", on=["seller_name"])
-        t1 = default_timer()
+        t1 = timer()
         self.t_merge += t1 - t0
 
-        t0 = default_timer()
+        t0 = timer()
         acq_gdf = acq_gdf.drop(["seller_name"], axis=1)
         acq_gdf["seller_name"] = acq_gdf["new"]
         acq_gdf = acq_gdf.drop(["new"], axis=1)
-        t1 = default_timer()
+        t1 = timer()
         self.t_drop_cols += t1 - t0
 
-        cdf = self.cpu_load_performance_csv(perf_file)
+        cdf = self.cpu_load_performance_csv(perf_file, self.perf_fields)
 
         joined_df = self.create_joined_df(cdf)
         df_features_12 = self.create_12_mon_features(joined_df)
@@ -94,150 +89,28 @@ class MortgagePandasBenchmark:
 
     def _parse_dtyped_csv(self, fname, dtypes, **kw):
         all_but_dates = {
-            col: valtype for (col, valtype) in dtypes.items() if valtype != "datetime64"
+            col: valtype for (col, valtype) in dtypes.items() if valtype.name != "datetime64[ns]"
         }
-        dates_only = [col for (col, valtype) in dtypes.items() if valtype == "datetime64"]
-        t0 = default_timer()
-        df = pd.read_csv(fname, dtype=all_but_dates, parse_dates=dates_only, **kw)
-        t1 = default_timer()
+        dates_only = [col for (col, valtype) in dtypes.items() if valtype.name == "datetime64[ns]"]
+        t0 = timer()
+        df = pd.read_csv(
+            fname, dtype=all_but_dates, parse_dates=dates_only, skiprows=1, delimiter=",", **kw
+        )
+        t1 = timer()
         self.t_read_csv += t1 - t0
         return df
 
-    def cpu_load_performance_csv(self, performance_path, **kwargs):
-        cols = [
-            "loan_id",
-            "monthly_reporting_period",
-            "servicer",
-            "interest_rate",
-            "current_actual_upb",
-            "loan_age",
-            "remaining_months_to_legal_maturity",
-            "adj_remaining_months_to_maturity",
-            "maturity_date",
-            "msa",
-            "current_loan_delinquency_status",
-            "mod_flag",
-            "zero_balance_code",
-            "zero_balance_effective_date",
-            "last_paid_installment_date",
-            "foreclosed_after",
-            "disposition_date",
-            "foreclosure_costs",
-            "prop_preservation_and_repair_costs",
-            "asset_recovery_costs",
-            "misc_holding_expenses",
-            "holding_taxes",
-            "net_sale_proceeds",
-            "credit_enhancement_proceeds",
-            "repurchase_make_whole_proceeds",
-            "other_foreclosure_proceeds",
-            "non_interest_bearing_upb",
-            "principal_forgiveness_upb",
-            "repurchase_make_whole_proceeds_flag",
-            "foreclosure_principal_write_off_amount",
-            "servicing_activity_indicator",
-        ]
-
-        dtypes = OrderedDict(
-            [
-                ("loan_id", "int64"),
-                ("monthly_reporting_period", "datetime64"),
-                ("servicer", "category"),
-                ("interest_rate", "float64"),
-                ("current_actual_upb", "float64"),
-                ("loan_age", "float64"),
-                ("remaining_months_to_legal_maturity", "float64"),
-                ("adj_remaining_months_to_maturity", "float64"),
-                ("maturity_date", "datetime64"),
-                ("msa", "float64"),
-                ("current_loan_delinquency_status", "int32"),
-                ("mod_flag", "category"),
-                ("zero_balance_code", "category"),
-                ("zero_balance_effective_date", "datetime64"),
-                ("last_paid_installment_date", "datetime64"),
-                ("foreclosed_after", "datetime64"),
-                ("disposition_date", "datetime64"),
-                ("foreclosure_costs", "float64"),
-                ("prop_preservation_and_repair_costs", "float64"),
-                ("asset_recovery_costs", "float64"),
-                ("misc_holding_expenses", "float64"),
-                ("holding_taxes", "float64"),
-                ("net_sale_proceeds", "float64"),
-                ("credit_enhancement_proceeds", "float64"),
-                ("repurchase_make_whole_proceeds", "float64"),
-                ("other_foreclosure_proceeds", "float64"),
-                ("non_interest_bearing_upb", "float64"),
-                ("principal_forgiveness_upb", "float64"),
-                ("repurchase_make_whole_proceeds_flag", "category"),
-                ("foreclosure_principal_write_off_amount", "float64"),
-                ("servicing_activity_indicator", "category"),
-            ]
-        )
-
+    def cpu_load_performance_csv(self, performance_path, perf_fields, **kwargs):
+        cols = [name for (name, dtype) in perf_fields]
+        dtypes = OrderedDict(perf_fields)
         print(performance_path)
-        return self._parse_dtyped_csv(performance_path, dtypes, names=cols, delimiter="|")
+        return self._parse_dtyped_csv(performance_path, dtypes, names=cols)
 
-    def cpu_load_acquisition_csv(self, acquisition_path, **kwargs):
-        cols = [
-            "loan_id",
-            "orig_channel",
-            "seller_name",
-            "orig_interest_rate",
-            "orig_upb",
-            "orig_loan_term",
-            "orig_date",
-            "first_pay_date",
-            "orig_ltv",
-            "orig_cltv",
-            "num_borrowers",
-            "dti",
-            "borrower_credit_score",
-            "first_home_buyer",
-            "loan_purpose",
-            "property_type",
-            "num_units",
-            "occupancy_status",
-            "property_state",
-            "zip",
-            "mortgage_insurance_percent",
-            "product_type",
-            "coborrow_credit_score",
-            "mortgage_insurance_type",
-            "relocation_mortgage_indicator",
-        ]
-        dtypes = OrderedDict(
-            [
-                ("loan_id", "int64"),
-                ("orig_channel", "category"),
-                ("seller_name", "category"),
-                ("orig_interest_rate", "float64"),
-                ("orig_upb", "int64"),
-                ("orig_loan_term", "int64"),
-                ("orig_date", "datetime64"),
-                ("first_pay_date", "datetime64"),
-                ("orig_ltv", "float64"),
-                ("orig_cltv", "float64"),
-                ("num_borrowers", "float64"),
-                ("dti", "float64"),
-                ("borrower_credit_score", "float64"),
-                ("first_home_buyer", "category"),
-                ("loan_purpose", "category"),
-                ("property_type", "category"),
-                ("num_units", "int64"),
-                ("occupancy_status", "category"),
-                ("property_state", "category"),
-                ("zip", "int64"),
-                ("mortgage_insurance_percent", "float64"),
-                ("product_type", "category"),
-                ("coborrow_credit_score", "float64"),
-                ("mortgage_insurance_type", "float64"),
-                ("relocation_mortgage_indicator", "category"),
-            ]
-        )
+    def cpu_load_acquisition_csv(self, acquisition_path, acq_fields, **kwargs):
+        cols = [name for (name, dtype) in acq_fields]
+        dtypes = OrderedDict(acq_fields)
         print(acquisition_path)
-        return self._parse_dtyped_csv(
-            acquisition_path, dtypes, names=cols, delimiter="|", index_col=False
-        )
+        return self._parse_dtyped_csv(acquisition_path, dtypes, names=cols, index_col=False)
 
     def pd_load_names(self, **kwargs):
         cols = ["seller_name", "new"]
@@ -245,9 +118,9 @@ class MortgagePandasBenchmark:
         #     ("seller_name", "category"),
         #     ("new", "category"),
         # ])
-        t0 = default_timer()
+        t0 = timer()
         df = pd.read_csv(self.col_names_path, names=cols, delimiter="|")
-        t1 = default_timer()
+        t1 = timer()
         self.t_read_csv += t1 - t0
         return df
 
@@ -264,40 +137,40 @@ class MortgagePandasBenchmark:
         del gdf
         test["timestamp"] = test["monthly_reporting_period"]
 
-        t0 = default_timer()
+        t0 = timer()
         test = test.drop(["monthly_reporting_period"], axis=1)
-        t1 = default_timer()
+        t1 = timer()
         self.t_drop_cols += t1 - t0
 
-        t0 = default_timer()
+        t0 = timer()
         test["timestamp_month"] = test["timestamp"].dt.month
         test["timestamp_year"] = test["timestamp"].dt.year
-        t1 = default_timer()
+        t1 = timer()
         self.t_conv_dates += t1 - t0
         test["delinquency_12"] = test["current_loan_delinquency_status"]
 
-        t0 = default_timer()
+        t0 = timer()
         test = test.drop(["current_loan_delinquency_status"], axis=1)
-        t1 = default_timer()
+        t1 = timer()
         self.t_drop_cols += t1 - t0
 
         test["upb_12"] = test["current_actual_upb"]
 
-        t0 = default_timer()
+        t0 = timer()
         test = test.drop(["current_actual_upb"], axis=1)
-        t1 = default_timer()
+        t1 = timer()
         self.t_drop_cols += t1 - t0
 
-        t0 = default_timer()
+        t0 = timer()
         test["upb_12"] = test["upb_12"].fillna(999999999)
         test["delinquency_12"] = test["delinquency_12"].fillna(-1)
-        t1 = default_timer()
+        t1 = timer()
         self.t_fillna += t1 - t0
 
-        t0 = default_timer()
+        t0 = timer()
         test["timestamp_year"] = test["timestamp_year"].astype("int32")
         test["timestamp_month"] = test["timestamp_month"].astype("int32")
-        t1 = default_timer()
+        t1 = timer()
         self.t_conv_dates += t1 - t0
 
         return test
@@ -307,10 +180,10 @@ class MortgagePandasBenchmark:
         n_months = 12
         for y in range(1, n_months + 1):
             tmpdf = joined_df.loc[
-                :, ["loan_id", "timestamp_year", "timestamp_month", "delinquency_12", "upb_12",],
+                :, ["loan_id", "timestamp_year", "timestamp_month", "delinquency_12", "upb_12"]
             ]
 
-            t0 = default_timer()
+            t0 = timer()
             tmpdf["josh_months"] = tmpdf["timestamp_year"] * 12 + tmpdf["timestamp_month"]
             tmpdf["josh_mody_n"] = np.floor(
                 (tmpdf["josh_months"].astype("float64") - 24000 - y) / 12
@@ -327,12 +200,12 @@ class MortgagePandasBenchmark:
                 ((tmpdf["josh_mody_n"] * n_months) + 24000 + (y - 1)) / 12
             ).astype("int16")
             tmpdf["timestamp_month"] = np.int8(y)
-            t1 = default_timer()
+            t1 = timer()
             self.t_conv_dates += t1 - t0
 
-            t0 = default_timer()
+            t0 = timer()
             tmpdf = tmpdf.drop(["josh_mody_n"], axis=1)
-            t1 = default_timer()
+            t1 = timer()
             self.t_drop_cols += t1 - t0
 
             testdfs.append(tmpdf)
@@ -342,23 +215,23 @@ class MortgagePandasBenchmark:
         return pd.concat(testdfs)
 
     def combine_joined_12_mon(self, joined_df, testdf, **kwargs):
-        t0 = default_timer()
+        t0 = timer()
         joined_df = joined_df.drop(["delinquency_12"], axis=1)
         joined_df = joined_df.drop(["upb_12"], axis=1)
-        t1 = default_timer()
+        t1 = timer()
         self.t_drop_cols += t1 - t0
 
-        t0 = default_timer()
+        t0 = timer()
         joined_df["timestamp_year"] = joined_df["timestamp_year"].astype("int16")
         joined_df["timestamp_month"] = joined_df["timestamp_month"].astype("int8")
-        t1 = default_timer()
+        t1 = timer()
         self.t_conv_dates += t1 - t0
 
-        t0 = default_timer()
+        t0 = timer()
         df = joined_df.merge(
             testdf, how="left", on=["loan_id", "timestamp_year", "timestamp_month"]
         )
-        t1 = default_timer()
+        t1 = timer()
         self.t_merge += t1 - t0
 
         return df
@@ -367,27 +240,27 @@ class MortgagePandasBenchmark:
         merged = self.null_workaround(gdf)
         joined_df = self.null_workaround(joined_df)
 
-        t0 = default_timer()
+        t0 = timer()
         joined_df["timestamp_month"] = joined_df["timestamp_month"].astype("int8")
         joined_df["timestamp_year"] = joined_df["timestamp_year"].astype("int16")
         merged["timestamp_month"] = merged["monthly_reporting_period"].dt.month
         merged["timestamp_month"] = merged["timestamp_month"].astype("int8")
         merged["timestamp_year"] = merged["monthly_reporting_period"].dt.year
         merged["timestamp_year"] = merged["timestamp_year"].astype("int16")
-        t1 = default_timer()
+        t1 = timer()
         self.t_conv_dates += t1 - t0
 
-        t0 = default_timer()
+        t0 = timer()
         merged = merged.merge(
             joined_df, how="left", on=["loan_id", "timestamp_year", "timestamp_month"]
         )
-        t1 = default_timer()
+        t1 = timer()
         self.t_merge += t1 - t0
 
-        t0 = default_timer()
+        t0 = timer()
         merged = merged.drop(["timestamp_year"], axis=1)
         merged = merged.drop(["timestamp_month"], axis=1)
-        t1 = default_timer()
+        t1 = timer()
         self.t_drop_cols += t1 - t0
 
         return merged
@@ -396,9 +269,9 @@ class MortgagePandasBenchmark:
         perf = self.null_workaround(perf)
         acq = self.null_workaround(acq)
 
-        t0 = default_timer()
+        t0 = timer()
         df = perf.merge(acq, how="left", on=["loan_id"])
-        t1 = default_timer()
+        t1 = timer()
         self.t_merge += t1 - t0
 
         return df
@@ -419,31 +292,31 @@ class MortgagePandasBenchmark:
             "timestamp",
         ]
 
-        t0 = default_timer()
+        t0 = timer()
         for column in drop_list:
             df = df.drop([column], axis=1)
-        t1 = default_timer()
+        t1 = timer()
         self.t_drop_cols += t1 - t0
 
-        t0 = default_timer()
+        t0 = timer()
         for col, dtype in df.dtypes.iteritems():
             if str(dtype) == "category":
                 df[col] = df[col].cat.codes
-        t1 = default_timer()
+        t1 = timer()
         self.t_one_hot_encoding += t1 - t0
 
         df["delinquency_12"] = df["delinquency_12"] > 0
 
-        t0 = default_timer()
+        t0 = timer()
         df["delinquency_12"] = df["delinquency_12"].fillna(False).astype("int32")
         for column in df.columns:
             df[column] = df[column].fillna(np.dtype(str(df[column].dtype)).type(-1))
-        t1 = default_timer()
+        t1 = timer()
         self.t_fillna += t1 - t0
 
         return df
 
-    def train_daal(pd_df):
+    def train_daal(self, pd_df):
         import daal4py
 
         dxgb_daal_params = {
@@ -461,21 +334,21 @@ class MortgagePandasBenchmark:
             "memorySavingMode": False,
         }
 
-        t0 = default_timer()
+        t0 = timer()
         y = np.ascontiguousarray(pd_df["delinquency_12"], dtype=np.float32).reshape(len(pd_df), 1)
         x = np.ascontiguousarray(pd_df.drop(["delinquency_12"], axis=1), dtype=np.float32)
-        t1 = default_timer()
+        t1 = timer()
         self.t_dmatrix = t1 - t0
         # print("Convert x,y from 64 to 32:", t1-t0)
 
         train_algo = daal4py.gbt_regression_training(**dxgb_daal_params)
-        t0 = default_timer()
+        t0 = timer()
         train_result = train_algo.compute(x, y)
-        self.t_train = default_timer() - t0
-        # print("TRAINING TIME:", default_timer()-t0)
+        self.t_train = timer() - t0
+        # print("TRAINING TIME:", timer()-t0)
         return train_result
 
-    def train_xgb(pd_df):
+    def train_xgb(self, pd_df):
         import xgboost as xgb
 
         dxgb_cpu_params = {
@@ -494,35 +367,96 @@ class MortgagePandasBenchmark:
             "predictor": "cpu_predictor",
         }
 
-        t0 = default_timer()
+        t1 = timer()
         y = pd_df["delinquency_12"]
         x = pd_df.drop(["delinquency_12"], axis=1)
-        t1 = default_timer()
-        self.t_drop_cols += t1 - t0
-
         dtrain = xgb.DMatrix(x, y)
-        self.t_dmatrix = default_timer() - t1
+        self.t_dmatrix = timer() - t1
 
-        t0 = default_timer()
+        t0 = timer()
         model_xgb = xgb.train(dxgb_cpu_params, dtrain, num_boost_round=dxgb_cpu_params["nround"])
-        self.t_train = default_timer() - t0
+        self.t_train = timer() - t0
 
         # calculate mse and cod
         x_test = xgb.DMatrix(x)
         y_pred = model_xgb.predict(x_test)
-        self.score_mse = mse(y, y_pred)
-        self.score_cod = cod(y, y_pred)
+        self.score_mse = self.mse(y, y_pred)
+        self.score_cod = self.cod(y, y_pred)
 
         return model_xgb
 
+    @staticmethod
     def mse(y_test, y_pred):
         return ((y_test - y_pred) ** 2).mean()
 
+    @staticmethod
     def cod(y_test, y_pred):
         y_bar = y_test.mean()
         total = ((y_test - y_bar) ** 2).sum()
         residuals = ((y_test - y_pred) ** 2).sum()
         return 1 - (residuals / total)
+
+    @staticmethod
+    def split_year_quarter(num):
+        # num starts with 1 for 2000Q1
+        return 2000 + num // 4, num % 4
+
+
+def etl_pandas(dataset_path, dfiles_num, acq_schema, perf_schema, etl_keys):
+    etl_times = {key: 0.0 for key in etl_keys}
+
+    mb = MortgagePandasBenchmark(
+        dataset_path, "xgb", acq_schema.to_pandas(), perf_schema.to_pandas()
+    )
+    year, quarter = MortgagePandasBenchmark.split_year_quarter(dfiles_num)
+    pd_dfs = []
+    for fname in mb.list_perf_files(quarter=quarter, year=year):
+        pd_dfs.append(mb.run_cpu_workflow(quarter=quarter, year=year, perf_file=fname))
+    pd_df = pd_dfs[0] if len(pd_dfs) == 1 else pd.concat(pd_dfs)
+    etl_times["t_readcsv"] = round(mb.t_read_csv * 1000)
+    print("ETL timings")
+    print("  t_one_hot_encoding = ", mb.t_one_hot_encoding)
+    print("  t_fillna = ", mb.t_fillna)
+    print("  t_drop_cols = ", mb.t_drop_cols)
+    print("  t_merge = ", mb.t_merge)
+    print("  t_conv_dates = ", mb.t_conv_dates)
+    etl_times["t_etl"] = round(
+        (mb.t_one_hot_encoding + mb.t_fillna + mb.t_drop_cols + mb.t_merge + mb.t_conv_dates)
+        * 1000
+    )
+
+    return pd_df, mb, etl_times
+
+
+def ml(df, n_runs, mb, ml_keys, ml_score_keys):
+    mse_values, cod_values = [], []
+    ml_times = {key: 0.0 for key in ml_keys}
+    ml_scores = {key: 0.0 for key in ml_score_keys}
+
+    print("ML runs: ", n_runs)
+    for i in range(n_runs):
+        mb.train_xgb(df)
+        ml_times["t_dmatrix"] += mb.t_dmatrix * 1000
+        ml_times["t_train"] += mb.t_train * 1000
+        mse_values.append(mb.score_mse)
+        cod_values.append(mb.score_cod)
+
+    ml_times["t_ml"] += ml_times["t_train"] + ml_times["t_dmatrix"]
+
+    ml_scores["mse_mean"] = sum(mse_values) / len(mse_values)
+    ml_scores["cod_mean"] = sum(cod_values) / len(cod_values)
+    ml_scores["mse_dev"] = pow(
+        sum([(mse_value - ml_scores["mse_mean"]) ** 2 for mse_value in mse_values])
+        / (len(mse_values) - 1),
+        0.5,
+    )
+    ml_scores["cod_dev"] = pow(
+        sum([(cod_value - ml_scores["cod_mean"]) ** 2 for cod_value in cod_values])
+        / (len(cod_values) - 1),
+        0.5,
+    )
+
+    return ml_scores, ml_times
 
 
 def main():
@@ -572,7 +506,7 @@ def main():
         help="Size of memory to allocate for Ray plasma store",
     )
     parser.add_argument(
-        "-no_ml", action="store_true", help="Do not run machine learning benchmark, only ETL part",
+        "-no_ml", action="store_true", help="Do not run machine learning benchmark, only ETL part"
     )
 
     parser.add_argument("-db-server", default="localhost", help="Host name of MySQL server")
@@ -583,10 +517,10 @@ def main():
         help="Username to use to connect to MySQL database. If user name is specified, script attempts to store results in MySQL database using other -db-* parameters.",
     )
     parser.add_argument(
-        "-db-pass", default="omniscidb", help="Password to use to connect to MySQL database",
+        "-db-pass", default="omniscidb", help="Password to use to connect to MySQL database"
     )
     parser.add_argument(
-        "-db-name", default="omniscidb", help="MySQL database to use to store benchmark results",
+        "-db-name", default="omniscidb", help="MySQL database to use to store benchmark results"
     )
     parser.add_argument("-db-table", help="Table to use to store results for this benchmark.")
 
@@ -650,7 +584,7 @@ def main():
     for iii in range(1, args.iterations + 1):
         dataFilesNumber = 0
         pd_dfs = []
-        time_ETL = default_timer()
+        time_ETL = timer()
         mb = MortgagePandasBenchmark(data_directory, args.algo)
         print("RUNNING BENCHMARK NUMBER", benchName, "ITERATION NUMBER", iii)
         for quarter in range(0, args.df):
@@ -668,7 +602,7 @@ def main():
                 )
             dataFilesNumber += 1
 
-        time_ETL = default_timer() - time_ETL
+        time_ETL = timer() - time_ETL
         print("ITERATION", iii, "ETL TIME: ", time_ETL)
 
         if bestExecTime > time_ETL:
@@ -705,9 +639,7 @@ def main():
 
     try:
         with open(args.r, "w") as report:
-            print(
-                "BENCHMARK", benchName, "EXEC TIME", bestExecTime, "TOTAL TIME", bestTotalTime,
-            )
+            print("BENCHMARK", benchName, "EXEC TIME", bestExecTime, "TOTAL TIME", bestTotalTime)
             print(
                 "datafiles,fragment_size,query,query_exec_min,query_total_min,query_exec_max,query_total_max,query_exec_avg,query_total_avg,query_error_info",
                 file=report,

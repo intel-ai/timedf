@@ -20,7 +20,13 @@ def main():
     omnisci_server = None
     port_default_value = -1
 
-    benchmarks = ["ny_taxi", "santander", "census", "plasticc"]
+    benchmarks = {
+        "ny_taxi": "taxi",
+        "santander": "santander",
+        "census": "census",
+        "plasticc": "plasticc",
+        "mortgage": "mortgage",
+    }
 
     parser = argparse.ArgumentParser(description="Run internal tests from ibis project")
     optional = parser._action_groups.pop()
@@ -30,7 +36,7 @@ def main():
     required.add_argument(
         "-bench_name",
         dest="bench_name",
-        choices=benchmarks,
+        choices=sorted(benchmarks.keys()),
         help="Benchmark name.",
         required=True,
     )
@@ -70,7 +76,7 @@ def main():
     optional.add_argument(
         "-import_mode",
         dest="import_mode",
-        default="copy-from",
+        default="fsi",
         help="measure 'COPY FROM' import, FSI import, import through pandas",
     )
     optional.add_argument(
@@ -283,14 +289,7 @@ def main():
         if args.calcite_port == port_default_value:
             args.calcite_port = find_free_port()
 
-        if args.bench_name == "ny_taxi":
-            from taxi import run_benchmark
-        elif args.bench_name == "santander":
-            from santander import run_benchmark
-        elif args.bench_name == "census":
-            from census import run_benchmark
-        elif args.bench_name == "plasticc":
-            from plasticc import run_benchmark
+        run_benchmark = __import__(benchmarks[args.bench_name]).run_benchmark
 
         parameters = {
             "data_file": args.data_file,
@@ -317,6 +316,7 @@ def main():
                 http_port=args.http_port,
                 calcite_port=args.calcite_port,
                 database_name=args.database_name,
+                omnisci_cwd=args.omnisci_cwd,
                 user=args.user,
                 password=args.password,
                 debug_timer=args.debug_timer,

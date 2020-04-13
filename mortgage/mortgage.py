@@ -284,7 +284,7 @@ CREATE TABLE names (
     create_table_names = create_table_names_temlate.replace(
         "##FRAGMENT_SIZE##", str(fragment_size)
     )
-    import_query = import_query_template % ("names", os.path.join(data_directory, "names.csv"),)
+    import_query = import_query_template % ("names", os.path.join(data_directory, "names.csv"))
 
     con.execute(create_table_names)
     con.execute(import_query)
@@ -664,9 +664,7 @@ parser.add_argument(
     help="Number of datafiles (quarters) to input into database for processing.",
 )
 parser.add_argument(
-    "-dp",
-    required=True,
-    help="Path to root of mortgage datafiles directory (contains names.csv).",
+    "-dp", required=True, help="Path to root of mortgage datafiles directory (contains names.csv)."
 )
 parser.add_argument(
     "-i",
@@ -693,7 +691,7 @@ parser.add_argument(
     "-db-pass", default="omniscidb", help="Password to use to connect to MySQL database"
 )
 parser.add_argument(
-    "-db-name", default="omniscidb", help="MySQL database to use to store benchmark results",
+    "-db-name", default="omniscidb", help="MySQL database to use to store benchmark results"
 )
 parser.add_argument("-db-table", help="Table to use to store results for this benchmark.")
 
@@ -713,7 +711,7 @@ if args.iterations < 1:
     print("Bad number of iterations specified", args.t)
 
 con = connect(
-    user="admin", password="HyperInteractive", host="localhost", dbname="omnisci", port=args.port,
+    user="admin", password="HyperInteractive", host="localhost", dbname="omnisci", port=args.port
 )
 
 db_reporter = None
@@ -772,7 +770,7 @@ for fs in args.fragment_size:
             ]
             for f in files:
                 dataframe, exec_time = run_pd_workflow(
-                    year=year, quarter=(quarter % 4 + 1), perf_file=str(f), fragment_size=fs,
+                    year=year, quarter=(quarter % 4 + 1), perf_file=str(f), fragment_size=fs
                 )
                 exec_time_total += exec_time
             dataFilesNumber += 1
@@ -796,9 +794,7 @@ avgTotalTime /= args.iterations
 
 try:
     with open(args.r, "w") as report:
-        print(
-            "BENCHMARK", benchName, "EXEC TIME", bestExecTime, "TOTAL TIME", bestTotalTime,
-        )
+        print("BENCHMARK", benchName, "EXEC TIME", bestExecTime, "TOTAL TIME", bestTotalTime)
         print(
             "datafiles,fragment_size,query,query_exec_min,query_total_min,query_exec_max,query_total_max,query_exec_avg,query_total_avg,query_error_info",
             file=report,
