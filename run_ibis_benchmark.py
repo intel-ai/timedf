@@ -333,7 +333,7 @@ def main():
 
         if parameters["validation"] and (parameters["no_pandas"] or parameters["no_ibis"]):
             parameters["validation"] = False
-            print("WARNING: validation was turned off, because of incompatible flags.")
+            print("WARNING: validation was turned off as it requires both sides to compare.")
 
         etl_results = []
         ml_results = []
