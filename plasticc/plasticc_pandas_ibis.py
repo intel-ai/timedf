@@ -260,6 +260,8 @@ def load_data_ibis(
                 **general_options,
             )
 
+            # before reading meta test files, we should update columns_names
+            # and columns_types in general options with its proper values
             general_options["columns_names"] = list(meta_dtypes.keys())
             general_options["columns_types"] = list(meta_dtypes.values())
 
