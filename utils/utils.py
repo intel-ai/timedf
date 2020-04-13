@@ -273,42 +273,6 @@ def timer_ms():
     return round(timer() * 1000)
 
 
-def check_args_compatibility(parameters, incompability):
-    from functools import partial
-
-    def end(msg, kind="warning"):
-        if kind == "warning":
-            print("WARNING: ", msg)
-        elif kind == "terminate":
-            print(msg)
-            sys.exit(1)
-
-    executor = None
-    for incomp_dict in incompability:
-        behavior = incomp_dict.pop("__behavior__", "warning")
-        final = incomp_dict.pop("__finally__", None)
-        if isinstance(behavior, str):
-            executor = partial(end, kind=behavior)
-        else:
-            executor = behavior
-
-        intersect = dict()
-        for arg in incomp_dict:
-            if parameters.get(arg) == incomp_dict.get(arg):
-                intersect[arg] = incomp_dict[arg]
-                if len(intersect) > 1:
-                    keys = list(intersect.keys())
-                    values = list(intersect.values())
-                    executor(
-                        "Incompatible args: '-{} {}' and '-{} {}'".format(
-                            keys[0], values[0], keys[1], values[1]
-                        )
-                    )
-                    if final is not None:
-                        final(parameters)
-                    break
-
-
 class KeyValueListParser(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         kwargs = {}
