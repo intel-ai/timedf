@@ -251,7 +251,8 @@ def main():
         default=[],
         nargs="*",
         type=int,
-        help="[fragments_size help message]",
+        help="Number of rows per fragment that is a unit of the table for query processing. \
+            Should be specified for each table in workload",
     )
     optional.add_argument(
         "-omnisci_run_kwargs",
