@@ -247,7 +247,7 @@ def main():
         "-no_pandas",
         default=False,
         type=str_arg_to_bool,
-        help="Do not run Pandas benchmark, only Ibis",
+        help="Do not run Pandas version of benchmark",
     )
     benchmark.add_argument(
         "-pandas_mode",

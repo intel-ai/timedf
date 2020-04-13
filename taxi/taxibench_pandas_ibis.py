@@ -547,7 +547,7 @@ def run_benchmark(parameters):
                 validation=parameters["validation"],
             )
 
-            print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
+            print_results(results=etl_times_ibis, backend="Ibis", unit="s")
             etl_times_ibis["Backend"] = "Ibis"
 
         if not parameters["no_pandas"]:
@@ -560,7 +560,7 @@ def run_benchmark(parameters):
                 columns_types=columns_types,
             )
 
-            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="ms")
+            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
             etl_times["Backend"] = parameters["pandas_mode"]
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": []}

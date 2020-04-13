@@ -11,7 +11,7 @@ import mysql.connector
 from report import DbReport
 from server import OmnisciServer
 from server_worker import OmnisciServerWorker
-from utils import find_free_port, str_arg_to_bool, KeyValueListParser
+from utils import find_free_port, KeyValueListParser, str_arg_to_bool
 
 
 def main():
@@ -96,7 +96,7 @@ def main():
         "-no_pandas",
         default=False,
         type=str_arg_to_bool,
-        help="Do not run Pandas benchmark, only Ibis",
+        help="Do not run Pandas version of benchmark",
     )
     optional.add_argument(
         "-pandas_mode",

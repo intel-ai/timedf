@@ -612,14 +612,14 @@ def run_benchmark(parameters):
                 print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
                 ml_times["Backend"] = parameters["pandas_mode"]
 
-        if parameters["validation"] and parameters["import_mode"] is not "pandas":
+        if parameters["validation"] and parameters["import_mode"] != "pandas":
             print(
                 "WARNING: validation can not be performed, it works only for 'pandas' import mode, '{}' passed".format(
                     parameters["import_mode"]
                 )
             )
 
-        if parameters["validation"] and parameters["import_mode"] is "pandas":
+        if parameters["validation"] and parameters["import_mode"] == "pandas":
             compare_dataframes(
                 ibis_dfs=[train_final_ibis, test_final_ibis], pandas_dfs=[train_final, test_final],
             )

@@ -424,7 +424,7 @@ def run_benchmark(parameters):
         etl_times = None
         ml_times = None
 
-        if parameters["validation"] and parameters["import_mode"] is not "pandas":
+        if parameters["validation"] and parameters["import_mode"] != "pandas":
             print(
                 "WARNING: validation can not be performed, it works only for 'pandas' import mode, '{}' passed".format(
                     parameters["import_mode"]
@@ -493,7 +493,7 @@ def run_benchmark(parameters):
                 print_results(results=ml_scores, backend=parameters["pandas_mode"])
                 ml_scores["Backend"] = parameters["pandas_mode"]
 
-        if parameters["validation"] and parameters["import_mode"] is "pandas":
+        if parameters["validation"] and parameters["import_mode"] == "pandas":
             # this should work only for pandas mode
             compare_dataframes(ibis_dfs=(X_ibis, y_ibis), pandas_dfs=(X, y))
 
