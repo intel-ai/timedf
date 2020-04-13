@@ -9,7 +9,7 @@ OmnisciDB server often
 requires a lot of open files, so it is a good idea to run it with
 `ulimit -n 10000`.
 
-## Main benchmark script
+## Main benchmark script 
 
 Main script is called `run_omnisci_benchmark.py`. It has two distinct
 modes of operation: to run synthetic benchmarks and to run dataset
