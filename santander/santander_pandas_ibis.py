@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 # https://www.kaggle.com/c/santander-customer-transaction-prediction/data
 
 # Current script prerequisites:
-# 1) Patched OmniSci version (https://github.com/intel-go/omniscidb/tree/ienkovich/santander)
+# 1) Patched OmniSci version (https://github.com/intel-go/omniscidb/tree/develop)
 # 2) Patched Ibis version (https://github.com/intel-go/ibis/tree/develop)
 
 
@@ -365,7 +365,7 @@ def run_benchmark(parameters):
                 import_mode=parameters["import_mode"],
             )
 
-            print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
+            print_results(results=etl_times_ibis, backend="Ibis", unit="s")
             etl_times_ibis["Backend"] = "Ibis"
 
         if not parameters["no_pandas"]:
@@ -375,7 +375,7 @@ def run_benchmark(parameters):
                 columns_types=columns_types_pd,
                 etl_keys=etl_keys,
             )
-            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="ms")
+            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
             etl_times["Backend"] = parameters["pandas_mode"]
 
         if not parameters["no_ml"]:
@@ -383,7 +383,7 @@ def run_benchmark(parameters):
                 ml_scores, ml_times = ml(
                     ml_data=ml_data, target="target", ml_keys=ml_keys, ml_score_keys=ml_score_keys,
                 )
-                print_results(results=ml_times, backend=parameters["pandas_mode"], unit="ms")
+                print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
                 ml_times["Backend"] = parameters["pandas_mode"]
                 print_results(results=ml_scores, backend=parameters["pandas_mode"])
                 ml_scores["Backend"] = parameters["pandas_mode"]
@@ -395,7 +395,7 @@ def run_benchmark(parameters):
                     ml_keys=ml_keys,
                     ml_score_keys=ml_score_keys,
                 )
-                print_results(results=ml_times_ibis, backend="Ibis", unit="ms")
+                print_results(results=ml_times_ibis, backend="Ibis", unit="s")
                 ml_times_ibis["Backend"] = "Ibis"
                 print_results(results=ml_scores_ibis, backend="Ibis")
                 ml_scores_ibis["Backend"] = "Ibis"

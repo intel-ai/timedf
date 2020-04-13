@@ -585,13 +585,13 @@ def run_benchmark(parameters):
                 import_mode=parameters["import_mode"],
             )
 
-            print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
+            print_results(results=etl_times_ibis, backend="Ibis", unit="s")
             etl_times_ibis["Backend"] = "Ibis"
 
             if not parameters["no_ml"]:
                 print("using ml with dataframes from Ibis")
                 ml_times_ibis = ml(train_final_ibis, test_final_ibis, ml_keys)
-                print_results(results=ml_times_ibis, backend="Ibis", unit="ms")
+                print_results(results=ml_times_ibis, backend="Ibis", unit="s")
                 ml_times_ibis["Backend"] = "Ibis"
 
         if not parameters["no_pandas"]:
@@ -603,13 +603,13 @@ def run_benchmark(parameters):
                 etl_keys=etl_keys,
             )
 
-            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="ms")
+            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
             etl_times["Backend"] = parameters["pandas_mode"]
 
             if not parameters["no_ml"]:
                 print("using ml with dataframes from Pandas")
                 ml_times = ml(train_final, test_final, ml_keys)
-                print_results(results=ml_times, backend=parameters["pandas_mode"], unit="ms")
+                print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
                 ml_times["Backend"] = parameters["pandas_mode"]
 
         if parameters["validation"] and parameters["import_mode"] is not "pandas":

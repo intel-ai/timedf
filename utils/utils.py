@@ -208,10 +208,16 @@ def print_times(times, backend=None):
 
 
 def print_results(results, backend=None, unit=""):
+    conversions = {
+        "ms": 1,
+        "s": 1 / 1000,
+        "m": 1 / (1000 * 60),
+    }
+    multiplier = conversions.get(unit, 1)
     if backend:
         print(f"{backend} results:")
     for result_name, result in results.items():
-        print("    {} = {} {}".format(result_name, result, unit))
+        print("    {} = {:.2f} {}".format(result_name, result * multiplier, unit))
 
 
 def mse(y_test, y_pred):
