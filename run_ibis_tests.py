@@ -181,7 +181,7 @@ def main():
     omnisci.add_argument(
         "-fragments_size",
         dest="fragments_size",
-        default=[],
+        default=None,
         nargs="*",
         type=int,
         help="Number of rows per fragment that is a unit of the table for query processing. \

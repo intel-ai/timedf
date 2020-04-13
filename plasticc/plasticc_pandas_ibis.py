@@ -166,14 +166,14 @@ def load_data_ibis(
     fragments_size,
 ):
     count_table = 4
-    if fragments_size != []:
+    if fragments_size:
         if import_mode != "pandas" and len(fragments_size) != count_table:
             raise ValueError(
                 f"fragment size should be specified for each table; \
                 fragments size: {fragments_size}; count table: {count_table}"
             )
     else:
-        fragments_size = [32000000] * count_table
+        fragments_size = [fragments_size] * count_table
 
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
 
