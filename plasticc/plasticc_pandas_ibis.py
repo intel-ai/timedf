@@ -163,12 +163,14 @@ def load_data_ibis(
     dtypes,
     meta_dtypes,
     import_mode,
-    fragments_size=[32000000]*4,
+    fragments_size=[32000000] * 4,
 ):
     count_table = 4
     if import_mode != "pandas" and len(fragments_size) != count_table:
-        raise ValueError(f"fragment size should be specified for each table; \
-            fragments size: {fragments_size}; count table: {count_table}")
+        raise ValueError(
+            f"fragment size should be specified for each table; \
+            fragments size: {fragments_size}; count table: {count_table}"
+        )
 
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
 
@@ -301,7 +303,10 @@ def load_data_ibis(
                 "training_meta", training_meta_file, meta_schema, fragment_size=fragments_size[2],
             )
             omnisci_server_worker._conn.create_table_from_csv(
-                "test_meta", test_meta_file, meta_schema_without_target, fragment_size=fragments_size[3],
+                "test_meta",
+                test_meta_file,
+                meta_schema_without_target,
+                fragment_size=fragments_size[3],
             )
             t_readcsv = round((timer() - t0) * 1000)
 
