@@ -173,7 +173,7 @@ def load_data_ibis(
                 fragments size: {fragments_size}; count table: {count_table}"
             )
     else:
-        fragments_size = [fragments_size] * count_table
+        fragments_size = [None] * count_table
 
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
 
