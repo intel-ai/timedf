@@ -246,14 +246,14 @@ def load_data_ibis(
             }
 
             # create table #1
-            (t_import_pandas_1, t_import_ibis_1,) = omnisci_server_worker.import_data_by_ibis(
+            t_import_pandas_1, t_import_ibis_1 = omnisci_server_worker.import_data_by_ibis(
                 table_name="training",
                 data_files_names="%s/training_set.csv" % dataset_path,
                 **general_options,
             )
 
             # create table #2
-            (t_import_pandas_2, t_import_ibis_2,) = omnisci_server_worker.import_data_by_ibis(
+            t_import_pandas_2, t_import_ibis_2 = omnisci_server_worker.import_data_by_ibis(
                 table_name="test",
                 data_files_names="%s/test_set.csv" % dataset_path,
                 skiprows=skip_rows,
@@ -264,7 +264,7 @@ def load_data_ibis(
             general_options["columns_types"] = list(meta_dtypes.values())
 
             # create table #3
-            (t_import_pandas_3, t_import_ibis_3,) = omnisci_server_worker.import_data_by_ibis(
+            t_import_pandas_3, t_import_ibis_3 = omnisci_server_worker.import_data_by_ibis(
                 table_name="training_meta",
                 data_files_names="%s/training_set_metadata.csv" % dataset_path,
                 **general_options,
@@ -275,7 +275,7 @@ def load_data_ibis(
             general_options["columns_types"] = list(meta_dtypes.values())
 
             # create table #4
-            (t_import_pandas_4, t_import_ibis_4,) = omnisci_server_worker.import_data_by_ibis(
+            t_import_pandas_4, t_import_ibis_4 = omnisci_server_worker.import_data_by_ibis(
                 table_name="test_meta",
                 data_files_names="%s/test_set_metadata.csv" % dataset_path,
                 **general_options,
