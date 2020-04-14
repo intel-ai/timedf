@@ -4,6 +4,7 @@ python3 run_ibis_tests.py --env_name ${ENV_NAME} --env_check True --save_env Tru
                           -executable "${PWD}/../omniscidb/build/bin/omnisci_server"                                          \
                           -database_name ${DATABASE_NAME} -table mg_bench_t -bench_name mortgage -dfiles_num 1 -iterations 1  \
                           -ipc_conn True -columnar_output True -lazy_fetch False -multifrag_rs True                           \
+                          -fragments_size 2000000 2000000                                                                     \
                           -data_file "${DATASETS_PWD}/mortgage_new"                                                           \
                           -import_mode fsi -pandas_mode Pandas -omnisci_run_kwargs enable-union=1                             \
                           -commit_omnisci ${BUILD_REVISION} -commit_ibis ${BUILD_IBIS_REVISION}                               \
