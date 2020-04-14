@@ -14,7 +14,13 @@ import xgboost as xgb
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from utils import compare_dataframes, import_pandas_into_module_namespace, print_results, split
+from utils import (
+    check_fragments_size,
+    compare_dataframes,
+    import_pandas_into_module_namespace,
+    print_results,
+    split,
+)
 
 
 def ravel_column_names(cols):
