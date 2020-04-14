@@ -43,7 +43,7 @@ def run_benchmark(parameters):
             raise ValueError("Unsupported import mode: %s" % parameters["import_mode"])
         if parameters["dfiles_num"] != 1:
             raise NotImplementedError("Loading more than 1 file not implemented yet")
-    
+
     if not parameters["no_pandas"]:
         import_pandas_into_module_namespace(
             namespace=[run_benchmark.__globals__, etl_pandas.__globals__],
@@ -206,7 +206,7 @@ def run_benchmark(parameters):
         result["ETL"].append(etl_times_ibis)
         if not parameters["no_ml"]:
             result["ML"].append(_run_ml(df_ibis, N_RUNS, mb_ibis, ml_keys, ml_score_keys, "Ibis"))
-    
+
     if not parameters["no_pandas"]:
         df_pd, mb_pd, etl_times_pd = etl_pandas(
             dataset_path=parameters["data_file"],
