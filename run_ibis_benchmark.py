@@ -92,6 +92,12 @@ def main():
         help="Do not run Ibis benchmark, run only Pandas (or Modin) version",
     )
     optional.add_argument(
+        "-no_pandas",
+        default=False,
+        type=str_arg_to_bool,
+        help="Do not run Pandas version of benchmark",
+    )
+    optional.add_argument(
         "-pandas_mode",
         choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python"],
         default="Pandas",
@@ -303,7 +309,8 @@ def main():
             "ray_tmpdir": args.ray_tmpdir,
             "ray_memory": args.ray_memory,
             "gpu_memory": args.gpu_memory,
-            "validation": False if args.no_ibis else args.validation,
+            "validation": args.validation,
+            "no_pandas": args.no_pandas,
         }
 
         if not args.no_ibis:
@@ -333,6 +340,10 @@ def main():
             parameters["dni"] = args.dni
             parameters["import_mode"] = args.import_mode
             parameters["fragments_size"] = args.fragments_size
+
+        if parameters["validation"] and (parameters["no_pandas"] or parameters["no_ibis"]):
+            parameters["validation"] = False
+            print("WARNING: validation was turned off as it requires both sides to compare.")
 
         etl_results = []
         ml_results = []

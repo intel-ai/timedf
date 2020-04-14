@@ -253,6 +253,12 @@ def main():
         help="Do not run Ibis benchmark, run only Pandas (or Modin) version",
     )
     benchmark.add_argument(
+        "-no_pandas",
+        default=False,
+        type=str_arg_to_bool,
+        help="Do not run Pandas version of benchmark",
+    )
+    benchmark.add_argument(
         "-pandas_mode",
         choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python"],
         default="Pandas",
@@ -462,6 +468,7 @@ def main():
                 "validation",
                 "optimizer",
                 "no_ibis",
+                "no_pandas",
                 "pandas_mode",
                 "ray_tmpdir",
                 "ray_memory",
