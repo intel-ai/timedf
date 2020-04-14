@@ -512,9 +512,9 @@ def main():
                                         ),
                                     ]
                                 )
-                            elif type(arg_value) == list:
+                            elif type(arg_value) == list and arg_value:
                                 benchmark_cmd.extend([arg_name] + [str(x) for x in arg_value])
-                            elif arg_value:
+                            else:
                                 benchmark_cmd.extend([arg_name, str(arg_value)])
 
                 except KeyError:
