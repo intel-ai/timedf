@@ -200,6 +200,7 @@ def run_benchmark(parameters):
             ipc_connection=parameters["ipc_connection"],
             etl_keys=etl_keys,
             import_mode=parameters["import_mode"],
+            fragments_size=parameters["fragments_size"],
         )
         print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
         etl_times_ibis["Backend"] = "Ibis"

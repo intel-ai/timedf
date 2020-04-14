@@ -8,6 +8,7 @@ import numpy as np
 import ibis
 
 from .mortgage_pandas import MortgagePandasBenchmark  # used for loading
+from utils import check_fragments_size
 
 
 class Timer:
@@ -161,8 +162,11 @@ def etl_ibis(
     ipc_connection,
     etl_keys,
     import_mode,
+    fragments_size,
 ):
     etl_times = {key: 0.0 for key in etl_keys}
+
+    fragments_size = check_fragments_size(fragments_size, count_table=2, import_mode=import_mode)
 
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
     mb = MortgagePandasBenchmark(dataset_path, "xgb")  # used for loading
@@ -183,7 +187,7 @@ def etl_ibis(
                 database_name,
                 delimiter=",",
                 header="true",
-                fragment_size=2000000,
+                fragment_size=fragments_size[0],
             )
             # FIXME: handle cases when quarter perf is split in two files
             omnisci_server_worker._conn.create_table_from_csv(
@@ -193,7 +197,7 @@ def etl_ibis(
                 database_name,
                 delimiter=",",
                 header=True,
-                fragment_size=2000000,
+                fragment_size=fragments_size[1],
             )
         etl_times["t_readcsv"] = round((timer() - t0) * 1000)
 
