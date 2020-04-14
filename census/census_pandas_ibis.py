@@ -119,7 +119,7 @@ def etl_ibis(
 ):
     import ibis
 
-    fragments_size = check_fragments_size(fragments_size, count_table=1, import_mode="pandas")
+    fragments_size = check_fragments_size(fragments_size, count_table=1, import_mode=import_mode)
 
     etl_times = {key: 0.0 for key in etl_keys}
 
