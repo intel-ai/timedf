@@ -503,7 +503,7 @@ def main():
                         arg_value = args_dict[pure_arg]
                         # correct filling of arguments with default values
                         if arg_value is not None:
-                            if type(arg_value) == dict and arg_value:
+                            if insinstance(arg_value, dict) and arg_value:
                                 benchmark_cmd.extend(
                                     [
                                         arg_name,
@@ -512,7 +512,7 @@ def main():
                                         ),
                                     ]
                                 )
-                            elif type(arg_value) == list and arg_value:
+                            elif isinstance(arg_value, (list, tuple)) and arg_value:
                                 benchmark_cmd.extend([arg_name] + [str(x) for x in arg_value])
                             else:
                                 benchmark_cmd.extend([arg_name, str(arg_value)])
