@@ -13,13 +13,8 @@ from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils import (
-    check_fragments_size,
-    compare_dataframes,
-    import_pandas_into_module_namespace,
-    print_results,
-    split,
-)
+
+from utils import compare_dataframes, import_pandas_into_module_namespace, print_results, split
 
 
 def ravel_column_names(cols):
@@ -321,13 +316,7 @@ def load_data_ibis(
     training_meta_table = db.table("training_meta")
     test_meta_table = db.table("test_meta")
 
-    return (
-        training_table,
-        training_meta_table,
-        test_table,
-        test_meta_table,
-        t_readcsv,
-    )
+    return (training_table, training_meta_table, test_table, test_meta_table, t_readcsv)
 
 
 def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes):
@@ -363,7 +352,9 @@ def split_step(train_final, test_final):
     lbl = LabelEncoder()
     y = lbl.fit_transform(y)
 
-    (X_train, y_train, X_test, y_test), split_time = split(X, y, test_size=0.1, random_state=126)
+    (X_train, y_train, X_test, y_test), split_time = split(
+        X, y, test_size=0.1, stratify=y, random_state=126
+    )
 
     return (X_train, y_train, X_test, y_test, Xt, classes, class_weights), split_time
 
@@ -417,7 +408,7 @@ def etl_all_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys):
 
     t0 = timer()
     train, train_meta, test, test_meta = load_data_pandas(
-        dataset_path=dataset_path, skip_rows=skip_rows, dtypes=dtypes, meta_dtypes=meta_dtypes,
+        dataset_path=dataset_path, skip_rows=skip_rows, dtypes=dtypes, meta_dtypes=meta_dtypes
     )
     etl_times["t_readcsv"] += round((timer() - t0) * 1000)
 
@@ -526,9 +517,7 @@ def compute_skip_rows(gpu_memory):
 
 
 def run_benchmark(parameters):
-    ignored_parameters = {
-        "dfiles_num": parameters["dfiles_num"],
-    }
+    ignored_parameters = {"dfiles_num": parameters["dfiles_num"]}
     warnings.warn(f"Parameters {ignored_parameters} are irnored", RuntimeWarning)
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
@@ -634,7 +623,7 @@ def run_benchmark(parameters):
 
         if parameters["validation"] and parameters["import_mode"] == "pandas":
             compare_dataframes(
-                ibis_dfs=[train_final_ibis, test_final_ibis], pandas_dfs=[train_final, test_final],
+                ibis_dfs=[train_final_ibis, test_final_ibis], pandas_dfs=[train_final, test_final]
             )
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
