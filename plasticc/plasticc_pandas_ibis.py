@@ -14,6 +14,7 @@ import xgboost as xgb
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
+    check_fragments_size,
     compare_dataframes,
     import_pandas_into_module_namespace,
     print_results,
@@ -165,15 +166,7 @@ def load_data_ibis(
     import_mode,
     fragments_size,
 ):
-    count_table = 4
-    if fragments_size:
-        if import_mode != "pandas" and len(fragments_size) != count_table:
-            raise ValueError(
-                f"fragment size should be specified for each table; \
-                fragments size: {fragments_size}; count table: {count_table}"
-            )
-    else:
-        fragments_size = [None] * count_table
+    fragments_size = check_fragments_size(fragments_size, count_table=4, import_mode=import_mode)
 
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
 
