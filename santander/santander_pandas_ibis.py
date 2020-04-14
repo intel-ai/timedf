@@ -10,6 +10,7 @@ import ibis
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
+    check_fragments_size,
     cod,
     compare_dataframes,
     import_pandas_into_module_namespace,
@@ -80,10 +81,12 @@ def etl_ibis(
     run_import_queries,
     etl_keys,
     import_mode,
+    fragments_size,
 ):
     tmp_table_name = "tmp_table"
-
     etl_times = {key: 0.0 for key in etl_keys}
+
+    fragments_size = check_fragments_size(fragments_size, count_table=1, import_mode=import_mode)
 
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
 
@@ -158,7 +161,7 @@ def etl_ibis(
         schema_table = ibis.Schema(names=columns_names, types=columns_types)
         if import_mode == "copy-from":
             omnisci_server_worker.create_table(
-                table_name=table_name, schema=schema_table, database=database_name,
+                table_name=table_name, schema=schema_table, database=database_name, fragment_size=fragments_size[0],
             )
             table_import = omnisci_server_worker.database(database_name).table(table_name)
 
@@ -198,7 +201,7 @@ def etl_ibis(
 
                 t0 = timer()
                 omnisci_server_worker._conn.create_table_from_csv(
-                    table_name, unzip_name or filename, schema_table
+                    table_name, unzip_name or filename, schema_table, fragment_size=fragments_size[0],
                 )
                 etl_times["t_readcsv"] = round((timer() - t0) * 1000)
 
@@ -363,6 +366,7 @@ def run_benchmark(parameters):
                 validation=parameters["validation"],
                 etl_keys=etl_keys,
                 import_mode=parameters["import_mode"],
+                fragments_size=parameters["fragments_size"],
             )
 
             print_results(results=etl_times_ibis, backend="Ibis", unit="s")
