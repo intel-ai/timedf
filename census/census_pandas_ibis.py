@@ -121,7 +121,7 @@ def etl_ibis(
                 table_name=table_name,
                 schema=schema_table,
                 database=database_name,
-                fragmnet_size=fragment_size,
+                fragment_size=fragment_size,
             )
             table_import = omnisci_server_worker.database(database_name).table(table_name)
 
