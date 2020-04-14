@@ -278,3 +278,16 @@ class KeyValueListParser(argparse.Action):
             k, v = kv.split("=")
             kwargs[k] = v
         setattr(namespace, self.dest, kwargs)
+
+
+def check_fragments_size(fragments_size, count_table, import_mode):
+    if fragments_size:
+        if import_mode != "pandas" and len(fragments_size) != count_table:
+            raise ValueError(
+                f"fragment size should be specified for each table; \
+                fragments size: {fragments_size}; count table: {count_table}"
+            )
+    else:
+        fragments_size = [None] * count_table
+
+    return fragments_size

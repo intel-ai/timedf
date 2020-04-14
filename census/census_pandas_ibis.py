@@ -8,6 +8,7 @@ from timeit import default_timer as timer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
+    check_fragments_size,
     cod,
     compare_dataframes,
     import_pandas_into_module_namespace,
@@ -87,19 +88,6 @@ def etl_pandas(filename, columns_names, columns_types, etl_keys):
     print("DataFrame shape:", X.shape)
 
     return df, X, y, etl_times
-
-
-def check_fragments_size(fragments_size, count_table, import_mode):
-    if fragments_size:
-        if import_mode != "pandas" and len(fragments_size) != count_table:
-            raise ValueError(
-                f"fragment size should be specified for each table; \
-                fragments size: {fragments_size}; count table: {count_table}"
-            )
-    else:
-        fragments_size = [None] * count_table
-
-    return fragments_size
 
 
 def etl_ibis(

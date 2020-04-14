@@ -1,4 +1,5 @@
 from .utils import (
+    check_fragments_size,
     cod,
     combinate_requirements,
     compare_dataframes,
