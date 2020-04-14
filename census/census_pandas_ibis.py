@@ -171,7 +171,10 @@ def etl_ibis(
 
                 t0 = timer()
                 omnisci_server_worker._conn.create_table_from_csv(
-                    table_name, unzip_name or filename, schema_table, fragment_size=fragments_size[0]
+                    table_name,
+                    unzip_name or filename,
+                    schema_table,
+                    fragment_size=fragments_size[0],
                 )
                 etl_times["t_readcsv"] = round((timer() - t0) * 1000)
 
