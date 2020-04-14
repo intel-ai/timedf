@@ -89,6 +89,19 @@ def etl_pandas(filename, columns_names, columns_types, etl_keys):
     return df, X, y, etl_times
 
 
+def check_fragments_size(fragments_size, count_table, import_mode):
+    if fragments_size:
+        if import_mode != "pandas" and len(fragments_size) != count_table:
+            raise ValueError(
+                f"fragment size should be specified for each table; \
+                fragments size: {fragments_size}; count table: {count_table}"
+            )
+    else:
+        fragments_size = [None] * count_table
+
+    return fragments_size
+
+
 def etl_ibis(
     filename,
     columns_names,
@@ -102,15 +115,15 @@ def etl_ibis(
     validation,
     etl_keys,
     import_mode,
+    fragments_size,
 ):
     import ibis
+
+    fragments_size = check_fragments_size(fragments_size, count_table=1, import_mode="pandas")
 
     etl_times = {key: 0.0 for key in etl_keys}
 
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
-
-    # TODO: this will be specified through command line parameter
-    fragment_size = 1000000
 
     # Create table and import data
     if create_new_table:
@@ -121,7 +134,7 @@ def etl_ibis(
                 table_name=table_name,
                 schema=schema_table,
                 database=database_name,
-                fragmnet_size=fragmnet_size,
+                fragment_size=fragments_size[0],
             )
             table_import = omnisci_server_worker.database(database_name).table(table_name)
 
@@ -158,7 +171,7 @@ def etl_ibis(
 
                 t0 = timer()
                 omnisci_server_worker._conn.create_table_from_csv(
-                    table_name, unzip_name or filename, schema_table, fragment_size=fragment_size
+                    table_name, unzip_name or filename, schema_table, fragment_size=fragments_size[0]
                 )
                 etl_times["t_readcsv"] = round((timer() - t0) * 1000)
 
@@ -440,6 +453,7 @@ def run_benchmark(parameters):
                 validation=parameters["validation"],
                 etl_keys=etl_keys,
                 import_mode=parameters["import_mode"],
+                fragments_size=parameters["fragments_size"],
             )
 
             print_results(results=etl_times_ibis, backend="Ibis", unit="s")
