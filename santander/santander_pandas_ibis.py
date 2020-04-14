@@ -161,7 +161,10 @@ def etl_ibis(
         schema_table = ibis.Schema(names=columns_names, types=columns_types)
         if import_mode == "copy-from":
             omnisci_server_worker.create_table(
-                table_name=table_name, schema=schema_table, database=database_name, fragment_size=fragments_size[0],
+                table_name=table_name,
+                schema=schema_table,
+                database=database_name,
+                fragment_size=fragments_size[0],
             )
             table_import = omnisci_server_worker.database(database_name).table(table_name)
 
@@ -201,7 +204,10 @@ def etl_ibis(
 
                 t0 = timer()
                 omnisci_server_worker._conn.create_table_from_csv(
-                    table_name, unzip_name or filename, schema_table, fragment_size=fragments_size[0],
+                    table_name,
+                    unzip_name or filename,
+                    schema_table,
+                    fragment_size=fragments_size[0],
                 )
                 etl_times["t_readcsv"] = round((timer() - t0) * 1000)
 
