@@ -225,4 +225,8 @@ def run_benchmark(parameters):
                 _run_ml(df_pd, N_RUNS, mb_pd, ml_keys, ml_score_keys, parameters["pandas_mode"])
             )
 
+    if parameters["validation"] and parameters["import_mode"] == "pandas":
+        # this should work only for pandas mode
+        compare_dataframes(ibis_dfs=(df_ibis,), pandas_dfs=(df_pd,), sort_cols=['loan_id', 'monthly_reporting_period'])
+
     return result

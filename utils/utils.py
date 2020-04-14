@@ -127,10 +127,11 @@ def compare_dataframes(ibis_dfs, pandas_dfs, sort_cols=["id"], drop_cols=["id"])
             # as 'id' column in source dataframe
             ibis_dfs[idx].sort_index(axis=0, inplace=True)
         else:
-            if len(sort_cols):
-                ibis_dfs[idx].sort_values(by=sort_cols, axis=0, inplace=True)
-            if len(drop_cols):
+            if drop_cols:
                 ibis_dfs[idx].drop(drop_cols, axis=1, inplace=True)
+            if sort_cols:
+                ibis_dfs[idx].sort_values(by=sort_cols, axis=0, inplace=True)
+                pandas_dfs[idx].sort_values(by=sort_cols, axis=0, inplace=True)
 
         ibis_dfs[idx].reset_index(drop=True, inplace=True)
         # prepare pandas part
