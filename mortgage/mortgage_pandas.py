@@ -414,12 +414,13 @@ def etl_pandas(dataset_path, dfiles_num, acq_schema, perf_schema, etl_keys):
         pd_dfs.append(mb.run_cpu_workflow(quarter=quarter, year=year, perf_file=fname))
     pd_df = pd_dfs[0] if len(pd_dfs) == 1 else pd.concat(pd_dfs)
     etl_times["t_readcsv"] = mb.t_read_csv
-    print("ETL timings")
-    print("  t_one_hot_encoding = ", round(mb.t_one_hot_encoding, 2), " s")
-    print("  t_fillna = ", round(mb.t_fillna, 2), " s")
-    print("  t_drop_cols = ", round(mb.t_drop_cols, 2), " s")
-    print("  t_merge = ", round(mb.t_merge, 2), " s")
-    print("  t_conv_dates = ", round(mb.t_conv_dates, 2), " s")
+    # TODO: enable those only in verbose mode
+    #print("ETL timings")
+    #print("  t_one_hot_encoding = ", round(mb.t_one_hot_encoding, 2), " s")
+    #print("  t_fillna = ", round(mb.t_fillna, 2), " s")
+    #print("  t_drop_cols = ", round(mb.t_drop_cols, 2), " s")
+    #print("  t_merge = ", round(mb.t_merge, 2), " s")
+    #print("  t_conv_dates = ", round(mb.t_conv_dates, 2), " s")
     etl_times["t_etl"] = (
         mb.t_one_hot_encoding + mb.t_fillna + mb.t_drop_cols + mb.t_merge + mb.t_conv_dates
     )
