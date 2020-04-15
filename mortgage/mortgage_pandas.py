@@ -367,9 +367,9 @@ class MortgagePandasBenchmark:
             "predictor": "cpu_predictor",
         }
 
+        y = np.ascontiguousarray(pd_df["delinquency_12"])#, dtype=np.float64)#.reshape(len(pd_df), 1)
+        x = np.ascontiguousarray(pd_df.drop(["delinquency_12"], axis=1))#, dtype=np.float64)
         t1 = timer()
-        y = pd_df["delinquency_12"]
-        x = pd_df.drop(["delinquency_12"], axis=1)
         dtrain = xgb.DMatrix(x, y)
         self.t_dmatrix = timer() - t1
 
