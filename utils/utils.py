@@ -290,10 +290,6 @@ def convert_units(dict_to_convert, ignore_fields, unit="ms"):
     }
 
 
-def convert_results_unit(results, ignore_fields, unit="ms"):
-    return convert_units(results, ignore_fields=ignore_fields, unit=unit)
-
-
 class KeyValueListParser(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         kwargs = {}

@@ -13,7 +13,7 @@ from utils import (
     KeyValueListParser,
     str_arg_to_bool,
     remove_fields_from_dict,
-    convert_results_unit,
+    convert_units,
 )
 
 
@@ -378,7 +378,7 @@ def main():
 
             for backend_res in result["ETL"]:
                 if backend_res:
-                    backend_res = convert_results_unit(
+                    backend_res = convert_units(
                         backend_res,
                         ignore_fields=ignore_fields_for_results_unit_conversion,
                         unit="ms",
@@ -388,7 +388,7 @@ def main():
                     etl_results.append(backend_res)
             for backend_res in result["ML"]:
                 if backend_res:
-                    backend_res = convert_results_unit(
+                    backend_res = convert_units(
                         backend_res,
                         ignore_fields=ignore_fields_for_results_unit_conversion,
                         unit="ms",
