@@ -167,7 +167,12 @@ def load_data_ibis(
     import_mode,
     fragments_size,
 ):
-    fragments_size = check_fragments_size(fragments_size, count_table=4, import_mode=import_mode)
+    fragments_size = check_fragments_size(
+        fragments_size,
+        count_table=4,
+        import_mode=import_mode,
+        default_fragments_size=[32000000, 32000000, 32000000, 32000000],
+    )
 
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
 

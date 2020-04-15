@@ -276,14 +276,26 @@ class KeyValueListParser(argparse.Action):
         setattr(namespace, self.dest, kwargs)
 
 
-def check_fragments_size(fragments_size, count_table, import_mode):
-    if fragments_size:
-        if import_mode != "pandas" and len(fragments_size) != count_table:
-            raise ValueError(
-                f"fragment size should be specified for each table; \
-                fragments size: {fragments_size}; count table: {count_table}"
-            )
-    else:
-        fragments_size = [None] * count_table
+def check_fragments_size(fragments_size, count_table, import_mode, default_fragments_size=None):
+    result_fragments_size = []
+    check_options = {
+        "fragments_size": fragments_size,
+        "default_fragments_size": default_fragments_size,
+    }
 
-    return fragments_size
+    for option_name, option in check_options.items():
+        if option:
+            if import_mode != "pandas" and len(option) != count_table:
+                raise ValueError(
+                    f"fragment size should be specified for each table; \
+                    {option_name}: {option}; count table: {count_table}"
+                )
+
+    if fragments_size:
+        result_fragments_size = fragments_size
+    elif default_fragments_size:
+        result_fragments_size = default_fragments_size
+    else:
+        result_fragments_size = [None] * count_table
+
+    return result_fragments_size
