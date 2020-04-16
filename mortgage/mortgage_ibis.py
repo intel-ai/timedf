@@ -127,7 +127,7 @@ def join_perf_acq_gdfs(perf_df, acq_table):
             if colName in dropList:
                 continue
             if isinstance(schema[colName], ibis.expr.datatypes.Category):
-                newCol = req[colName].cast('int32')
+                newCol = req[colName].cast("int32")
                 resultCols.append(newCol)
                 relabels[newCol.get_name()] = colName
             else:
@@ -143,10 +143,10 @@ def run_ibis_workflow(acq_table, perf_table):
         perf_df = final_performance_delinquency(perf_table, mon12_df)
         final_gdf = join_perf_acq_gdfs(perf_df, acq_table)
 
-#    with Timer("ibis compilation"):
-#        final_gdf.compile()
-#        final_gdf.materialize()
-#        print(final_gdf.schema())
+    # with Timer("ibis compilation"):
+    #     final_gdf.compile()
+    #     final_gdf.materialize()
+    #     print(final_gdf.schema())
 
     with Timer("execute queries"):
         result = final_gdf.execute()

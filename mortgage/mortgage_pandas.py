@@ -367,8 +367,8 @@ class MortgagePandasBenchmark:
             "predictor": "cpu_predictor",
         }
 
-        y = np.ascontiguousarray(pd_df["delinquency_12"])#, dtype=np.float64)#.reshape(len(pd_df), 1)
-        x = np.ascontiguousarray(pd_df.drop(["delinquency_12"], axis=1))#, dtype=np.float64)
+        y = np.ascontiguousarray(pd_df["delinquency_12"])
+        x = np.ascontiguousarray(pd_df.drop(["delinquency_12"], axis=1))
         t1 = timer()
         dtrain = xgb.DMatrix(x, y)
         self.t_dmatrix = timer() - t1
@@ -415,12 +415,12 @@ def etl_pandas(dataset_path, dfiles_num, acq_schema, perf_schema, etl_keys):
     pd_df = pd_dfs[0] if len(pd_dfs) == 1 else pd.concat(pd_dfs)
     etl_times["t_readcsv"] = mb.t_read_csv
     # TODO: enable those only in verbose mode
-    #print("ETL timings")
-    #print("  t_one_hot_encoding = ", round(mb.t_one_hot_encoding, 2), " s")
-    #print("  t_fillna = ", round(mb.t_fillna, 2), " s")
-    #print("  t_drop_cols = ", round(mb.t_drop_cols, 2), " s")
-    #print("  t_merge = ", round(mb.t_merge, 2), " s")
-    #print("  t_conv_dates = ", round(mb.t_conv_dates, 2), " s")
+    # print("ETL timings")
+    # print("  t_one_hot_encoding = ", round(mb.t_one_hot_encoding, 2), " s")
+    # print("  t_fillna = ", round(mb.t_fillna, 2), " s")
+    # print("  t_drop_cols = ", round(mb.t_drop_cols, 2), " s")
+    # print("  t_merge = ", round(mb.t_merge, 2), " s")
+    # print("  t_conv_dates = ", round(mb.t_conv_dates, 2), " s")
     etl_times["t_etl"] = (
         mb.t_one_hot_encoding + mb.t_fillna + mb.t_drop_cols + mb.t_merge + mb.t_conv_dates
     )
