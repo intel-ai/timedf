@@ -431,7 +431,6 @@ def run_benchmark(parameters):
                 pandas_dfs=[ml_data],
                 sort_cols=cols_to_sort,
                 drop_cols=[],
-                parallel_execution=True,
             )
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
