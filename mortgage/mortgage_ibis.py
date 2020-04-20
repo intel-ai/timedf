@@ -189,6 +189,7 @@ def etl_ibis(
         default_fragments_size=[2000000, 2000000],
     )
 
+    omnisci_server_worker.connect_to_server(database_name) # force new connection if not running first time
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
     mb = MortgagePandasBenchmark(dataset_path, "xgb")  # used for loading
 
