@@ -144,7 +144,7 @@ def main():
     )
     omnisci.add_argument(
         "-ipc_conn",
-        dest="ipc_connection",
+        dest="ipc_conn",
         default=True,
         type=str_arg_to_bool,
         help="Connection type for ETL operations",
@@ -488,7 +488,7 @@ def main():
                 "calcite_port",
                 "user",
                 "password",
-                "ipc_connection",
+                "ipc_conn",
                 "database_name",
                 "table",
                 "commit_omnisci",
