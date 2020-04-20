@@ -226,20 +226,32 @@ def run_benchmark(parameters):
             )
 
     if parameters["validation"]:
-        print("WARNING: validation is not enabled yet")
-    # TODO: enable when validation is able to pass
-    #    sortBy = [
-    #        "first_home_buyer",
-    #        "remaining_months_to_legal_maturity",
-    #        "current_actual_upb",
-    #        "interest_rate",
-    #        "loan_age",
-    #    ]
-    #    dropCols = ["servicer", "current_actual_upb"]
-    #    df_pd.sort_values(by=sortBy, axis=0, inplace=True)
-    #    df_pd.drop(dropCols, axis=1, inplace=True)
-    #    compare_dataframes(
-    #        ibis_dfs=(df_ibis,), pandas_dfs=(df_pd,), sort_cols=sortBy, drop_cols=dropCols
-    #    )
+
+        for colName in df_pd.dtypes.index:
+            col_pd = df_pd[colName].sort_values().to_numpy()
+            col_ibis = df_ibis[colName].sort_values().to_numpy()
+            diff = max(abs(col_pd - col_ibis))
+            if diff >= 0.1:
+                print(f'Column "{colName}": diff={diff}')
+
+
+#print("WARNING: validation is not enabled yet")
+        sortBy = [
+            "first_home_buyer",
+            "remaining_months_to_legal_maturity",
+            "current_actual_upb",
+            "interest_rate",
+            "loan_age",
+        ]
+        # FIXME: order by non-categories first and only then by categories
+        sortBy = sorted(df_pd.dtypes.index)
+        dropCols = []
+        df_pd.sort_values(by=sortBy, axis=0, inplace=True)
+        df_ibis.sort_values(by=sortBy, axis=0, inplace=True)
+        import pdb;pdb.set_trace()
+#df_pd.drop(dropCols, axis=1, inplace=True)
+        compare_dataframes(
+            ibis_dfs=(df_ibis,), pandas_dfs=(df_pd,), sort_cols=sortBy, drop_cols=dropCols
+        )
 
     return result

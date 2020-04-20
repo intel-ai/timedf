@@ -24,6 +24,12 @@ class Timer:
 
 
 # ------------------------------------------------------------------------------------------
+def cleanup_nulls(df):
+    resultCols = []
+    for colName in df.schema():
+        resultCols.append(df[colName].fillna(-1).name(colName))
+    return df[resultCols]
+
 def create_joined_df(perf_table):
     delinquency_12_expr = (
         ibis.case()
@@ -52,7 +58,7 @@ def create_joined_df(perf_table):
 
 def create_12_mon_features(joined_df):
     delinq_df = None
-    n_months = 12  # should be 12 but we don't have UNION yet :(
+    n_months = 12
     for y in range(1, n_months + 1):
         year_dec = (
             ibis.case().when(joined_df["timestamp_month"] < ibis.literal(y), 1).else_(0).end()
@@ -127,7 +133,7 @@ def join_perf_acq_gdfs(perf_df, acq_table):
             if colName in dropList:
                 continue
             if isinstance(schema[colName], ibis.expr.datatypes.Category):
-                newCol = req[colName].cast("int32")
+                newCol = req[colName].cast("int8")
                 resultCols.append(newCol)
                 relabels[newCol.get_name()] = colName
             else:
@@ -142,6 +148,8 @@ def run_ibis_workflow(acq_table, perf_table):
 
         perf_df = final_performance_delinquency(perf_table, mon12_df)
         final_gdf = join_perf_acq_gdfs(perf_df, acq_table)
+
+        final_gdf = cleanup_nulls(final_gdf)
 
     # with Timer("ibis compilation"):
     #     final_gdf.compile()
