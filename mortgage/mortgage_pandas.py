@@ -10,12 +10,15 @@ import numpy as np
 
 
 class MortgagePandasBenchmark:
-    def __init__(self, mortgage_path, algo, acq_fields=None, perf_fields=None):
+    def __init__(
+        self, mortgage_path, algo, acq_fields=None, perf_fields=None, leave_category_strings=False
+    ):
         self.acq_data_path = mortgage_path + "/acq"
         self.perf_data_path = mortgage_path + "/perf"
         self.col_names_path = mortgage_path + "/names.csv"
         self.acq_fields = acq_fields
         self.perf_fields = perf_fields
+        self.leave_category_strings = leave_category_strings
 
         self.t_one_hot_encoding = 0
         self.t_read_csv = 0
@@ -36,7 +39,7 @@ class MortgagePandasBenchmark:
         for column, data_type in df.dtypes.items():
 
             t0 = timer()
-            if str(data_type) == "category":
+            if not self.leave_category_strings and str(data_type) == "category":
                 df[column] = df[column].cat.codes
             t1 = timer()
             self.t_one_hot_encoding += t1 - t0
@@ -299,9 +302,10 @@ class MortgagePandasBenchmark:
         self.t_drop_cols += t1 - t0
 
         t0 = timer()
-        for col, dtype in df.dtypes.iteritems():
-            if str(dtype) == "category":
-                df[col] = df[col].cat.codes
+        if not self.leave_category_strings:
+            for col, dtype in df.dtypes.iteritems():
+                if str(dtype) == "category":
+                    df[col] = df[col].cat.codes
         t1 = timer()
         self.t_one_hot_encoding += t1 - t0
 
@@ -402,11 +406,17 @@ class MortgagePandasBenchmark:
         return 2000 + num // 4, num % 4
 
 
-def etl_pandas(dataset_path, dfiles_num, acq_schema, perf_schema, etl_keys):
+def etl_pandas(
+    dataset_path, dfiles_num, acq_schema, perf_schema, etl_keys, leave_category_strings=False
+):
     etl_times = {key: 0.0 for key in etl_keys}
 
     mb = MortgagePandasBenchmark(
-        dataset_path, "xgb", acq_schema.to_pandas(), perf_schema.to_pandas()
+        dataset_path,
+        "xgb",
+        acq_schema.to_pandas(),
+        perf_schema.to_pandas(),
+        leave_category_strings,
     )
     year, quarter = MortgagePandasBenchmark.split_year_quarter(dfiles_num)
     pd_dfs = []

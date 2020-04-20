@@ -30,6 +30,7 @@ def cleanup_nulls(df):
         resultCols.append(df[colName].fillna(-1).name(colName))
     return df[resultCols]
 
+
 def create_joined_df(perf_table):
     delinquency_12_expr = (
         ibis.case()
@@ -101,7 +102,7 @@ def final_performance_delinquency(perf_table, mon12_df):
     )[perf_table, mon12_df["delinquency_12"]]
 
 
-def join_perf_acq_gdfs(perf_df, acq_table):
+def join_perf_acq_gdfs(perf_df, acq_table, leave_category_strings):
     merged = perf_df.inner_join(acq_table, ["loan_id"])
 
     dropList = {
@@ -132,7 +133,9 @@ def join_perf_acq_gdfs(perf_df, acq_table):
         for colName in schema:
             if colName in dropList:
                 continue
-            if isinstance(schema[colName], ibis.expr.datatypes.Category):
+            if not leave_category_strings and isinstance(
+                schema[colName], ibis.expr.datatypes.Category
+            ):
                 newCol = req[colName].cast("int8")
                 resultCols.append(newCol)
                 relabels[newCol.get_name()] = colName
@@ -141,13 +144,13 @@ def join_perf_acq_gdfs(perf_df, acq_table):
     return merged[resultCols].relabel(relabels)
 
 
-def run_ibis_workflow(acq_table, perf_table):
+def run_ibis_workflow(acq_table, perf_table, leave_category_strings):
     with Timer("create ibis queries"):
         joined_df = create_joined_df(perf_table)
         mon12_df = create_12_mon_features(joined_df)
 
         perf_df = final_performance_delinquency(perf_table, mon12_df)
-        final_gdf = join_perf_acq_gdfs(perf_df, acq_table)
+        final_gdf = join_perf_acq_gdfs(perf_df, acq_table, leave_category_strings)
 
         final_gdf = cleanup_nulls(final_gdf)
 
@@ -175,6 +178,7 @@ def etl_ibis(
     etl_keys,
     import_mode,
     fragments_size,
+    leave_category_strings=False,
 ):
     etl_times = {key: 0.0 for key in etl_keys}
 
@@ -227,7 +231,7 @@ def etl_ibis(
     etl_times["t_connect"] += timer() - t0
 
     t_etl_start = timer()
-    ibis_df = run_ibis_workflow(acq_table, perf_table)
+    ibis_df = run_ibis_workflow(acq_table, perf_table, leave_category_strings)
     etl_times["t_etl"] = timer() - t_etl_start
 
     return ibis_df, mb, etl_times
