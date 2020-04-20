@@ -289,6 +289,12 @@ def main():
         default="1234567890123456789012345678901234567890",
         help="Ibis commit hash to use for benchmark.",
     )
+    optional.add_argument(
+        "-commit_omniscripts",
+        dest="commit_omniscripts",
+        default="1234567890123456789012345678901234567890",
+        help="Omniscripts commit hash to use for tests.",
+    )
 
     try:
         os.environ["PYTHONIOENCODING"] = "UTF-8"
@@ -411,6 +417,7 @@ def main():
                     reporting_init_fields = {
                         "OmnisciCommitHash": args.commit_omnisci,
                         "IbisCommitHash": args.commit_ibis,
+                        "OmniscriptsCommitHash": args.commit_omniscripts,
                     }
 
                     reporting_fields_benchmark_etl = {
