@@ -313,8 +313,9 @@ class MortgagePandasBenchmark:
 
         t0 = timer()
         df["delinquency_12"] = df["delinquency_12"].fillna(False).astype("int32")
-        for column in df.columns:
-            df[column] = df[column].fillna(np.dtype(str(df[column].dtype)).type(-1))
+        for column, data_type in df.dtypes.items():
+            if str(data_type) in ["int8", "int16", "int32", "int64", "float32", "float64"]:
+                df[column] = df[column].fillna(np.dtype(str(df[column].dtype)).type(-1))
         t1 = timer()
         self.t_fillna += t1 - t0
 

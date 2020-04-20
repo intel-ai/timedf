@@ -32,8 +32,6 @@ def cleanup_nulls(df):
             resultCols.append(df[colName].fillna(-1).name(colName))
         elif isinstance(schema[colName], ibis.expr.datatypes.Floating):
             resultCols.append(df[colName].fillna(-1.0).name(colName))
-        elif isinstance(schema[colName], ibis.expr.datatypes.Category):
-            resultCols.append(df[colName].fillna("N/A").name(colName))
 
     return df[resultCols]
 
