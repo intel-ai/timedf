@@ -225,7 +225,7 @@ def main():
     )
     optional.add_argument(
         "-ipc_conn",
-        dest="ipc_connection",
+        dest="ipc_conn",
         default=True,
         type=str_arg_to_bool,
         help="Table name name to use in omniscidb server.",
@@ -367,7 +367,7 @@ def main():
 
                 omnisci_server_worker = OmnisciServerWorker(omnisci_server)
                 parameters["omnisci_server_worker"] = omnisci_server_worker
-                parameters["ipc_connection"] = args.ipc_connection
+                parameters["ipc_connection"] = args.ipc_conn
                 omnisci_server.launch()
 
             result = run_benchmark(parameters)
