@@ -62,7 +62,7 @@ def convert_type_ibis2pandas(types):
 
 def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_memory=None):
     if mode == "Pandas":
-        print("Running on Pandas")
+        print("Pandas backend: pure Pandas")
         import pandas as pd
     else:
         if mode == "Modin_on_ray":
@@ -81,14 +81,14 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
                 )
             os.environ["MODIN_ENGINE"] = "ray"
             print(
-                "Running on Modin on Ray with tmp directory", ray_tmpdir, "and memory", ray_memory
+                f"Pandas backend: Modin on Ray with tmp directory {ray_tmpdir} and memory {ray_memory}"
             )
         elif mode == "Modin_on_dask":
             os.environ["MODIN_ENGINE"] = "dask"
-            print("Running on Modin on Dask")
+            print("Pandas backend: Modin on Dask")
         elif mode == "Modin_on_python":
             os.environ["MODIN_ENGINE"] = "python"
-            print("Running on Modin on Python")
+            print("Pandas backend: Modin on pure Python")
         else:
             raise ValueError(f"Unknown pandas mode {mode}")
         import modin.pandas as pd

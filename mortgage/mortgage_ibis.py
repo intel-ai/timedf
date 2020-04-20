@@ -26,8 +26,15 @@ class Timer:
 # ------------------------------------------------------------------------------------------
 def cleanup_nulls(df):
     resultCols = []
-    for colName in df.schema():
-        resultCols.append(df[colName].fillna(-1).name(colName))
+    schema = df.schema()
+    for colName in schema:
+        if isinstance(schema[colName], ibis.expr.datatypes.SignedInteger):
+            resultCols.append(df[colName].fillna(-1).name(colName))
+        elif isinstance(schema[colName], ibis.expr.datatypes.Floating):
+            resultCols.append(df[colName].fillna(-1.0).name(colName))
+        elif isinstance(schema[colName], ibis.expr.datatypes.Category):
+            resultCols.append(df[colName].fillna("N/A").name(colName))
+
     return df[resultCols]
 
 
@@ -189,7 +196,9 @@ def etl_ibis(
         default_fragments_size=[2000000, 2000000],
     )
 
-    omnisci_server_worker.connect_to_server(database_name) # force new connection if not running first time
+    omnisci_server_worker.connect_to_server(
+        database_name
+    )  # force new connection if not running first time
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
     mb = MortgagePandasBenchmark(dataset_path, "xgb")  # used for loading
 
