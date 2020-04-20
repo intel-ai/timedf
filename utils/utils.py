@@ -144,14 +144,28 @@ def compare_dataframes(ibis_dfs, pandas_dfs, sort_cols=["id"], drop_cols=["id"])
     # comparing step
     for ibis_df, pandas_df in zip(ibis_dfs, pandas_dfs):
         assert ibis_df.shape == pandas_df.shape
-        for column_name in ibis_df.columns:
+        for column_name, column_type in ibis_df.dtypes.items():
             try:
                 pd.testing.assert_frame_equal(
                     ibis_df[[column_name]],
                     pandas_df[[column_name]],
                     check_less_precise=2,
                     check_dtype=False,
+                    check_categorical=False,
                 )
+                if str(column_type) == "category":
+                    left = ibis_df[column_name]
+                    right = pandas_df[column_name]
+                    assert left.cat.ordered == right.cat.ordered
+                    # assert_frame_equal cannot turn off comparison of
+                    # order of categories, so compare categories manually
+                    pd.testing.assert_series_equal(
+                        left,
+                        right,
+                        check_dtype=False,
+                        check_less_precise=2,
+                        check_category_order=left.cat.ordered,
+                    )
             except AssertionError as assert_err:
                 if str(ibis_df.dtypes[column_name]).startswith("float"):
                     try:
@@ -165,7 +179,7 @@ def compare_dataframes(ibis_dfs, pandas_dfs, sort_cols=["id"], drop_cols=["id"])
                     except Exception:
                         raise assert_err
                 else:
-                    raise assert_err
+                    raise
 
     print("dataframes are equal")
 
