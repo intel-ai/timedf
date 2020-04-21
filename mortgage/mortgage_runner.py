@@ -241,17 +241,21 @@ def run_benchmark(parameters):
         pdf, _, _ = _etl_pandas(parameters, acq_schema, perf_schema, etl_keys, do_validate=True)
         for df in (pdf, idf):
             for colname, coltype in df.dtypes.items():
-                if str(coltype) == 'category':
-                    df[colname] = df[colname].cat.reorder_categories(sorted(df[colname].cat.categories), True).cat.add_categories('N/A').fillna('N/A')
+                if str(coltype) == "category":
+                    df[colname] = (
+                        df[colname]
+                        .cat.reorder_categories(sorted(df[colname].cat.categories), True)
+                        .cat.add_categories("N/A")
+                        .fillna("N/A")
+                    )
         sortBy = sorted(pdf.dtypes.index)
         pdf.sort_values(by=sortBy, axis=0, inplace=True)
         idf.sort_values(by=sortBy, axis=0, inplace=True)
-        pdf = pdf.reset_index().drop('index', axis=1)
-        idf = idf.reset_index().drop('index', axis=1)
+        pdf = pdf.reset_index().drop("index", axis=1)
+        idf = idf.reset_index().drop("index", axis=1)
 
         compare_dataframes((idf,), (pdf,), [], [])
-#pdf['servicer'] = pdf['servicer'].cat.add_categories('N/A').fillna('N/A')
-
+    # pdf['servicer'] = pdf['servicer'].cat.add_categories('N/A').fillna('N/A')
 
     #        pdb.set_trace()
     #        # df_pd.drop(dropCols, axis=1, inplace=True)
