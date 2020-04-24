@@ -12,4 +12,4 @@ python3 run_omnisci_benchmark.py --env_name ${ENV_NAME} --env_check True --save_
                                  --iterations 5 --fragment-size 5000000                                                        \
                                  -commit ${BUILD_REVISION}                                                                     \
                                  -db-server ${DATABASE_SERVER_NAME} -db-name "${DATABASE_NAME}" -db-table taxibench            \
-                                 -db-user ${DATABASE_USER_NAME} -db-pass "${DATABASE_USER_PW}"                                 \
+                                 -db-user ${DATABASE_USER_NAME} -db-pass "${DATABASE_USER_PW}"
