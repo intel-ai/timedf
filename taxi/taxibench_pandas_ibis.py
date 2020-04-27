@@ -312,31 +312,31 @@ def etl_ibis(
             etl_times["t_connect"] = omnisci_server_worker.get_conn_creation_time()
 
         elif import_mode == "fsi":
-            data_file_name = None
+            data_file_path = None
             if data_files_extension == "gz" or len(data_files_names) > 1:
-                data_file_name = os.path.abspath(
-                    os.path.join(
-                        os.path.dirname(__file__),
-                        "..",
-                        "tmp",
-                        f"taxibench-{files_limit}-files-fsi.csv",
-                    )
+                data_file_dir = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), "..", "tmp")
+                )
+                data_file_path = os.path.join(
+                    data_file_dir, f"taxibench-{files_limit}-files-fsi.csv"
                 )
 
-            if data_file_name and not os.path.exists(data_file_name):
+            if data_file_path and not os.path.exists(data_file_path):
+                if not os.path.exists(data_file_dir):
+                    os.mkdir(data_file_dir)
                 try:
                     for file_name in data_files_names[:files_limit]:
                         write_to_csv_by_chunks(
-                            file_to_write=file_name, output_file=data_file_name, write_mode="ab",
+                            file_to_write=file_name, output_file=data_file_path, write_mode="ab",
                         )
                 except Exception as exc:
-                    os.remove(data_file_name)
+                    os.remove(data_file_path)
                     raise
 
             t0 = timer()
             omnisci_server_worker.get_conn().create_table_from_csv(
                 table_name,
-                data_file_name if data_file_name else data_files_names[0],
+                data_file_path if data_file_path else data_files_names[0],
                 schema_table,
                 header=0,
             )

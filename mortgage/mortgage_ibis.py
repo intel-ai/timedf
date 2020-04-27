@@ -24,6 +24,20 @@ class Timer:
 
 
 # ------------------------------------------------------------------------------------------
+def cleanup_nulls(df):
+    resultCols = []
+    schema = df.schema()
+    for colName in schema:
+        if isinstance(schema[colName], ibis.expr.datatypes.SignedInteger):
+            resultCols.append(df[colName].fillna(-1).name(colName))
+        elif isinstance(schema[colName], ibis.expr.datatypes.Floating):
+            resultCols.append(df[colName].fillna(-1.0).name(colName))
+        else:
+            resultCols.append(colName)
+
+    return df[resultCols]
+
+
 def create_joined_df(perf_table):
     delinquency_12_expr = (
         ibis.case()
@@ -52,7 +66,7 @@ def create_joined_df(perf_table):
 
 def create_12_mon_features(joined_df):
     delinq_df = None
-    n_months = 12  # should be 12 but we don't have UNION yet :(
+    n_months = 12
     for y in range(1, n_months + 1):
         year_dec = (
             ibis.case().when(joined_df["timestamp_month"] < ibis.literal(y), 1).else_(0).end()
@@ -95,7 +109,7 @@ def final_performance_delinquency(perf_table, mon12_df):
     )[perf_table, mon12_df["delinquency_12"]]
 
 
-def join_perf_acq_gdfs(perf_df, acq_table):
+def join_perf_acq_gdfs(perf_df, acq_table, leave_category_strings):
     merged = perf_df.inner_join(acq_table, ["loan_id"])
 
     dropList = {
@@ -120,29 +134,37 @@ def join_perf_acq_gdfs(perf_df, acq_table):
     }
 
     resultCols = []
+    relabels = {}
     for req in (perf_df, acq_table):
         schema = req.schema()
         for colName in schema:
             if colName in dropList:
                 continue
-            if isinstance(schema[colName], ibis.expr.datatypes.Category):
-                resultCols.append(req[colName].cast("int32"))
+            if not leave_category_strings and isinstance(
+                schema[colName], ibis.expr.datatypes.Category
+            ):
+                newCol = req[colName].cast("int8")
+                resultCols.append(newCol)
+                relabels[newCol.get_name()] = colName
             else:
                 resultCols.append(req[colName])
-    return merged[resultCols]
+    return merged[resultCols].relabel(relabels)
 
 
-def run_ibis_workflow(acq_table, perf_table):
+def run_ibis_workflow(acq_table, perf_table, leave_category_strings):
     with Timer("create ibis queries"):
         joined_df = create_joined_df(perf_table)
         mon12_df = create_12_mon_features(joined_df)
 
         perf_df = final_performance_delinquency(perf_table, mon12_df)
-        final_gdf = join_perf_acq_gdfs(perf_df, acq_table)
+        final_gdf = join_perf_acq_gdfs(perf_df, acq_table, leave_category_strings)
 
-    with Timer("ibis compilation"):
-        final_gdf.compile()
-        final_gdf.materialize()
+        final_gdf = cleanup_nulls(final_gdf)
+
+    # with Timer("ibis compilation"):
+    #     final_gdf.compile()
+    #     final_gdf.materialize()
+    #     print(final_gdf.schema())
 
     with Timer("execute queries"):
         result = final_gdf.execute()
@@ -163,6 +185,7 @@ def etl_ibis(
     etl_keys,
     import_mode,
     fragments_size,
+    leave_category_strings=False,
 ):
     etl_times = {key: 0.0 for key in etl_keys}
 
@@ -173,6 +196,10 @@ def etl_ibis(
         default_fragments_size=[2000000, 2000000],
     )
 
+    if omnisci_server_worker.get_conn():
+        omnisci_server_worker.connect_to_server(
+            database_name
+        )  # force new connection if not running first time
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
     mb = MortgagePandasBenchmark(dataset_path, "xgb")  # used for loading
 
@@ -215,7 +242,7 @@ def etl_ibis(
     etl_times["t_connect"] += timer() - t0
 
     t_etl_start = timer()
-    ibis_df = run_ibis_workflow(acq_table, perf_table)
+    ibis_df = run_ibis_workflow(acq_table, perf_table, leave_category_strings)
     etl_times["t_etl"] = timer() - t_etl_start
 
     return ibis_df, mb, etl_times

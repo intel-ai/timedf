@@ -1,3 +1,15 @@
 ROOT_DIR="${PWD}"
 cd omniscripts
-python3 run_omnisci_benchmark.py -m dataset -path="${ROOT_DIR}"/omniscidb/Benchmarks -u admin -p HyperInteractive -e "${ROOT_DIR}"/omniscidb/build/bin/omnisci_server --port 61274 -n omnisci -t taxi_benchmark -l taxi_test -f '/localdisk/benchmark_datasets/taxi/trips_xa*.csv.gz' -c "${ROOT_DIR}"/omniscidb/Benchmarks/import_table_schemas/taxis.sql -d "${ROOT_DIR}"/omniscidb/Benchmarks/queries/taxis -i 5 -fs 5000000 -db-server=ansatlin07.an.intel.com -db-user=gashiman -db-pass=omniscidb -db-name=omniscidb -db-table=taxibench --env_name ${ENV_NAME} --env_check True --save_env True --ci_requirements ci_requirements.yml -commit ${BUILD_REVISION}
+python3 run_omnisci_benchmark.py --env_name ${ENV_NAME} --env_check True --save_env True --mode dataset                        \
+                                 --ci_requirements ci_requirements.yml                                                         \
+                                 --executable "${ROOT_DIR}"/omniscidb/build/bin/omnisci_server                                 \
+                                 --import-table-name taxi_benchmark --label taxi_test                                          \
+                                 --table-schema-file "${ROOT_DIR}"/omniscidb/Benchmarks/import_table_schemas/taxis.sql         \
+                                 --port 61274 --name omnisci --user admin --passwd HyperInteractive                            \
+                                 -path "${ROOT_DIR}"/omniscidb/Benchmarks                                                      \
+                                 --import-file '/localdisk/benchmark_datasets/taxi/trips_xa*.csv.gz'                           \
+                                 --queries-dir "${ROOT_DIR}"/omniscidb/Benchmarks/queries/taxis                                \
+                                 --iterations 5 --fragment-size 5000000                                                        \
+                                 -commit ${BUILD_REVISION}                                                                     \
+                                 -db-server ${DATABASE_SERVER_NAME} -db-name "${DATABASE_NAME}" -db-table taxibench            \
+                                 -db-user ${DATABASE_USER_NAME} -db-pass "${DATABASE_USER_PW}"

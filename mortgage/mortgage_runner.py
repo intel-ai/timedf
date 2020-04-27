@@ -21,6 +21,36 @@ warnings.filterwarnings("ignore")
 # https://rapidsai.github.io/demos/datasets/mortgage-data
 
 
+def _etl_ibis(parameters, acq_schema, perf_schema, etl_keys, do_validate=False):
+    return etl_ibis(
+        dataset_path=parameters["data_file"],
+        dfiles_num=parameters["dfiles_num"],
+        acq_schema=acq_schema,
+        perf_schema=perf_schema,
+        database_name=parameters["database_name"],
+        table_prefix=parameters["table"],
+        omnisci_server_worker=parameters["omnisci_server_worker"],
+        delete_old_database=not parameters["dnd"] and not do_validate,
+        create_new_table=not parameters["dni"] and not do_validate,
+        ipc_connection=parameters["ipc_connection"],
+        etl_keys=etl_keys,
+        import_mode=parameters["import_mode"],
+        fragments_size=parameters["fragments_size"],
+        leave_category_strings=do_validate,
+    )
+
+
+def _etl_pandas(parameters, acq_schema, perf_schema, etl_keys, do_validate=False):
+    return etl_pandas(
+        dataset_path=parameters["data_file"],
+        dfiles_num=parameters["dfiles_num"],
+        acq_schema=acq_schema,
+        perf_schema=perf_schema,
+        etl_keys=etl_keys,
+        leave_category_strings=do_validate,
+    )
+
+
 def _run_ml(df, n_runs, mb, ml_keys, ml_score_keys, backend):
     ml_scores, ml_times = ml(
         df=df, n_runs=n_runs, mb=mb, ml_keys=ml_keys, ml_score_keys=ml_score_keys
@@ -187,21 +217,7 @@ def run_benchmark(parameters):
     result = {"ETL": [], "ML": []}
 
     if not parameters["no_ibis"]:
-        df_ibis, mb_ibis, etl_times_ibis = etl_ibis(
-            dataset_path=parameters["data_file"],
-            dfiles_num=parameters["dfiles_num"],
-            acq_schema=acq_schema,
-            perf_schema=perf_schema,
-            database_name=parameters["database_name"],
-            table_prefix=parameters["table"],
-            omnisci_server_worker=parameters["omnisci_server_worker"],
-            delete_old_database=not parameters["dnd"],
-            create_new_table=not parameters["dni"],
-            ipc_connection=parameters["ipc_connection"],
-            etl_keys=etl_keys,
-            import_mode=parameters["import_mode"],
-            fragments_size=parameters["fragments_size"],
-        )
+        df_ibis, mb_ibis, etl_times_ibis = _etl_ibis(parameters, acq_schema, perf_schema, etl_keys)
         print_results(results=etl_times_ibis, backend="Ibis", unit="s")
         etl_times_ibis["Backend"] = "Ibis"
         result["ETL"].append(etl_times_ibis)
@@ -209,13 +225,7 @@ def run_benchmark(parameters):
             result["ML"].append(_run_ml(df_ibis, N_RUNS, mb_ibis, ml_keys, ml_score_keys, "Ibis"))
 
     if not parameters["no_pandas"]:
-        df_pd, mb_pd, etl_times_pd = etl_pandas(
-            dataset_path=parameters["data_file"],
-            dfiles_num=parameters["dfiles_num"],
-            acq_schema=acq_schema,
-            perf_schema=perf_schema,
-            etl_keys=etl_keys,
-        )
+        df_pd, mb_pd, etl_times_pd = _etl_pandas(parameters, acq_schema, perf_schema, etl_keys)
         print_results(results=etl_times_pd, backend=parameters["pandas_mode"], unit="s")
         etl_times_pd["Backend"] = parameters["pandas_mode"]
         result["ETL"].append(etl_times_pd)
@@ -224,5 +234,33 @@ def run_benchmark(parameters):
             result["ML"].append(
                 _run_ml(df_pd, N_RUNS, mb_pd, ml_keys, ml_score_keys, parameters["pandas_mode"])
             )
+
+    if parameters["validation"]:
+        # recompute frames but leave categories as strings
+        idf, _, _ = _etl_ibis(parameters, acq_schema, perf_schema, etl_keys, do_validate=True)
+        pdf, _, _ = _etl_pandas(parameters, acq_schema, perf_schema, etl_keys, do_validate=True)
+        for df in (pdf, idf):
+            for colname, coltype in df.dtypes.items():
+                if str(coltype) == "category":
+                    df[colname] = (
+                        df[colname]
+                        .cat.reorder_categories(sorted(df[colname].cat.categories), True)
+                        .cat.add_categories("N/A")
+                        .fillna("N/A")
+                    )
+        sortBy = sorted(pdf.dtypes.index)
+        pdf.sort_values(by=sortBy, axis=0, inplace=True)
+        idf.sort_values(by=sortBy, axis=0, inplace=True)
+        pdf = pdf.reset_index().drop("index", axis=1)
+        idf = idf.reset_index().drop("index", axis=1)
+
+        compare_dataframes((idf,), (pdf,), [], [])
+    # pdf['servicer'] = pdf['servicer'].cat.add_categories('N/A').fillna('N/A')
+
+    #        pdb.set_trace()
+    #        # df_pd.drop(dropCols, axis=1, inplace=True)
+    #        compare_dataframes(
+    #            ibis_dfs=(df_ibis,), pandas_dfs=(df_pd,), sort_cols=sortBy, drop_cols=dropCols
+    #        )
 
     return result

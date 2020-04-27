@@ -78,7 +78,6 @@ def etl_ibis(
     create_new_table,
     ipc_connection,
     validation,
-    run_import_queries,
     etl_keys,
     import_mode,
     fragments_size,
@@ -89,72 +88,6 @@ def etl_ibis(
     fragments_size = check_fragments_size(fragments_size, count_table=1, import_mode=import_mode)
 
     omnisci_server_worker.create_database(database_name, delete_if_exists=delete_old_database)
-
-    if run_import_queries:
-        etl_times_import = {
-            "t_readcsv_by_ibis": 0.0,
-            "t_readcsv_by_COPY": 0.0,
-            "t_readcsv_by_FSI": 0.0,
-        }
-
-        # SQL statemnts preparation for data file import queries
-        connect_to_db_sql_template = "\c {0} admin HyperInteractive"
-        create_table_sql_template = """
-        CREATE TABLE {0} ({1});
-        """
-        import_by_COPY_sql_template = """
-        COPY {0} FROM '{1}' WITH (header='{2}');
-        """
-        import_by_FSI_sql_template = """
-        CREATE TEMPORARY TABLE {0} ({1}) WITH (storage_type='CSV:{2}');
-        """
-        drop_table_sql_template = """
-        DROP TABLE IF EXISTS {0};
-        """
-
-        import_query_cols_list = (
-            ["ID_code TEXT ENCODING NONE, \n", "target SMALLINT, \n"]
-            + ["var_%s DOUBLE, \n" % i for i in range(199)]
-            + ["var_199 DOUBLE"]
-        )
-        import_query_cols_str = "".join(import_query_cols_list)
-
-        create_table_sql = create_table_sql_template.format(tmp_table_name, import_query_cols_str)
-        import_by_COPY_sql = import_by_COPY_sql_template.format(tmp_table_name, filename, "true")
-        import_by_FSI_sql = import_by_FSI_sql_template.format(
-            tmp_table_name, import_query_cols_str, filename
-        )
-
-        # data file import by ibis
-        columns_types_import_query = ["string", "int64"] + ["float64" for _ in range(200)]
-        schema_table_import = ibis.Schema(names=columns_names, types=columns_types_import_query)
-        omnisci_server_worker.create_table(
-            table_name=tmp_table_name, schema=schema_table_import, database=database_name,
-        )
-
-        table_import_query = omnisci_server_worker.database(database_name).table(tmp_table_name)
-        t0 = timer()
-        table_import_query.read_csv(filename, delimiter=",")
-        etl_times_import["t_readcsv_by_ibis"] = timer() - t0
-
-        # data file import by FSI
-        omnisci_server_worker.drop_table(tmp_table_name)
-        t0 = timer()
-        omnisci_server_worker.execute_sql_query(import_by_FSI_sql)
-        etl_times_import["t_readcsv_by_FSI"] = timer() - t0
-
-        omnisci_server_worker.drop_table(tmp_table_name)
-
-        # data file import by SQL COPY statement
-        omnisci_server_worker.execute_sql_query(create_table_sql)
-
-        t0 = timer()
-        omnisci_server_worker.execute_sql_query(import_by_COPY_sql)
-        etl_times_import["t_readcsv_by_COPY"] = timer() - t0
-
-        omnisci_server_worker.drop_table(tmp_table_name)
-
-        etl_times.update(etl_times_import)
 
     if create_new_table:
         # Create table and import data for ETL queries
@@ -367,7 +300,6 @@ def run_benchmark(parameters):
         if not parameters["no_ibis"]:
             ml_data_ibis, etl_times_ibis = etl_ibis(
                 filename=parameters["data_file"],
-                run_import_queries=False,
                 columns_names=columns_names,
                 columns_types=columns_types_ibis,
                 database_name=parameters["database_name"],
@@ -419,7 +351,7 @@ def run_benchmark(parameters):
 
         # Results validation block (comparison of etl_ibis and etl_pandas outputs)
         if parameters["validation"]:
-            print("Validation of ETL query results with ...")
+            print("Validation of ETL query results ...")
             cols_to_sort = ["var_0", "var_1", "var_2", "var_3", "var_4"]
 
             ml_data_ibis = ml_data_ibis.rename(columns={"target0": "target"})

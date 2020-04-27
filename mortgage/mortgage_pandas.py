@@ -10,12 +10,15 @@ import numpy as np
 
 
 class MortgagePandasBenchmark:
-    def __init__(self, mortgage_path, algo, acq_fields=None, perf_fields=None):
+    def __init__(
+        self, mortgage_path, algo, acq_fields=None, perf_fields=None, leave_category_strings=False
+    ):
         self.acq_data_path = mortgage_path + "/acq"
         self.perf_data_path = mortgage_path + "/perf"
         self.col_names_path = mortgage_path + "/names.csv"
         self.acq_fields = acq_fields
         self.perf_fields = perf_fields
+        self.leave_category_strings = leave_category_strings
 
         self.t_one_hot_encoding = 0
         self.t_read_csv = 0
@@ -36,7 +39,7 @@ class MortgagePandasBenchmark:
         for column, data_type in df.dtypes.items():
 
             t0 = timer()
-            if str(data_type) == "category":
+            if not self.leave_category_strings and str(data_type) == "category":
                 df[column] = df[column].cat.codes
             t1 = timer()
             self.t_one_hot_encoding += t1 - t0
@@ -299,9 +302,10 @@ class MortgagePandasBenchmark:
         self.t_drop_cols += t1 - t0
 
         t0 = timer()
-        for col, dtype in df.dtypes.iteritems():
-            if str(dtype) == "category":
-                df[col] = df[col].cat.codes
+        if not self.leave_category_strings:
+            for col, dtype in df.dtypes.iteritems():
+                if str(dtype) == "category":
+                    df[col] = df[col].cat.codes
         t1 = timer()
         self.t_one_hot_encoding += t1 - t0
 
@@ -309,8 +313,9 @@ class MortgagePandasBenchmark:
 
         t0 = timer()
         df["delinquency_12"] = df["delinquency_12"].fillna(False).astype("int32")
-        for column in df.columns:
-            df[column] = df[column].fillna(np.dtype(str(df[column].dtype)).type(-1))
+        for column, data_type in df.dtypes.items():
+            if str(data_type) in ["int8", "int16", "int32", "int64", "float32", "float64"]:
+                df[column] = df[column].fillna(np.dtype(str(df[column].dtype)).type(-1))
         t1 = timer()
         self.t_fillna += t1 - t0
 
@@ -367,9 +372,9 @@ class MortgagePandasBenchmark:
             "predictor": "cpu_predictor",
         }
 
+        y = np.ascontiguousarray(pd_df["delinquency_12"])
+        x = np.ascontiguousarray(pd_df.drop(["delinquency_12"], axis=1))
         t1 = timer()
-        y = pd_df["delinquency_12"]
-        x = pd_df.drop(["delinquency_12"], axis=1)
         dtrain = xgb.DMatrix(x, y)
         self.t_dmatrix = timer() - t1
 
@@ -402,11 +407,17 @@ class MortgagePandasBenchmark:
         return 2000 + num // 4, num % 4
 
 
-def etl_pandas(dataset_path, dfiles_num, acq_schema, perf_schema, etl_keys):
+def etl_pandas(
+    dataset_path, dfiles_num, acq_schema, perf_schema, etl_keys, leave_category_strings=False
+):
     etl_times = {key: 0.0 for key in etl_keys}
 
     mb = MortgagePandasBenchmark(
-        dataset_path, "xgb", acq_schema.to_pandas(), perf_schema.to_pandas()
+        dataset_path,
+        "xgb",
+        acq_schema.to_pandas(),
+        perf_schema.to_pandas(),
+        leave_category_strings,
     )
     year, quarter = MortgagePandasBenchmark.split_year_quarter(dfiles_num)
     pd_dfs = []
@@ -414,12 +425,13 @@ def etl_pandas(dataset_path, dfiles_num, acq_schema, perf_schema, etl_keys):
         pd_dfs.append(mb.run_cpu_workflow(quarter=quarter, year=year, perf_file=fname))
     pd_df = pd_dfs[0] if len(pd_dfs) == 1 else pd.concat(pd_dfs)
     etl_times["t_readcsv"] = mb.t_read_csv
-    print("ETL timings")
-    print("  t_one_hot_encoding = ", round(mb.t_one_hot_encoding, 2), " s")
-    print("  t_fillna = ", round(mb.t_fillna, 2), " s")
-    print("  t_drop_cols = ", round(mb.t_drop_cols, 2), " s")
-    print("  t_merge = ", round(mb.t_merge, 2), " s")
-    print("  t_conv_dates = ", round(mb.t_conv_dates, 2), " s")
+    # TODO: enable those only in verbose mode
+    # print("ETL timings")
+    # print("  t_one_hot_encoding = ", round(mb.t_one_hot_encoding, 2), " s")
+    # print("  t_fillna = ", round(mb.t_fillna, 2), " s")
+    # print("  t_drop_cols = ", round(mb.t_drop_cols, 2), " s")
+    # print("  t_merge = ", round(mb.t_merge, 2), " s")
+    # print("  t_conv_dates = ", round(mb.t_conv_dates, 2), " s")
     etl_times["t_etl"] = (
         mb.t_one_hot_encoding + mb.t_fillna + mb.t_drop_cols + mb.t_merge + mb.t_conv_dates
     )
