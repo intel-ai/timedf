@@ -33,7 +33,7 @@ def main():
 
     ignore_fields_for_bd_report_etl = ["t_connect"]
     ignore_fields_for_bd_report_ml = []
-    ignore_fields_for_results_unit_conversion = ["Backend"]
+    ignore_fields_for_results_unit_conversion = ["Backend", "dfiles_num"]
 
     parser = argparse.ArgumentParser(description="Run internal tests from ibis project")
     optional = parser._action_groups.pop()
