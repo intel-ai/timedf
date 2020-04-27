@@ -5,6 +5,7 @@ import warnings
 from timeit import default_timer as timer
 
 import numpy as np
+import pandas as pd
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
@@ -48,18 +49,16 @@ def q1_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
 
         # Casting of Pandas q1 output to Pandas.DataFrame type, which is compartible with
         # Ibis q1 output
-        q1_output_pd_df = q1_output_pd.to_frame()
-        q1_output_pd_df.loc[:, "count"] = q1_output_pd_df.loc[:, "cab_type"]
-        q1_output_pd_df["cab_type"] = q1_output_pd_df.index
-        q1_output_pd_df.index = [i for i in range(len(q1_output_pd_df))]
+        q1_output_pd_data = {q1_output_pd.name: list(q1_output_pd.index), "count": q1_output_pd.tolist()}
+        q1_output_pd_df = pd.DataFrame(q1_output_pd_data, columns=[q1_output_pd.name, "count"])
+        q1_output_pd_df = q1_output_pd_df.astype({"cab_type": "category"} ,copy=False)
 
-        # queries_validation_results["q1"] = compare_dataframes(
-        #     ibis_df=q1_output_pd_df,
-        #     pandas_df=q1_output_ibis,
-        #     pd=run_benchmark.__globals__["pd"],
-        # )
-        if queries_validation_results["q1"]:
-            print("q1 results are validated!")
+        compare_dataframes(
+            ibis_dfs=[q1_output_pd_df],
+            pandas_dfs=[q1_output_ibis],
+            sort_cols=[], 
+            drop_cols=[]
+        )
 
     return t_query
 
@@ -226,9 +225,9 @@ def q4_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
         #     pd=run_benchmark.__globals__["pd"],
         # )
 
-        queries_validation_results["q4"] = (
-            compare_result_1 and compare_result_2 and compare_result_3
-        )
+        # queries_validation_results["q4"] = (
+        #     compare_result_1 and compare_result_2 and compare_result_3
+        # )
         if queries_validation_results["q4"]:
             print("q4 results are validated!")
 
