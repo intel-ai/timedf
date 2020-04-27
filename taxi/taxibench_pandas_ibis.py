@@ -18,12 +18,6 @@ from utils import (
 )
 
 
-def validation_prereqs(omnisci_server_worker, data_files_names, files_limit, columns_names):
-    return omnisci_server_worker.import_data_by_pandas(
-        data_files_names=data_files_names, files_limit=files_limit, columns_names=columns_names,
-    )
-
-
 def run_queries(queries, parameters, etl_times):
     for query_number, (query_name, query_func) in enumerate(queries.items()):
         exec_time = query_func(**parameters)
@@ -32,7 +26,7 @@ def run_queries(queries, parameters, etl_times):
 
 
 # Queries definitions
-def q1_ibis(table, df_pandas, queries_validation_results, queries_validation_flags, validation):
+def q1_ibis(table, df_pandas, input_for_validation):
     t_query = 0
     t0 = timer()
     q1_output_ibis = (
@@ -40,10 +34,8 @@ def q1_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
     )
     t_query += timer() - t0
 
-    if validation and not queries_validation_flags["q1"]:
+    if validation:
         print("Validating query 1 results ...")
-
-        queries_validation_flags["q1"] = True
 
         q1_output_pd = df_pandas.groupby("cab_type")["cab_type"].count()
 
@@ -63,7 +55,7 @@ def q1_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
     return t_query
 
 
-def q2_ibis(table, df_pandas, queries_validation_results, queries_validation_flags, validation):
+def q2_ibis(table, df_pandas, input_for_validation):
     t_query = 0
     t0 = timer()
     q2_output_ibis = (
@@ -73,27 +65,23 @@ def q2_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
     )
     t_query += timer() - t0
 
-    if validation and not queries_validation_flags["q2"]:
+    if input_for_validation is not None:
         print("Validating query 2 results ...")
-
-        queries_validation_flags["q2"] = True
 
         q2_output_pd = df_pandas.groupby("passenger_count", as_index=False).mean()[
             ["passenger_count", "total_amount"]
         ]
 
-        # queries_validation_results["q2"] = compare_dataframes(
+        # compare_dataframes(
         #     pandas_df=q2_output_pd,
         #     ibis_df=q2_output_ibis,
         #     pd=run_benchmark.__globals__["pd"],
         # )
-        if queries_validation_results["q2"]:
-            print("q2 results are validated!")
 
     return t_query
 
 
-def q3_ibis(table, df_pandas, queries_validation_results, queries_validation_flags, validation):
+def q3_ibis(table, df_pandas, input_for_validation):
     t_query = 0
     t0 = timer()
     q3_output_ibis = (
@@ -105,10 +93,8 @@ def q3_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
     )
     t_query += timer() - t0
 
-    if validation and not queries_validation_flags["q3"]:
+    if input_for_validation is not None:
         print("Validating query 3 results ...")
-
-        queries_validation_flags["q3"] = True
 
         transformed = df_pandas[["passenger_count", "pickup_datetime"]].transform(
             {
@@ -130,18 +116,16 @@ def q3_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
         q3_output_pd_df.loc[:, "count"] = count_df
         q3_output_pd_df.index = [i for i in range(len(q3_output_pd_df))]
 
-        # queries_validation_results["q3"] = compare_dataframes(
+        # compare_dataframes(
         #     pandas_df=q3_output_pd_df,
         #     ibis_df=q3_output_ibis,
         #     pd=run_benchmark.__globals__["pd"],
         # )
-        if queries_validation_results["q3"]:
-            print("q3 results are validated!")
 
     return t_query
 
 
-def q4_ibis(table, df_pandas, queries_validation_results, queries_validation_flags, validation):
+def q4_ibis(table, df_pandas, input_for_validation):
     t_query = 0
     t0 = timer()
     q4_ibis_sized = table.groupby(
@@ -154,10 +138,8 @@ def q4_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
     q4_output_ibis = q4_ibis_sized.sort_by([("pickup_datetime", True), ("count", False)]).execute()
     t_query += timer() - t0
 
-    if validation and not queries_validation_flags["q4"]:
+    if input_for_validation is not None:
         print("Validating query 4 results ...")
-
-        queries_validation_flags["q4"] = True
 
         q4_pd_sized = (
             df_pandas[["passenger_count", "pickup_datetime", "trip_distance"]]
@@ -225,12 +207,6 @@ def q4_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
         #     pd=run_benchmark.__globals__["pd"],
         # )
 
-        # queries_validation_results["q4"] = (
-        #     compare_result_1 and compare_result_2 and compare_result_3
-        # )
-        if queries_validation_results["q4"]:
-            print("q4 results are validated!")
-
     return t_query
 
 
@@ -245,7 +221,7 @@ def etl_ibis(
     delete_old_database,
     create_new_table,
     ipc_connection,
-    validation,
+    input_for_validation,
     import_mode,
 ):
     import ibis
@@ -259,9 +235,6 @@ def etl_ibis(
     etl_times = {x: 0.0 for x in queries.keys()}
     etl_times["t_readcsv"] = 0.0
     etl_times["t_connect"] = 0.0
-
-    queries_validation_results = {"q%s" % i: False for i in range(1, 5)}
-    queries_validation_flags = {"q%s" % i: False for i in range(1, 5)}
 
     omnisci_server_worker.connect_to_server()
 
@@ -350,18 +323,9 @@ def etl_ibis(
     table = omnisci_server_worker.database(database_name).table(table_name)
     etl_times["t_connect"] += timer() - t0
 
-    df_pandas = None
-    if validation:
-        df_pandas = validation_prereqs(
-            omnisci_server_worker, data_files_names, files_limit, columns_names
-        )
-
     queries_parameters = {
         "table": table,
-        "df_pandas": df_pandas,
-        "queries_validation_results": queries_validation_results,
-        "queries_validation_flags": queries_validation_flags,
-        "validation": validation,
+        "input_for_validation": input_for_validation,
     }
     return run_queries(queries=queries, parameters=queries_parameters, etl_times=etl_times)
 
@@ -371,20 +335,30 @@ def etl_ibis(
 # FROM trips
 # GROUP BY cab_type;
 # @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
-def q1_pandas(df):
+def q1_pandas(df, output_for_validation):
     t0 = timer()
-    df.groupby("cab_type").count()
-    return timer() - t0
+    q1_pandas_output = df.groupby("cab_type").count()
+    query_time = timer() - t0
+
+    if output_for_validation is not None:
+        output_for_validation["Query1"] = q1_pandas_output
+
+    return query_time
 
 
 # SELECT passenger_count,
 #       count(total_amount)
 # FROM trips
 # GROUP BY passenger_count;
-def q2_pandas(df):
+def q2_pandas(df, output_for_validation):
     t0 = timer()
-    df.groupby("passenger_count", as_index=False).count()[["passenger_count", "total_amount"]]
-    return timer() - t0
+    q2_pandas_output = df.groupby("passenger_count", as_index=False).count()[["passenger_count", "total_amount"]]
+    query_time = timer() - t0
+
+    if output_for_validation is not None:
+        output_for_validation["Query2"] = q2_pandas_output
+
+    return query_time
 
 
 # SELECT passenger_count,
@@ -393,13 +367,18 @@ def q2_pandas(df):
 # FROM trips
 # GROUP BY passenger_count,
 #         year;
-def q3_pandas(df):
+def q3_pandas(df, output_for_validation):
     t0 = timer()
     transformed = df.applymap(lambda x: x.year if hasattr(x, "year") else x)
-    transformed.groupby(["pickup_datetime", "passenger_count"], as_index=False).count()[
+    q3_pandas_output = transformed.groupby(["pickup_datetime", "passenger_count"], as_index=False).count()[
         "passenger_count"
     ]
-    return timer() - t0
+    query_time = timer() - t0
+
+    if output_for_validation is not None:
+        output_for_validation["Query3"] = q3_pandas_output
+
+    return query_time
 
 
 # SELECT passenger_count,
@@ -412,7 +391,7 @@ def q3_pandas(df):
 #         distance
 # ORDER BY year,
 #         trips desc;
-def q4_pandas(df):
+def q4_pandas(df, output_for_validation):
     t0 = timer()
     transformed = df.applymap(
         lambda x: x.year
@@ -423,16 +402,17 @@ def q4_pandas(df):
     )[["passenger_count", "pickup_datetime", "trip_distance"]].groupby(
         ["passenger_count", "pickup_datetime", "trip_distance"]
     )
-    (
-        transformed.count()
-        .reset_index()
-        .sort_values(by=["pickup_datetime", "trip_distance"], ascending=[True, False])
-    )
-    return timer() - t0
+    q4_pandas_output = transformed.count().reset_index().sort_values(by=["pickup_datetime", "trip_distance"], ascending=[True, False])
+    query_time = timer() - t0
+
+    if output_for_validation is not None:
+        output_for_validation["Query4"] = q4_pandas_output
+
+    return query_time
 
 
 def etl_pandas(
-    filename, files_limit, columns_names, columns_types,
+    filename, files_limit, columns_names, columns_types, output_for_validation,
 ):
     queries = {
         "Query1": q1_pandas,
@@ -458,7 +438,7 @@ def etl_pandas(
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
     etl_times["t_readcsv"] = timer() - t0
 
-    queries_parameters = {"df": concatenated_df}
+    queries_parameters = {"df": concatenated_df, "output_for_validation": output_for_validation}
     return run_queries(queries=queries, parameters=queries_parameters, etl_times=etl_times)
 
 
@@ -595,6 +575,21 @@ def run_benchmark(parameters):
 
         etl_times_ibis = None
         etl_times = None
+        pd_queries_outputs = {}
+        if not parameters["no_pandas"]:
+            pandas_files_limit = parameters["dfiles_num"]
+            filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
+            etl_times = etl_pandas(
+                filename=filename,
+                files_limit=pandas_files_limit,
+                columns_names=columns_names,
+                columns_types=columns_types,
+                output_for_validation=pd_queries_outputs if parameters["validation"] else None,
+            )
+
+            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="ms")
+            etl_times["Backend"] = parameters["pandas_mode"]
+
         if not parameters["no_ibis"]:
             etl_times_ibis = etl_ibis(
                 filename=parameters["data_file"],
@@ -607,25 +602,12 @@ def run_benchmark(parameters):
                 delete_old_database=not parameters["dnd"],
                 ipc_connection=parameters["ipc_connection"],
                 create_new_table=not parameters["dni"],
-                validation=parameters["validation"],
+                input_for_validation=pd_queries_outputs if parameters["validation"] else None,
                 import_mode=parameters["import_mode"],
             )
 
             print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
             etl_times_ibis["Backend"] = "Ibis"
-
-        if not parameters["no_pandas"]:
-            pandas_files_limit = parameters["dfiles_num"]
-            filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
-            etl_times = etl_pandas(
-                filename=filename,
-                files_limit=pandas_files_limit,
-                columns_names=columns_names,
-                columns_types=columns_types,
-            )
-
-            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="ms")
-            etl_times["Backend"] = parameters["pandas_mode"]
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": []}
     except Exception:
