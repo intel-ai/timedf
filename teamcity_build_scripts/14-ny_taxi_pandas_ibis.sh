@@ -2,7 +2,7 @@ python3 run_ibis_tests.py --env_name ${ENV_NAME} --env_check True --save_env Tru
                           --ci_requirements "${PWD}"/ci_requirements.yml                                                           \
                           --ibis_path "${PWD}"/../ibis/                                                                            \
                           -executable "${PWD}"/../omniscidb/build/bin/omnisci_server                                               \
-                          -database_name ${DATABASE_NAME} -table taxi -bench_name ny_taxi -dfiles_num 20 -iterations 5             \
+                          -database_name ${DATABASE_NAME} -table taxi -bench_name taxi -dfiles_num 20 -iterations 5                \
                           -data_file '/localdisk/benchmark_datasets/taxi/trips_xa{a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t}.csv.gz' \
                           -pandas_mode Pandas -ray_tmpdir /tmp -validation True                                                    \
                           -commit_omnisci ${BUILD_REVISION} -commit_ibis ${BUILD_IBIS_REVISION}                                    \
