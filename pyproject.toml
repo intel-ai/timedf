@@ -2,6 +2,4 @@
     line-length = 99
 
 [flake8]
-    max_line_length = 99
-    ignore = E121,E123,E126,E226,E24,
-             E704,W503,W504,E501 # default ignore errors + E501(line length check, we already checks it with black)
+    ignore = E121, E123, E126, E226, E24, E704, W503, W504, E501
