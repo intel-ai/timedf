@@ -20,7 +20,7 @@ command1DropTableTrips = "drop table taxitestdb;"
 command2ImportCSV = "COPY taxitestdb FROM '%s' WITH (header='false');"
 
 timingRegexpRegexp = re.compile(
-    "Execution time: (\d+) ms, Total time: (\d+) ms", flags=re.MULTILINE
+    r"Execution time: (\d+) ms, Total time: (\d+) ms", flags=re.MULTILINE
 )
 exceptionRegexpRegexp = re.compile("Exception: .*", flags=re.MULTILINE)
 
@@ -311,7 +311,7 @@ if args.t < 1:
 omnisciCmdLine = [args.e] + omnisciCmdLine + ["--port", str(args.port)]
 
 db_reporter = None
-if args.db_user is not "":
+if args.db_user != "":
     print("Connecting to database")
     db = mysql.connector.connect(
         host=args.db_server,

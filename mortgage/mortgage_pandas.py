@@ -554,7 +554,7 @@ def main():
     )
 
     db_reporter = None
-    if args.db_user is not "":
+    if args.db_user != "":
         print("Connecting to database")
         db = mysql.connector.connect(
             host=args.db_server,

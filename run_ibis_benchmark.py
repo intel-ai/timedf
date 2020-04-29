@@ -423,7 +423,7 @@ def main():
                     reporting_fields_benchmark_etl = {
                         x: "VARCHAR(500) NOT NULL" for x in etl_results[0]
                     }
-                    if len(etl_results) is not 1:
+                    if len(etl_results) != 1:
                         reporting_fields_benchmark_etl.update(
                             {x: "VARCHAR(500) NOT NULL" for x in etl_results[1]}
                         )
@@ -435,11 +435,11 @@ def main():
                         reporting_init_fields,
                     )
 
-                    if len(ml_results) is not 0:
+                    if len(ml_results) != 0:
                         reporting_fields_benchmark_ml = {
                             x: "VARCHAR(500) NOT NULL" for x in ml_results[0]
                         }
-                        if len(ml_results) is not 1:
+                        if len(ml_results) != 1:
                             reporting_fields_benchmark_ml.update(
                                 {x: "VARCHAR(500) NOT NULL" for x in ml_results[1]}
                             )
@@ -455,7 +455,7 @@ def main():
                     remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)
                     db_reporter_etl.submit(result_etl)
 
-                if len(ml_results) is not 0:
+                if len(ml_results) != 0:
                     for result_ml in ml_results:
                         remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
                         db_reporter_ml.submit(result_ml)

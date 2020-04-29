@@ -428,7 +428,7 @@ else:
     benchmark_cmdline = dataset_benchmark_cmdline
 
 db_reporter = None
-if args.db_user is not "":
+if args.db_user != "":
     if args.db_table is None:
         print("--db-table parameter is mandatory to store results in MySQL database")
         sys.exit(4)

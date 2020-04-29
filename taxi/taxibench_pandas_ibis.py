@@ -5,6 +5,7 @@ import warnings
 from timeit import default_timer as timer
 
 import numpy as np
+import pandas as pd
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
@@ -100,7 +101,7 @@ def q3_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
     t0 = timer()
     q3_output_ibis = (
         table.groupby(
-            [table.passenger_count, table.pickup_datetime.year().name("pickup_datetime"),]
+            [table.passenger_count, table.pickup_datetime.year().name("pickup_datetime")]
         )
         .aggregate(count=table.passenger_count.count())
         .execute()
@@ -459,7 +460,7 @@ def etl_pandas(
             header=None,
             nrows=None,
             use_gzip=f.endswith(".gz"),
-            parse_dates=["pickup_datetime", "dropoff_datetime",],
+            parse_dates=["pickup_datetime", "dropoff_datetime"],
             pd=run_benchmark.__globals__["pd"],
         )
         for f in filename
