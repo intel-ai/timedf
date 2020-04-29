@@ -8,6 +8,7 @@ import pandas as pd
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
+    check_fragments_size,
     compare_dataframes,
     files_names_from_pattern,
     import_pandas_into_module_namespace,
@@ -210,8 +211,11 @@ def etl_ibis(
     ipc_connection,
     input_for_validation,
     import_mode,
+    fragments_size,
 ):
     import ibis
+
+    fragments_size = check_fragments_size(fragments_size, count_table=1, import_mode=import_mode)
 
     queries = {
         "Query1": q1_ibis,
@@ -244,7 +248,10 @@ def etl_ibis(
         if import_mode == "copy-from":
             t0 = timer()
             omnisci_server_worker.create_table(
-                table_name=table_name, schema=schema_table, database=database_name,
+                table_name=table_name,
+                schema=schema_table,
+                database=database_name,
+                fragment_size=fragments_size[0],
             )
             etl_times["t_connect"] += timer() - t0
             table_import = omnisci_server_worker.database(database_name).table(table_name)
@@ -298,7 +305,8 @@ def etl_ibis(
                 table_name,
                 data_file_path if data_file_path else data_files_names[0],
                 schema_table,
-                header=0,
+                header=False,
+                fragment_size=fragments_size[0],
             )
             etl_times["t_readcsv"] += timer() - t0
             etl_times["t_connect"] = omnisci_server_worker.get_conn_creation_time()
@@ -586,10 +594,12 @@ def run_benchmark(parameters):
                 create_new_table=not parameters["dni"],
                 input_for_validation=pd_queries_outputs if parameters["validation"] else None,
                 import_mode=parameters["import_mode"],
+                fragments_size=parameters["fragments_size"],
             )
 
             print_results(results=etl_times_ibis, backend="Ibis", unit="ms")
             etl_times_ibis["Backend"] = "Ibis"
+            etl_times_ibis["dfiles_num"] = parameters["dfiles_num"]
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": []}
     except Exception:
