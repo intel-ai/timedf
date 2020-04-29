@@ -4,7 +4,6 @@ import traceback
 import warnings
 from timeit import default_timer as timer
 
-import numpy as np
 import pandas as pd
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -58,11 +57,6 @@ def q1_ibis(table, input_for_validation):
 def q2_ibis(table, input_for_validation):
     t_query = 0
     t0 = timer()
-    # q2_output_ibis = (
-    #     table.groupby("passenger_count")
-    #     .aggregate(total_amount=table.total_amount.mean())[["passenger_count", "total_amount"]]
-    #     .execute()
-    # )
     q2_output_ibis = (
         table.groupby("passenger_count")
         .aggregate(total_amount=table.total_amount.count())[["passenger_count", "total_amount"]]
@@ -79,11 +73,12 @@ def q2_ibis(table, input_for_validation):
 
         q2_output_pd = input_for_validation['Query2']
 
-        # compare_dataframes(
-        #     pandas_df=q2_output_pd,
-        #     ibis_df=q2_output_ibis,
-        #     pd=run_benchmark.__globals__["pd"],
-        # )
+        compare_dataframes(
+            ibis_dfs=[q2_output_pd],
+            pandas_dfs=[q2_output_ibis],
+            sort_cols=[], 
+            drop_cols=[]
+        )
 
     return t_query
 
@@ -103,33 +98,20 @@ def q3_ibis(table, input_for_validation):
     if input_for_validation is not None:
         print("Validating query 3 results ...")
 
-        # transformed = df_pandas[["passenger_count", "pickup_datetime"]].transform(
-        #     {
-        #         "passenger_count": lambda x: x,
-        #         "pickup_datetime": lambda x: pd.DatetimeIndex(x).year,
-        #     }
-        # )
-        # q3_output_pd = transformed.groupby(["passenger_count", "pickup_datetime"])[
-        #     ["passenger_count", "pickup_datetime"]
-        # ].count()["passenger_count"]
-
         q3_output_pd = input_for_validation['Query3']
-
         # Casting of Pandas q3 output to Pandas.DataFrame type, which is compartible with
         # Ibis q3 output
-        q3_output_pd_df = q3_output_pd.to_frame()
-        count_df = q3_output_pd_df.loc[:, "passenger_count"].copy()
-        q3_output_pd_df["passenger_count"] = q3_output_pd.index.droplevel(level="pickup_datetime")
-        q3_output_pd_df["pickup_datetime"] = q3_output_pd.index.droplevel(level="passenger_count")
-        q3_output_pd_df = q3_output_pd_df.astype({"pickup_datetime": "int32"})
-        q3_output_pd_df.loc[:, "count"] = count_df
-        q3_output_pd_df.index = [i for i in range(len(q3_output_pd_df))]
+        passenger_count_col = q3_output_pd.index.droplevel(level="pickup_datetime")
+        pickup_datetime_col = q3_output_pd.index.droplevel(level="passenger_count")
+        count_col = q3_output_pd[("passenger_count", "count")].tolist()
+        q3_output_pd_casted = pd.DataFrame({"passenger_count": passenger_count_col, "pickup_datetime": pickup_datetime_col, "count": count_col})
 
-        # compare_dataframes(
-        #     pandas_df=q3_output_pd_df,
-        #     ibis_df=q3_output_ibis,
-        #     pd=run_benchmark.__globals__["pd"],
-        # )
+        compare_dataframes(
+            ibis_dfs=[q3_output_pd_casted],
+            pandas_dfs=[q3_output_ibis],
+            sort_cols=[], 
+            drop_cols=[]
+        )
 
     return t_query
 
@@ -141,7 +123,7 @@ def q4_ibis(table, input_for_validation):
         [
             table.passenger_count,
             table.pickup_datetime.year().name("pickup_datetime"),
-            table.trip_distance.cast("int64").name("trip_distance"),
+            table.trip_distance.round().cast("int64").name("trip_distance"),
         ]
     ).size()
     q4_output_ibis = q4_ibis_sized.sort_by([("pickup_datetime", True), ("count", False)]).execute()
@@ -150,34 +132,28 @@ def q4_ibis(table, input_for_validation):
     if input_for_validation is not None:
         print("Validating query 4 results ...")
 
-        # q4_pd_sized = (
-        #     df_pandas[["passenger_count", "pickup_datetime", "trip_distance"]]
-        #     .transform(
-        #         {
-        #             "passenger_count": lambda x: x,
-        #             "pickup_datetime": lambda x: pd.DatetimeIndex(x).year,
-        #             "trip_distance": lambda x: x.astype("int64", copy=False),
-        #         }
-        #     )
-        #     .groupby(["passenger_count", "pickup_datetime", "trip_distance"])
-        #     .size()
-        #     .reset_index()
-        # )
-
-        # q4_output_pd = q4_pd_sized.sort_values(by=["pickup_datetime", 0], ascending=[True, False])
-
         q4_output_pd = input_for_validation['Query4']
 
         # Casting of Pandas q4 output to Pandas.DataFrame type, which is compartible with
         # Ibis q4 output
-        q4_output_pd = q4_output_pd.astype({"pickup_datetime": "int32"})
-        q4_output_pd.columns = [
-            "passenger_count",
-            "pickup_datetime",
-            "trip_distance",
-            "count",
-        ]
-        q4_output_pd.index = [i for i in range(len(q4_output_pd))]
+        # q4_output_pd = q4_output_pd.astype({"trip_distance": "int64"}, copy=False)
+
+        # compare_dataframes(
+        #     ibis_dfs=[q4_output_pd],
+        #     pandas_dfs=[q4_output_ibis],
+        #     sort_cols=[], 
+        #     drop_cols=[]
+        # )
+
+
+        # q4_output_pd = q4_output_pd.astype({"pickup_datetime": "int32"})
+        # q4_output_pd.columns = [
+        #     "passenger_count",
+        #     "pickup_datetime",
+        #     "trip_distance",
+        #     "count",
+        # ]
+        # q4_output_pd.index = [i for i in range(len(q4_output_pd))]
 
         # compare_result_1 and compare_result_2 are the results of comparison of q4 sorted columns
         # compare_result_1 = compare_dataframes(
@@ -192,25 +168,25 @@ def q4_ibis(table, input_for_validation):
         # )
 
         # compare_result_3 is the result of q4 output table all elements presence check
-        q4_output_ibis_validation = q4_ibis_sized.sort_by(
-            [
-                ("pickup_datetime", True),
-                ("count", False),
-                ("trip_distance", True),
-                ("passenger_count", True),
-            ]
-        ).execute()
-        q4_output_pd_valid = q4_pd_sized.sort_values(
-            by=["trip_distance", "passenger_count"]
-        ).sort_values(by=["pickup_datetime", 0], ascending=[True, False])
-        q4_output_pd_valid = q4_output_pd_valid.astype({"pickup_datetime": "int32"})
-        q4_output_pd_valid.columns = [
-            "passenger_count",
-            "pickup_datetime",
-            "trip_distance",
-            "count",
-        ]
-        q4_output_pd_valid.index = [i for i in range(len(q4_output_pd))]
+        # q4_output_ibis_validation = q4_ibis_sized.sort_by(
+        #     [
+        #         ("pickup_datetime", True),
+        #         ("count", False),
+        #         ("trip_distance", True),
+        #         ("passenger_count", True),
+        #     ]
+        # ).execute()
+        # q4_output_pd_valid = q4_pd_sized.sort_values(
+        #     by=["trip_distance", "passenger_count"]
+        # ).sort_values(by=["pickup_datetime", 0], ascending=[True, False])
+        # q4_output_pd_valid = q4_output_pd_valid.astype({"pickup_datetime": "int32"})
+        # q4_output_pd_valid.columns = [
+        #     "passenger_count",
+        #     "pickup_datetime",
+        #     "trip_distance",
+        #     "count",
+        # ]
+        # q4_output_pd_valid.index = [i for i in range(len(q4_output_pd))]
 
         # compare_result_3 = compare_dataframes(
         #     pandas_df=q4_output_pd_valid,
@@ -365,17 +341,11 @@ def q1_pandas(df, output_for_validation):
 # GROUP BY passenger_count;
 def q2_pandas(df, output_for_validation):
     t0 = timer()
-    q2_pandas_output_new = df.groupby("passenger_count", as_index=False).count()[["passenger_count", "total_amount"]]
-    q2_pandas_output = df.groupby('passenger_count', as_index=False).mean()[['passenger_count','total_amount']]
+    q2_pandas_output = df.groupby("passenger_count", as_index=False).count()[["passenger_count", "total_amount"]]
     query_time = timer() - t0
 
     if output_for_validation is not None:
         output_for_validation["Query2"] = q2_pandas_output
-
-    # q2_pandas_output_new = df.groupby("passenger_count", as_index=False).count()[["passenger_count", "total_amount"]]
-
-    # q2_pandas_output.to_csv('/localdisk/amyskov/ny_taxi_queries_results/q2_pd_result.csv', index=False)
-    # q2_pandas_output_new.to_csv('/localdisk/amyskov/ny_taxi_queries_results/q2_pd_result_new.csv', index=False)
 
     return query_time
 
