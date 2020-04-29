@@ -26,7 +26,7 @@ def run_queries(queries, parameters, etl_times):
 
 
 # Queries definitions
-def q1_ibis(table, df_pandas, input_for_validation):
+def q1_ibis(table, input_for_validation):
     t_query = 0
     t0 = timer()
     q1_output_ibis = (
@@ -34,10 +34,10 @@ def q1_ibis(table, df_pandas, input_for_validation):
     )
     t_query += timer() - t0
 
-    if validation:
+    if input_for_validation is not None:
         print("Validating query 1 results ...")
 
-        q1_output_pd = df_pandas.groupby("cab_type")["cab_type"].count()
+        q1_output_pd = input_for_validation['Query1']
 
         # Casting of Pandas q1 output to Pandas.DataFrame type, which is compartible with
         # Ibis q1 output
@@ -55,12 +55,17 @@ def q1_ibis(table, df_pandas, input_for_validation):
     return t_query
 
 
-def q2_ibis(table, df_pandas, input_for_validation):
+def q2_ibis(table, input_for_validation):
     t_query = 0
     t0 = timer()
+    # q2_output_ibis = (
+    #     table.groupby("passenger_count")
+    #     .aggregate(total_amount=table.total_amount.mean())[["passenger_count", "total_amount"]]
+    #     .execute()
+    # )
     q2_output_ibis = (
         table.groupby("passenger_count")
-        .aggregate(total_amount=table.total_amount.mean())[["passenger_count", "total_amount"]]
+        .aggregate(total_amount=table.total_amount.count())[["passenger_count", "total_amount"]]
         .execute()
     )
     t_query += timer() - t0
@@ -68,9 +73,11 @@ def q2_ibis(table, df_pandas, input_for_validation):
     if input_for_validation is not None:
         print("Validating query 2 results ...")
 
-        q2_output_pd = df_pandas.groupby("passenger_count", as_index=False).mean()[
-            ["passenger_count", "total_amount"]
-        ]
+        # q2_output_pd = df_pandas.groupby("passenger_count", as_index=False).mean()[
+        #     ["passenger_count", "total_amount"]
+        # ]
+
+        q2_output_pd = input_for_validation['Query2']
 
         # compare_dataframes(
         #     pandas_df=q2_output_pd,
@@ -81,7 +88,7 @@ def q2_ibis(table, df_pandas, input_for_validation):
     return t_query
 
 
-def q3_ibis(table, df_pandas, input_for_validation):
+def q3_ibis(table, input_for_validation):
     t_query = 0
     t0 = timer()
     q3_output_ibis = (
@@ -96,15 +103,17 @@ def q3_ibis(table, df_pandas, input_for_validation):
     if input_for_validation is not None:
         print("Validating query 3 results ...")
 
-        transformed = df_pandas[["passenger_count", "pickup_datetime"]].transform(
-            {
-                "passenger_count": lambda x: x,
-                "pickup_datetime": lambda x: pd.DatetimeIndex(x).year,
-            }
-        )
-        q3_output_pd = transformed.groupby(["passenger_count", "pickup_datetime"])[
-            ["passenger_count", "pickup_datetime"]
-        ].count()["passenger_count"]
+        # transformed = df_pandas[["passenger_count", "pickup_datetime"]].transform(
+        #     {
+        #         "passenger_count": lambda x: x,
+        #         "pickup_datetime": lambda x: pd.DatetimeIndex(x).year,
+        #     }
+        # )
+        # q3_output_pd = transformed.groupby(["passenger_count", "pickup_datetime"])[
+        #     ["passenger_count", "pickup_datetime"]
+        # ].count()["passenger_count"]
+
+        q3_output_pd = input_for_validation['Query3']
 
         # Casting of Pandas q3 output to Pandas.DataFrame type, which is compartible with
         # Ibis q3 output
@@ -125,7 +134,7 @@ def q3_ibis(table, df_pandas, input_for_validation):
     return t_query
 
 
-def q4_ibis(table, df_pandas, input_for_validation):
+def q4_ibis(table, input_for_validation):
     t_query = 0
     t0 = timer()
     q4_ibis_sized = table.groupby(
@@ -141,21 +150,23 @@ def q4_ibis(table, df_pandas, input_for_validation):
     if input_for_validation is not None:
         print("Validating query 4 results ...")
 
-        q4_pd_sized = (
-            df_pandas[["passenger_count", "pickup_datetime", "trip_distance"]]
-            .transform(
-                {
-                    "passenger_count": lambda x: x,
-                    "pickup_datetime": lambda x: pd.DatetimeIndex(x).year,
-                    "trip_distance": lambda x: x.astype("int64", copy=False),
-                }
-            )
-            .groupby(["passenger_count", "pickup_datetime", "trip_distance"])
-            .size()
-            .reset_index()
-        )
+        # q4_pd_sized = (
+        #     df_pandas[["passenger_count", "pickup_datetime", "trip_distance"]]
+        #     .transform(
+        #         {
+        #             "passenger_count": lambda x: x,
+        #             "pickup_datetime": lambda x: pd.DatetimeIndex(x).year,
+        #             "trip_distance": lambda x: x.astype("int64", copy=False),
+        #         }
+        #     )
+        #     .groupby(["passenger_count", "pickup_datetime", "trip_distance"])
+        #     .size()
+        #     .reset_index()
+        # )
 
-        q4_output_pd = q4_pd_sized.sort_values(by=["pickup_datetime", 0], ascending=[True, False])
+        # q4_output_pd = q4_pd_sized.sort_values(by=["pickup_datetime", 0], ascending=[True, False])
+
+        q4_output_pd = input_for_validation['Query4']
 
         # Casting of Pandas q4 output to Pandas.DataFrame type, which is compartible with
         # Ibis q4 output
@@ -337,11 +348,13 @@ def etl_ibis(
 # @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
 def q1_pandas(df, output_for_validation):
     t0 = timer()
-    q1_pandas_output = df.groupby("cab_type").count()
+    q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
     query_time = timer() - t0
 
     if output_for_validation is not None:
         output_for_validation["Query1"] = q1_pandas_output
+
+    # q1_pandas_output.to_csv('/localdisk/amyskov/ny_taxi_queries_results/q1_pd_result.csv', index=False)
 
     return query_time
 
@@ -352,27 +365,32 @@ def q1_pandas(df, output_for_validation):
 # GROUP BY passenger_count;
 def q2_pandas(df, output_for_validation):
     t0 = timer()
-    q2_pandas_output = df.groupby("passenger_count", as_index=False).count()[["passenger_count", "total_amount"]]
+    q2_pandas_output_new = df.groupby("passenger_count", as_index=False).count()[["passenger_count", "total_amount"]]
+    q2_pandas_output = df.groupby('passenger_count', as_index=False).mean()[['passenger_count','total_amount']]
     query_time = timer() - t0
 
     if output_for_validation is not None:
         output_for_validation["Query2"] = q2_pandas_output
 
+    # q2_pandas_output_new = df.groupby("passenger_count", as_index=False).count()[["passenger_count", "total_amount"]]
+
+    # q2_pandas_output.to_csv('/localdisk/amyskov/ny_taxi_queries_results/q2_pd_result.csv', index=False)
+    # q2_pandas_output_new.to_csv('/localdisk/amyskov/ny_taxi_queries_results/q2_pd_result_new.csv', index=False)
+
     return query_time
 
 
 # SELECT passenger_count,
-#       EXTRACT(year from pickup_datetime) as year,
+#       EXTRACT(year from pickup_datetime) as year0,
 #       count(*)
 # FROM trips
 # GROUP BY passenger_count,
-#         year;
+#         year0;
 def q3_pandas(df, output_for_validation):
     t0 = timer()
-    transformed = df.applymap(lambda x: x.year if hasattr(x, "year") else x)
-    q3_pandas_output = transformed.groupby(["pickup_datetime", "passenger_count"], as_index=False).count()[
-        "passenger_count"
-    ]
+    transformed = df[['passenger_count','pickup_datetime']].transform({'passenger_count':lambda x: x,'pickup_datetime':lambda x:  pd.DatetimeIndex(x).year})
+    q3_pandas_output = transformed.groupby(['pickup_datetime', 'passenger_count']).agg({'passenger_count': ['count']})
+
     query_time = timer() - t0
 
     if output_for_validation is not None:
@@ -382,27 +400,20 @@ def q3_pandas(df, output_for_validation):
 
 
 # SELECT passenger_count,
-#       EXTRACT(year from pickup_datetime) as year,
+#       EXTRACT(year from pickup_datetime) as year0,
 #       round(trip_distance) distance,
 #       count(*) trips
 # FROM trips
 # GROUP BY passenger_count,
-#         year,
+#         year0,
 #         distance
-# ORDER BY year,
+# ORDER BY year0,
 #         trips desc;
 def q4_pandas(df, output_for_validation):
     t0 = timer()
-    transformed = df.applymap(
-        lambda x: x.year
-        if hasattr(x, "year")
-        else round(x)
-        if isinstance(x, (int, float)) and not np.isnan(x)
-        else x
-    )[["passenger_count", "pickup_datetime", "trip_distance"]].groupby(
-        ["passenger_count", "pickup_datetime", "trip_distance"]
-    )
-    q4_pandas_output = transformed.count().reset_index().sort_values(by=["pickup_datetime", "trip_distance"], ascending=[True, False])
+    transformed = df[['passenger_count','pickup_datetime','trip_distance']].transform({'passenger_count':lambda x: x,'pickup_datetime':lambda x:  pd.DatetimeIndex(x).year,'trip_distance': lambda x: x.round()}).groupby(['passenger_count','pickup_datetime','trip_distance'])
+    q4_pandas_output = transformed.size().reset_index().sort_values(by=['pickup_datetime',0],ascending=[True,False])
+
     query_time = timer() - t0
 
     if output_for_validation is not None:
@@ -560,6 +571,7 @@ def run_benchmark(parameters):
         "category",
         "float64",
     ]
+
 
     if parameters["dfiles_num"] <= 0:
         print("Bad number of data files specified: ", parameters["dfiles_num"])
