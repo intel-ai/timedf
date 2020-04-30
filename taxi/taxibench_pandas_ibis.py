@@ -120,7 +120,7 @@ def q4_ibis(table, input_for_validation):
         [
             table.passenger_count,
             table.pickup_datetime.year().name("pickup_datetime"),
-            table.trip_distance.round().cast("int64").name("trip_distance"),
+            table.trip_distance.round().name("trip_distance"),
         ]
     ).size()
     q4_output_ibis = q4_ibis_sized.sort_by([("pickup_datetime", True), ("count", False)]).execute()
@@ -290,8 +290,6 @@ def q1_pandas(df, output_for_validation):
 
     if output_for_validation is not None:
         output_for_validation["Query1"] = q1_pandas_output
-
-    # q1_pandas_output.to_csv('/localdisk/amyskov/ny_taxi_queries_results/q1_pd_result.csv', index=False)
 
     return query_time
 
