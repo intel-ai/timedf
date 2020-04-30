@@ -3,13 +3,9 @@ import warnings
 import ibis
 
 from utils import (
-    cod,
     compare_dataframes,
     import_pandas_into_module_namespace,
-    load_data_pandas,
-    mse,
     print_results,
-    split,
 )
 from .mortgage_ibis import etl_ibis
 from .mortgage_pandas import etl_pandas, ml

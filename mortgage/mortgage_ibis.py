@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-import sys
-import time
-from collections import OrderedDict
 from timeit import default_timer as timer
-
-import numpy as np
 import ibis
 
 from .mortgage_pandas import MortgagePandasBenchmark  # used for loading
