@@ -109,7 +109,6 @@ def get_percentage(error_message):
 def compare_dataframes(ibis_dfs, pandas_dfs, sort_cols=["id"], drop_cols=["id"]):
     import pandas as pd
 
-    prepared_dfs = []
     # in percentage - 0.05 %
     max_error = 0.05
 
@@ -268,9 +267,7 @@ def find_free_port():
 
 def split(X, y, test_size=0.1, stratify=None, random_state=None, optimizer="intel"):
     if optimizer == "intel":
-        import daal4py
-        from daal4py import sklearn
-        from sklearn.model_selection import train_test_split
+        from daal4py.sklearn.model_selection import train_test_split
     elif optimizer == "stock":
         from sklearn.model_selection import train_test_split
     else:
