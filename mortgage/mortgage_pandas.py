@@ -601,7 +601,10 @@ def main():
         print("RUNNING BENCHMARK NUMBER", benchName, "ITERATION NUMBER", iii)
         for quarter in range(0, args.df):
             year = 2000 + quarter // 4
-            perf_file = perf_format_path % (str(year), str(quarter % 4 + 1))  # noqa: F841 (assigned, but never used)
+            perf_file = perf_format_path % (  # noqa: F841 (assigned, but never used)
+                str(year),
+                str(quarter % 4 + 1),
+            )
 
             files = [
                 f

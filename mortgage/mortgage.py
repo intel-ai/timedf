@@ -11,7 +11,9 @@ import mysql.connector
 
 import numpy as np  # noqa: F401 (imported, but unused. Used in commented code.)
 import pandas as pd  # noqa: F401 (imported, but unused. Used in commented code.)
-from pandas.api.types import CategoricalDtype  # noqa: F401 (imported, but unused. Used in commented code.)
+from pandas.api.types import (  # noqa: F401 (imported, but unused. Used in commented code.)
+    CategoricalDtype,
+)
 
 import report
 from pymapd import connect
