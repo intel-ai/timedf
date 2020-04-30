@@ -1,7 +1,6 @@
 # coding: utf-8
 import os
 import sys
-import time
 import traceback
 import warnings
 from timeit import default_timer as timer
@@ -82,7 +81,6 @@ def etl_ibis(
     import_mode,
     fragments_size,
 ):
-    tmp_table_name = "tmp_table"
     etl_times = {key: 0.0 for key in etl_keys}
 
     fragments_size = check_fragments_size(fragments_size, count_table=1, import_mode=import_mode)
@@ -173,7 +171,7 @@ def etl_ibis(
     for i in range(200):
         col = "var_%d" % i
         col_count = "var_%d_count" % i
-        col_gt1 = "var_%d_gt1" % i
+        col_gt1 = "var_%d_gt1" % i  # noqa: F841 (assigned, but never used)
         w = ibis.window(group_by=col)
         count_cols.append(table[col].count().over(w).name(col_count))
         gt1_cols.append(
@@ -279,8 +277,8 @@ def run_benchmark(parameters):
     ml_times = None
 
     var_cols = ["var_%s" % i for i in range(200)]
-    count_cols = ["var_%s_count" % i for i in range(200)]
-    gt1_cols = ["var_%s_gt1" % i for i in range(200)]
+    count_cols = ["var_%s_count" % i for i in range(200)]  # noqa: F841 (assigned, but never used)
+    gt1_cols = ["var_%s_gt1" % i for i in range(200)]  # noqa: F841 (assigned, but never used)
     columns_names = ["ID_code", "target"] + var_cols
     columns_types_pd = ["object", "int64"] + ["float64" for _ in range(200)]
     columns_types_ibis = ["string", "int32"] + ["decimal(8, 4)" for _ in range(200)]

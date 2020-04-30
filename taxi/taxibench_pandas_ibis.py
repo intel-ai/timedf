@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils import (
+from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Used in commented code.)
     check_fragments_size,
     compare_dataframes,
     files_names_from_pattern,
@@ -36,7 +36,7 @@ def run_queries(queries, parameters, etl_times):
 def q1_ibis(table, df_pandas, queries_validation_results, queries_validation_flags, validation):
     t_query = 0
     t0 = timer()
-    q1_output_ibis = (
+    q1_output_ibis = (  # noqa: F841 (assigned, but unused. Used in commented code.)
         table.groupby("cab_type").count().sort_by("cab_type")["cab_type", "count"].execute()
     )
     t_query += timer() - t0
@@ -69,7 +69,7 @@ def q1_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
 def q2_ibis(table, df_pandas, queries_validation_results, queries_validation_flags, validation):
     t_query = 0
     t0 = timer()
-    q2_output_ibis = (
+    q2_output_ibis = (  # noqa: F841 (assigned, but unused. Used in commented code.)
         table.groupby("passenger_count")
         .aggregate(total_amount=table.total_amount.mean())[["passenger_count", "total_amount"]]
         .execute()
@@ -81,7 +81,9 @@ def q2_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
 
         queries_validation_flags["q2"] = True
 
-        q2_output_pd = df_pandas.groupby("passenger_count", as_index=False).mean()[
+        q2_output_pd = df_pandas.groupby(  # noqa: F841 (assigned, but unused. Used in commented code.)
+            "passenger_count", as_index=False
+        ).mean()[
             ["passenger_count", "total_amount"]
         ]
 
@@ -99,7 +101,7 @@ def q2_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
 def q3_ibis(table, df_pandas, queries_validation_results, queries_validation_flags, validation):
     t_query = 0
     t0 = timer()
-    q3_output_ibis = (
+    q3_output_ibis = (  # noqa: F841 (assigned, but unused. Used in commented code.)
         table.groupby(
             [table.passenger_count, table.pickup_datetime.year().name("pickup_datetime")]
         )
@@ -154,7 +156,9 @@ def q4_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
             table.trip_distance.cast("int64").name("trip_distance"),
         ]
     ).size()
-    q4_output_ibis = q4_ibis_sized.sort_by([("pickup_datetime", True), ("count", False)]).execute()
+    q4_output_ibis = q4_ibis_sized.sort_by(  # noqa: F841 (assigned, but unused. Used in commented code.)
+        [("pickup_datetime", True), ("count", False)]
+    ).execute()
     t_query += timer() - t0
 
     if validation and not queries_validation_flags["q4"]:
@@ -202,7 +206,7 @@ def q4_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
         # )
 
         # compare_result_3 is the result of q4 output table all elements presence check
-        q4_output_ibis_validation = q4_ibis_sized.sort_by(
+        q4_output_ibis_validation = q4_ibis_sized.sort_by(  # noqa: F841 (assigned, but unused. Used in commented code.)
             [
                 ("pickup_datetime", True),
                 ("count", False),
@@ -229,7 +233,9 @@ def q4_ibis(table, df_pandas, queries_validation_results, queries_validation_fla
         # )
 
         queries_validation_results["q4"] = (
-            compare_result_1 and compare_result_2 and compare_result_3
+            compare_result_1  # noqa: F821 (undefined name. Defined in commented code.)
+            and compare_result_2  # noqa: F821 (undefined name. Defined in commented code.)
+            and compare_result_3  # noqa: F821 (undefined name. Defined in commented code.)
         )
         if queries_validation_results["q4"]:
             print("q4 results are validated!")
@@ -338,7 +344,7 @@ def etl_ibis(
                         write_to_csv_by_chunks(
                             file_to_write=file_name, output_file=data_file_path, write_mode="ab",
                         )
-                except Exception as exc:
+                except Exception:
                     os.remove(data_file_path)
                     raise
 

@@ -2,7 +2,6 @@ import argparse
 import glob
 import io
 import os
-import pathlib
 import re
 import subprocess
 import sys
@@ -454,7 +453,7 @@ for fs in args.fs:
                             )
                         else:
                             print("Failed to parse command output:", output)
-                            errstr = getErrorLine(strout)
+                            errstr = getErrorLine(output)
                     if bestExecTime > execTime:
                         bestExecTime = execTime
                     if bestTotalTime > totalTime:

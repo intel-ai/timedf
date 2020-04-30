@@ -18,7 +18,7 @@ from utils import (
 
 
 def main():
-    omniscript_path = os.path.dirname(__file__)
+    omniscript_path = os.path.dirname(__file__)  # noqa: F841 (assigned, but never used)
     args = None
     omnisci_server = None
     port_default_value = -1

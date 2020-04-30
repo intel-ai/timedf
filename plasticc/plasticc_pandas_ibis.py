@@ -8,7 +8,7 @@ from timeit import default_timer as timer
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split  # noqa: F401 (import unused)
 from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
 
@@ -523,7 +523,7 @@ def ml(train_final, test_final, ml_keys):
     cpu_loss = multi_weighted_logloss(y_test, yp, classes, class_weights)
 
     t0 = timer()
-    ysub = clf.predict(dtest)
+    ysub = clf.predict(dtest)  # noqa: F841 (unused variable)
     ml_times["t_infer"] += timer() - t0
 
     ml_times["t_ml"] = timer() - t_ml_start
