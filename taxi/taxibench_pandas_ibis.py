@@ -34,7 +34,7 @@ def q1_ibis(table, input_for_validation):
     )
     t_query += timer() - t0
 
-    if input_for_validation is not None:
+    if input_for_validation:
         print("Validating query 1 results ...")
 
         q1_output_pd = input_for_validation["Query1"]
@@ -553,7 +553,7 @@ def run_benchmark(parameters):
 
         etl_times_ibis = None
         etl_times = None
-        pd_queries_outputs = {}
+        pd_queries_outputs = {} if parameters['validation'] else None
         if not parameters["no_pandas"]:
             pandas_files_limit = parameters["dfiles_num"]
             filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
