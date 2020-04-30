@@ -16,7 +16,7 @@ from utils import (
     load_data_pandas,
     print_results,
     write_to_csv_by_chunks,
-)
+)  # noqa
 
 
 def validation_prereqs(omnisci_server_worker, data_files_names, files_limit, columns_names):

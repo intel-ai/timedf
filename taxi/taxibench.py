@@ -11,7 +11,7 @@ import mysql.connector
 
 # Load database reporting functions
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-import report
+import report  # noqa
 
 omnisciExecutable = "build/bin/omnisql"
 taxiTripsDirectory = "/localdisk/work/trips_x*.csv"

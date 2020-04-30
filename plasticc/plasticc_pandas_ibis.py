@@ -20,7 +20,7 @@ from utils import (
     import_pandas_into_module_namespace,
     print_results,
     split,
-)
+)  # noqa
 
 
 def ravel_column_names(cols):

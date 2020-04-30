@@ -1,7 +1,6 @@
 # coding: utf-8
 import os
 import sys
-import time
 import traceback
 import numpy as np
 from sklearn import config_context
@@ -18,7 +17,7 @@ from utils import (
     mse,
     print_results,
     split,
-)
+)  # noqa
 
 warnings.filterwarnings("ignore")
 

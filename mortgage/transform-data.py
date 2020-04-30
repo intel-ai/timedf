@@ -14,7 +14,7 @@ def main():
     headers = {h.count(","): h for h in HEADERS}
     try:
         source, dest = [os.path.abspath(x) for x in sys.argv[1:]]
-    except:
+    except TypeError:
         sys.exit("Usage: %s source-path dest-path" % sys.argv[0])
 
     for root, _, files in os.walk(source):

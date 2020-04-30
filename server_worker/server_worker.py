@@ -8,7 +8,7 @@ import ibis
 import pandas as pd
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils import convert_type_ibis2pandas
+from utils import convert_type_ibis2pandas  # noqa
 
 
 class OmnisciServerWorker:

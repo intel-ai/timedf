@@ -9,7 +9,7 @@ except ImportError:
     sys.exit("Please run the script from (base) conda environment")
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils import execute_process
+from utils import execute_process  # noqa
 
 
 class CondaEnvironment:

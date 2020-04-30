@@ -17,7 +17,7 @@ from utils import (
     load_data_pandas,
     mse,
     print_results,
-)
+)  # noqa
 
 warnings.filterwarnings("ignore")
 
