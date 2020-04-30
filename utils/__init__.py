@@ -1,5 +1,3 @@
-# flake8: noqa
-
 from .utils import (
     check_fragments_size,
     cod,
