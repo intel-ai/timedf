@@ -20,7 +20,9 @@ from utils import (
 
 def run_queries(queries, parameters, etl_times):
     for query_number, (query_name, query_func) in enumerate(queries.items()):
-        exec_time = query_func(**parameters)
+        query_result  = query_func(**parameters[query_name])
+        if len(query_result) == 2:
+            
         etl_times[query_name] = exec_time
     return etl_times
 
@@ -120,7 +122,7 @@ def q4_ibis(table, input_for_validation):
         [
             table.passenger_count,
             table.pickup_datetime.year().name("pickup_datetime"),
-            table.trip_distance.round().name("trip_distance"),
+            table.trip_distance.round().cast("int64").name("trip_distance"),
         ]
     ).size()
     q4_output_ibis = q4_ibis_sized.sort_by([("pickup_datetime", True), ("count", False)]).execute()
@@ -271,10 +273,7 @@ def etl_ibis(
     table = omnisci_server_worker.database(database_name).table(table_name)
     etl_times["t_connect"] += timer() - t0
 
-    queries_parameters = {
-        "table": table,
-        "input_for_validation": input_for_validation,
-    }
+    queries_parameters = {query_name: {"table": table, "input_for_validation": input_for_validation} for query_name in queries.keys()}
     return run_queries(queries=queries, parameters=queries_parameters, etl_times=etl_times)
 
 
@@ -283,32 +282,26 @@ def etl_ibis(
 # FROM trips
 # GROUP BY cab_type;
 # @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
-def q1_pandas(df, output_for_validation):
+def q1_pandas(df):
     t0 = timer()
     q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
     query_time = timer() - t0
 
-    if output_for_validation is not None:
-        output_for_validation["Query1"] = q1_pandas_output
-
-    return query_time
+    return query_time, q1_pandas_output
 
 
 # SELECT passenger_count,
 #       count(total_amount)
 # FROM trips
 # GROUP BY passenger_count;
-def q2_pandas(df, output_for_validation):
+def q2_pandas(df):
     t0 = timer()
     q2_pandas_output = df.groupby("passenger_count", as_index=False).count()[
         ["passenger_count", "total_amount"]
     ]
     query_time = timer() - t0
 
-    if output_for_validation is not None:
-        output_for_validation["Query2"] = q2_pandas_output
-
-    return query_time
+    return query_time, q2_pandas_output
 
 
 # SELECT passenger_count,
@@ -317,7 +310,7 @@ def q2_pandas(df, output_for_validation):
 # FROM trips
 # GROUP BY passenger_count,
 #         year0;
-def q3_pandas(df, output_for_validation):
+def q3_pandas(df):
     t0 = timer()
     transformed = df[["passenger_count", "pickup_datetime"]].transform(
         {"passenger_count": lambda x: x, "pickup_datetime": lambda x: pd.DatetimeIndex(x).year}
@@ -325,13 +318,9 @@ def q3_pandas(df, output_for_validation):
     q3_pandas_output = transformed.groupby(["pickup_datetime", "passenger_count"]).agg(
         {"passenger_count": ["count"]}
     )
-
     query_time = timer() - t0
 
-    if output_for_validation is not None:
-        output_for_validation["Query3"] = q3_pandas_output
-
-    return query_time
+    return query_time, q3_pandas_output
 
 
 # SELECT passenger_count,
@@ -344,7 +333,7 @@ def q3_pandas(df, output_for_validation):
 #         distance
 # ORDER BY year0,
 #         trips desc;
-def q4_pandas(df, output_for_validation):
+def q4_pandas(df, validation):
     t0 = timer()
     transformed = (
         df[["passenger_count", "pickup_datetime", "trip_distance"]]
@@ -362,14 +351,13 @@ def q4_pandas(df, output_for_validation):
         .reset_index()
         .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
     )
-
     query_time = timer() - t0
 
-    if output_for_validation is not None:
+    if validation:
         import numpy as np
 
         # Pandas and Ibis/OmniSciDB round() methods works differently with .5 values, so for validation workaround below is used
-        transformed_val = df[["passenger_count", "pickup_datetime", "trip_distance"]].transform(
+        transformed = df[["passenger_count", "pickup_datetime", "trip_distance"]].transform(
             {
                 "passenger_count": lambda x: x,
                 "pickup_datetime": lambda x: pd.DatetimeIndex(x).year,
@@ -378,20 +366,18 @@ def q4_pandas(df, output_for_validation):
                 else np.modf(x + 1)[1],
             }
         )
-        q4_pandas_output_val = (
+        q4_pandas_output = (
             transformed_val.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
             .size()
             .reset_index()
             .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
         )
 
-        output_for_validation["Query4"] = q4_pandas_output_val
-
-    return query_time
+    return query_time, q4_pandas_output
 
 
 def etl_pandas(
-    filename, files_limit, columns_names, columns_types, output_for_validation,
+    filename, files_limit, columns_names, columns_types, validation,
 ):
     queries = {
         "Query1": q1_pandas,
@@ -417,7 +403,8 @@ def etl_pandas(
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
     etl_times["t_readcsv"] = timer() - t0
 
-    queries_parameters = {"df": concatenated_df, "output_for_validation": output_for_validation}
+    queries_parameters = {query_name: {"df": concatenated_df} for query_name in list(queries.keys())[:3]}
+    queries_parameters.update("Query4": {"df": concatenated_df, "validation": validation})
     return run_queries(queries=queries, parameters=queries_parameters, etl_times=etl_times)
 
 
@@ -562,7 +549,7 @@ def run_benchmark(parameters):
                 files_limit=pandas_files_limit,
                 columns_names=columns_names,
                 columns_types=columns_types,
-                output_for_validation=pd_queries_outputs if parameters["validation"] else None,
+                validation=parameters['validation'],
             )
 
             print_results(results=etl_times, backend=parameters["pandas_mode"], unit="ms")
@@ -580,7 +567,7 @@ def run_benchmark(parameters):
                 delete_old_database=not parameters["dnd"],
                 ipc_connection=parameters["ipc_connection"],
                 create_new_table=not parameters["dni"],
-                input_for_validation=pd_queries_outputs if parameters["validation"] else None,
+                input_for_validation=pd_queries_outputs,
                 import_mode=parameters["import_mode"],
                 fragments_size=parameters["fragments_size"],
             )
