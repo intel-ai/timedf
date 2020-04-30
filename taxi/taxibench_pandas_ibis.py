@@ -122,7 +122,7 @@ def q4_ibis(table, input_for_validation):
             table.pickup_datetime.year().name("pickup_datetime"),
             table.trip_distance.round().cast("int64").name("trip_distance"),
         ]
-    ).count()
+    ).size()
     q4_output_ibis = q4_ibis_sized.sort_by([("pickup_datetime", True), ("count", False)]).execute()
     t_query += timer() - t0
 
