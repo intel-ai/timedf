@@ -8,7 +8,7 @@ from timeit import default_timer as timer
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split  # noqa: F401 (import unused)
+from sklearn.model_selection import train_test_split  # noqa: F401 (unused import)
 from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
 
@@ -20,7 +20,7 @@ from utils import (
     import_pandas_into_module_namespace,
     print_results,
     split,
-)  # noqa
+)  # noqa: E402 (module level import not at top of file. Import after sys.path)
 
 
 def ravel_column_names(cols):

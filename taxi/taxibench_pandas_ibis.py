@@ -16,7 +16,7 @@ from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Us
     load_data_pandas,
     print_results,
     write_to_csv_by_chunks,
-)  # noqa
+)  # noqa: E402 (module level import not at top of file. Import after sys.path)
 
 
 def validation_prereqs(omnisci_server_worker, data_files_names, files_limit, columns_names):

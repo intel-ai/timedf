@@ -17,7 +17,7 @@ from utils import (
     mse,
     print_results,
     split,
-)  # noqa
+)  # noqa: E402 (module level import not at top of file. Import after sys.path)
 
 warnings.filterwarnings("ignore")
 

@@ -16,7 +16,7 @@ from utils import (
     load_data_pandas,
     mse,
     print_results,
-)  # noqa
+)  # noqa: E402 (module level import not at top of file. Import after sys.path)
 
 warnings.filterwarnings("ignore")
 

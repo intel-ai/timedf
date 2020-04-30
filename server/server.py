@@ -6,7 +6,9 @@ import threading
 import time
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils import execute_process  # noqa
+from utils import (
+    execute_process,
+)  # noqa: E402 (module level import not at top of file. Import after sys.path)
 
 
 class OmnisciServer:
