@@ -68,10 +68,6 @@ def q2_ibis(table, input_for_validation):
     if input_for_validation is not None:
         print("Validating query 2 results ...")
 
-        # q2_output_pd = df_pandas.groupby("passenger_count", as_index=False).mean()[
-        #     ["passenger_count", "total_amount"]
-        # ]
-
         q2_output_pd = input_for_validation["Query2"]
 
         compare_dataframes(
