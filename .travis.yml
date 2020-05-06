@@ -3,8 +3,7 @@ python:
   - "3.7"
 # command to install dependencies
 install:
-  - pip install black
-  - pip install flake8
+  - pip install black flake8 flake8-per-file-ignores
 # command to run tests
 script:
   - black . --check
