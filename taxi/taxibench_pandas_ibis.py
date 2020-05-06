@@ -344,9 +344,9 @@ def etl_ibis(
                         write_to_csv_by_chunks(
                             file_to_write=file_name, output_file=data_file_path, write_mode="ab",
                         )
-                except Exception:
+                except Exception as exc:
                     os.remove(data_file_path)
-                    raise
+                    raise exc
 
             t0 = timer()
             omnisci_server_worker.get_conn().create_table_from_csv(
