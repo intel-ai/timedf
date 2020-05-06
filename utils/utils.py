@@ -267,7 +267,9 @@ def find_free_port():
 
 def split(X, y, test_size=0.1, stratify=None, random_state=None, optimizer="intel"):
     if optimizer == "intel":
-        from daal4py.sklearn.model_selection import train_test_split
+        import daal4py  # noqa: F401 (imported but unused) FIXME
+        from daal4py import sklearn  # noqa: F401 (imported but unused) FIXME
+        from sklearn.model_selection import train_test_split
     elif optimizer == "stock":
         from sklearn.model_selection import train_test_split
     else:
