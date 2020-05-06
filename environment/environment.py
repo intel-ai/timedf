@@ -8,7 +8,7 @@ try:
 except ImportError:
     sys.exit("Please run the script from (base) conda environment")
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+#sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
     execute_process,
 )  # noqa: E402 (module level import not at top of file. Import after sys.path)
