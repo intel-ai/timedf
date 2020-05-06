@@ -7,7 +7,6 @@ from timeit import default_timer as timer
 
 import ibis
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
     check_fragments_size,
     cod,
@@ -16,7 +15,7 @@ from utils import (
     load_data_pandas,
     mse,
     print_results,
-)  # noqa: E402 (module level import not at top of file. Import after sys.path)
+)
 
 warnings.filterwarnings("ignore")
 

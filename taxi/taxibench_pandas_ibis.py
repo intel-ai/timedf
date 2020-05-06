@@ -7,7 +7,6 @@ from timeit import default_timer as timer
 import numpy as np
 import pandas as pd
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Used in commented code.)
     check_fragments_size,
     compare_dataframes,
@@ -16,7 +15,7 @@ from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Us
     load_data_pandas,
     print_results,
     write_to_csv_by_chunks,
-)  # noqa: E402 (module level import not at top of file. Import after sys.path)
+)
 
 
 def validation_prereqs(omnisci_server_worker, data_files_names, files_limit, columns_names):

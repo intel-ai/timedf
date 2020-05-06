@@ -7,7 +7,6 @@ from sklearn import config_context
 import warnings
 from timeit import default_timer as timer
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
     check_fragments_size,
     cod,
@@ -17,7 +16,7 @@ from utils import (
     mse,
     print_results,
     split,
-)  # noqa: E402 (module level import not at top of file. Import after sys.path)
+)
 
 warnings.filterwarnings("ignore")
 

@@ -8,11 +8,8 @@ from timeit import default_timer as timer
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split  # noqa: F401 (unused import)
 from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from utils import (
     check_fragments_size,
@@ -20,7 +17,7 @@ from utils import (
     import_pandas_into_module_namespace,
     print_results,
     split,
-)  # noqa: E402 (module level import not at top of file. Import after sys.path)
+)
 
 
 def ravel_column_names(cols):

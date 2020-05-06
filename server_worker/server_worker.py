@@ -7,10 +7,9 @@ from timeit import default_timer as timer
 import ibis
 import pandas as pd
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
     convert_type_ibis2pandas,
-)  # noqa: E402 (module level import not at top of file. Import after sys.path)
+)
 
 
 class OmnisciServerWorker:

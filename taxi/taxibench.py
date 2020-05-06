@@ -9,8 +9,7 @@ import sys
 import mysql.connector
 
 # Load database reporting functions
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-import report  # noqa: E402 (module level import not at top of file. Import after sys.path)
+import report
 
 omnisciExecutable = "build/bin/omnisql"
 taxiTripsDirectory = "/localdisk/work/trips_x*.csv"
