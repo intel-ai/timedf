@@ -18,12 +18,18 @@ from utils import (
 )
 
 
-def run_queries(queries, parameters, etl_times):
-    for query_number, (query_name, query_func) in enumerate(queries.items()):
-        query_result  = query_func(**parameters[query_name])
-        if len(query_result) == 2:
-            
-        etl_times[query_name] = exec_time
+def run_queries(queries, parameters, etl_times, output_for_validation=None):
+    for query_name, query_func in queries.items():
+        query_result = query_func(**parameters[query_name])
+        etl_times[query_name] = (
+            query_result[0]
+            if isinstance(query_result, (tuple, list)) and len(query_result) == 2
+            else query_result
+        )
+        if output_for_validation is not None:
+            assert len(query_result) == 2
+            output_for_validation[query_name] = query_result[1]
+
     return etl_times
 
 
@@ -135,7 +141,6 @@ def q4_ibis(table, input_for_validation):
 
         # Casting of Pandas q4 output to Pandas.DataFrame type, which is compartible with
         # Ibis q4 output
-        q4_output_pd = q4_output_pd.astype({"trip_distance": "int64"}, copy=False)
         q4_output_pd = q4_output_pd.rename(columns={0: "count"})
         q4_output_ibis = q4_output_ibis.sort_values(
             by=["passenger_count", "pickup_datetime", "trip_distance"],
@@ -273,7 +278,10 @@ def etl_ibis(
     table = omnisci_server_worker.database(database_name).table(table_name)
     etl_times["t_connect"] += timer() - t0
 
-    queries_parameters = {query_name: {"table": table, "input_for_validation": input_for_validation} for query_name in queries.keys()}
+    queries_parameters = {
+        query_name: {"table": table, "input_for_validation": input_for_validation}
+        for query_name in queries.keys()
+    }
     return run_queries(queries=queries, parameters=queries_parameters, etl_times=etl_times)
 
 
@@ -350,7 +358,7 @@ def q4_pandas(df, validation):
         transformed.size()
         .reset_index()
         .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
-    )
+    ).astype({"trip_distance": "int64"}, copy=False)
     query_time = timer() - t0
 
     if validation:
@@ -367,17 +375,17 @@ def q4_pandas(df, validation):
             }
         )
         q4_pandas_output = (
-            transformed_val.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
+            transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
             .size()
             .reset_index()
             .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
-        )
+        ).astype({"trip_distance": "int64"}, copy=False)
 
     return query_time, q4_pandas_output
 
 
 def etl_pandas(
-    filename, files_limit, columns_names, columns_types, validation,
+    filename, files_limit, columns_names, columns_types, output_for_validation,
 ):
     queries = {
         "Query1": q1_pandas,
@@ -403,9 +411,23 @@ def etl_pandas(
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
     etl_times["t_readcsv"] = timer() - t0
 
-    queries_parameters = {query_name: {"df": concatenated_df} for query_name in list(queries.keys())[:3]}
-    queries_parameters.update("Query4": {"df": concatenated_df, "validation": validation})
-    return run_queries(queries=queries, parameters=queries_parameters, etl_times=etl_times)
+    queries_parameters = {
+        query_name: {"df": concatenated_df} for query_name in list(queries.keys())[:3]
+    }
+    queries_parameters.update(
+        {
+            "Query4": {
+                "df": concatenated_df,
+                "validation": True if output_for_validation is not None else False,
+            }
+        }
+    )
+    return run_queries(
+        queries=queries,
+        parameters=queries_parameters,
+        etl_times=etl_times,
+        output_for_validation=output_for_validation,
+    )
 
 
 def run_benchmark(parameters):
@@ -540,7 +562,7 @@ def run_benchmark(parameters):
 
         etl_times_ibis = None
         etl_times = None
-        pd_queries_outputs = {} if parameters['validation'] else None
+        pd_queries_outputs = {} if parameters["validation"] else None
         if not parameters["no_pandas"]:
             pandas_files_limit = parameters["dfiles_num"]
             filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
@@ -549,7 +571,7 @@ def run_benchmark(parameters):
                 files_limit=pandas_files_limit,
                 columns_names=columns_names,
                 columns_types=columns_types,
-                validation=parameters['validation'],
+                output_for_validation=pd_queries_outputs,
             )
 
             print_results(results=etl_times, backend=parameters["pandas_mode"], unit="ms")
