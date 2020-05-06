@@ -1,4 +1,3 @@
-import os
 import re
 import subprocess
 import sys
@@ -8,7 +7,6 @@ try:
     from conda.cli.python_api import Commands, run_command
 except ImportError:
     sys.exit("Please run the script from (base) conda environment")
-
 
 
 class CondaEnvironment:

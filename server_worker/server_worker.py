@@ -1,5 +1,4 @@
 import gzip
-import os
 import subprocess
 import sys
 from timeit import default_timer as timer
@@ -7,9 +6,7 @@ from timeit import default_timer as timer
 import ibis
 import pandas as pd
 
-from utils import (
-    convert_type_ibis2pandas,
-)
+from utils import convert_type_ibis2pandas
 
 
 class OmnisciServerWorker:

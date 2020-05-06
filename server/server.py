@@ -5,9 +5,7 @@ import sys
 import threading
 import time
 
-from utils import (
-    execute_process,
-)
+from utils import execute_process
 
 
 class OmnisciServer:

@@ -1,7 +1,6 @@
 import argparse
 import glob
 import io
-import os
 import re
 import subprocess
 import sys
