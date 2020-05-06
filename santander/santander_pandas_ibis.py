@@ -177,7 +177,7 @@ def etl_ibis(
             .when(table[col].count().over(w).name(col_count) > 1, table[col].cast("float32"),)
             .else_(ibis.null())
             .end()
-            .name("var_%d_gt1" % col_gt1)
+            .name(col_gt1)
         )
         cast_cols.append(table[col].cast("float32").name(col))
 
