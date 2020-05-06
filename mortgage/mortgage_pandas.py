@@ -601,7 +601,7 @@ def main():
         print("RUNNING BENCHMARK NUMBER", benchName, "ITERATION NUMBER", iii)
         for quarter in range(0, args.df):
             year = 2000 + quarter // 4
-            perf_file = perf_format_path % (  # noqa: F841 (assigned, but never used)
+            perf_file = perf_format_path % (
                 str(year),
                 str(quarter % 4 + 1),
             )
@@ -609,7 +609,7 @@ def main():
             files = [
                 f
                 for f in Path(perf_data_path).iterdir()
-                if f.match("Performance_%sQ%s.txt*" % (str(year), str(quarter % 4 + 1)))
+                if f.match(perf_file)
             ]
             for f in files:
                 pd_dfs.append(

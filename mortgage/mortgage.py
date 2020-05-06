@@ -5,8 +5,6 @@ import os
 import pathlib
 import sys
 import time
-from glob import glob  # noqa: F401 (imported, but unused)
-from io import StringIO  # noqa: F401 (imported, but unused
 import mysql.connector
 
 import numpy as np  # noqa: F401 (imported, but unused. Used in commented code.)
