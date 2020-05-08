@@ -19,4 +19,6 @@ from .utils import (
     remove_fields_from_dict,
     convert_units,
     write_to_csv_by_chunks,
+    get_dir,
+    get_ny_taxi_dataset_size,
 )

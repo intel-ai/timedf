@@ -33,7 +33,7 @@ def main():
 
     ignore_fields_for_bd_report_etl = ["t_connect"]
     ignore_fields_for_bd_report_ml = []
-    ignore_fields_for_results_unit_conversion = ["Backend", "dfiles_num"]
+    ignore_fields_for_results_unit_conversion = ["Backend", "dfiles_num", "dataset_size"]
 
     parser = argparse.ArgumentParser(description="Run internal tests from ibis project")
     optional = parser._action_groups.pop()
@@ -451,14 +451,15 @@ def main():
                             reporting_init_fields,
                         )
 
-                for result_etl in etl_results:
-                    remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)
-                    db_reporter_etl.submit(result_etl)
+                if iter_num == args.iterations:
+                    for result_etl in etl_results:
+                        remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)
+                        db_reporter_etl.submit(result_etl)
 
-                if len(ml_results) is not 0:
-                    for result_ml in ml_results:
-                        remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
-                        db_reporter_ml.submit(result_ml)
+                    if len(ml_results) is not 0:
+                        for result_ml in ml_results:
+                            remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
+                            db_reporter_ml.submit(result_ml)
 
     except Exception:
         traceback.print_exc(file=sys.stdout)
