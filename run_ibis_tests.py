@@ -457,7 +457,7 @@ def main():
 
             if not args.data_file:
                 print(
-                    f"Parameter --data_file was received empty, but it is required for benchmarks"
+                    "Parameter --data_file was received empty, but it is required for benchmarks"
                 )
                 sys.exit(1)
 
