@@ -6,11 +6,38 @@ import socket
 import subprocess
 from timeit import default_timer as timer
 import sys
+from collections import OrderedDict
 
 import hiyapyco
 
 returned_port_numbers = []
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
+repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+directories = {"repository_root": repository_root_directory}
+ny_taxi_data_files_sizes_MB = OrderedDict(
+    {
+        "trips_xaa.csv": 8000,
+        "trips_xab.csv": 8100,
+        "trips_xac.csv": 4200,
+        "trips_xad.csv": 7300,
+        "trips_xae.csv": 8600,
+        "trips_xaf.csv": 8600,
+        "trips_xag.csv": 8600,
+        "trips_xah.csv": 8600,
+        "trips_xai.csv": 8600,
+        "trips_xaj.csv": 8600,
+        "trips_xak.csv": 8700,
+        "trips_xal.csv": 8700,
+        "trips_xam.csv": 8600,
+        "trips_xan.csv": 8600,
+        "trips_xao.csv": 8600,
+        "trips_xap.csv": 8600,
+        "trips_xaq.csv": 8600,
+        "trips_xar.csv": 8600,
+        "trips_xas.csv": 8600,
+        "trips_xat.csv": 8600,
+    }
+)
 
 
 def str_arg_to_bool(v):
@@ -369,3 +396,14 @@ def write_to_csv_by_chunks(file_to_write, output_file, write_mode="wb", chunksiz
                 buffer = f.read(chunksize)
         else:
             raise NotImplementedError(f"file' extension: [{file_to_write}] is not supported yet")
+
+
+def get_dir(dir_id):
+    try:
+        return directories[dir_id]
+    except KeyError:
+        raise ValueError(f"{dir_id} is not known")
+
+
+def get_ny_taxi_dataset_size(dfiles_num):
+    return sum(list(ny_taxi_data_files_sizes_MB.values())[:dfiles_num])

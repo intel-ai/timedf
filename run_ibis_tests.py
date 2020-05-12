@@ -274,6 +274,7 @@ def main():
     benchmark.add_argument(
         "-ray_memory",
         default=200 * 1024 * 1024 * 1024,
+        type=int,
         help="Size of memory to allocate for Ray plasma store",
     )
     benchmark.add_argument(
