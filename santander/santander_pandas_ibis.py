@@ -8,6 +8,7 @@ import ibis
 
 from utils import (
     check_fragments_size,
+    check_support,
     cod,
     compare_dataframes,
     import_pandas_into_module_namespace,
@@ -261,11 +262,7 @@ def ml(ml_data, target, ml_keys, ml_score_keys):
 
 
 def run_benchmark(parameters):
-    ignored_parameters = {
-        "dfiles_num": parameters["dfiles_num"],
-        "gpu_memory": parameters["gpu_memory"],
-    }
-    warnings.warn(f"Parameters {ignored_parameters} are irnored", RuntimeWarning)
+    check_support(parameters, unsupported_params=["dfiles_num", "gpu_memory", "optimizer"])
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
 

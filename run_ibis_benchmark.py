@@ -52,7 +52,7 @@ def main():
     optional.add_argument(
         "-dfiles_num",
         dest="dfiles_num",
-        default=1,
+        default=None,
         type=int,
         help="Number of datafiles to input into database for processing.",
     )

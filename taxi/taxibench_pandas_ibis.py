@@ -490,13 +490,7 @@ def etl_pandas(
 
 
 def run_benchmark(parameters):
-
-    ignored_parameters = {
-        "optimizer": parameters["optimizer"],
-        "no_ml": parameters["no_ml"],
-        "gpu_memory": parameters["gpu_memory"],
-    }
-    warnings.warn(f"Parameters {ignored_parameters} are ignored", RuntimeWarning)
+    check_support(parameters, unsupported_params=["optimizer", "no_ml", "gpu_memory"])
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
 

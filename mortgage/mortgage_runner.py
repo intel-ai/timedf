@@ -3,6 +3,8 @@ import warnings
 import ibis
 
 from utils import (
+    check_support,
+    cod,
     compare_dataframes,
     import_pandas_into_module_namespace,
     print_results,
@@ -60,8 +62,10 @@ def _run_ml(df, n_runs, mb, ml_keys, ml_score_keys, backend):
 
 def run_benchmark(parameters):
     parameters["data_file"] = parameters["data_file"].replace("'", "")
-    ignored_parameters = {"gpu_memory": parameters["gpu_memory"]}
-    warnings.warn(f"Parameters {ignored_parameters} are irnored", RuntimeWarning)
+    parameters["dfiles_num"] = parameters["dfiles_num"] or 1
+
+    check_support(parameters, unsupported_params=["gpu_memory"])
+
     if parameters["validation"]:
         print("WARNING: Validation not yet supported")
     if not parameters["no_ibis"]:

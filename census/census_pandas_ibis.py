@@ -8,6 +8,7 @@ from timeit import default_timer as timer
 
 from utils import (
     check_fragments_size,
+    check_support,
     cod,
     compare_dataframes,
     import_pandas_into_module_namespace,
@@ -312,12 +313,7 @@ def ml(X, y, random_state, n_runs, test_size, optimizer, ml_keys, ml_score_keys)
 
 
 def run_benchmark(parameters):
-
-    ignored_parameters = {
-        "dfiles_num": parameters["dfiles_num"],
-        "gpu_memory": parameters["gpu_memory"],
-    }
-    warnings.warn(f"Parameters {ignored_parameters} are irnored", RuntimeWarning)
+    check_support(parameters, unsupported_params=["dfiles_num", "gpu_memory"])
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
 
@@ -441,9 +437,8 @@ def run_benchmark(parameters):
 
         if parameters["validation"] and parameters["import_mode"] != "pandas":
             print(
-                "WARNING: validation can not be performed, it works only for 'pandas' import mode, '{}' passed".format(
-                    parameters["import_mode"]
-                )
+                f"WARNING: validation can not be performed, it works only for 'pandas' \
+                    import mode, '{parameters['import_mode']}' passed"
             )
 
         if not parameters["no_ibis"]:

@@ -1,6 +1,7 @@
 import argparse
 import glob
 import os
+import warnings
 import re
 import socket
 import subprocess
@@ -300,8 +301,10 @@ def split(X, y, test_size=0.1, stratify=None, random_state=None, optimizer="inte
     elif optimizer == "stock":
         from sklearn.model_selection import train_test_split
     else:
-        print(f"Intel optimized and stock sklearn are supported. {optimizer} can't be recognized")
-        sys.exit(1)
+        raise ValueError(
+            f"Intel optimized and stock sklearn are supported. \
+            {optimizer} can't be recognized"
+        )
 
     t0 = timer()
     X_train, X_test, y_train, y_test = train_test_split(
@@ -396,6 +399,16 @@ def write_to_csv_by_chunks(file_to_write, output_file, write_mode="wb", chunksiz
                 buffer = f.read(chunksize)
         else:
             raise NotImplementedError(f"file' extension: [{file_to_write}] is not supported yet")
+
+
+def check_support(current_params, unsupported_params):
+    ignored_params = {}
+    for param in unsupported_params:
+        if current_params.get(param) is not None:
+            ignored_params[param] = current_params[param]
+
+    if ignored_params:
+        warnings.warn(f"Parameters {ignored_params} are ignored", RuntimeWarning)
 
 
 def get_dir(dir_id):
