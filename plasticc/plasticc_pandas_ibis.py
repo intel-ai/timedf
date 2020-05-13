@@ -1,6 +1,5 @@
 import sys
 import traceback
-import warnings
 from collections import OrderedDict
 from functools import partial
 from timeit import default_timer as timer

@@ -4,7 +4,6 @@ import ibis
 
 from utils import (
     check_support,
-    cod,
     compare_dataframes,
     import_pandas_into_module_namespace,
     print_results,

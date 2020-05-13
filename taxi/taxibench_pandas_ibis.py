@@ -1,7 +1,6 @@
 import os
 import sys
 import traceback
-import warnings
 from timeit import default_timer as timer
 
 import numpy as np
@@ -17,6 +16,7 @@ from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Us
     write_to_csv_by_chunks,
     get_dir,
     get_ny_taxi_dataset_size,
+    check_support,
 )
 
 

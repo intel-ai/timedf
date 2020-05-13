@@ -6,7 +6,6 @@ import re
 import socket
 import subprocess
 from timeit import default_timer as timer
-import sys
 from collections import OrderedDict
 
 import hiyapyco
