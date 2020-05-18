@@ -10,7 +10,7 @@ import os
 from server import OmnisciServer
 from report import DbReport
 from environment import CondaEnvironment
-from utils import str_arg_to_bool
+from utils_base_env import str_arg_to_bool
 
 omniscript_path = os.path.dirname(__file__)
 omnisci_server = None

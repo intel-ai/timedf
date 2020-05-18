@@ -6,7 +6,12 @@ import traceback
 
 from environment import CondaEnvironment
 from server import OmnisciServer
-from utils import combinate_requirements, find_free_port, KeyValueListParser, str_arg_to_bool
+from utils_base_env import (
+    combinate_requirements,
+    find_free_port,
+    KeyValueListParser,
+    str_arg_to_bool,
+)
 
 
 def main():

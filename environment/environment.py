@@ -1,7 +1,7 @@
 import re
 import subprocess
 import sys
-from utils import execute_process
+from utils_base_env import execute_process
 
 try:
     from conda.cli.python_api import Commands, run_command
