@@ -52,8 +52,8 @@ def q1_ibis(table, input_for_validation):
         # Casting of Pandas q1 output to Pandas.DataFrame type, which is compartible with
         # Ibis q1 output
         q1_output_pd_data = {
-            q1_output_pd.name: list(q1_output_pd.index),
-            "count": q1_output_pd.tolist(),
+            q1_output_pd.name: q1_output_pd.index.to_numpy(),
+            "count": q1_output_pd.to_numpy(),
         }
         q1_output_pd_df = pd.DataFrame(q1_output_pd_data, columns=[q1_output_pd.name, "count"])
         q1_output_pd_df = q1_output_pd_df.astype({"cab_type": "category"}, copy=False)
@@ -107,7 +107,7 @@ def q3_ibis(table, input_for_validation):
         # Ibis q3 output
         passenger_count_col = q3_output_pd.index.droplevel(level="pickup_datetime")
         pickup_datetime_col = q3_output_pd.index.droplevel(level="passenger_count")
-        count_col = q3_output_pd[("passenger_count", "count")].tolist()
+        count_col = q3_output_pd[("passenger_count", "count")].to_numpy()
         q3_output_pd_casted = pd.DataFrame(
             {
                 "passenger_count": passenger_count_col,
