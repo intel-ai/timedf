@@ -3,6 +3,7 @@ import os
 import warnings
 from timeit import default_timer as timer
 from collections import OrderedDict
+from tempfile import mkstemp
 
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -371,3 +372,8 @@ def get_dir(dir_id):
 
 def get_ny_taxi_dataset_size(dfiles_num):
     return sum(list(ny_taxi_data_files_sizes_MB.values())[:dfiles_num])
+
+
+def get_tmp_file(filename):
+    filename, extension = os.path.splitext(filename)
+    return mkstemp(extension, filename + "-")[1]
