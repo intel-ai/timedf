@@ -333,8 +333,11 @@ def q2_pandas(df):
 #         year0;
 def q3_pandas(df):
     t0 = timer()
-    transformed = df[["passenger_count", "pickup_datetime"]].transform(
-        {"passenger_count": lambda x: x, "pickup_datetime": lambda x: pd.DatetimeIndex(x).year}
+    transformed = pd.DataFrame(
+        {
+            "passenger_count": df["passenger_count"],
+            "pickup_datetime": df["pickup_datetime"].dt.year,
+        }
     )
     q3_pandas_output = transformed.groupby(["pickup_datetime", "passenger_count"]).agg(
         {"passenger_count": ["count"]}
@@ -356,17 +359,13 @@ def q3_pandas(df):
 #         trips desc;
 def q4_pandas(df, validation):
     t0 = timer()
-    transformed = (
-        df[["passenger_count", "pickup_datetime", "trip_distance"]]
-        .transform(
-            {
-                "passenger_count": lambda x: x,
-                "pickup_datetime": lambda x: pd.DatetimeIndex(x).year,
-                "trip_distance": lambda x: x.round(),
-            }
-        )
-        .groupby(["passenger_count", "pickup_datetime", "trip_distance"])
-    )
+    transformed = pd.DataFrame(
+        {
+            "passenger_count": df["passenger_count"],
+            "pickup_datetime": df["pickup_datetime"].dt.year,
+            "trip_distance": df["trip_distance"].round(),
+        }
+    ).groupby(["passenger_count", "pickup_datetime", "trip_distance"])
     q4_pandas_output = (
         transformed.size()
         .reset_index()
