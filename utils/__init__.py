@@ -17,4 +17,5 @@ from .utils import (
     write_to_csv_by_chunks,
     get_dir,
     get_ny_taxi_dataset_size,
+    get_tmp_file,
 )
