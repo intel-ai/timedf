@@ -17,6 +17,7 @@ from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Us
     get_dir,
     get_ny_taxi_dataset_size,
     check_support,
+    get_tmp_file,
 )
 
 
@@ -329,6 +330,7 @@ def etl_ibis(
 
         elif import_mode == "fsi":
             data_file_path = None
+            data_file_tmp_dir = None
             # If data files are compressed or number of csv files is more than one,
             # data files (or single compressed file) should be transformed to single csv file.
             # Before files transformation, script checks existance of already transformed file
@@ -341,15 +343,17 @@ def etl_ibis(
                         f"taxibench-{files_limit}-files-fsi.csv",
                     )
                 )
-                data_file_tmp_dir = os.path.join(get_dir("repository_root"), "tmp")
                 if not os.path.exists(data_file_path):
-                    data_file_path = os.path.join(
-                        data_file_tmp_dir, f"taxibench-{files_limit}-files-fsi.csv"
+                    data_file_tmp_dir = os.path.join(get_dir("repository_root"), "tmp")
+
+                    if not os.path.exists(data_file_tmp_dir):
+                        os.mkdir(data_file_tmp_dir)
+
+                    data_file_path = get_tmp_file(
+                        f"taxibench-{files_limit}-files-fsi.csv", data_file_tmp_dir
                     )
 
             if data_file_path and not os.path.exists(data_file_path):
-                if not os.path.exists(data_file_tmp_dir):
-                    os.mkdir(data_file_tmp_dir)
                 try:
                     for file_name in data_files_names[:files_limit]:
                         write_to_csv_by_chunks(
@@ -369,6 +373,9 @@ def etl_ibis(
             )
             etl_results["t_readcsv"] += timer() - t0
             etl_results["t_connect"] = omnisci_server_worker.get_conn_creation_time()
+
+            if data_file_tmp_dir is not None:
+                os.remove(data_file_path)
 
     # Second connection - this is ibis's ipc connection for DML
     omnisci_server_worker.connect_to_server(database_name, ipc=ipc_connection)

@@ -374,6 +374,6 @@ def get_ny_taxi_dataset_size(dfiles_num):
     return sum(list(ny_taxi_data_files_sizes_MB.values())[:dfiles_num])
 
 
-def get_tmp_file(filename):
+def get_tmp_file(filename, dir=None):
     filename, extension = os.path.splitext(filename)
-    return mkstemp(extension, filename + "-")[1]
+    return mkstemp(suffix=extension, prefix=filename + "-", dir=dir)[1]
