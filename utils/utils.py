@@ -7,7 +7,8 @@ from tempfile import mkstemp
 
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-directories = {"repository_root": repository_root_directory}
+temporary_directory = os.path.abspath(os.path.join(repository_root_directory, "tmp"))
+directories = {"repository_root": repository_root_directory, "tmp": temporary_directory}
 ny_taxi_data_files_sizes_MB = OrderedDict(
     {
         "trips_xaa.csv": 8000,
@@ -365,15 +366,67 @@ def check_support(current_params, unsupported_params):
 
 def get_dir(dir_id):
     try:
-        return directories[dir_id]
+        directory = directories[dir_id]
     except KeyError:
         raise ValueError(f"{dir_id} is not known")
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+    return directory
 
 
 def get_ny_taxi_dataset_size(dfiles_num):
     return sum(list(ny_taxi_data_files_sizes_MB.values())[:dfiles_num])
 
 
-def get_tmp_file(filename, dir=None):
+def get_tmp_file(filename, tmp_dir=None):
+    if tmp_dir is None:
+        tmp_dir = get_dir("tmp")
+
     filename, extension = os.path.splitext(filename)
-    return mkstemp(suffix=extension, prefix=filename + "-", dir=dir)[1]
+    file_descriptor, file_path = mkstemp(suffix=extension, prefix=filename + "-", dir=tmp_dir)
+    os.close(file_descriptor)
+
+    return file_path
+
+
+class files_combiner:
+    """
+        If data files are compressed or number of csv files is more than one,
+        data files (or single compressed file) should be transformed to single csv file.
+        Before files transformation, script checks existance of already transformed file
+        in the directory passed with -data_file flag.
+    """
+
+    def __init__(self, data_files_names, combined_filename, files_limit):
+        self._data_files_names = data_files_names
+        self._files_limit = files_limit
+
+        data_file_path = self._data_files_names[0]
+
+        _, data_files_extension = os.path.splitext(data_file_path)
+        if data_files_extension == "gz" or len(data_files_names) > 1:
+            data_file_path = os.path.abspath(
+                os.path.join(os.path.dirname(data_files_names[0]), combined_filename)
+            )
+
+        self._should_combine = not os.path.exists(data_file_path)
+        if self._should_combine:
+            data_file_path = get_tmp_file(combined_filename)
+
+        self._data_file_path = data_file_path
+
+    def __enter__(self):
+        if self._should_combine:
+            for file_name in self._data_files_names[: self._files_limit]:
+                write_to_csv_by_chunks(
+                    file_to_write=file_name, output_file=self._data_file_path, write_mode="ab",
+                )
+
+        return self._data_file_path
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._should_combine:
+            try:
+                os.remove(self._data_file_path)
+            except Exception:
+                pass

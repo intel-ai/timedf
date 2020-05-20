@@ -1,4 +1,3 @@
-import os
 import sys
 import traceback
 from timeit import default_timer as timer
@@ -18,6 +17,7 @@ from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Us
     get_ny_taxi_dataset_size,
     check_support,
     get_tmp_file,
+    files_combiner,
 )
 
 
@@ -329,53 +329,21 @@ def etl_ibis(
             etl_results["t_connect"] = omnisci_server_worker.get_conn_creation_time()
 
         elif import_mode == "fsi":
-            data_file_path = None
-            data_file_tmp_dir = None
-            # If data files are compressed or number of csv files is more than one,
-            # data files (or single compressed file) should be transformed to single csv file.
-            # Before files transformation, script checks existance of already transformed file
-            # in the directory passed with -data_file flag, and then, if file is not found,
-            # in the omniscripts/tmp directory.
-            if data_files_extension == "gz" or len(data_files_names) > 1:
-                data_file_path = os.path.abspath(
-                    os.path.join(
-                        os.path.dirname(data_files_names[0]),
-                        f"taxibench-{files_limit}-files-fsi.csv",
-                    )
+            with files_combiner(
+                data_files_names=data_files_names,
+                combined_filename=f"taxibench-{files_limit}--files-fsi.csv",
+                files_limit=files_limit,
+            ) as data_file_path:
+                t0 = timer()
+                omnisci_server_worker.get_conn().create_table_from_csv(
+                    table_name,
+                    data_file_path,
+                    schema_table,
+                    header=False,
+                    fragment_size=fragments_size[0],
                 )
-                if not os.path.exists(data_file_path):
-                    data_file_tmp_dir = os.path.join(get_dir("repository_root"), "tmp")
-
-                    if not os.path.exists(data_file_tmp_dir):
-                        os.mkdir(data_file_tmp_dir)
-
-                    data_file_path = get_tmp_file(
-                        f"taxibench-{files_limit}-files-fsi.csv", data_file_tmp_dir
-                    )
-
-            if data_file_tmp_dir:
-                try:
-                    for file_name in data_files_names[:files_limit]:
-                        write_to_csv_by_chunks(
-                            file_to_write=file_name, output_file=data_file_path, write_mode="ab",
-                        )
-                except Exception as exc:
-                    os.remove(data_file_path)
-                    raise exc
-
-            t0 = timer()
-            omnisci_server_worker.get_conn().create_table_from_csv(
-                table_name,
-                data_file_path if data_file_path else data_files_names[0],
-                schema_table,
-                header=False,
-                fragment_size=fragments_size[0],
-            )
-            etl_results["t_readcsv"] += timer() - t0
-            etl_results["t_connect"] = omnisci_server_worker.get_conn_creation_time()
-
-            if data_file_tmp_dir is not None:
-                os.remove(data_file_path)
+                etl_results["t_readcsv"] += timer() - t0
+                etl_results["t_connect"] = omnisci_server_worker.get_conn_creation_time()
 
     # Second connection - this is ibis's ipc connection for DML
     omnisci_server_worker.connect_to_server(database_name, ipc=ipc_connection)
