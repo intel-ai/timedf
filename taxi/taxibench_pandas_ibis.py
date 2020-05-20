@@ -367,46 +367,19 @@ def q4_pandas(df, validation):
         }
     )
     q4_pandas_output = (
-        transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
-        .size()
+        transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"]).size()
         .reset_index()
         .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
     ).astype({"trip_distance": "int64"}, copy=False)
     query_time = timer() - t0
 
     if validation:
-        # import numpy as np
-
-        # Pandas and Ibis/OmniSciDB round() methods works differently with .5 values, so for validation workaround below is used
-        # transformed = pd.DataFrame(
-        #     {
-        #         "passenger_count": df["passenger_count"],
-        #         "pickup_datetime": df["pickup_datetime"].dt.year,
-        #         "trip_distance": df["trip_distance"].round(),
-        #     }
-        # )
-
-        # transformed["trip_distance"] = df["trip_distance"].transform(lambda x: np.round(x)
-        #         if np.round(np.modf(x)[0], 5) != 0.5
-        #         else np.modf(x + 1)[1])
         import math
-
-        transformed["trip_distance"] = df["trip_distance"].transform(
-            lambda x: round(x) if round(math.modf(x)[0], 5) != 0.5 else math.modf(x + 1)[1]
-        )
-
-        # transformed = df[["passenger_count", "pickup_datetime", "trip_distance"]].transform(
-        #     {
-        #         "passenger_count": lambda x: x,
-        #         "pickup_datetime": lambda x: pd.DatetimeIndex(x).year,
-        #         "trip_distance": lambda x: np.round(x)
-        #         if np.round(np.modf(x)[0], 5) != 0.5
-        #         else np.modf(x + 1)[1],
-        #     }
-        # )
+        transformed["trip_distance"] = df["trip_distance"].transform(lambda x: round(x)
+                if round(math.modf(x)[0], 5) != 0.5
+                else math.modf(x + 1)[1])
         q4_pandas_output = (
-            transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
-            .size()
+            transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"]).size()
             .reset_index()
             .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
         ).astype({"trip_distance": "int64"}, copy=False)
