@@ -1,13 +1,11 @@
 import os
 import sys
 import traceback
-import warnings
 from timeit import default_timer as timer
 
 import pandas as pd
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils import (
+from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Used in commented code.)
     check_fragments_size,
     compare_dataframes,
     files_names_from_pattern,
@@ -17,6 +15,7 @@ from utils import (
     write_to_csv_by_chunks,
     get_dir,
     get_ny_taxi_dataset_size,
+    check_support,
 )
 
 
@@ -39,7 +38,7 @@ def run_queries(queries, parameters, etl_results, output_for_validation=None):
 def q1_ibis(table, input_for_validation):
     t_query = 0
     t0 = timer()
-    q1_output_ibis = (
+    q1_output_ibis = (  # noqa: F841 (assigned, but unused. Used in commented code.)
         table.groupby("cab_type").count().sort_by("cab_type")["cab_type", "count"].execute()
     )
     t_query += timer() - t0
@@ -68,7 +67,7 @@ def q1_ibis(table, input_for_validation):
 def q2_ibis(table, input_for_validation):
     t_query = 0
     t0 = timer()
-    q2_output_ibis = (
+    q2_output_ibis = (  # noqa: F841 (assigned, but unused. Used in commented code.)
         table.groupby("passenger_count")
         .aggregate(total_amount=table.total_amount.count())[["passenger_count", "total_amount"]]
         .execute()
@@ -90,9 +89,9 @@ def q2_ibis(table, input_for_validation):
 def q3_ibis(table, input_for_validation):
     t_query = 0
     t0 = timer()
-    q3_output_ibis = (
+    q3_output_ibis = (  # noqa: F841 (assigned, but unused. Used in commented code.)
         table.groupby(
-            [table.passenger_count, table.pickup_datetime.year().name("pickup_datetime"),]
+            [table.passenger_count, table.pickup_datetime.year().name("pickup_datetime")]
         )
         .aggregate(count=table.passenger_count.count())
         .execute()
@@ -133,7 +132,9 @@ def q4_ibis(table, input_for_validation):
             table.trip_distance.round().cast("int64").name("trip_distance"),
         ]
     ).size()
-    q4_output_ibis = q4_ibis_sized.sort_by([("pickup_datetime", True), ("count", False)]).execute()
+    q4_output_ibis = q4_ibis_sized.sort_by(  # noqa: F841 (assigned, but unused. Used in commented code.)
+        [("pickup_datetime", True), ("count", False)]
+    ).execute()
     t_query += timer() - t0
 
     if input_for_validation is not None:
@@ -259,7 +260,6 @@ def etl_ibis(
                     data_file_path = os.path.join(
                         data_file_tmp_dir, f"taxibench-{files_limit}-files-fsi.csv"
                     )
-                    data_file_dir = data_file_tmp_dir
 
             if data_file_path and not os.path.exists(data_file_path):
                 if not os.path.exists(data_file_tmp_dir):
@@ -271,7 +271,7 @@ def etl_ibis(
                         )
                 except Exception as exc:
                     os.remove(data_file_path)
-                    raise
+                    raise exc
 
             t0 = timer()
             omnisci_server_worker.get_conn().create_table_from_csv(
@@ -367,7 +367,8 @@ def q4_pandas(df, validation):
         }
     )
     q4_pandas_output = (
-        transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"]).size()
+        transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
+        .size()
         .reset_index()
         .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
     ).astype({"trip_distance": "int64"}, copy=False)
@@ -375,11 +376,13 @@ def q4_pandas(df, validation):
 
     if validation:
         import math
-        transformed["trip_distance"] = df["trip_distance"].transform(lambda x: round(x)
-                if round(math.modf(x)[0], 5) != 0.5
-                else math.modf(x + 1)[1])
+
+        transformed["trip_distance"] = df["trip_distance"].transform(
+            lambda x: round(x) if round(math.modf(x)[0], 5) != 0.5 else math.modf(x + 1)[1]
+        )
         q4_pandas_output = (
-            transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"]).size()
+            transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
+            .size()
             .reset_index()
             .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
         ).astype({"trip_distance": "int64"}, copy=False)
@@ -406,7 +409,7 @@ def etl_pandas(
             header=None,
             nrows=None,
             use_gzip=f.endswith(".gz"),
-            parse_dates=["pickup_datetime", "dropoff_datetime",],
+            parse_dates=["pickup_datetime", "dropoff_datetime"],
             pd=run_benchmark.__globals__["pd"],
         )
         for f in filename
@@ -434,13 +437,7 @@ def etl_pandas(
 
 
 def run_benchmark(parameters):
-
-    ignored_parameters = {
-        "optimizer": parameters["optimizer"],
-        "no_ml": parameters["no_ml"],
-        "gpu_memory": parameters["gpu_memory"],
-    }
-    warnings.warn(f"Parameters {ignored_parameters} are ignored", RuntimeWarning)
+    check_support(parameters, unsupported_params=["optimizer", "no_ml", "gpu_memory"])
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
 

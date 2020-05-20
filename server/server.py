@@ -5,8 +5,7 @@ import sys
 import threading
 import time
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils import execute_process
+from utils_base_env import execute_process
 
 
 class OmnisciServer:

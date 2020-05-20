@@ -5,12 +5,13 @@ import os
 import pathlib
 import sys
 import time
-from glob import glob
-from io import StringIO
+import mysql.connector
 
-import numpy as np
-import pandas as pd
-from pandas.api.types import CategoricalDtype
+import numpy as np  # noqa: F401 (imported, but unused. Used in commented code.)
+import pandas as pd  # noqa: F401 (imported, but unused. Used in commented code.)
+from pandas.api.types import (  # noqa: F401 (imported, but unused. Used in commented code.)
+    CategoricalDtype,
+)
 
 import report
 from pymapd import connect
@@ -57,7 +58,7 @@ def run_pd_workflow(quarter, year, perf_file, fragment_size):
     final_performance_delinquency()
     join_perf_acq_pdfs()
     print("compute time", (time.time() - t1) * 1000)
-    final_pdf = last_mile_cleaning(final_pdf)
+    final_pdf = last_mile_cleaning(final_pdf)  # noqa: F821 ("final_pdf" undefined variable)
     exec_time = (time.time() - t1) * 1000
     print("compute time with copy to host", exec_time)
     return final_pdf, exec_time
@@ -515,7 +516,7 @@ def create_joined_df():
 
 
 def create_12_mon_features():
-    testdfs = []
+    testdfs = []  # noqa: F841 (assigned, but unused. Used in commented code.)
     n_months = 12
     for y in range(1, n_months + 1):
         string = str(y)
@@ -715,7 +716,7 @@ con = connect(
 )
 
 db_reporter = None
-if args.db_user is not "":
+if args.db_user != "":
     print("Connecting to database")
     db = mysql.connector.connect(
         host=args.db_server,

@@ -1,21 +1,17 @@
-import os
 import sys
 import traceback
-import warnings
 from collections import OrderedDict
 from functools import partial
 from timeit import default_timer as timer
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 import xgboost as xgb
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
 from utils import (
     check_fragments_size,
+    check_support,
     compare_dataframes,
     import_pandas_into_module_namespace,
     print_results,
@@ -523,7 +519,7 @@ def ml(train_final, test_final, ml_keys):
     cpu_loss = multi_weighted_logloss(y_test, yp, classes, class_weights)
 
     t0 = timer()
-    ysub = clf.predict(dtest)
+    ysub = clf.predict(dtest)  # noqa: F841 (unused variable)
     ml_times["t_infer"] += timer() - t0
 
     ml_times["t_ml"] = timer() - t_ml_start
@@ -549,10 +545,12 @@ def compute_skip_rows(gpu_memory):
 
 
 def run_benchmark(parameters):
-    ignored_parameters = {"dfiles_num": parameters["dfiles_num"]}
-    warnings.warn(f"Parameters {ignored_parameters} are irnored", RuntimeWarning)
+    check_support(parameters, unsupported_params=["dfiles_num"])
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
+    parameters["gpu_memory"] = parameters["gpu_memory"] or 16
+    parameters["no_ml"] = parameters["no_ml"] or False
+
     skip_rows = compute_skip_rows(parameters["gpu_memory"])
 
     dtypes = OrderedDict(
@@ -655,7 +653,9 @@ def run_benchmark(parameters):
 
         if parameters["validation"] and parameters["import_mode"] == "pandas":
             compare_dataframes(
-                ibis_dfs=[train_final_ibis, test_final_ibis], pandas_dfs=[train_final, test_final]
+                ibis_dfs=[train_final_ibis, test_final_ibis],
+                pandas_dfs=[train_final, test_final],
+                parallel_execution=True,
             )
 
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}

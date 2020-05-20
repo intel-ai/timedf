@@ -5,6 +5,7 @@ from collections import OrderedDict
 from pathlib import Path
 from timeit import default_timer as timer
 import glob
+import mysql.connector
 
 import numpy as np
 
@@ -554,7 +555,7 @@ def main():
     )
 
     db_reporter = None
-    if args.db_user is not "":
+    if args.db_user != "":
         print("Connecting to database")
         db = mysql.connector.connect(
             host=args.db_server,
@@ -563,7 +564,7 @@ def main():
             passwd=args.db_pass,
             db=args.db_name,
         )
-        db_reporter = report.DbReport(
+        db_reporter = DbReport(
             db,
             args.db_table,
             {
@@ -600,13 +601,9 @@ def main():
         print("RUNNING BENCHMARK NUMBER", benchName, "ITERATION NUMBER", iii)
         for quarter in range(0, args.df):
             year = 2000 + quarter // 4
-            perf_file = perf_format_path % (str(year), str(quarter % 4 + 1))
+            perf_file = perf_format_path % (str(year), str(quarter % 4 + 1),)
 
-            files = [
-                f
-                for f in Path(perf_data_path).iterdir()
-                if f.match("Performance_%sQ%s.txt*" % (str(year), str(quarter % 4 + 1)))
-            ]
+            files = [f for f in Path(perf_data_path).iterdir() if f.match(perf_file)]
             for f in files:
                 pd_dfs.append(
                     mb.run_cpu_workflow(year=year, quarter=(quarter % 4 + 1), perf_file=str(f))
@@ -637,7 +634,7 @@ def main():
 
         if not args.no_ml:
             pd_df = pd.concat(pd_dfs)
-            xgb_model = mb.ml_func(pd_df)
+            xgb_model = mb.ml_func(pd_df)  # noqa: F841 (assigned, but never used)
             print("t_ML = ", mb.t_dmatrix + mb.t_train)
             print("   t_dmatrix = ", mb.t_dmatrix)
             print("   t_train = ", mb.t_train)

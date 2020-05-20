@@ -1,15 +1,9 @@
-import argparse
 import glob
 import os
-import re
-import socket
-import subprocess
+import warnings
 from timeit import default_timer as timer
 from collections import OrderedDict
 
-import hiyapyco
-
-returned_port_numbers = []
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 directories = {"repository_root": repository_root_directory}
@@ -37,44 +31,6 @@ ny_taxi_data_files_sizes_MB = OrderedDict(
         "trips_xat.csv": 8600,
     }
 )
-
-
-def str_arg_to_bool(v):
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ("yes", "true", "True", "t", "y", "1"):
-        return True
-    elif v.lower() in ("no", "false", "False", "f", "n", "0"):
-        return False
-    else:
-        raise argparse.ArgumentTypeError("Cannot recognize boolean value.")
-
-
-def combinate_requirements(ibis, ci, res):
-    merged_yaml = hiyapyco.load([ibis, ci], method=hiyapyco.METHOD_MERGE)
-    with open(res, "w") as f_res:
-        hiyapyco.dump(merged_yaml, stream=f_res)
-
-
-def execute_process(cmdline, cwd=None, shell=False, daemon=False, print_output=True):
-    "Execute cmdline in user-defined directory by creating separated process"
-    try:
-        print("CMD: ", " ".join(cmdline))
-        output = ""
-        process = subprocess.Popen(
-            cmdline, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=shell
-        )
-        if not daemon:
-            output = process.communicate()[0].strip().decode()
-            if re.findall(r"\d fail", output) or re.findall(r"[e,E]rror", output):
-                process.returncode = 1
-            elif print_output:
-                print(output)
-        if process.returncode != 0 and process.returncode is not None:
-            raise Exception(f"Command returned {process.returncode}. \n{output}")
-        return process, output
-    except OSError as err:
-        print("Failed to start", cmdline, err)
 
 
 def convert_type_ibis2pandas(types):
@@ -132,13 +88,60 @@ def get_percentage(error_message):
     return float(error_message.split("values are different ")[1].split("%)")[0][1:])
 
 
-def compare_dataframes(ibis_dfs, pandas_dfs, sort_cols=["id"], drop_cols=["id"]):
+def compare_columns(columns):
+    if len(columns) != 2:
+        raise AttributeError(f"Columns number should be 2, actual number is {len(columns)}")
+
     import pandas as pd
 
-    prepared_dfs = []
     # in percentage - 0.05 %
     max_error = 0.05
 
+    try:
+        pd.testing.assert_series_equal(
+            columns[0],
+            columns[1],
+            check_less_precise=2,
+            check_dtype=False,
+            check_categorical=False,
+        )
+        if str(columns[0].dtype) == "category":
+            left = columns[0]
+            right = columns[1]
+            assert left.cat.ordered == right.cat.ordered
+            # assert_frame_equal cannot turn off comparison of
+            # order of categories, so compare categories manually
+            pd.testing.assert_series_equal(
+                left,
+                right,
+                check_dtype=False,
+                check_less_precise=2,
+                check_category_order=left.cat.ordered,
+            )
+    except AssertionError as assert_err:
+        if str(columns[0].dtype).startswith("float"):
+            try:
+                current_error = get_percentage(str(assert_err))
+                if current_error > max_error:
+                    print(
+                        f"Max acceptable difference: {max_error}%; current difference: {current_error}%"
+                    )
+                    raise assert_err
+            # for catch exceptions from `get_percentage`
+            except Exception:
+                raise assert_err
+        else:
+            raise
+
+
+def compare_dataframes(
+    ibis_dfs, pandas_dfs, sort_cols=["id"], drop_cols=["id"], parallel_execution=False
+):
+    import pandas as pd
+
+    parallel_processes = os.cpu_count() // 2
+
+    t0 = timer()
     assert len(ibis_dfs) == len(pandas_dfs)
 
     # preparing step
@@ -163,45 +166,29 @@ def compare_dataframes(ibis_dfs, pandas_dfs, sort_cols=["id"], drop_cols=["id"])
         print("dataframes are equal")
         return
 
+    print("Fast check took {:.2f} seconds".format(timer() - t0))
+
     # comparing step
+    t0 = timer()
     for ibis_df, pandas_df in zip(ibis_dfs, pandas_dfs):
         assert ibis_df.shape == pandas_df.shape
-        for column_name, column_type in ibis_df.dtypes.items():
-            try:
-                pd.testing.assert_frame_equal(
-                    ibis_df[[column_name]],
-                    pandas_df[[column_name]],
-                    check_less_precise=2,
-                    check_dtype=False,
-                    check_categorical=False,
-                )
-                if str(column_type) == "category":
-                    left = ibis_df[column_name]
-                    right = pandas_df[column_name]
-                    assert left.cat.ordered == right.cat.ordered
-                    # assert_frame_equal cannot turn off comparison of
-                    # order of categories, so compare categories manually
-                    pd.testing.assert_series_equal(
-                        left,
-                        right,
-                        check_dtype=False,
-                        check_less_precise=2,
-                        check_category_order=left.cat.ordered,
-                    )
-            except AssertionError as assert_err:
-                if str(ibis_df.dtypes[column_name]).startswith("float"):
-                    try:
-                        current_error = get_percentage(str(assert_err))
-                        if current_error > max_error:
-                            print(
-                                f"Max acceptable difference: {max_error}%; current difference: {current_error}%"
-                            )
-                            raise assert_err
-                    # for catch exceptions from `get_percentage`
-                    except Exception:
-                        raise assert_err
-                else:
-                    raise
+        if parallel_execution:
+            from multiprocessing import Pool
+
+            pool = Pool(parallel_processes)
+            pool.map(
+                compare_columns,
+                (
+                    (ibis_df[column_name], pandas_df[column_name])
+                    for column_name in ibis_df.columns
+                ),
+            )
+            pool.close()
+        else:
+            for column_name in ibis_df.columns:
+                compare_columns((ibis_df[column_name], pandas_df[column_name]))
+
+        print("Per-column check took {:.2f} seconds".format(timer() - t0))
 
     print("dataframes are equal")
 
@@ -266,42 +253,18 @@ def cod(y_test, y_pred):
     return 1 - (residuals / total)
 
 
-def check_port_availability(port_num):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        sock.bind(("127.0.0.1", port_num))
-    except Exception:
-        return False
-    finally:
-        sock.close()
-    return True
-
-
-def find_free_port():
-    min_port_num = 49152
-    max_port_num = 65535
-    if len(returned_port_numbers) == 0:
-        port_num = min_port_num
-    else:
-        port_num = returned_port_numbers[-1] + 1
-    while port_num < max_port_num:
-        if check_port_availability(port_num) and port_num not in returned_port_numbers:
-            returned_port_numbers.append(port_num)
-            return port_num
-        port_num += 1
-    raise Exception("Can't find available ports")
-
-
 def split(X, y, test_size=0.1, stratify=None, random_state=None, optimizer="intel"):
     if optimizer == "intel":
-        import daal4py
-        from daal4py import sklearn
+        import daal4py  # noqa: F401 (imported but unused) FIXME
+        from daal4py import sklearn  # noqa: F401 (imported but unused) FIXME
         from sklearn.model_selection import train_test_split
     elif optimizer == "stock":
         from sklearn.model_selection import train_test_split
     else:
-        print(f"Intel optimized and stock sklearn are supported. {optimizer} can't be recognized")
-        sys.exit(1)
+        raise ValueError(
+            f"Intel optimized and stock sklearn are supported. \
+            {optimizer} can't be recognized"
+        )
 
     t0 = timer()
     X_train, X_test, y_train, y_test = train_test_split(
@@ -332,15 +295,6 @@ def convert_units(dict_to_convert, ignore_fields, unit="ms"):
         key: (value * multiplier if key not in ignore_fields else value)
         for key, value in dict_to_convert.items()
     }
-
-
-class KeyValueListParser(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        kwargs = {}
-        for kv in values.split(","):
-            k, v = kv.split("=")
-            kwargs[k] = v
-        setattr(namespace, self.dest, kwargs)
 
 
 def check_fragments_size(fragments_size, count_table, import_mode, default_fragments_size=None):
@@ -396,6 +350,16 @@ def write_to_csv_by_chunks(file_to_write, output_file, write_mode="wb", chunksiz
                 buffer = f.read(chunksize)
         else:
             raise NotImplementedError(f"file' extension: [{file_to_write}] is not supported yet")
+
+
+def check_support(current_params, unsupported_params):
+    ignored_params = {}
+    for param in unsupported_params:
+        if current_params.get(param) is not None:
+            ignored_params[param] = current_params[param]
+
+    if ignored_params:
+        warnings.warn(f"Parameters {ignored_params} are ignored", RuntimeWarning)
 
 
 def get_dir(dir_id):

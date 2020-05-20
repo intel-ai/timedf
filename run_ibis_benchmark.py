@@ -8,17 +8,18 @@ import time
 import mysql.connector
 
 from report import DbReport
-from utils import (
+from utils_base_env import (
     find_free_port,
     KeyValueListParser,
     str_arg_to_bool,
+)
+from utils import (
     remove_fields_from_dict,
     convert_units,
 )
 
 
 def main():
-    omniscript_path = os.path.dirname(__file__)
     args = None
     omnisci_server = None
     port_default_value = -1
@@ -53,7 +54,7 @@ def main():
     optional.add_argument(
         "-dfiles_num",
         dest="dfiles_num",
-        default=1,
+        default=None,
         type=int,
         help="Number of datafiles to input into database for processing.",
     )
@@ -90,7 +91,7 @@ def main():
         "-optimizer",
         choices=["intel", "stock"],
         dest="optimizer",
-        default="intel",
+        default=None,
         help="Which optimizer is used",
     )
     optional.add_argument(
@@ -119,11 +120,12 @@ def main():
     optional.add_argument(
         "-ray_memory",
         default=200 * 1024 * 1024 * 1024,
+        type=int,
         help="Size of memory to allocate for Ray plasma store",
     )
     optional.add_argument(
         "-no_ml",
-        default=False,
+        default=None,
         type=str_arg_to_bool,
         help="Do not run machine learning benchmark, only ETL part",
     )
@@ -131,8 +133,9 @@ def main():
         "-gpu_memory",
         dest="gpu_memory",
         type=int,
-        help="specify the memory of your gpu, default 16. (This controls the lines to be used. Also work for CPU version. )",
-        default=16,
+        help="specify the memory of your gpu"
+        "(This controls the lines to be used. Also work for CPU version. )",
+        default=None,
     )
     # MySQL database parameters
     optional.add_argument(
@@ -423,7 +426,7 @@ def main():
                     reporting_fields_benchmark_etl = {
                         x: "VARCHAR(500) NOT NULL" for x in etl_results[0]
                     }
-                    if len(etl_results) is not 1:
+                    if len(etl_results) != 1:
                         reporting_fields_benchmark_etl.update(
                             {x: "VARCHAR(500) NOT NULL" for x in etl_results[1]}
                         )
@@ -435,11 +438,11 @@ def main():
                         reporting_init_fields,
                     )
 
-                    if len(ml_results) is not 0:
+                    if len(ml_results) != 0:
                         reporting_fields_benchmark_ml = {
                             x: "VARCHAR(500) NOT NULL" for x in ml_results[0]
                         }
-                        if len(ml_results) is not 1:
+                        if len(ml_results) != 1:
                             reporting_fields_benchmark_ml.update(
                                 {x: "VARCHAR(500) NOT NULL" for x in ml_results[1]}
                             )
@@ -456,7 +459,7 @@ def main():
                         remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)
                         db_reporter_etl.submit(result_etl)
 
-                    if len(ml_results) is not 0:
+                    if len(ml_results) != 0:
                         for result_ml in ml_results:
                             remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
                             db_reporter_ml.submit(result_ml)

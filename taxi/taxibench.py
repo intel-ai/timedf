@@ -1,8 +1,6 @@
 import argparse
 import glob
 import io
-import os
-import pathlib
 import re
 import subprocess
 import sys
@@ -10,7 +8,6 @@ import sys
 import mysql.connector
 
 # Load database reporting functions
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import report
 
 omnisciExecutable = "build/bin/omnisql"
@@ -20,7 +17,7 @@ command1DropTableTrips = "drop table taxitestdb;"
 command2ImportCSV = "COPY taxitestdb FROM '%s' WITH (header='false');"
 
 timingRegexpRegexp = re.compile(
-    "Execution time: (\d+) ms, Total time: (\d+) ms", flags=re.MULTILINE
+    r"Execution time: (\d+) ms, Total time: (\d+) ms", flags=re.MULTILINE
 )
 exceptionRegexpRegexp = re.compile("Exception: .*", flags=re.MULTILINE)
 
@@ -311,7 +308,7 @@ if args.t < 1:
 omnisciCmdLine = [args.e] + omnisciCmdLine + ["--port", str(args.port)]
 
 db_reporter = None
-if args.db_user is not "":
+if args.db_user != "":
     print("Connecting to database")
     db = mysql.connector.connect(
         host=args.db_server,
@@ -454,7 +451,7 @@ for fs in args.fs:
                             )
                         else:
                             print("Failed to parse command output:", output)
-                            errstr = getErrorLine(strout)
+                            errstr = getErrorLine(output)
                     if bestExecTime > execTime:
                         bestExecTime = execTime
                     if bestTotalTime > totalTime:
