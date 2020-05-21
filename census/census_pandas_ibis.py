@@ -16,7 +16,7 @@ from utils import (
     mse,
     print_results,
     split,
-    get_tmp_file,
+    get_tmp_filepath,
 )
 
 warnings.filterwarnings("ignore")
@@ -157,7 +157,7 @@ def etl_ibis(
                 if filename.endswith("gz"):
                     import gzip
 
-                    unzip_name = get_tmp_file("census-fsi.csv")
+                    unzip_name = get_tmp_filepath("census-fsi.csv")
 
                     with gzip.open(filename, "rb") as gz_input:
                         with open(unzip_name, "wb") as output:

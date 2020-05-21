@@ -15,7 +15,7 @@ from utils import (
     load_data_pandas,
     mse,
     print_results,
-    get_tmp_file,
+    get_tmp_filepath,
 )
 
 warnings.filterwarnings("ignore")
@@ -131,7 +131,7 @@ def etl_ibis(
                 if filename.endswith(".gz"):
                     import gzip
 
-                    unzip_name = get_tmp_file("santander-fsi.csv")
+                    unzip_name = get_tmp_filepath("santander-fsi.csv")
 
                     with gzip.open(filename, "rb") as gz_input:
                         with open(unzip_name, "wb") as output:

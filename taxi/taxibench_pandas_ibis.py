@@ -16,7 +16,7 @@ from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Us
     get_dir,
     get_ny_taxi_dataset_size,
     check_support,
-    get_tmp_file,
+    get_tmp_filepath,
     files_combiner,
 )
 

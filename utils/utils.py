@@ -378,11 +378,13 @@ def get_ny_taxi_dataset_size(dfiles_num):
     return sum(list(ny_taxi_data_files_sizes_MB.values())[:dfiles_num])
 
 
-def get_tmp_file(filename, tmp_dir=None):
+def get_tmp_filepath(filename, tmp_dir=None):
     if tmp_dir is None:
         tmp_dir = get_dir("tmp")
 
     filename, extension = os.path.splitext(filename)
+
+    # filename would be transormed like "census-fsi.csv" -> "ROOT_RESOPOSITORY_DIR/tmp/census-fsi-f15cxc9y.csv"
     file_descriptor, file_path = mkstemp(suffix=extension, prefix=filename + "-", dir=tmp_dir)
     os.close(file_descriptor)
 
@@ -411,7 +413,7 @@ class files_combiner:
 
         self._should_combine = not os.path.exists(data_file_path)
         if self._should_combine:
-            data_file_path = get_tmp_file(combined_filename)
+            data_file_path = get_tmp_filepath(combined_filename)
 
         self._data_file_path = data_file_path
 
@@ -428,5 +430,5 @@ class files_combiner:
         if self._should_combine:
             try:
                 os.remove(self._data_file_path)
-            except Exception:
+            except FileNotFoundError:
                 pass
