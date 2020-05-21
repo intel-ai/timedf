@@ -7,8 +7,7 @@ from tempfile import mkstemp
 
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-temporary_directory = os.path.abspath(os.path.join(repository_root_directory, "tmp"))
-directories = {"repository_root": repository_root_directory, "tmp": temporary_directory}
+directories = {"repository_root": repository_root_directory}
 ny_taxi_data_files_sizes_MB = OrderedDict(
     {
         "trips_xaa.csv": 8000,
@@ -364,13 +363,11 @@ def check_support(current_params, unsupported_params):
         warnings.warn(f"Parameters {ignored_params} are ignored", RuntimeWarning)
 
 
-def get_dir(dir_id):
-    try:
-        directory = directories[dir_id]
-    except KeyError:
-        raise ValueError(f"{dir_id} is not known")
+def create_dir(dir_name):
+    directory = os.path.abspath(os.path.join(directories["repository_root"], dir_name))
     if not os.path.exists(directory):
         os.mkdir(directory)
+
     return directory
 
 
@@ -380,7 +377,7 @@ def get_ny_taxi_dataset_size(dfiles_num):
 
 def get_tmp_filepath(filename, tmp_dir=None):
     if tmp_dir is None:
-        tmp_dir = get_dir("tmp")
+        tmp_dir = create_dir("tmp")
 
     filename, extension = os.path.splitext(filename)
 
@@ -391,7 +388,7 @@ def get_tmp_filepath(filename, tmp_dir=None):
     return file_path
 
 
-class files_combiner:
+class FilesCombiner:
     """
         If data files are compressed or number of csv files is more than one,
         data files (or single compressed file) should be transformed to single csv file.

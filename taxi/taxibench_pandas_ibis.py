@@ -13,11 +13,10 @@ from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Us
     load_data_pandas,
     print_results,
     write_to_csv_by_chunks,
-    get_dir,
     get_ny_taxi_dataset_size,
     check_support,
     get_tmp_filepath,
-    files_combiner,
+    FilesCombiner,
 )
 
 
@@ -329,7 +328,7 @@ def etl_ibis(
             etl_results["t_connect"] = omnisci_server_worker.get_conn_creation_time()
 
         elif import_mode == "fsi":
-            with files_combiner(
+            with FilesCombiner(
                 data_files_names=data_files_names,
                 combined_filename=f"taxibench-{files_limit}--files-fsi.csv",
                 files_limit=files_limit,
