@@ -410,7 +410,10 @@ def main():
 
         if args.modin_path:
             install_modin_reqs_cmdline = ["pip", "install", "-r", "requirements.txt"]
-            conda_env.run(install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False)
+            try:
+                conda_env.run(install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False)
+            except:
+                conda_env.run(install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False)
 
         if tasks["build"]:
             install_cmdline = ["python3", "setup.py", "install"]
