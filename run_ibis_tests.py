@@ -277,7 +277,7 @@ def main():
     )
     benchmark.add_argument(
         "-pandas_mode",
-        choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python"],
+        choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python", "Modin_on_omnisci"],
         default="Pandas",
         help="Specifies which version of Pandas to use: "
         "plain Pandas, Modin runing on Ray or on Dask",
@@ -438,6 +438,15 @@ def main():
                     conda_env.run(install_cmdline, cwd=args.modin_path, print_output=False)
                 except Exception:
                     print("MODIN INSTALLATION PROCESSED WITH ERRORS")
+
+            # trying to install dbe extension if omnisci generated it
+            dbe_path = os.path.dirname(os.path.dirname(args.executable)) + "/Embedded"
+            if os.path.exists(dbe_path):
+                print("DBE INSTALLATION")
+                conda_env.run(install_cmdline, cwd=dbe_path, print_output=False)
+            else:
+                print("Using Omnisci server")
+
 
         if tasks["test"]:
             ibis_data_script = os.path.join(args.ibis_path, "ci", "datamgr.py")
