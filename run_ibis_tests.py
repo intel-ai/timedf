@@ -98,6 +98,13 @@ def main():
     optional.add_argument(
         "-m", "--modin_path", dest="modin_path", default=None, help="Path to modin directory."
     )
+    optional.add_argument(
+        "--modin_pkgs_dir",
+        dest="modin_pkgs_dir",
+        default=None,
+        type=str,
+        help="Path where to store built Modin dependincies (--target flag for pip), can be helpfull if you have space limited home directory.",
+    )
 
     # Omnisci server parameters
     omnisci.add_argument(
@@ -408,13 +415,6 @@ def main():
         combinate_requirements(ibis_requirements, args.ci_requirements, requirements_file)
         conda_env.create(args.env_check, requirements_file=requirements_file)
 
-        if args.modin_path:
-            install_modin_reqs_cmdline = ["pip", "install", "-r", "requirements.txt"]
-            try:
-                conda_env.run(install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False)
-            except:
-                conda_env.run(install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False)
-
         if tasks["build"]:
             install_cmdline = ["python3", "setup.py", "install"]
 
@@ -422,8 +422,25 @@ def main():
             conda_env.run(install_cmdline, cwd=args.ibis_path, print_output=False)
 
             if args.modin_path:
+                if args.modin_path:
+                    install_modin_reqs_cmdline = ["pip", "install", "-r", "requirements.txt"]
+                    if args.modin_pkgs_dir:
+                        # If your home directory is space limited, you can be unable to install all Modin
+                        # dependencies in home directory, so using of --target flag can solve this problem
+                        install_modin_reqs_cmdline += ["--target", args.modin_pkgs_dir]
+                    print("INSTALLATION OF MODIN DEPENDENCIES")
+                    conda_env.run(
+                        install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False
+                    )
+
                 print("MODIN INSTALLATION")
-                conda_env.run(install_cmdline, cwd=args.modin_path, print_output=False)
+                # Modin installation handled this way because "conda run --name env_name python3 setup.py install"
+                # (called by "conda_env.run") processed with warning that is not raised via "python3 setup.py install".
+                # This warning is handled by omniscripts as error, that causing exception raise.
+                try:
+                    conda_env.run(install_cmdline, cwd=args.modin_path, print_output=False)
+                except Exception:
+                    print("MODIN INSTALLATION PROCESSED WITH ERRORS")
 
         if tasks["test"]:
             ibis_data_script = os.path.join(args.ibis_path, "ci", "datamgr.py")
