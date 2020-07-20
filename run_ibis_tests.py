@@ -103,7 +103,7 @@ def main():
         dest="modin_pkgs_dir",
         default=None,
         type=str,
-        help="Path where to store built Modin dependincies (--target flag for pip), can be helpfull if you have space limited home directory.",
+        help="Path where to store built Modin dependencies (--target flag for pip), can be helpful if you have space limited home directory.",
     )
 
     # Omnisci server parameters
