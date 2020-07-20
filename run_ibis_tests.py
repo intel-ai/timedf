@@ -428,9 +428,7 @@ def main():
                     # dependencies in home directory, so using of --target flag can solve this problem
                     install_modin_reqs_cmdline += ["--target", args.modin_pkgs_dir]
                 print("INSTALLATION OF MODIN DEPENDENCIES")
-                conda_env.run(
-                    install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False
-                )
+                conda_env.run(install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False)
 
                 print("MODIN INSTALLATION")
                 # Modin installation handled this way because "conda run --name env_name python3 setup.py install"
