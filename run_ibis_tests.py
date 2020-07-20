@@ -422,16 +422,15 @@ def main():
             conda_env.run(install_cmdline, cwd=args.ibis_path, print_output=False)
 
             if args.modin_path:
-                if args.modin_path:
-                    install_modin_reqs_cmdline = ["pip", "install", "-r", "requirements.txt"]
-                    if args.modin_pkgs_dir:
-                        # If your home directory is space limited, you can be unable to install all Modin
-                        # dependencies in home directory, so using of --target flag can solve this problem
-                        install_modin_reqs_cmdline += ["--target", args.modin_pkgs_dir]
-                    print("INSTALLATION OF MODIN DEPENDENCIES")
-                    conda_env.run(
-                        install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False
-                    )
+                install_modin_reqs_cmdline = ["pip", "install", "-r", "requirements.txt"]
+                if args.modin_pkgs_dir:
+                    # If your home directory is space limited, you can be unable to install all Modin
+                    # dependencies in home directory, so using of --target flag can solve this problem
+                    install_modin_reqs_cmdline += ["--target", args.modin_pkgs_dir]
+                print("INSTALLATION OF MODIN DEPENDENCIES")
+                conda_env.run(
+                    install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False
+                )
 
                 print("MODIN INSTALLATION")
                 # Modin installation handled this way because "conda run --name env_name python3 setup.py install"
