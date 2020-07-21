@@ -73,7 +73,7 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
             os.environ["MODIN_ENGINE"] = "ray"
             os.environ["MODIN_BACKEND"] = "omnisci"
             os.environ["MODIN_EXPERIMENTAL"] = "True"
-            print("Pandas backend: Modin on OmniSci")            
+            print("Pandas backend: Modin on OmniSci")
         else:
             raise ValueError(f"Unknown pandas mode {mode}")
         import modin.pandas as pd

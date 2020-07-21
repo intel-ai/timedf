@@ -80,8 +80,8 @@ def main():
     )
 
     # Ibis
-    required.add_argument(
-        "-i", "--ibis_path", dest="ibis_path", required=True, help="Path to ibis directory."
+    optional.add_argument(
+        "-i", "--ibis_path", dest="ibis_path", required=False, help="Path to ibis directory."
     )
 
     # Ibis tests
@@ -404,22 +404,24 @@ def main():
             )
             sys.exit(1)
 
-        ibis_requirements = os.path.join(
-            args.ibis_path, "ci", f"requirements-{args.python_version}-dev.yml"
-        )
-        requirements_file = "requirements.yml"
-
         conda_env = CondaEnvironment(args.env_name)
+        requirements_file = args.ci_requirements
+        if args.ibis_path:
+            ibis_requirements = os.path.join(
+                args.ibis_path, "ci", f"requirements-{args.python_version}-dev.yml"
+            )
+            requirements_file = "requirements.yml"
+            combinate_requirements(ibis_requirements, args.ci_requirements, requirements_file)
 
         print("PREPARING ENVIRONMENT")
-        combinate_requirements(ibis_requirements, args.ci_requirements, requirements_file)
         conda_env.create(args.env_check, requirements_file=requirements_file)
 
         if tasks["build"]:
             install_cmdline = ["python3", "setup.py", "install"]
 
-            print("IBIS INSTALLATION")
-            conda_env.run(install_cmdline, cwd=args.ibis_path, print_output=False)
+            if args.ibis_path:
+                print("IBIS INSTALLATION")
+                conda_env.run(install_cmdline, cwd=args.ibis_path, print_output=False)
 
             if args.modin_path:
                 install_modin_reqs_cmdline = ["pip", "install", "-r", "requirements.txt"]
@@ -428,7 +430,14 @@ def main():
                     # dependencies in home directory, so using of --target flag can solve this problem
                     install_modin_reqs_cmdline += ["--target", args.modin_pkgs_dir]
                 print("INSTALLATION OF MODIN DEPENDENCIES")
-                conda_env.run(install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False)
+                # Installation of Modin dependencies can proceed with errors. If error occurs, please try to
+                # rebase your branch to the current Modin master
+                try:
+                    conda_env.run(
+                        install_modin_reqs_cmdline, cwd=args.modin_path, print_output=False
+                    )
+                except Exception:
+                    print("INSTALLATION OF MODIN DEPENDENCIES PROCESSED WITH ERRORS")
 
                 print("MODIN INSTALLATION")
                 # Modin installation handled this way because "conda run --name env_name python3 setup.py install"
@@ -440,13 +449,22 @@ def main():
                     print("MODIN INSTALLATION PROCESSED WITH ERRORS")
 
             # trying to install dbe extension if omnisci generated it
-            dbe_path = os.path.dirname(os.path.dirname(args.executable)) + "/Embedded"
+            executables_path = os.path.dirname(args.executable)
+            dbe_path = os.path.join(os.path.dirname(executables_path), "Embedded")
+            initdb_path = os.path.join(executables_path, "initdb")
+            data_dir = os.path.join(os.path.dirname(__file__), "data")
+            initdb_cmdline = [initdb_path, "--data", data_dir]
+
+            if not os.path.isdir(data_dir):
+                print("MANAGING OMNISCI DATA DIR", data_dir)
+                os.makedirs(data_dir)
+                conda_env.run(initdb_cmdline, print_output=False)
+
             if os.path.exists(dbe_path):
                 print("DBE INSTALLATION")
                 conda_env.run(install_cmdline, cwd=dbe_path, print_output=False)
             else:
                 print("Using Omnisci server")
-
 
         if tasks["test"]:
             ibis_data_script = os.path.join(args.ibis_path, "ci", "datamgr.py")
