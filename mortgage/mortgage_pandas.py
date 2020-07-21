@@ -240,8 +240,7 @@ class MortgagePandasBenchmark:
     def combine_joined_12_mon(self, joined_df, testdf, **kwargs):
         print("combine_joined_12_mon")
         t0 = timer()
-        joined_df = joined_df.drop(["delinquency_12"], axis=1)
-        joined_df = joined_df.drop(["upb_12"], axis=1)
+        joined_df = joined_df.drop(["delinquency_12", "upb_12"], axis=1)
         t1 = timer()
         self.t_drop_cols += t1 - t0
 
@@ -283,8 +282,7 @@ class MortgagePandasBenchmark:
         self.t_merge += t1 - t0
 
         t0 = timer()
-        merged = merged.drop(["timestamp_year"], axis=1)
-        merged = merged.drop(["timestamp_month"], axis=1)
+        merged = merged.drop(["timestamp_year", "timestamp_month"], axis=1)
         t1 = timer()
         self.t_drop_cols += t1 - t0
 
@@ -321,8 +319,7 @@ class MortgagePandasBenchmark:
         ]
 
         t0 = timer()
-        for column in drop_list:
-            df = df.drop([column], axis=1)
+        df = df.drop(drop_list, axis=1)
         t1 = timer()
         self.t_drop_cols += t1 - t0
 
@@ -340,7 +337,7 @@ class MortgagePandasBenchmark:
         df["delinquency_12"] = df["delinquency_12"].fillna(False).astype("int32")
         for column, data_type in df.dtypes.items():
             if str(data_type) in ["int8", "int16", "int32", "int64", "float32", "float64"]:
-                df[column] = df[column].fillna(np.dtype(str(df[column].dtype)).type(-1))
+                df[column] = df[column].fillna(np.dtype(str(data_type)).type(-1))
         t1 = timer()
         self.t_fillna += t1 - t0
 
