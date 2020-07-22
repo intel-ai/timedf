@@ -451,6 +451,10 @@ def main():
                 except Exception:
                     print("INSTALLATION OF MODIN DEPENDENCIES PROCESSED WITH ERRORS")
 
+                # installation of Modin dependencies by pip causes hiyapyco package loss, so it is
+                # needed to be reinstalled
+                conda_env.run(["pip", "install", "hiyapyco"], print_output=False)
+
                 print("MODIN INSTALLATION")
                 # Modin installation handled this way because "conda run --name env_name python3 setup.py install"
                 # (called by "conda_env.run") processed with warning that is not raised via "python3 setup.py install".
