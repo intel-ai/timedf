@@ -105,6 +105,13 @@ def main():
         type=str,
         help="Path where to store built Modin dependencies (--target flag for pip), can be helpful if you have space limited home directory.",
     )
+    optional.add_argument(
+        "--manage_dbe_dir",
+        dest="manage_dbe_dir",
+        default=False,
+        type=str_arg_to_bool,
+        help="Manage (create and initialize) DBE data directory on the 'build' step.",
+    )
 
     # Omnisci server parameters
     omnisci.add_argument(
@@ -460,7 +467,7 @@ def main():
             data_dir = os.path.join(os.path.dirname(__file__), "data")
             initdb_cmdline = [initdb_path, "--data", data_dir]
 
-            if not os.path.isdir(data_dir):
+            if not os.path.isdir(data_dir) and args.manage_dbe_dir:
                 print("MANAGING OMNISCI DATA DIR", data_dir)
                 os.makedirs(data_dir)
                 conda_env.run(initdb_cmdline, print_output=False)
