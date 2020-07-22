@@ -429,6 +429,11 @@ def main():
                     # If your home directory is space limited, you can be unable to install all Modin
                     # dependencies in home directory, so using of --target flag can solve this problem
                     install_modin_reqs_cmdline += ["--target", args.modin_pkgs_dir]
+                    os.environ["PYTHONPATH"] = (
+                        os.getenv("PYTHONPATH") + os.pathsep + args.modin_pkgs_dir
+                        if os.getenv("PYTHONPATH")
+                        else args.modin_pkgs_dir
+                    )
                 print("INSTALLATION OF MODIN DEPENDENCIES")
                 # Installation of Modin dependencies can proceed with errors. If error occurs, please try to
                 # rebase your branch to the current Modin master
