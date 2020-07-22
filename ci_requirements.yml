@@ -19,5 +19,3 @@ dependencies:
   - Cython
   - pyarrow<0.17
   - arrow-cpp<0.17
-  - pip:
-    - hiyapyco
