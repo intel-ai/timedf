@@ -230,14 +230,12 @@ def load_data_modin(
     filename,
     columns_names=None,
     columns_types=None,
-    header=None,
-    nrows=None,
-    use_gzip=False,
     parse_dates=None,
     pd=None,
+    mode="Modin_on_ray",
 ):
     if not pd:
-        import_pandas_into_module_namespace(namespace=load_data_pandas.__globals__, mode="Pandas")
+        import_pandas_into_module_namespace(namespace=load_data_pandas.__globals__, mode=mode)
     dtypes = None
     if columns_types:
         dtypes = {
@@ -247,7 +245,7 @@ def load_data_modin(
     print("IMPORT TYPES:", dtypes)
 
     all_but_dates = None
-    dates_only = None
+    dates_only = False
     if parse_dates:
         parse_dates = parse_dates if isinstance(parse_dates, (list, tuple)) else [parse_dates]
         all_but_dates = {
@@ -258,8 +256,8 @@ def load_data_modin(
     return pd.read_csv(
         filename,
         names=columns_names,
-        dtype=all_but_dates or types,
-        parse_dates=dates_only or parse_dates,
+        dtype=all_but_dates,
+        parse_dates=dates_only,
     )
 
 

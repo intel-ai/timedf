@@ -467,7 +467,7 @@ def etl_pandas(
 
 
 def etl_pandas_modin(
-    filename, files_limit, columns_names, columns_types, output_for_validation,
+    filename, files_limit, columns_names, columns_types, output_for_validation, modin_mode,
 ):
     queries = {
         "Query1": q1_pandas,
@@ -486,11 +486,9 @@ def etl_pandas_modin(
             filename=f,
             columns_names=columns_names,
             columns_types=columns_types,
-            header=None,
-            nrows=None,
-            use_gzip=f.endswith(".gz"),
             parse_dates=["timestamp"],
             pd=run_benchmark.__globals__["pd"],
+            mode=modin_mode,
         )
         for f in filename
     ]
@@ -645,6 +643,7 @@ def run_benchmark(parameters):
                 columns_names=columns_names,
                 columns_types=columns_types,
                 output_for_validation=pd_queries_outputs,
+                modin_mode=parameters["pandas_mode"],
             )
 
             print_results(results=etl_results, backend=parameters["pandas_mode"], unit="ms")
