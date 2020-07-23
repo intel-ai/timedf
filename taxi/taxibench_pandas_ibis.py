@@ -11,6 +11,7 @@ from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Us
     files_names_from_pattern,
     import_pandas_into_module_namespace,
     load_data_pandas,
+    load_data_modin,
     print_results,
     write_to_csv_by_chunks,
     get_ny_taxi_dataset_size,
@@ -330,7 +331,8 @@ def etl_ibis(
 # @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
 def q1_pandas(df):
     t0 = timer()
-    q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
+    #q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
+    q1_pandas_output = df.groupby("cab_type").size()
     query_time = timer() - t0
 
     return query_time, q1_pandas_output
@@ -342,9 +344,11 @@ def q1_pandas(df):
 # GROUP BY passenger_count;
 def q2_pandas(df):
     t0 = timer()
-    q2_pandas_output = df.groupby("passenger_count", as_index=False).mean()[
-        ["passenger_count", "total_amount"]
-    ]
+    #q2_pandas_output = df.groupby("passenger_count", as_index=False).mean()[
+    #    ["passenger_count", "total_amount"]
+    #]
+    q2_pandas_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
+    res = q2_pandas_output.shape # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q2_pandas_output
@@ -358,7 +362,7 @@ def q2_pandas(df):
 #         pickup_year;
 def q3_pandas(df):
     t0 = timer()
-    transformed = pd.DataFrame(
+    """transformed = pd.DataFrame(
         {
             "passenger_count": df["passenger_count"],
             "pickup_datetime": df["pickup_datetime"].dt.year,
@@ -366,7 +370,10 @@ def q3_pandas(df):
     )
     q3_pandas_output = transformed.groupby(["pickup_datetime", "passenger_count"]).agg(
         {"passenger_count": ["count"]}
-    )
+    )"""
+    df["pickup_datetime"] = df["pickup_datetime"].dt.year
+    q3_pandas_output = df.groupby(
+            ["passenger_count", "pickup_datetime"]).size()
     query_time = timer() - t0
 
     return query_time, q3_pandas_output
@@ -395,7 +402,7 @@ def q3_pandas(df):
 # ORDER BY passenger_count, pickup_year, distance, the_count;
 def q4_pandas(df):
     t0 = timer()
-    transformed = pd.DataFrame(
+    """transformed = pd.DataFrame(
         {
             "passenger_count": df["passenger_count"],
             "pickup_datetime": df["pickup_datetime"].dt.year,
@@ -407,6 +414,14 @@ def q4_pandas(df):
         .size()
         .reset_index()
         .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
+    )"""
+    df["pickup_datetime"] = df["pickup_datetime"].dt.year
+    df["trip_distance"] = df["trip_distance"].astype("int64")
+    q4_pandas_output = (
+        df.groupby(["passenger_count", "pickup_datetime", "trip_distance"], sort=False)
+        .size()
+        .reset_index()
+        .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
     )
     query_time = timer() - t0
 
@@ -442,6 +457,48 @@ def etl_pandas(
 
     queries_parameters = {
         query_name: {"df": concatenated_df} for query_name in list(queries.keys())
+    }
+
+    return run_queries(
+        queries=queries,
+        parameters=queries_parameters,
+        etl_results=etl_results,
+        output_for_validation=output_for_validation,
+    )
+
+def etl_pandas_modin(
+    filename, files_limit, columns_names, columns_types, output_for_validation,
+):
+    queries = {
+        "Query1": q1_pandas,
+        "Query2": q2_pandas,
+        "Query3": q3_pandas,
+        "Query4": q4_pandas,
+    }
+    etl_results = {x: 0.0 for x in queries.keys()}
+
+    #TODO: some check that we do not import gzipped files
+    #assert not f.endswith(".gz") for f in filename
+
+    t0 = timer()
+    df_from_each_file = [
+        load_data_modin(
+            filename=f,
+            columns_names=columns_names,
+            columns_types=columns_types,
+            header=None,
+            nrows=None,
+            use_gzip=f.endswith(".gz"),
+            parse_dates=["pickup_datetime", "dropoff_datetime"],
+            pd=run_benchmark.__globals__["pd"],
+        )
+        for f in filename
+    ]
+    concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
+    etl_results["t_readcsv"] = timer() - t0
+
+    queries_parameters = {
+        query_name: {"df": concatenated_df.copy()} for query_name in list(queries.keys())
     }
 
     return run_queries(
@@ -582,7 +639,7 @@ def run_benchmark(parameters):
         if not parameters["no_pandas"]:
             pandas_files_limit = parameters["dfiles_num"]
             filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
-            etl_results = etl_pandas(
+            etl_results = etl_pandas_modin(
                 filename=filename,
                 files_limit=pandas_files_limit,
                 columns_names=columns_names,
