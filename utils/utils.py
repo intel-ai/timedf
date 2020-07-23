@@ -225,6 +225,7 @@ def load_data_pandas(
         parse_dates=parse_dates,
     )
 
+
 def load_data_modin(
     filename,
     columns_names=None,
@@ -237,15 +238,28 @@ def load_data_modin(
 ):
     if not pd:
         import_pandas_into_module_namespace(namespace=load_data_pandas.__globals__, mode="Pandas")
-    types = None
+    dtypes = None
     if columns_types:
-        types = {columns_names[i]: columns_types[i] if (columns_types[i] != "category") else "string" for i in range(len(columns_names))}
-    print("IMPORT TYPES:", types)
+        dtypes = {
+            columns_names[i]: columns_types[i] if (columns_types[i] != "category") else "string"
+            for i in range(len(columns_names))
+        }
+    print("IMPORT TYPES:", dtypes)
+
+    all_but_dates = None
+    dates_only = None
+    if parse_dates:
+        parse_dates = parse_dates if isinstance(parse_dates, (list, tuple)) else [parse_dates]
+        all_but_dates = {
+            col: valtype for (col, valtype) in dtypes.items() if valtype not in parse_dates
+        }
+        dates_only = [col for (col, valtype) in dtypes.items() if valtype in parse_dates]
+
     return pd.read_csv(
         filename,
         names=columns_names,
-        dtype=types,
-        parse_dates=parse_dates,
+        dtype=all_but_dates or types,
+        parse_dates=dates_only or parse_dates,
     )
 
 

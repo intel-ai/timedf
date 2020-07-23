@@ -331,7 +331,7 @@ def etl_ibis(
 # @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
 def q1_pandas(df):
     t0 = timer()
-    #q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
+    # q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
     q1_pandas_output = df.groupby("cab_type").size()
     query_time = timer() - t0
 
@@ -344,11 +344,11 @@ def q1_pandas(df):
 # GROUP BY passenger_count;
 def q2_pandas(df):
     t0 = timer()
-    #q2_pandas_output = df.groupby("passenger_count", as_index=False).mean()[
+    # q2_pandas_output = df.groupby("passenger_count", as_index=False).mean()[
     #    ["passenger_count", "total_amount"]
-    #]
+    # ]
     q2_pandas_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
-    res = q2_pandas_output.shape # to trigger real execution
+    res = q2_pandas_output.shape  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q2_pandas_output
@@ -372,8 +372,7 @@ def q3_pandas(df):
         {"passenger_count": ["count"]}
     )"""
     df["pickup_datetime"] = df["pickup_datetime"].dt.year
-    q3_pandas_output = df.groupby(
-            ["passenger_count", "pickup_datetime"]).size()
+    q3_pandas_output = df.groupby(["passenger_count", "pickup_datetime"]).size()
     query_time = timer() - t0
 
     return query_time, q3_pandas_output
@@ -466,6 +465,7 @@ def etl_pandas(
         output_for_validation=output_for_validation,
     )
 
+
 def etl_pandas_modin(
     filename, files_limit, columns_names, columns_types, output_for_validation,
 ):
@@ -477,8 +477,8 @@ def etl_pandas_modin(
     }
     etl_results = {x: 0.0 for x in queries.keys()}
 
-    #TODO: some check that we do not import gzipped files
-    #assert not f.endswith(".gz") for f in filename
+    # TODO: some check that we do not import gzipped files
+    # assert not f.endswith(".gz") for f in filename
 
     t0 = timer()
     df_from_each_file = [
@@ -489,7 +489,7 @@ def etl_pandas_modin(
             header=None,
             nrows=None,
             use_gzip=f.endswith(".gz"),
-            parse_dates=["pickup_datetime", "dropoff_datetime"],
+            parse_dates=["timestamp"],
             pd=run_benchmark.__globals__["pd"],
         )
         for f in filename
