@@ -225,6 +225,28 @@ def load_data_pandas(
         parse_dates=parse_dates,
     )
 
+def load_data_modin(
+    filename,
+    columns_names=None,
+    columns_types=None,
+    header=None,
+    nrows=None,
+    use_gzip=False,
+    parse_dates=None,
+    pd=None,
+):
+    if not pd:
+        import_pandas_into_module_namespace(namespace=load_data_pandas.__globals__, mode="Pandas")
+    types = None
+    if columns_types:
+        types = {columns_names[i]: columns_types[i] if (columns_types[i] != "category") else "string" for i in range(len(columns_names))}
+    return pd.read_csv(
+        filename,
+        names=columns_names,
+        dtype=types,
+        parse_dates=parse_dates,
+    )
+
 
 def files_names_from_pattern(filename):
     from braceexpand import braceexpand
