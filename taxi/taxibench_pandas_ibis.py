@@ -11,7 +11,7 @@ from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Us
     files_names_from_pattern,
     import_pandas_into_module_namespace,
     load_data_pandas,
-    load_data_modin,
+    load_data_modin_on_omnisci,
     print_results,
     write_to_csv_by_chunks,
     get_ny_taxi_dataset_size,
@@ -348,7 +348,7 @@ def q2_pandas(df):
     #    ["passenger_count", "total_amount"]
     # ]
     q2_pandas_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
-    res = q2_pandas_output.shape  # to trigger real execution
+    q2_pandas_output.shape  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q2_pandas_output
@@ -428,47 +428,14 @@ def q4_pandas(df):
 
 
 def etl_pandas(
-    filename, files_limit, columns_names, columns_types, output_for_validation,
-):
-    queries = {
-        "Query1": q1_pandas,
-        "Query2": q2_pandas,
-        "Query3": q3_pandas,
-        "Query4": q4_pandas,
-    }
-    etl_results = {x: 0.0 for x in queries.keys()}
-
-    t0 = timer()
-    df_from_each_file = [
-        load_data_pandas(
-            filename=f,
-            columns_names=columns_names,
-            header=None,
-            nrows=None,
-            use_gzip=f.endswith(".gz"),
-            parse_dates=["pickup_datetime", "dropoff_datetime"],
-            pd=run_benchmark.__globals__["pd"],
-        )
-        for f in filename
-    ]
-    concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
-    etl_results["t_readcsv"] = timer() - t0
-
-    queries_parameters = {
-        query_name: {"df": concatenated_df} for query_name in list(queries.keys())
-    }
-
-    return run_queries(
-        queries=queries,
-        parameters=queries_parameters,
-        etl_results=etl_results,
-        output_for_validation=output_for_validation,
-    )
-
-
-def etl_pandas_modin(
     filename, files_limit, columns_names, columns_types, output_for_validation, modin_mode,
 ):
+
+    if modin_mode == "Modin_on_omnisci" and any(f.endswith(".gz") for f in filename):
+        raise NotImplementedError(
+            "Modin_on_omnisci mode doesn't support import of compressed files yet"
+        )
+
     queries = {
         "Query1": q1_pandas,
         "Query2": q2_pandas,
@@ -477,26 +444,41 @@ def etl_pandas_modin(
     }
     etl_results = {x: 0.0 for x in queries.keys()}
 
-    # TODO: some check that we do not import gzipped files
-    # assert not f.endswith(".gz") for f in filename
-
     t0 = timer()
-    df_from_each_file = [
-        load_data_modin(
-            filename=f,
-            columns_names=columns_names,
-            columns_types=columns_types,
-            parse_dates=["timestamp"],
-            pd=run_benchmark.__globals__["pd"],
-            mode=modin_mode,
-        )
-        for f in filename
-    ]
+    if modin_mode == "Modin_on_omnisci":
+        df_from_each_file = [
+            load_data_modin_on_omnisci(
+                filename=f,
+                columns_names=columns_names,
+                columns_types=columns_types,
+                parse_dates=["timestamp"],
+                pd=run_benchmark.__globals__["pd"],
+                mode=modin_mode,
+            )
+            for f in filename
+        ]
+    else:
+        df_from_each_file = [
+            load_data_pandas(
+                filename=f,
+                columns_names=columns_names,
+                header=None,
+                nrows=None,
+                use_gzip=f.endswith(".gz"),
+                parse_dates=["pickup_datetime", "dropoff_datetime"],
+                pd=run_benchmark.__globals__["pd"],
+            )
+            for f in filename
+        ]
+
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
     etl_results["t_readcsv"] = timer() - t0
 
     queries_parameters = {
-        query_name: {"df": concatenated_df.copy()} for query_name in list(queries.keys())
+        query_name: {
+            "df": concatenated_df.copy() if modin_mode == "Modin_on_omnisci" else concatenated_df
+        }
+        for query_name in list(queries.keys())
     }
 
     return run_queries(
@@ -637,7 +619,7 @@ def run_benchmark(parameters):
         if not parameters["no_pandas"]:
             pandas_files_limit = parameters["dfiles_num"]
             filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
-            etl_results = etl_pandas_modin(
+            etl_results = etl_pandas(
                 filename=filename,
                 files_limit=pandas_files_limit,
                 columns_names=columns_names,

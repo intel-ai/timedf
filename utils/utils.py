@@ -226,7 +226,7 @@ def load_data_pandas(
     )
 
 
-def load_data_modin(
+def load_data_modin_on_omnisci(
     filename,
     columns_names=None,
     columns_types=None,
@@ -253,12 +253,7 @@ def load_data_modin(
         }
         dates_only = [col for (col, valtype) in dtypes.items() if valtype in parse_dates]
 
-    return pd.read_csv(
-        filename,
-        names=columns_names,
-        dtype=all_but_dates,
-        parse_dates=dates_only,
-    )
+    return pd.read_csv(filename, names=columns_names, dtype=all_but_dates, parse_dates=dates_only,)
 
 
 def files_names_from_pattern(filename):
