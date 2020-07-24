@@ -329,10 +329,12 @@ def etl_ibis(
 # FROM trips
 # GROUP BY cab_type;
 # @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
-def q1_pandas(df):
+def q1_pandas(df, modin_mode):
     t0 = timer()
-    # q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
-    q1_pandas_output = df.groupby("cab_type").size()
+    if modin_mode != "Modin_on_omnisci":
+        q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
+    else:
+        q1_pandas_output = df.groupby("cab_type").size()
     query_time = timer() - t0
 
     return query_time, q1_pandas_output
@@ -342,13 +344,15 @@ def q1_pandas(df):
 #       avg(total_amount)
 # FROM trips
 # GROUP BY passenger_count;
-def q2_pandas(df):
+def q2_pandas(df, modin_mode):
     t0 = timer()
-    # q2_pandas_output = df.groupby("passenger_count", as_index=False).mean()[
-    #    ["passenger_count", "total_amount"]
-    # ]
-    q2_pandas_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
-    q2_pandas_output.shape  # to trigger real execution
+    if modin_mode != "Modin_on_omnisci":
+        q2_pandas_output = df.groupby("passenger_count", as_index=False).mean()[
+            ["passenger_count", "total_amount"]
+        ]
+    else:
+        q2_pandas_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
+        q2_pandas_output.shape  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q2_pandas_output
@@ -360,19 +364,21 @@ def q2_pandas(df):
 # FROM trips
 # GROUP BY passenger_count,
 #         pickup_year;
-def q3_pandas(df):
+def q3_pandas(df, modin_mode):
     t0 = timer()
-    """transformed = pd.DataFrame(
-        {
-            "passenger_count": df["passenger_count"],
-            "pickup_datetime": df["pickup_datetime"].dt.year,
-        }
-    )
-    q3_pandas_output = transformed.groupby(["pickup_datetime", "passenger_count"]).agg(
-        {"passenger_count": ["count"]}
-    )"""
-    df["pickup_datetime"] = df["pickup_datetime"].dt.year
-    q3_pandas_output = df.groupby(["passenger_count", "pickup_datetime"]).size()
+    if modin_mode != "Modin_on_omnisci":
+        transformed = pd.DataFrame(
+            {
+                "passenger_count": df["passenger_count"],
+                "pickup_datetime": df["pickup_datetime"].dt.year,
+            }
+        )
+        q3_pandas_output = transformed.groupby(["pickup_datetime", "passenger_count"]).agg(
+            {"passenger_count": ["count"]}
+        )
+    else:
+        df["pickup_datetime"] = df["pickup_datetime"].dt.year
+        q3_pandas_output = df.groupby(["passenger_count", "pickup_datetime"]).size()
     query_time = timer() - t0
 
     return query_time, q3_pandas_output
@@ -399,29 +405,31 @@ def q3_pandas(df):
 #         pickup_year,
 #         distance
 # ORDER BY passenger_count, pickup_year, distance, the_count;
-def q4_pandas(df):
+def q4_pandas(df, modin_mode):
     t0 = timer()
-    """transformed = pd.DataFrame(
-        {
-            "passenger_count": df["passenger_count"],
-            "pickup_datetime": df["pickup_datetime"].dt.year,
-            "trip_distance": df["trip_distance"].astype("int64"),
-        }
-    )
-    q4_pandas_output = (
-        transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
-        .size()
-        .reset_index()
-        .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
-    )"""
-    df["pickup_datetime"] = df["pickup_datetime"].dt.year
-    df["trip_distance"] = df["trip_distance"].astype("int64")
-    q4_pandas_output = (
-        df.groupby(["passenger_count", "pickup_datetime", "trip_distance"], sort=False)
-        .size()
-        .reset_index()
-        .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
-    )
+    if modin_mode != "Modin_on_omnisci":
+        transformed = pd.DataFrame(
+            {
+                "passenger_count": df["passenger_count"],
+                "pickup_datetime": df["pickup_datetime"].dt.year,
+                "trip_distance": df["trip_distance"].astype("int64"),
+            }
+        )
+        q4_pandas_output = (
+            transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
+            .size()
+            .reset_index()
+            .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
+        )
+    else:
+        df["pickup_datetime"] = df["pickup_datetime"].dt.year
+        df["trip_distance"] = df["trip_distance"].astype("int64")
+        q4_pandas_output = (
+            df.groupby(["passenger_count", "pickup_datetime", "trip_distance"], sort=False)
+            .size()
+            .reset_index()
+            .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
+        )
     query_time = timer() - t0
 
     return query_time, q4_pandas_output
@@ -476,7 +484,8 @@ def etl_pandas(
 
     queries_parameters = {
         query_name: {
-            "df": concatenated_df.copy() if modin_mode == "Modin_on_omnisci" else concatenated_df
+            "df": concatenated_df.copy() if modin_mode == "Modin_on_omnisci" else concatenated_df,
+            "modin_mode": modin_mode,
         }
         for query_name in list(queries.keys())
     }
