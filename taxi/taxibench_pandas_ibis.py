@@ -329,9 +329,9 @@ def etl_ibis(
 # FROM trips
 # GROUP BY cab_type;
 # @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
-def q1_pandas(df, modin_mode):
+def q1_pandas(df, pandas_mode):
     t0 = timer()
-    if modin_mode != "Modin_on_omnisci":
+    if pandas_mode != "Modin_on_omnisci":
         q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
     else:
         q1_pandas_output = df.groupby("cab_type").size()
@@ -344,9 +344,9 @@ def q1_pandas(df, modin_mode):
 #       avg(total_amount)
 # FROM trips
 # GROUP BY passenger_count;
-def q2_pandas(df, modin_mode):
+def q2_pandas(df, pandas_mode):
     t0 = timer()
-    if modin_mode != "Modin_on_omnisci":
+    if pandas_mode != "Modin_on_omnisci":
         q2_pandas_output = df.groupby("passenger_count", as_index=False).mean()[
             ["passenger_count", "total_amount"]
         ]
@@ -364,9 +364,9 @@ def q2_pandas(df, modin_mode):
 # FROM trips
 # GROUP BY passenger_count,
 #         pickup_year;
-def q3_pandas(df, modin_mode):
+def q3_pandas(df, pandas_mode):
     t0 = timer()
-    if modin_mode != "Modin_on_omnisci":
+    if pandas_mode != "Modin_on_omnisci":
         transformed = pd.DataFrame(
             {
                 "passenger_count": df["passenger_count"],
@@ -405,9 +405,9 @@ def q3_pandas(df, modin_mode):
 #         pickup_year,
 #         distance
 # ORDER BY passenger_count, pickup_year, distance, the_count;
-def q4_pandas(df, modin_mode):
+def q4_pandas(df, pandas_mode):
     t0 = timer()
-    if modin_mode != "Modin_on_omnisci":
+    if pandas_mode != "Modin_on_omnisci":
         transformed = pd.DataFrame(
             {
                 "passenger_count": df["passenger_count"],
@@ -436,10 +436,10 @@ def q4_pandas(df, modin_mode):
 
 
 def etl_pandas(
-    filename, files_limit, columns_names, columns_types, output_for_validation, modin_mode,
+    filename, files_limit, columns_names, columns_types, output_for_validation, pandas_mode,
 ):
 
-    if modin_mode == "Modin_on_omnisci" and any(f.endswith(".gz") for f in filename):
+    if pandas_mode == "Modin_on_omnisci" and any(f.endswith(".gz") for f in filename):
         raise NotImplementedError(
             "Modin_on_omnisci mode doesn't support import of compressed files yet"
         )
@@ -453,7 +453,7 @@ def etl_pandas(
     etl_results = {x: 0.0 for x in queries.keys()}
 
     t0 = timer()
-    if modin_mode == "Modin_on_omnisci":
+    if pandas_mode == "Modin_on_omnisci":
         df_from_each_file = [
             load_data_modin_on_omnisci(
                 filename=f,
@@ -461,7 +461,6 @@ def etl_pandas(
                 columns_types=columns_types,
                 parse_dates=["timestamp"],
                 pd=run_benchmark.__globals__["pd"],
-                mode=modin_mode,
             )
             for f in filename
         ]
@@ -475,6 +474,7 @@ def etl_pandas(
                 use_gzip=f.endswith(".gz"),
                 parse_dates=["pickup_datetime", "dropoff_datetime"],
                 pd=run_benchmark.__globals__["pd"],
+                pandas_mode=pandas_mode,
             )
             for f in filename
         ]
@@ -484,8 +484,8 @@ def etl_pandas(
 
     queries_parameters = {
         query_name: {
-            "df": concatenated_df.copy() if modin_mode == "Modin_on_omnisci" else concatenated_df,
-            "modin_mode": modin_mode,
+            "df": concatenated_df.copy() if pandas_mode == "Modin_on_omnisci" else concatenated_df,
+            "pandas_mode": pandas_mode,
         }
         for query_name in list(queries.keys())
     }
@@ -634,7 +634,7 @@ def run_benchmark(parameters):
                 columns_names=columns_names,
                 columns_types=columns_types,
                 output_for_validation=pd_queries_outputs,
-                modin_mode=parameters["pandas_mode"],
+                pandas_mode=parameters["pandas_mode"],
             )
 
             print_results(results=etl_results, backend=parameters["pandas_mode"], unit="ms")
