@@ -212,7 +212,9 @@ def load_data_pandas(
     pandas_mode="Pandas",
 ):
     if not pd:
-        import_pandas_into_module_namespace(namespace=load_data_pandas.__globals__, mode=pandas_mode)
+        import_pandas_into_module_namespace(
+            namespace=load_data_pandas.__globals__, mode=pandas_mode
+        )
     types = None
     if columns_types:
         types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
@@ -228,14 +230,12 @@ def load_data_pandas(
 
 
 def load_data_modin_on_omnisci(
-    filename,
-    columns_names=None,
-    columns_types=None,
-    parse_dates=None,
-    pd=None,
+    filename, columns_names=None, columns_types=None, parse_dates=None, pd=None,
 ):
     if not pd:
-        import_pandas_into_module_namespace(namespace=load_data_pandas.__globals__, mode="Modin_on_omnisci")
+        import_pandas_into_module_namespace(
+            namespace=load_data_pandas.__globals__, mode="Modin_on_omnisci"
+        )
     dtypes = None
     if columns_types:
         dtypes = {
