@@ -242,7 +242,6 @@ def load_data_modin_on_omnisci(
             columns_names[i]: columns_types[i] if (columns_types[i] != "category") else "string"
             for i in range(len(columns_names))
         }
-    print("IMPORT TYPES:", dtypes)
 
     all_but_dates = None
     dates_only = False
