@@ -45,6 +45,7 @@ def _etl_pandas(parameters, acq_schema, perf_schema, etl_keys, do_validate=False
         perf_schema=perf_schema,
         etl_keys=etl_keys,
         leave_category_strings=do_validate,
+        pandas_mode=parameters["pandas_mode"],
     )
 
 

@@ -16,7 +16,13 @@ import numpy as np
 
 class MortgagePandasBenchmark:
     def __init__(
-        self, mortgage_path, algo, acq_fields=None, perf_fields=None, leave_category_strings=False
+        self,
+        mortgage_path,
+        algo,
+        acq_fields=None,
+        perf_fields=None,
+        leave_category_strings=False,
+        pandas_mode="Pandas",
     ):
         # some hack - do not append things if mortgage_path is a URL
         self._is_remote_dataset = "://" in mortgage_path
@@ -26,6 +32,8 @@ class MortgagePandasBenchmark:
         self.acq_fields = acq_fields
         self.perf_fields = perf_fields
         self.leave_category_strings = leave_category_strings
+        self.pandas_mode = pandas_mode
+        self.table_new_field_name = "new" if pandas_mode != "Modin_on_omnisci" else "new_name"
 
         self.t_one_hot_encoding = 0
         self.t_read_csv = 0
@@ -79,8 +87,8 @@ class MortgagePandasBenchmark:
 
         t0 = timer()
         acq_gdf = acq_gdf.drop(["seller_name"], axis=1)
-        acq_gdf["seller_name"] = acq_gdf["new_name"]
-        acq_gdf = acq_gdf.drop(["new_name"], axis=1)
+        acq_gdf["seller_name"] = acq_gdf[self.table_new_field_name]
+        acq_gdf = acq_gdf.drop([self.table_new_field_name], axis=1)
         t1 = timer()
         self.t_drop_cols += t1 - t0
 
@@ -102,7 +110,7 @@ class MortgagePandasBenchmark:
         final_gdf = self.last_mile_cleaning(final_gdf)
         return final_gdf
 
-    def _parse_dtyped_csv(self, fname, dtypes, names, **kw):
+    def _parse_dtyped_csv(self, fname, dtypes, **kw):
         all_but_dates = {
             col: valtype for (col, valtype) in dtypes.items() if valtype.name != "datetime64[ns]"
         }
@@ -111,7 +119,6 @@ class MortgagePandasBenchmark:
         df = pd.read_csv(
             fname,
             dtype=all_but_dates,
-            names=names,
             parse_dates=dates_only,
             delimiter="|" if self._is_remote_dataset else ",",
             skiprows=1,
@@ -134,7 +141,7 @@ class MortgagePandasBenchmark:
         return self._parse_dtyped_csv(acquisition_path, dtypes, names=cols, index_col=False)
 
     def pd_load_names(self, **kwargs):
-        cols = ["seller_name", "new_name"]
+        cols = ["seller_name", self.table_new_field_name]
         # dtypes = OrderedDict([
         #     ("seller_name", "category"),
         #     ("new", "category"),
@@ -209,10 +216,12 @@ class MortgagePandasBenchmark:
 
             t0 = timer()
             tmpdf["josh_months"] = tmpdf["timestamp_year"] * 12 + tmpdf["timestamp_month"]
-            tmpdf["josh_mody_n"] = (tmpdf["josh_months"] - 24000 - y) // 12
-            # tmpdf["josh_mody_n"] = np.floor(
-            #    (tmpdf["josh_months"].astype("float64") - 24000 - y) / 12
-            # )
+            if self.pandas_mode != "Modin_on_omnisci":
+                tmpdf["josh_mody_n"] = np.floor(
+                    (tmpdf["josh_months"].astype("float64") - 24000 - y) / 12
+                )
+            else:
+                tmpdf["josh_mody_n"] = (tmpdf["josh_months"] - 24000 - y) // 12
             tmpdf = tmpdf.groupby(["loan_id", "josh_mody_n"], as_index=False).agg(
                 {"delinquency_12": "max", "upb_12": "min"}
             )
@@ -221,12 +230,14 @@ class MortgagePandasBenchmark:
             # tmpdf.drop('max_delinquency_12', axis=1)
             # tmpdf['upb_12'] = tmpdf['min_upb_12']
             # tmpdf.drop('min_upb_12', axis=1)
-            tmpdf["timestamp_year"] = (
-                ((tmpdf["josh_mody_n"] * n_months) + 24000 + (y - 1)) // 12
-            ).astype("int16")
-            # tmpdf["timestamp_year"] = np.floor(
-            #    ((tmpdf["josh_mody_n"] * n_months) + 24000 + (y - 1)) / 12
-            # ).astype("int16")
+            if self.pandas_mode != "Modin_on_omnisci":
+                tmpdf["timestamp_year"] = np.floor(
+                    ((tmpdf["josh_mody_n"] * n_months) + 24000 + (y - 1)) / 12
+                ).astype("int16")
+            else:
+                tmpdf["timestamp_year"] = (
+                    ((tmpdf["josh_mody_n"] * n_months) + 24000 + (y - 1)) // 12
+                ).astype("int16")
             tmpdf["timestamp_month"] = np.int8(y)
             t1 = timer()
             self.t_conv_dates += t1 - t0
@@ -239,8 +250,10 @@ class MortgagePandasBenchmark:
             testdfs.append(tmpdf)
             del tmpdf
         del joined_df
-
-        return pd.concat(testdfs, ignore_index=True)
+        if self.pandas_mode != "Modin_on_omnisci":
+            return pd.concat(testdfs)
+        else:
+            return pd.concat(testdfs, ignore_index=True)
 
     def combine_joined_12_mon(self, joined_df, testdf, **kwargs):
         print("combine_joined_12_mon")
@@ -435,7 +448,13 @@ class MortgagePandasBenchmark:
 
 
 def etl_pandas(
-    dataset_path, dfiles_num, acq_schema, perf_schema, etl_keys, leave_category_strings=False
+    dataset_path,
+    dfiles_num,
+    acq_schema,
+    perf_schema,
+    etl_keys,
+    leave_category_strings=False,
+    pandas_mode="Pandas",
 ):
     etl_times = {key: 0.0 for key in etl_keys}
 
@@ -445,6 +464,7 @@ def etl_pandas(
         acq_schema.to_pandas(),
         perf_schema.to_pandas(),
         leave_category_strings,
+        pandas_mode=pandas_mode,
     )
     pd_dfs = []
     t0 = timer()
@@ -454,7 +474,8 @@ def etl_pandas(
             pd_dfs.append(mb.run_cpu_workflow(quarter=quarter, year=year, perf_file=fname))
 
     pd_df = pd_dfs[0] if len(pd_dfs) == 1 else pd.concat(pd_dfs)
-    pd_df.shape  # to trigger execution for modin
+    if pandas_mode == "Modin_on_omnisci":
+        pd_df.shape  # to trigger execution for modin
     etl_times["t_etl"] = timer() - t0
     etl_times["t_readcsv"] = mb.t_read_csv
     # TODO: enable those only in verbose mode
@@ -464,9 +485,6 @@ def etl_pandas(
     # print("  t_drop_cols = ", round(mb.t_drop_cols, 2), " s")
     # print("  t_merge = ", round(mb.t_merge, 2), " s")
     # print("  t_conv_dates = ", round(mb.t_conv_dates, 2), " s")
-    # etl_times["t_etl"] = (
-    #    mb.t_one_hot_encoding + mb.t_fillna + mb.t_drop_cols + mb.t_merge + mb.t_conv_dates
-    # )
 
     return pd_df, mb, etl_times
 
