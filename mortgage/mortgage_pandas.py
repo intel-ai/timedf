@@ -476,7 +476,6 @@ def etl_pandas(
     pd_df = pd_dfs[0] if len(pd_dfs) == 1 else pd.concat(pd_dfs)
     if pandas_mode == "Modin_on_omnisci":
         pd_df.shape  # to trigger execution for modin
-    etl_times["t_etl"] = timer() - t0
     etl_times["t_readcsv"] = mb.t_read_csv
     # TODO: enable those only in verbose mode
     # print("ETL timings")
@@ -485,6 +484,11 @@ def etl_pandas(
     # print("  t_drop_cols = ", round(mb.t_drop_cols, 2), " s")
     # print("  t_merge = ", round(mb.t_merge, 2), " s")
     # print("  t_conv_dates = ", round(mb.t_conv_dates, 2), " s")
+    etl_times["t_etl"] = (
+        (mb.t_one_hot_encoding + mb.t_fillna + mb.t_drop_cols + mb.t_merge + mb.t_conv_dates)
+        if pandas_mode != "Modin_on_omnisci"
+        else timer() - t0
+    )
 
     return pd_df, mb, etl_times
 
