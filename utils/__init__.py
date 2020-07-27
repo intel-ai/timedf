@@ -7,7 +7,7 @@ from .utils import (
     files_names_from_pattern,
     import_pandas_into_module_namespace,
     load_data_pandas,
-    load_data_modin,
+    load_data_modin_on_omnisci,
     mse,
     print_times,
     split,

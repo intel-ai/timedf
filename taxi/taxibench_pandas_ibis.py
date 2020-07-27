@@ -11,7 +11,7 @@ from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Us
     files_names_from_pattern,
     import_pandas_into_module_namespace,
     load_data_pandas,
-    load_data_modin,
+    load_data_modin_on_omnisci,
     print_results,
     write_to_csv_by_chunks,
     get_ny_taxi_dataset_size,
@@ -329,10 +329,12 @@ def etl_ibis(
 # FROM trips
 # GROUP BY cab_type;
 # @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
-def q1_pandas(df):
+def q1_pandas(df, pandas_mode):
     t0 = timer()
-    #q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
-    q1_pandas_output = df.groupby("cab_type").size()
+    if pandas_mode != "Modin_on_omnisci":
+        q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
+    else:
+        q1_pandas_output = df.groupby("cab_type").size()
     query_time = timer() - t0
 
     return query_time, q1_pandas_output
@@ -342,13 +344,15 @@ def q1_pandas(df):
 #       avg(total_amount)
 # FROM trips
 # GROUP BY passenger_count;
-def q2_pandas(df):
+def q2_pandas(df, pandas_mode):
     t0 = timer()
-    #q2_pandas_output = df.groupby("passenger_count", as_index=False).mean()[
-    #    ["passenger_count", "total_amount"]
-    #]
-    q2_pandas_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
-    res = q2_pandas_output.shape # to trigger real execution
+    if pandas_mode != "Modin_on_omnisci":
+        q2_pandas_output = df.groupby("passenger_count", as_index=False).mean()[
+            ["passenger_count", "total_amount"]
+        ]
+    else:
+        q2_pandas_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
+        q2_pandas_output.shape  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q2_pandas_output
@@ -360,20 +364,21 @@ def q2_pandas(df):
 # FROM trips
 # GROUP BY passenger_count,
 #         pickup_year;
-def q3_pandas(df):
+def q3_pandas(df, pandas_mode):
     t0 = timer()
-    """transformed = pd.DataFrame(
-        {
-            "passenger_count": df["passenger_count"],
-            "pickup_datetime": df["pickup_datetime"].dt.year,
-        }
-    )
-    q3_pandas_output = transformed.groupby(["pickup_datetime", "passenger_count"]).agg(
-        {"passenger_count": ["count"]}
-    )"""
-    df["pickup_datetime"] = df["pickup_datetime"].dt.year
-    q3_pandas_output = df.groupby(
-            ["passenger_count", "pickup_datetime"]).size()
+    if pandas_mode != "Modin_on_omnisci":
+        transformed = pd.DataFrame(
+            {
+                "passenger_count": df["passenger_count"],
+                "pickup_datetime": df["pickup_datetime"].dt.year,
+            }
+        )
+        q3_pandas_output = transformed.groupby(["pickup_datetime", "passenger_count"]).agg(
+            {"passenger_count": ["count"]}
+        )
+    else:
+        df["pickup_datetime"] = df["pickup_datetime"].dt.year
+        q3_pandas_output = df.groupby(["passenger_count", "pickup_datetime"]).size()
     query_time = timer() - t0
 
     return query_time, q3_pandas_output
@@ -400,37 +405,45 @@ def q3_pandas(df):
 #         pickup_year,
 #         distance
 # ORDER BY passenger_count, pickup_year, distance, the_count;
-def q4_pandas(df):
+def q4_pandas(df, pandas_mode):
     t0 = timer()
-    """transformed = pd.DataFrame(
-        {
-            "passenger_count": df["passenger_count"],
-            "pickup_datetime": df["pickup_datetime"].dt.year,
-            "trip_distance": df["trip_distance"].astype("int64"),
-        }
-    )
-    q4_pandas_output = (
-        transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
-        .size()
-        .reset_index()
-        .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
-    )"""
-    df["pickup_datetime"] = df["pickup_datetime"].dt.year
-    df["trip_distance"] = df["trip_distance"].astype("int64")
-    q4_pandas_output = (
-        df.groupby(["passenger_count", "pickup_datetime", "trip_distance"], sort=False)
-        .size()
-        .reset_index()
-        .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
-    )
+    if pandas_mode != "Modin_on_omnisci":
+        transformed = pd.DataFrame(
+            {
+                "passenger_count": df["passenger_count"],
+                "pickup_datetime": df["pickup_datetime"].dt.year,
+                "trip_distance": df["trip_distance"].astype("int64"),
+            }
+        )
+        q4_pandas_output = (
+            transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
+            .size()
+            .reset_index()
+            .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
+        )
+    else:
+        df["pickup_datetime"] = df["pickup_datetime"].dt.year
+        df["trip_distance"] = df["trip_distance"].astype("int64")
+        q4_pandas_output = (
+            df.groupby(["passenger_count", "pickup_datetime", "trip_distance"], sort=False)
+            .size()
+            .reset_index()
+            .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
+        )
     query_time = timer() - t0
 
     return query_time, q4_pandas_output
 
 
 def etl_pandas(
-    filename, files_limit, columns_names, columns_types, output_for_validation,
+    filename, files_limit, columns_names, columns_types, output_for_validation, pandas_mode,
 ):
+
+    if pandas_mode == "Modin_on_omnisci" and any(f.endswith(".gz") for f in filename):
+        raise NotImplementedError(
+            "Modin_on_omnisci mode doesn't support import of compressed files yet"
+        )
+
     queries = {
         "Query1": q1_pandas,
         "Query2": q2_pandas,
@@ -440,23 +453,41 @@ def etl_pandas(
     etl_results = {x: 0.0 for x in queries.keys()}
 
     t0 = timer()
-    df_from_each_file = [
-        load_data_pandas(
-            filename=f,
-            columns_names=columns_names,
-            header=None,
-            nrows=None,
-            use_gzip=f.endswith(".gz"),
-            parse_dates=["pickup_datetime", "dropoff_datetime"],
-            pd=run_benchmark.__globals__["pd"],
-        )
-        for f in filename
-    ]
+    if pandas_mode == "Modin_on_omnisci":
+        df_from_each_file = [
+            load_data_modin_on_omnisci(
+                filename=f,
+                columns_names=columns_names,
+                columns_types=columns_types,
+                parse_dates=["timestamp"],
+                pd=run_benchmark.__globals__["pd"],
+            )
+            for f in filename
+        ]
+    else:
+        df_from_each_file = [
+            load_data_pandas(
+                filename=f,
+                columns_names=columns_names,
+                header=None,
+                nrows=None,
+                use_gzip=f.endswith(".gz"),
+                parse_dates=["pickup_datetime", "dropoff_datetime"],
+                pd=run_benchmark.__globals__["pd"],
+                pandas_mode=pandas_mode,
+            )
+            for f in filename
+        ]
+
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
     etl_results["t_readcsv"] = timer() - t0
 
     queries_parameters = {
-        query_name: {"df": concatenated_df} for query_name in list(queries.keys())
+        query_name: {
+            "df": concatenated_df.copy() if pandas_mode == "Modin_on_omnisci" else concatenated_df,
+            "pandas_mode": pandas_mode,
+        }
+        for query_name in list(queries.keys())
     }
 
     return run_queries(
@@ -645,6 +676,7 @@ def run_benchmark(parameters):
                 columns_names=columns_names,
                 columns_types=columns_types,
                 output_for_validation=pd_queries_outputs,
+                pandas_mode=parameters["pandas_mode"],
             )
 
             print_results(results=etl_results, backend=parameters["pandas_mode"], unit="ms")

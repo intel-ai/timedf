@@ -209,9 +209,12 @@ def load_data_pandas(
     use_gzip=False,
     parse_dates=None,
     pd=None,
+    pandas_mode="Pandas",
 ):
     if not pd:
-        import_pandas_into_module_namespace(namespace=load_data_pandas.__globals__, mode="Pandas")
+        import_pandas_into_module_namespace(
+            namespace=load_data_pandas.__globals__, mode=pandas_mode
+        )
     types = None
     if columns_types:
         types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
@@ -246,6 +249,32 @@ def load_data_modin(
         dtype=types,
         parse_dates=parse_dates,
     )
+
+
+def load_data_modin_on_omnisci(
+    filename, columns_names=None, columns_types=None, parse_dates=None, pd=None,
+):
+    if not pd:
+        import_pandas_into_module_namespace(
+            namespace=load_data_pandas.__globals__, mode="Modin_on_omnisci"
+        )
+    dtypes = None
+    if columns_types:
+        dtypes = {
+            columns_names[i]: columns_types[i] if (columns_types[i] != "category") else "string"
+            for i in range(len(columns_names))
+        }
+
+    all_but_dates = None
+    dates_only = False
+    if parse_dates:
+        parse_dates = parse_dates if isinstance(parse_dates, (list, tuple)) else [parse_dates]
+        all_but_dates = {
+            col: valtype for (col, valtype) in dtypes.items() if valtype not in parse_dates
+        }
+        dates_only = [col for (col, valtype) in dtypes.items() if valtype in parse_dates]
+
+    return pd.read_csv(filename, names=columns_names, dtype=all_but_dates, parse_dates=dates_only,)
 
 
 def files_names_from_pattern(filename):
