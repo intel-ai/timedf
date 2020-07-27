@@ -497,48 +497,6 @@ def etl_pandas(
         output_for_validation=output_for_validation,
     )
 
-def etl_pandas_modin(
-    filename, files_limit, columns_names, columns_types, output_for_validation,
-):
-    queries = {
-        "Query1": q1_pandas,
-        "Query2": q2_pandas,
-        "Query3": q3_pandas,
-        "Query4": q4_pandas,
-    }
-    etl_results = {x: 0.0 for x in queries.keys()}
-
-    #TODO: some check that we do not import gzipped files
-    #assert not f.endswith(".gz") for f in filename
-
-    t0 = timer()
-    df_from_each_file = [
-        load_data_modin(
-            filename=f,
-            columns_names=columns_names,
-            columns_types=columns_types,
-            header=None,
-            nrows=None,
-            use_gzip=f.endswith(".gz"),
-            parse_dates=["pickup_datetime", "dropoff_datetime"],
-            pd=run_benchmark.__globals__["pd"],
-        )
-        for f in filename
-    ]
-    concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
-    etl_results["t_readcsv"] = timer() - t0
-
-    queries_parameters = {
-        query_name: {"df": concatenated_df.copy()} for query_name in list(queries.keys())
-    }
-
-    return run_queries(
-        queries=queries,
-        parameters=queries_parameters,
-        etl_results=etl_results,
-        output_for_validation=output_for_validation,
-    )
-
 
 def run_benchmark(parameters):
     check_support(parameters, unsupported_params=["optimizer", "no_ml", "gpu_memory"])
@@ -670,7 +628,7 @@ def run_benchmark(parameters):
         if not parameters["no_pandas"]:
             pandas_files_limit = parameters["dfiles_num"]
             filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
-            etl_results = etl_pandas_modin(
+            etl_results = etl_pandas(
                 filename=filename,
                 files_limit=pandas_files_limit,
                 columns_names=columns_names,

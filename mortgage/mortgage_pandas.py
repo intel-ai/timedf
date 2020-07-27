@@ -210,9 +210,9 @@ class MortgagePandasBenchmark:
             t0 = timer()
             tmpdf["josh_months"] = tmpdf["timestamp_year"] * 12 + tmpdf["timestamp_month"]
             tmpdf["josh_mody_n"] = (tmpdf["josh_months"] - 24000 - y) // 12
-            #tmpdf["josh_mody_n"] = np.floor(
+            # tmpdf["josh_mody_n"] = np.floor(
             #    (tmpdf["josh_months"].astype("float64") - 24000 - y) / 12
-            #)
+            # )
             tmpdf = tmpdf.groupby(["loan_id", "josh_mody_n"], as_index=False).agg(
                 {"delinquency_12": "max", "upb_12": "min"}
             )
@@ -221,10 +221,12 @@ class MortgagePandasBenchmark:
             # tmpdf.drop('max_delinquency_12', axis=1)
             # tmpdf['upb_12'] = tmpdf['min_upb_12']
             # tmpdf.drop('min_upb_12', axis=1)
-            tmpdf["timestamp_year"] = (((tmpdf["josh_mody_n"] * n_months) + 24000 + (y - 1)) // 12).astype("int16")
-            #tmpdf["timestamp_year"] = np.floor(
+            tmpdf["timestamp_year"] = (
+                ((tmpdf["josh_mody_n"] * n_months) + 24000 + (y - 1)) // 12
+            ).astype("int16")
+            # tmpdf["timestamp_year"] = np.floor(
             #    ((tmpdf["josh_mody_n"] * n_months) + 24000 + (y - 1)) / 12
-            #).astype("int16")
+            # ).astype("int16")
             tmpdf["timestamp_month"] = np.int8(y)
             t1 = timer()
             self.t_conv_dates += t1 - t0
@@ -452,7 +454,7 @@ def etl_pandas(
             pd_dfs.append(mb.run_cpu_workflow(quarter=quarter, year=year, perf_file=fname))
 
     pd_df = pd_dfs[0] if len(pd_dfs) == 1 else pd.concat(pd_dfs)
-    res = pd_df.shape # to trigger execution for modin
+    res = pd_df.shape  # to trigger execution for modin
     etl_times["t_etl"] = timer() - t0
     etl_times["t_readcsv"] = mb.t_read_csv
     # TODO: enable those only in verbose mode
@@ -462,9 +464,9 @@ def etl_pandas(
     # print("  t_drop_cols = ", round(mb.t_drop_cols, 2), " s")
     # print("  t_merge = ", round(mb.t_merge, 2), " s")
     # print("  t_conv_dates = ", round(mb.t_conv_dates, 2), " s")
-    #etl_times["t_etl"] = (
+    # etl_times["t_etl"] = (
     #    mb.t_one_hot_encoding + mb.t_fillna + mb.t_drop_cols + mb.t_merge + mb.t_conv_dates
-    #)
+    # )
 
     return pd_df, mb, etl_times
 
