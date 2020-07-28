@@ -652,7 +652,7 @@ def get_dir_size(start_path="."):
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(start_path):
         for f in filenames:
-            fp = os.path.join(dirpath, f)
+            fp = os.path.join(dirpath, f) if not s3_client.s3like(f) else f
             total_size += getsize(fp)
 
     return total_size
