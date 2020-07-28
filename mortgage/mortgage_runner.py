@@ -7,6 +7,7 @@ from utils import (
     compare_dataframes,
     import_pandas_into_module_namespace,
     print_results,
+    get_dir_size,
 )
 from .mortgage_ibis import etl_ibis
 from .mortgage_pandas import etl_pandas, ml
@@ -214,11 +215,15 @@ def run_benchmark(parameters):
     N_RUNS = 1
 
     result = {"ETL": [], "ML": []}
+    # gets data directory size in MB
+    dataset_size = get_dir_size(parameters["data_file"]) / 1024 / 1024
+    print("dataset_size\n\n", dataset_size)
 
     if not parameters["no_ibis"]:
         df_ibis, mb_ibis, etl_times_ibis = _etl_ibis(parameters, acq_schema, perf_schema, etl_keys)
         print_results(results=etl_times_ibis, backend="Ibis", unit="s")
         etl_times_ibis["Backend"] = "Ibis"
+        etl_times_ibis["dataset_size"] = dataset_size
         result["ETL"].append(etl_times_ibis)
         if not parameters["no_ml"]:
             result["ML"].append(_run_ml(df_ibis, N_RUNS, mb_ibis, ml_keys, ml_score_keys, "Ibis"))
@@ -227,6 +232,7 @@ def run_benchmark(parameters):
         df_pd, mb_pd, etl_times_pd = _etl_pandas(parameters, acq_schema, perf_schema, etl_keys)
         print_results(results=etl_times_pd, backend=parameters["pandas_mode"], unit="s")
         etl_times_pd["Backend"] = parameters["pandas_mode"]
+        etl_times_pd["dataset_size"] = dataset_size
         result["ETL"].append(etl_times_pd)
 
         if not parameters["no_ml"]:

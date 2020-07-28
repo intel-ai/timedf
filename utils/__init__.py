@@ -24,4 +24,5 @@ from .utils import (
     get_tmp_filepath,
     FilesCombiner,
     refactor_results_for_reporting,
+    get_dir_size,
 )
