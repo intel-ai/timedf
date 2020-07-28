@@ -217,7 +217,6 @@ def run_benchmark(parameters):
     result = {"ETL": [], "ML": []}
     # gets data directory size in MB
     dataset_size = get_dir_size(parameters["data_file"]) / 1024 / 1024
-    print("dataset_size\n\n", dataset_size)
 
     if not parameters["no_ibis"]:
         df_ibis, mb_ibis, etl_times_ibis = _etl_ibis(parameters, acq_schema, perf_schema, etl_keys)
