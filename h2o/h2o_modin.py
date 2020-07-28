@@ -1,6 +1,5 @@
 # coding: utf-8
 # This script is ported to omniscripts repository from https://github.com/h2oai/db-benchmark
-import os
 import sys
 import traceback
 import warnings
@@ -15,6 +14,7 @@ from utils import (
     files_names_from_pattern,
     join_to_tbls,
     check_support,
+    getsize,
 )
 
 warnings.filterwarnings("ignore")
@@ -491,7 +491,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
             # "groupby_query10": groupby_query10_modin,
         }
         queries_results = {x: {y: 0.0 for y in queries_results_fields} for x in queries.keys()}
-        x_data_file_size = os.path.getsize(data_for_groupby_queries[0]) / 1024 / 1024
+        x_data_file_size = getsize(data_for_groupby_queries[0])
         query_data_file_sizes = {x: x_data_file_size for x in queries.keys()}
         query_data_file_import_times = {x: x_data_file_import_time for x in queries.keys()}
 

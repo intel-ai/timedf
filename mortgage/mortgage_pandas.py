@@ -487,7 +487,7 @@ def etl_pandas(
     etl_times["t_etl"] = (
         (mb.t_one_hot_encoding + mb.t_fillna + mb.t_drop_cols + mb.t_merge + mb.t_conv_dates)
         if pandas_mode != "Modin_on_omnisci"
-        else timer() - t0
+        else timer() - t0 - mb.t_read_csv
     )
 
     return pd_df, mb, etl_times
