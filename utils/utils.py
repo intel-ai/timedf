@@ -646,7 +646,7 @@ def get_dir_size(start_path="."):
     Return
     ------
     total_size:
-        Total size of directory in bytes.
+        Total size of directory in MB.
 
     """
     total_size = 0
@@ -655,6 +655,6 @@ def get_dir_size(start_path="."):
             fp = os.path.join(dirpath, f)
             # skip if it is symbolic link
             if not os.path.islink(fp):
-                total_size += os.path.getsize(fp)
+                total_size += getsize(fp)
 
     return total_size
