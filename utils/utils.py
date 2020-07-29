@@ -650,9 +650,15 @@ def get_dir_size(start_path="."):
 
     """
     total_size = 0
-    for dirpath, dirnames, filenames in os.walk(start_path):
-        for f in filenames:
-            fp = os.path.join(dirpath, f) if not s3_client.s3like(f) else f
-            total_size += getsize(fp)
+    if "://" in start_path:
+        if s3_client.s3like(start_path):
+            total_size = s3_client.fs.du(start_path) / 1024 / 1024
+        else:
+            raise ValueError(f"bad s3like link: {start_path}")
+    else:
+        for dirpath, dirnames, filenames in os.walk(start_path):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                total_size += getsize(fp)
 
     return total_size
