@@ -294,6 +294,11 @@ class S3Client:
         else:
             return [f"s3://{filename}" for filename in self.fs.glob(files_pattern)]
 
+    def du(self, start_path: str):
+        if start_path.startswith("https://"):
+            _, start_path = self._prepare_s3_link(start_path)
+        return s3_client.fs.du(start_path) / 1024 / 1024
+
 
 s3_client = S3Client()
 
@@ -652,7 +657,7 @@ def get_dir_size(start_path="."):
     total_size = 0
     if "://" in start_path:
         if s3_client.s3like(start_path):
-            total_size = s3_client.fs.du(start_path) / 1024 / 1024
+            total_size = s3_client.du(start_path)
         else:
             raise ValueError(f"bad s3like link: {start_path}")
     else:
