@@ -176,7 +176,10 @@ def etl_ibis(
         count_cols.append(table[col].count().over(w).name(col_count))
         gt1_cols.append(
             ibis.case()
-            .when(table[col].count().over(w).name(col_count) > 1, table[col].cast("float32"),)
+            .when(
+                table[col].count().over(w).name(col_count) > 1,
+                table[col].cast("float32"),
+            )
             .else_(ibis.null())
             .end()
             .name(col_gt1)
@@ -323,7 +326,10 @@ def run_benchmark(parameters):
         if not parameters["no_ml"]:
             if not parameters["no_pandas"]:
                 ml_scores, ml_times = ml(
-                    ml_data=ml_data, target="target", ml_keys=ml_keys, ml_score_keys=ml_score_keys,
+                    ml_data=ml_data,
+                    target="target",
+                    ml_keys=ml_keys,
+                    ml_score_keys=ml_score_keys,
                 )
                 print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
                 ml_times["Backend"] = parameters["pandas_mode"]

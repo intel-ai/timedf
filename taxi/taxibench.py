@@ -239,10 +239,15 @@ parser.add_argument(
     help="Use CREATE TABLE WITH (STORAGE_TYPE='CSV:trips.csv'). KEEP IN MIND that currently it is possible to load JUST ONE CSV file with this statement, so join all data into one big file, so -df value has no effect.",
 )
 parser.add_argument(
-    "-df", default=1, type=int, help="Number of datafiles to input into database for processing",
+    "-df",
+    default=1,
+    type=int,
+    help="Number of datafiles to input into database for processing",
 )
 parser.add_argument(
-    "-dp", default=taxiTripsDirectory, help="Wildcard pattern of datafiles that should be loaded",
+    "-dp",
+    default=taxiTripsDirectory,
+    help="Wildcard pattern of datafiles that should be loaded",
 )
 parser.add_argument(
     "-dnd",
@@ -261,7 +266,9 @@ parser.add_argument(
     help="Number of times to run every benchmark. Best result is selected",
 )
 parser.add_argument(
-    "-sco", action="store_true", help="Show commands (that delete and create table) output",
+    "-sco",
+    action="store_true",
+    help="Show commands (that delete and create table) output",
 )
 parser.add_argument("-sbo", action="store_true", help="Show benchmarks output")
 parser.add_argument("-r", default="report.csv", help="Report file name")
@@ -284,7 +291,9 @@ parser.add_argument(
     "-db-pass", default="omniscidb", help="Password to use to connect to MySQL database"
 )
 parser.add_argument(
-    "-db-name", default="omniscidb", help="MySQL database to use to store benchmark results",
+    "-db-name",
+    default="omniscidb",
+    help="MySQL database to use to store benchmark results",
 )
 
 parser.add_argument(
@@ -447,7 +456,12 @@ for fs in args.fs:
                             execTime = int(matches[0])
                             totalTime = int(matches[1])
                             print(
-                                "Iteration", iii, "exec time", execTime, "total time", totalTime,
+                                "Iteration",
+                                iii,
+                                "exec time",
+                                execTime,
+                                "total time",
+                                totalTime,
                             )
                         else:
                             print("Failed to parse command output:", output)

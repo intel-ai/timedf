@@ -65,7 +65,7 @@ def run_pd_workflow(quarter, year, perf_file, fragment_size):
 
 
 def pd_load_performance_csv(performance_path, con, fragment_size):
-    """ Loads performance data
+    """Loads performance data
 
     Returns
     -------
@@ -167,7 +167,7 @@ CREATE TABLE perf (
 
 
 def pd_load_acquisition_csv(acquisition_path, con, fragment_size):
-    """ Loads acquisition data
+    """Loads acquisition data
 
     Returns
     -------
@@ -260,7 +260,7 @@ CREATE TABLE acq (
 
 
 def pd_load_names(con, fragment_size):
-    """ Loads names used for renaming the banks
+    """Loads names used for renaming the banks
 
      Returns
     -------

@@ -485,7 +485,15 @@ def main():
 
             if os.path.exists(dbe_path):
                 print("DBE INSTALLATION")
-                cmake_cmdline = ["cmake", "--install", "build", "--component", "DBE", "--prefix", os.environ["CONDA_PREFIX"]]
+                cmake_cmdline = [
+                    "cmake",
+                    "--install",
+                    "build",
+                    "--component",
+                    "DBE",
+                    "--prefix",
+                    os.environ["CONDA_PREFIX"],
+                ]
                 omniscidb_root = os.path.abspath(f"{executables_path}/../../")
                 conda_env.run(cmake_cmdline, cwd=omniscidb_root, print_output=False)
                 conda_env.run(install_cmdline, cwd=dbe_path, print_output=False)

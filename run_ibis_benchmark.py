@@ -56,7 +56,10 @@ def main():
         required=True,
     )
     required.add_argument(
-        "-data_file", dest="data_file", help="A datafile that should be loaded.", required=True,
+        "-data_file",
+        dest="data_file",
+        help="A datafile that should be loaded.",
+        required=True,
     )
     optional.add_argument(
         "-dfiles_num",
@@ -154,10 +157,17 @@ def main():
 
     # MySQL database parameters
     optional.add_argument(
-        "-db_server", dest="db_server", default="localhost", help="Host name of MySQL server.",
+        "-db_server",
+        dest="db_server",
+        default="localhost",
+        help="Host name of MySQL server.",
     )
     optional.add_argument(
-        "-db_port", dest="db_port", default=3306, type=int, help="Port number of MySQL server.",
+        "-db_port",
+        dest="db_port",
+        default=3306,
+        type=int,
+        help="Port number of MySQL server.",
     )
     optional.add_argument(
         "-db_user",
@@ -190,7 +200,9 @@ def main():
     )
     # Omnisci server parameters
     optional.add_argument(
-        "-executable", dest="executable", help="Path to omnisci_server executable.",
+        "-executable",
+        dest="executable",
+        help="Path to omnisci_server executable.",
     )
     optional.add_argument(
         "-omnisci_cwd",
@@ -221,7 +233,10 @@ def main():
         help="Calcite port number to run omnisci_server on.",
     )
     optional.add_argument(
-        "-user", dest="user", default="admin", help="User name to use on omniscidb server.",
+        "-user",
+        dest="user",
+        default="admin",
+        help="User name to use on omniscidb server.",
     )
     optional.add_argument(
         "-password",

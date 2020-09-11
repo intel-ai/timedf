@@ -145,9 +145,11 @@ def q4_ibis(table, input_for_validation, debug_mode):
             table.trip_distance.cast("int64").name("trip_distance"),
         ]
     ).size()
-    q4_output_ibis = q4_ibis_sized.sort_by(  # noqa: F841 (assigned, but unused. Used in commented code.)
-        [("pickup_datetime", True), ("count", False)]
-    ).execute()
+    q4_output_ibis = (
+        q4_ibis_sized.sort_by(  # noqa: F841 (assigned, but unused. Used in commented code.)
+            [("pickup_datetime", True), ("count", False)]
+        ).execute()
+    )
     t_query += timer() - t0
 
     if input_for_validation is not None:

@@ -201,7 +201,6 @@ def compare_dataframes(
     print("dataframes are equal")
 
 
-
 def load_data_pandas(
     filename,
     columns_names=None,
@@ -232,7 +231,11 @@ def load_data_pandas(
 
 
 def load_data_modin_on_omnisci(
-    filename, columns_names=None, columns_types=None, parse_dates=None, pd=None,
+    filename,
+    columns_names=None,
+    columns_types=None,
+    parse_dates=None,
+    pd=None,
 ):
     if not pd:
         import_pandas_into_module_namespace(
@@ -254,7 +257,12 @@ def load_data_modin_on_omnisci(
         }
         dates_only = [col for (col, valtype) in dtypes.items() if valtype in parse_dates]
 
-    return pd.read_csv(filename, names=columns_names, dtype=all_but_dates, parse_dates=dates_only,)
+    return pd.read_csv(
+        filename,
+        names=columns_names,
+        dtype=all_but_dates,
+        parse_dates=dates_only,
+    )
 
 
 class S3Client:
@@ -537,10 +545,10 @@ def get_tmp_filepath(filename, tmp_dir=None):
 
 class FilesCombiner:
     """
-        If data files are compressed or number of csv files is more than one,
-        data files (or single compressed file) should be transformed to single csv file.
-        Before files transformation, script checks existance of already transformed file
-        in the directory passed with -data_file flag.
+    If data files are compressed or number of csv files is more than one,
+    data files (or single compressed file) should be transformed to single csv file.
+    Before files transformation, script checks existance of already transformed file
+    in the directory passed with -data_file flag.
     """
 
     def __init__(self, data_files_names, combined_filename, files_limit):
@@ -565,7 +573,9 @@ class FilesCombiner:
         if self._should_combine:
             for file_name in self._data_files_names[: self._files_limit]:
                 write_to_csv_by_chunks(
-                    file_to_write=file_name, output_file=self._data_file_path, write_mode="ab",
+                    file_to_write=file_name,
+                    output_file=self._data_file_path,
+                    write_mode="ab",
                 )
 
         return self._data_file_path

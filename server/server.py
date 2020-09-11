@@ -115,7 +115,9 @@ class OmnisciServer:
         print("Server is launched")
         try:
             pt = threading.Thread(
-                target=self._print_omnisci_output, args=(self.server_process.stdout,), daemon=True,
+                target=self._print_omnisci_output,
+                args=(self.server_process.stdout,),
+                daemon=True,
             )
             pt.start()
 
