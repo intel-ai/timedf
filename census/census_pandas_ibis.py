@@ -1,6 +1,7 @@
 # coding: utf-8
 import sys
 import traceback
+import os
 import numpy as np
 from sklearn import config_context
 import warnings
@@ -18,6 +19,7 @@ from utils import (
     print_results,
     split,
     get_tmp_filepath,
+    getsize,
 )
 
 warnings.filterwarnings("ignore")
@@ -190,8 +192,6 @@ def etl_ibis(
 
             finally:
                 if filename.endswith("gz"):
-                    import os
-
                     os.remove(unzip_name)
 
     # Second connection - this is ibis's ipc connection for DML
@@ -459,6 +459,16 @@ def run_benchmark(parameters):
                     import mode, '{parameters['import_mode']}' passed"
             )
 
+        datafile_name, datafile_ext = os.path.splitext(parameters["data_file"])
+        csv_path = datafile_name + datafile_ext if datafile_ext == ".csv" else datafile_name
+        if os.path.exists(csv_path):
+            csv_size = getsize(csv_path)
+        else:
+            print(
+                "WARNING: uncompressed datafile not found, default value for dataset_size is set"
+            )
+            csv_size = 2100.0
+
         if not parameters["no_ibis"]:
             df_ibis, X_ibis, y_ibis, etl_times_ibis = etl_ibis(
                 filename=parameters["data_file"],
@@ -478,6 +488,7 @@ def run_benchmark(parameters):
 
             print_results(results=etl_times_ibis, backend="Ibis", unit="s")
             etl_times_ibis["Backend"] = "Ibis"
+            etl_times_ibis["dataset_size"] = csv_size
 
             if not parameters["no_ml"]:
                 ml_scores_ibis, ml_times_ibis = ml(
@@ -506,6 +517,7 @@ def run_benchmark(parameters):
 
             print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
             etl_times["Backend"] = parameters["pandas_mode"]
+            etl_times["dataset_size"] = csv_size
 
             if not parameters["no_ml"]:
                 ml_scores, ml_times = ml(
