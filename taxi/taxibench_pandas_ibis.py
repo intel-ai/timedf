@@ -329,7 +329,6 @@ def q1_pandas(df, pandas_mode):
         q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
     else:
         q1_pandas_output = df.groupby("cab_type").size()
-        q1_pandas_output.shape  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q1_pandas_output
@@ -374,7 +373,6 @@ def q3_pandas(df, pandas_mode):
     else:
         df["pickup_datetime"] = df["pickup_datetime"].dt.year
         q3_pandas_output = df.groupby(["passenger_count", "pickup_datetime"]).size()
-        q3_pandas_output.shape  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q3_pandas_output
@@ -426,7 +424,6 @@ def q4_pandas(df, pandas_mode):
             .reset_index()
             .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
         )
-        q4_pandas_output.shape  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q4_pandas_output
@@ -444,50 +441,41 @@ def etl_pandas(
     queries = {"Query1": q1_pandas, "Query2": q2_pandas, "Query3": q3_pandas, "Query4": q4_pandas}
     etl_results = {x: 0.0 for x in queries.keys()}
 
-    concatenated_df = None
-
-    def get_df(mode):
-        if mode == "Modin_on_omnisci":
-            df_from_each_file = [
-                load_data_modin_on_omnisci(
-                    filename=f,
-                    columns_names=columns_names,
-                    columns_types=columns_types,
-                    parse_dates=["timestamp"],
-                    pd=run_benchmark.__globals__["pd"],
-                )
-                for f in filename
-            ]
-        elif concatenated_df is not None:
-            return concatenated_df
-        else:
-            df_from_each_file = [
-                load_data_pandas(
-                    filename=f,
-                    columns_names=columns_names,
-                    header=None,
-                    nrows=None,
-                    use_gzip=f.endswith(".gz"),
-                    parse_dates=["pickup_datetime", "dropoff_datetime"],
-                    pd=run_benchmark.__globals__["pd"],
-                    pandas_mode=mode,
-                )
-                for f in filename
-            ]
-
-        df = pd.concat(df_from_each_file, ignore_index=True)
-        if mode == "Modin_on_omnisci":
-            df.shape  # this is to execute concat
-        return df
-
     t0 = timer()
-    concatenated_df = get_df(pandas_mode)
+    if pandas_mode == "Modin_on_omnisci":
+        df_from_each_file = [
+            load_data_modin_on_omnisci(
+                filename=f,
+                columns_names=columns_names,
+                columns_types=columns_types,
+                parse_dates=["timestamp"],
+                pd=run_benchmark.__globals__["pd"],
+            )
+            for f in filename
+        ]
+    else:
+        df_from_each_file = [
+            load_data_pandas(
+                filename=f,
+                columns_names=columns_names,
+                header=None,
+                nrows=None,
+                use_gzip=f.endswith(".gz"),
+                parse_dates=["pickup_datetime", "dropoff_datetime"],
+                pd=run_benchmark.__globals__["pd"],
+                pandas_mode=pandas_mode,
+            )
+            for f in filename
+        ]
+
+    concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
+    if pandas_mode == "Modin_on_omnisci":
+        concatenated_df.shape  # this is to execute concat
     etl_results["t_readcsv"] = timer() - t0
 
     queries_parameters = {
         query_name: {
-            # for 'Modin_on_omnisci' mode data imported for each query separately
-            "df": get_df(pandas_mode),
+            "df": concatenated_df.copy() if pandas_mode == "Modin_on_omnisci" else concatenated_df,
             "pandas_mode": pandas_mode,
         }
         for query_name in list(queries.keys())
