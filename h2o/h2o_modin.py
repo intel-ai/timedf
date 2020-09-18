@@ -475,21 +475,23 @@ def queries_modin(filename, pandas_mode, extended_functionality):
         x = pd.read_csv(data_for_groupby_queries[0])
         x_data_file_import_time = timer() - t0
 
-        # groupby_query9 currently fails with message:
-        # numpy.core._exceptions.UFuncTypeError: ufunc 'subtract' did not contain a loop
-        # with signature matching types (dtype('<U2'), dtype('<U2')) -> dtype('<U2')
         queries = {
             "groupby_query1": groupby_query1_modin,
             "groupby_query2": groupby_query2_modin,
             "groupby_query3": groupby_query3_modin,
             "groupby_query4": groupby_query4_modin,
             "groupby_query5": groupby_query5_modin,
-            # "groupby_query6": groupby_query6_modin, # NotImplementedError: unsupported aggreagte median
+            "groupby_query6": groupby_query6_modin,
             "groupby_query7": groupby_query7_modin,
-            # "groupby_query8": groupby_query8_modin, # NotImplementedError: reindex is not yet suported in DFAlgQueryCompiler
-            # "groupby_query9": groupby_query9_modin,
-            # "groupby_query10": groupby_query10_modin,
+            "groupby_query8": groupby_query8_modin,
+            "groupby_query9": groupby_query9_modin,
+            "groupby_query10": groupby_query10_modin,
         }
+        if pandas_mode == "Modin_on_omnisci":
+            del queries["groupby_query6"] # NotImplementedError: unsupported aggreagte median
+            del queries["groupby_query9"] # core dumped issue
+            del queries["groupby_query10"] # core dumped issue
+
         queries_results = {x: {y: 0.0 for y in queries_results_fields} for x in queries.keys()}
         x_data_file_size = getsize(data_for_groupby_queries[0])
         query_data_file_sizes = {x: x_data_file_size for x in queries.keys()}
