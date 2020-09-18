@@ -475,7 +475,11 @@ def etl_pandas(
                 for f in filename
             ]
 
-        df = pd.concat(df_from_each_file, ignore_index=True)
+        df = (
+            df_from_each_file[0]
+            if len(df_from_each_file) == 1
+            else pd.concat(df_from_each_file, ignore_index=True)
+        )
         if mode == "Modin_on_omnisci":
             df.shape  # this is to execute concat
         return df
