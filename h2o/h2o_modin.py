@@ -488,7 +488,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
             "groupby_query10": groupby_query10_modin,
         }
         if pandas_mode == "Modin_on_omnisci":
-            del queries["groupby_query6"]  # NotImplementedError: unsupported aggreagte median
+            del queries["groupby_query6"]  # NotImplementedError: unsupported aggregate median
             del queries["groupby_query9"]  # core dumped issue
             del queries["groupby_query10"]  # core dumped issue
 
