@@ -444,8 +444,6 @@ def etl_pandas(
     queries = {"Query1": q1_pandas, "Query2": q2_pandas, "Query3": q3_pandas, "Query4": q4_pandas}
     etl_results = {x: 0.0 for x in queries.keys()}
 
-    concatenated_df = None
-
     def get_df(mode):
         if mode == "Modin_on_omnisci":
             df_from_each_file = [
@@ -458,8 +456,6 @@ def etl_pandas(
                 )
                 for f in filename
             ]
-        elif concatenated_df is not None:
-            return concatenated_df
         else:
             df_from_each_file = [
                 load_data_pandas(
@@ -491,7 +487,7 @@ def etl_pandas(
     queries_parameters = {
         query_name: {
             # for 'Modin_on_omnisci' mode data imported for each query separately
-            "df": get_df(pandas_mode),
+            "df": get_df(pandas_mode) if pandas_mode == "Modin_on_omnisci" else concatenated_df
             "pandas_mode": pandas_mode,
         }
         for query_name in list(queries.keys())
