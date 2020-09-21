@@ -459,9 +459,7 @@ def run_benchmark(parameters):
                     import mode, '{parameters['import_mode']}' passed"
             )
 
-        datafile_name, datafile_ext = os.path.splitext(parameters["data_file"])
-        csv_path = datafile_name + datafile_ext if datafile_ext == ".csv" else datafile_name
-        if os.path.exists(csv_path):
+        if parameters["data_file"].endswith(".csv"):
             csv_size = getsize(csv_path)
         else:
             print(
