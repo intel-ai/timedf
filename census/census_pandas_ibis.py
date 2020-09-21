@@ -460,11 +460,14 @@ def run_benchmark(parameters):
             )
 
         if parameters["data_file"].endswith(".csv"):
-            csv_size = getsize(csv_path)
+            csv_size = getsize(parameters["data_file"])
         else:
             print(
                 "WARNING: uncompressed datafile not found, default value for dataset_size is set"
             )
+            # deafault csv_size value obtained by calling getsize function
+            # on the ipums_education2income_1970-2010.csv file (default
+            # Census benchmark data file)
             csv_size = 2100.0
 
         if not parameters["no_ibis"]:
