@@ -487,7 +487,7 @@ def etl_pandas(
     queries_parameters = {
         query_name: {
             # for 'Modin_on_omnisci' mode data imported for each query separately
-            "df": get_df(pandas_mode) if pandas_mode == "Modin_on_omnisci" else concatenated_df
+            "df": get_df(pandas_mode) if pandas_mode == "Modin_on_omnisci" else concatenated_df,
             "pandas_mode": pandas_mode,
         }
         for query_name in list(queries.keys())
