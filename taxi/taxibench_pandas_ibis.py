@@ -329,6 +329,7 @@ def q1_pandas(df, pandas_mode):
         q1_pandas_output = df.groupby("cab_type")["cab_type"].count()
     else:
         q1_pandas_output = df.groupby("cab_type").size()
+        q1_pandas_output.shape  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q1_pandas_output
@@ -373,6 +374,7 @@ def q3_pandas(df, pandas_mode):
     else:
         df["pickup_datetime"] = df["pickup_datetime"].dt.year
         q3_pandas_output = df.groupby(["passenger_count", "pickup_datetime"]).size()
+        q3_pandas_output.shape  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q3_pandas_output
@@ -424,6 +426,7 @@ def q4_pandas(df, pandas_mode):
             .reset_index()
             .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
         )
+        q4_pandas_output.shape  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q4_pandas_output
