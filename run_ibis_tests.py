@@ -461,6 +461,7 @@ def main():
                 # installation of Modin dependencies by pip causes hiyapyco package loss, so it is
                 # needed to be reinstalled
                 conda_env.run(["pip", "install", "hiyapyco"], print_output=False)
+                conda_env.run(["pip", "install", "--upgrade", "protobuf"], print_output=False)
 
                 print("MODIN INSTALLATION")
                 # Modin installation handled this way because "conda run --name env_name python3 setup.py install"
