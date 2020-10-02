@@ -63,9 +63,8 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
                 ray_memory = 200 * 1024 * 1024 * 1024
             if not ray.is_initialized():
                 ray.init(
-                    huge_pages=False,
-                    plasma_directory=ray_tmpdir,
-                    memory=ray_memory,
+                    _plasma_directory=ray_tmpdir,
+                    _memory=ray_memory,
                     object_store_memory=ray_memory,
                 )
             os.environ["MODIN_ENGINE"] = "ray"
