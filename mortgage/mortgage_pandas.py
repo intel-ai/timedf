@@ -120,7 +120,7 @@ class MortgagePandasBenchmark:
             fname,
             dtype=all_but_dates,
             parse_dates=dates_only,
-            delimiter="|",
+            delimiter="|" if self._is_remote_dataset else ",",
             skiprows=1,
             **kw,
         )
