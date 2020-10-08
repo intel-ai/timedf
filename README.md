@@ -1,4 +1,4 @@
-# Benchmarking    scripts that are used to run OmniSciDB benchmarks in automated way in TeamCity and for performance analyzes in development cycle.
+# Benchmarking     scripts that are used to run OmniSciDB benchmarks in automated way in TeamCity and for performance analyzes in development cycle.
 
 ## Requirements
 Scripts require to be installed:
