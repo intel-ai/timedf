@@ -7,7 +7,7 @@ python3 run_ibis_tests.py --env_name ${ENV_NAME} --env_check True --save_env Tru
                           -database_name ${DATABASE_NAME} -table mg_bench_t -bench_name mortgage -dfiles_num 1 -iterations 1  \
                           -ipc_conn True -columnar_output True -lazy_fetch False -multifrag_rs True                           \
                           -fragments_size 2000000 2000000 -import_mode fsi -omnisci_run_kwargs enable-union=1                 \
-                          -data_file '${DATASETS_PWD}/mortgage_new'                                                           \
+                          -data_file '${DATASETS_PWD}/mortgage'                                                               \
                           -pandas_mode Pandas                                                                                 \
                           -optimizer intel -gpu_memory 16                                                                     \
                           -commit_omnisci ${BUILD_REVISION}                                                                   \
