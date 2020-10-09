@@ -24,12 +24,12 @@ class MortgagePandasBenchmark:
         leave_category_strings=False,
         pandas_mode="Pandas",
     ):
-        datasets_pwd = (
-            os.path.dirname(os.path.dirname(mortgage_path))
-            if mortgage_path.endswith("/")
-            else os.path.dirname(mortgage_path)
-        )
-        mortgage_path = os.path.join(datasets_pwd, "mortgage")
+        # datasets_pwd = (
+        #     os.path.dirname(os.path.dirname(mortgage_path))
+        #     if mortgage_path.endswith("/")
+        #     else os.path.dirname(mortgage_path)
+        # )
+        # mortgage_path = os.path.join(datasets_pwd, "mortgage")
         # some hack - do not append things if mortgage_path is a URL
         self._is_remote_dataset = "://" in mortgage_path
         self.acq_data_path = mortgage_path + ("/acq" if not self._is_remote_dataset else "")
@@ -462,6 +462,14 @@ def etl_pandas(
     leave_category_strings=False,
     pandas_mode="Pandas",
 ):
+    # For Pandas version of etl queries used original dataset
+    # without any data format transformation
+    datasets_pwd = (
+        os.path.dirname(os.path.dirname(dataset_path))
+        if dataset_path.endswith("/")
+        else os.path.dirname(dataset_path)
+    )
+    dataset_path = os.path.join(datasets_pwd, "mortgage")
     etl_times = {key: 0.0 for key in etl_keys}
 
     mb = MortgagePandasBenchmark(
