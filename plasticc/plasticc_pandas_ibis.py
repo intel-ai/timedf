@@ -129,7 +129,7 @@ def etl_cpu_pandas(df, df_meta, etl_times):
         "flux_ratio_sq": ["sum"],
         "flux_by_flux_ratio_sq": ["sum"],
     }
-    agg_df = df.groupby("object_id").agg(aggs)
+    agg_df = df.groupby("object_id", sort=False).agg(aggs)
 
     agg_df.columns = ravel_column_names(agg_df.columns)
 
