@@ -10,6 +10,6 @@ python3 run_ibis_benchmark.py -bench_name census -data_file '${DATASETS_PWD}/cen
                               -commit_modin ${BUILD_MODIN_REVISION}                                                                \
                               ${ADDITIONAL_OPTS}                                                                                   \
                               ${ADDITIONAL_OPTS_NIGHTLY}                                                                           \
-                              ${DB_COMMON_OPTS} ${DB_H2O_OPTS}
+                              ${DB_COMMON_OPTS} ${DB_CENSUS_OPTS}
 
 conda deactivate

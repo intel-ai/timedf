@@ -10,6 +10,6 @@ python3 run_ibis_benchmark.py -bench_name plasticc -data_file '${DATASETS_PWD}/p
                               -commit_modin ${BUILD_MODIN_REVISION}                                                                \
                               ${ADDITIONAL_OPTS}                                                                                   \
                               ${ADDITIONAL_OPTS_NIGHTLY}                                                                           \
-                              ${DB_COMMON_OPTS} ${DB_H2O_OPTS}
+                              ${DB_COMMON_OPTS} ${DB_PLASTICC_OPTS}
 
 conda deactivate
