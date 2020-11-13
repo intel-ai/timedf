@@ -5,7 +5,6 @@ import traceback
 import warnings
 from timeit import default_timer as timer
 import gc
-import os
 
 from utils import (
     import_pandas_into_module_namespace,
@@ -437,7 +436,7 @@ def join_query5_modin(x, ys, queries_results, extended_functionality):
 
 
 def queries_modin(filename, pandas_mode, extended_functionality):
-    data_files_names = files_names_from_pattern(os.path.expandvars(filename))
+    data_files_names = files_names_from_pattern(filename)
     data_for_groupby_queries = []
     data_for_join_queries = []
     for f in data_files_names:
