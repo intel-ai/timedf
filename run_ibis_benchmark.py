@@ -427,7 +427,10 @@ def main():
                 parameters["omnisci_server_worker"] = omnisci_server_worker
                 parameters["ipc_connection"] = args.ipc_conn
                 omnisci_server.launch()
-
+            parameters = {
+                key: os.path.expandvars(value) if isinstance(value, str) else value
+                for key, value in parameters.items()
+            }
             benchmark_results = run_benchmark(parameters)
 
             if launch_omnisci_server:
