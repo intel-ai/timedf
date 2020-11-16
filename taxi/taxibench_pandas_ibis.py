@@ -616,6 +616,7 @@ def run_benchmark(parameters):
     if parameters["dfiles_num"] <= 0:
         raise ValueError(f"Bad number of data files specified: {parameters['dfiles_num']}")
     try:
+        raise Exception
         if not parameters["no_pandas"]:
             import_pandas_into_module_namespace(
                 namespace=run_benchmark.__globals__,

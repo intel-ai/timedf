@@ -266,6 +266,7 @@ def ml(ml_data, target, ml_keys, ml_score_keys):
 
 
 def run_benchmark(parameters):
+    raise Exception
     check_support(parameters, unsupported_params=["dfiles_num", "gpu_memory", "optimizer"])
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
