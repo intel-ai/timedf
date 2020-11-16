@@ -1,8 +1,6 @@
 # coding: utf-8
 import argparse
 import os
-import sys
-import traceback
 import time
 
 import mysql.connector
@@ -509,9 +507,6 @@ def main():
                             remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
                             db_reporter_ml.submit(result_ml)
 
-    except Exception:
-        traceback.print_exc(file=sys.stdout)
-        raise
     finally:
         if omnisci_server_worker:
             omnisci_server_worker.terminate()

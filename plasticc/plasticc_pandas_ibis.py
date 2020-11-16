@@ -1,5 +1,3 @@
-import sys
-import traceback
 from collections import OrderedDict
 from functools import partial
 from timeit import default_timer as timer
@@ -612,81 +610,77 @@ def run_benchmark(parameters):
 
     etl_keys = ["t_readcsv", "t_etl", "t_connect"]
     ml_keys = ["t_train_test_split", "t_dmatrix", "t_training", "t_infer", "t_ml"]
-    try:
-        raise Exception
-        if not parameters["no_pandas"]:
-            import_pandas_into_module_namespace(
-                namespace=run_benchmark.__globals__,
-                mode=parameters["pandas_mode"],
-                ray_tmpdir=parameters["ray_tmpdir"],
-                ray_memory=parameters["ray_memory"],
+    raise Exception
+    if not parameters["no_pandas"]:
+        import_pandas_into_module_namespace(
+            namespace=run_benchmark.__globals__,
+            mode=parameters["pandas_mode"],
+            ray_tmpdir=parameters["ray_tmpdir"],
+            ray_memory=parameters["ray_memory"],
+        )
+
+    etl_times_ibis = None
+    ml_times_ibis = None
+    etl_times = None
+    ml_times = None
+
+    if not parameters["no_ibis"]:
+        train_final_ibis, test_final_ibis, etl_times_ibis = etl_all_ibis(
+            dataset_path=parameters["data_file"],
+            database_name=parameters["database_name"],
+            omnisci_server_worker=parameters["omnisci_server_worker"],
+            delete_old_database=not parameters["dnd"],
+            create_new_table=not parameters["dni"],
+            ipc_connection=parameters["ipc_connection"],
+            skip_rows=skip_rows,
+            validation=parameters["validation"],
+            dtypes=dtypes,
+            meta_dtypes=meta_dtypes,
+            etl_keys=etl_keys,
+            import_mode=parameters["import_mode"],
+            fragments_size=parameters["fragments_size"],
+        )
+
+        print_results(results=etl_times_ibis, backend="Ibis", unit="s")
+        etl_times_ibis["Backend"] = "Ibis"
+
+        if not parameters["no_ml"]:
+            print("using ml with dataframes from Ibis")
+            ml_times_ibis = ml(train_final_ibis, test_final_ibis, ml_keys)
+            print_results(results=ml_times_ibis, backend="Ibis", unit="s")
+            ml_times_ibis["Backend"] = "Ibis"
+
+    if not parameters["no_pandas"]:
+        train_final, test_final, etl_times = etl_all_pandas(
+            dataset_path=parameters["data_file"],
+            skip_rows=skip_rows,
+            dtypes=dtypes,
+            meta_dtypes=meta_dtypes,
+            etl_keys=etl_keys,
+            pandas_mode=parameters["pandas_mode"],
+        )
+
+        print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
+        etl_times["Backend"] = parameters["pandas_mode"]
+
+        if not parameters["no_ml"]:
+            print("using ml with dataframes from Pandas")
+            ml_times = ml(train_final, test_final, ml_keys)
+            print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
+            ml_times["Backend"] = parameters["pandas_mode"]
+
+    if parameters["validation"] and parameters["import_mode"] != "pandas":
+        print(
+            "WARNING: validation can not be performed, it works only for 'pandas' import mode, '{}' passed".format(
+                parameters["import_mode"]
             )
+        )
 
-        etl_times_ibis = None
-        ml_times_ibis = None
-        etl_times = None
-        ml_times = None
+    if parameters["validation"] and parameters["import_mode"] == "pandas":
+        compare_dataframes(
+            ibis_dfs=[train_final_ibis, test_final_ibis],
+            pandas_dfs=[train_final, test_final],
+            parallel_execution=True,
+        )
 
-        if not parameters["no_ibis"]:
-            train_final_ibis, test_final_ibis, etl_times_ibis = etl_all_ibis(
-                dataset_path=parameters["data_file"],
-                database_name=parameters["database_name"],
-                omnisci_server_worker=parameters["omnisci_server_worker"],
-                delete_old_database=not parameters["dnd"],
-                create_new_table=not parameters["dni"],
-                ipc_connection=parameters["ipc_connection"],
-                skip_rows=skip_rows,
-                validation=parameters["validation"],
-                dtypes=dtypes,
-                meta_dtypes=meta_dtypes,
-                etl_keys=etl_keys,
-                import_mode=parameters["import_mode"],
-                fragments_size=parameters["fragments_size"],
-            )
-
-            print_results(results=etl_times_ibis, backend="Ibis", unit="s")
-            etl_times_ibis["Backend"] = "Ibis"
-
-            if not parameters["no_ml"]:
-                print("using ml with dataframes from Ibis")
-                ml_times_ibis = ml(train_final_ibis, test_final_ibis, ml_keys)
-                print_results(results=ml_times_ibis, backend="Ibis", unit="s")
-                ml_times_ibis["Backend"] = "Ibis"
-
-        if not parameters["no_pandas"]:
-            train_final, test_final, etl_times = etl_all_pandas(
-                dataset_path=parameters["data_file"],
-                skip_rows=skip_rows,
-                dtypes=dtypes,
-                meta_dtypes=meta_dtypes,
-                etl_keys=etl_keys,
-                pandas_mode=parameters["pandas_mode"],
-            )
-
-            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
-            etl_times["Backend"] = parameters["pandas_mode"]
-
-            if not parameters["no_ml"]:
-                print("using ml with dataframes from Pandas")
-                ml_times = ml(train_final, test_final, ml_keys)
-                print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
-                ml_times["Backend"] = parameters["pandas_mode"]
-
-        if parameters["validation"] and parameters["import_mode"] != "pandas":
-            print(
-                "WARNING: validation can not be performed, it works only for 'pandas' import mode, '{}' passed".format(
-                    parameters["import_mode"]
-                )
-            )
-
-        if parameters["validation"] and parameters["import_mode"] == "pandas":
-            compare_dataframes(
-                ibis_dfs=[train_final_ibis, test_final_ibis],
-                pandas_dfs=[train_final, test_final],
-                parallel_execution=True,
-            )
-
-        return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
-    except Exception:
-        traceback.print_exc(file=sys.stdout)
-        raise
+    return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}

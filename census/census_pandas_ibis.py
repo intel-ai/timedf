@@ -1,6 +1,4 @@
 # coding: utf-8
-import sys
-import traceback
 import os
 import numpy as np
 from sklearn import config_context
@@ -441,108 +439,102 @@ def run_benchmark(parameters):
 
     ml_score_keys = ["mse_mean", "cod_mean", "mse_dev", "cod_dev"]
 
-    try:
-        if not parameters["no_pandas"]:
-            import_pandas_into_module_namespace(
-                namespace=run_benchmark.__globals__,
-                mode=parameters["pandas_mode"],
-                ray_tmpdir=parameters["ray_tmpdir"],
-                ray_memory=parameters["ray_memory"],
+    if not parameters["no_pandas"]:
+        import_pandas_into_module_namespace(
+            namespace=run_benchmark.__globals__,
+            mode=parameters["pandas_mode"],
+            ray_tmpdir=parameters["ray_tmpdir"],
+            ray_memory=parameters["ray_memory"],
+        )
+
+    etl_times_ibis = None
+    ml_times_ibis = None
+    etl_times = None
+    ml_times = None
+
+    if parameters["validation"] and parameters["import_mode"] != "pandas":
+        print(
+            f"WARNING: validation can not be performed, it works only for 'pandas' \
+                import mode, '{parameters['import_mode']}' passed"
+        )
+
+    if parameters["data_file"].endswith(".csv"):
+        csv_size = getsize(parameters["data_file"])
+    else:
+        print("WARNING: uncompressed datafile not found, default value for dataset_size is set")
+        # deafault csv_size value (unit - MB) obtained by calling getsize
+        # function on the ipums_education2income_1970-2010.csv file
+        # (default Census benchmark data file)
+        csv_size = 2100.0
+
+    if not parameters["no_ibis"]:
+        df_ibis, X_ibis, y_ibis, etl_times_ibis = etl_ibis(
+            filename=parameters["data_file"],
+            columns_names=columns_names,
+            columns_types=columns_types,
+            database_name=parameters["database_name"],
+            table_name=parameters["table"],
+            omnisci_server_worker=parameters["omnisci_server_worker"],
+            delete_old_database=not parameters["dnd"],
+            create_new_table=not parameters["dni"],
+            ipc_connection=parameters["ipc_connection"],
+            validation=parameters["validation"],
+            etl_keys=etl_keys,
+            import_mode=parameters["import_mode"],
+            fragments_size=parameters["fragments_size"],
+        )
+
+        print_results(results=etl_times_ibis, backend="Ibis", unit="s")
+        etl_times_ibis["Backend"] = "Ibis"
+        etl_times_ibis["dataset_size"] = csv_size
+
+        if not parameters["no_ml"]:
+            ml_scores_ibis, ml_times_ibis = ml(
+                X=X_ibis,
+                y=y_ibis,
+                random_state=RANDOM_STATE,
+                n_runs=N_RUNS,
+                test_size=TEST_SIZE,
+                optimizer=parameters["optimizer"],
+                ml_keys=ml_keys,
+                ml_score_keys=ml_score_keys,
             )
+            print_results(results=ml_times_ibis, backend="Ibis", unit="s")
+            ml_times_ibis["Backend"] = "Ibis"
+            print_results(results=ml_scores_ibis, backend="Ibis")
+            ml_scores_ibis["Backend"] = "Ibis"
 
-        etl_times_ibis = None
-        ml_times_ibis = None
-        etl_times = None
-        ml_times = None
+    if not parameters["no_pandas"]:
+        df, X, y, etl_times = etl_pandas(
+            parameters["data_file"],
+            columns_names=columns_names,
+            columns_types=columns_types,
+            etl_keys=etl_keys,
+            pandas_mode=parameters["pandas_mode"],
+        )
 
-        if parameters["validation"] and parameters["import_mode"] != "pandas":
-            print(
-                f"WARNING: validation can not be performed, it works only for 'pandas' \
-                    import mode, '{parameters['import_mode']}' passed"
+        print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
+        etl_times["Backend"] = parameters["pandas_mode"]
+        etl_times["dataset_size"] = csv_size
+
+        if not parameters["no_ml"]:
+            ml_scores, ml_times = ml(
+                X=X,
+                y=y,
+                random_state=RANDOM_STATE,
+                n_runs=N_RUNS,
+                test_size=TEST_SIZE,
+                optimizer=parameters["optimizer"],
+                ml_keys=ml_keys,
+                ml_score_keys=ml_score_keys,
             )
+            print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
+            ml_times["Backend"] = parameters["pandas_mode"]
+            print_results(results=ml_scores, backend=parameters["pandas_mode"])
+            ml_scores["Backend"] = parameters["pandas_mode"]
 
-        if parameters["data_file"].endswith(".csv"):
-            csv_size = getsize(parameters["data_file"])
-        else:
-            print(
-                "WARNING: uncompressed datafile not found, default value for dataset_size is set"
-            )
-            # deafault csv_size value (unit - MB) obtained by calling getsize
-            # function on the ipums_education2income_1970-2010.csv file
-            # (default Census benchmark data file)
-            csv_size = 2100.0
+    if parameters["validation"] and parameters["import_mode"] == "pandas":
+        # this should work only for pandas mode
+        compare_dataframes(ibis_dfs=(X_ibis, y_ibis), pandas_dfs=(X, y))
 
-        if not parameters["no_ibis"]:
-            df_ibis, X_ibis, y_ibis, etl_times_ibis = etl_ibis(
-                filename=parameters["data_file"],
-                columns_names=columns_names,
-                columns_types=columns_types,
-                database_name=parameters["database_name"],
-                table_name=parameters["table"],
-                omnisci_server_worker=parameters["omnisci_server_worker"],
-                delete_old_database=not parameters["dnd"],
-                create_new_table=not parameters["dni"],
-                ipc_connection=parameters["ipc_connection"],
-                validation=parameters["validation"],
-                etl_keys=etl_keys,
-                import_mode=parameters["import_mode"],
-                fragments_size=parameters["fragments_size"],
-            )
-
-            print_results(results=etl_times_ibis, backend="Ibis", unit="s")
-            etl_times_ibis["Backend"] = "Ibis"
-            etl_times_ibis["dataset_size"] = csv_size
-
-            if not parameters["no_ml"]:
-                ml_scores_ibis, ml_times_ibis = ml(
-                    X=X_ibis,
-                    y=y_ibis,
-                    random_state=RANDOM_STATE,
-                    n_runs=N_RUNS,
-                    test_size=TEST_SIZE,
-                    optimizer=parameters["optimizer"],
-                    ml_keys=ml_keys,
-                    ml_score_keys=ml_score_keys,
-                )
-                print_results(results=ml_times_ibis, backend="Ibis", unit="s")
-                ml_times_ibis["Backend"] = "Ibis"
-                print_results(results=ml_scores_ibis, backend="Ibis")
-                ml_scores_ibis["Backend"] = "Ibis"
-
-        if not parameters["no_pandas"]:
-            df, X, y, etl_times = etl_pandas(
-                parameters["data_file"],
-                columns_names=columns_names,
-                columns_types=columns_types,
-                etl_keys=etl_keys,
-                pandas_mode=parameters["pandas_mode"],
-            )
-
-            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
-            etl_times["Backend"] = parameters["pandas_mode"]
-            etl_times["dataset_size"] = csv_size
-
-            if not parameters["no_ml"]:
-                ml_scores, ml_times = ml(
-                    X=X,
-                    y=y,
-                    random_state=RANDOM_STATE,
-                    n_runs=N_RUNS,
-                    test_size=TEST_SIZE,
-                    optimizer=parameters["optimizer"],
-                    ml_keys=ml_keys,
-                    ml_score_keys=ml_score_keys,
-                )
-                print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
-                ml_times["Backend"] = parameters["pandas_mode"]
-                print_results(results=ml_scores, backend=parameters["pandas_mode"])
-                ml_scores["Backend"] = parameters["pandas_mode"]
-
-        if parameters["validation"] and parameters["import_mode"] == "pandas":
-            # this should work only for pandas mode
-            compare_dataframes(ibis_dfs=(X_ibis, y_ibis), pandas_dfs=(X, y))
-
-        return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
-    except Exception:
-        traceback.print_exc(file=sys.stdout)
-        raise
+    return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}

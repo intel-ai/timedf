@@ -1,6 +1,4 @@
 # Original SQL queries can be found here https://tech.marksblogg.com/billion-nyc-taxi-rides-nvidia-pascal-titan-x-mapd.html
-import sys
-import traceback
 from timeit import default_timer as timer
 
 import pandas as pd
@@ -615,60 +613,57 @@ def run_benchmark(parameters):
 
     if parameters["dfiles_num"] <= 0:
         raise ValueError(f"Bad number of data files specified: {parameters['dfiles_num']}")
-    try:
-        raise Exception
-        if not parameters["no_pandas"]:
-            import_pandas_into_module_namespace(
-                namespace=run_benchmark.__globals__,
-                mode=parameters["pandas_mode"],
-                ray_tmpdir=parameters["ray_tmpdir"],
-                ray_memory=parameters["ray_memory"],
-            )
 
-        etl_results_ibis = None
-        etl_results = None
-        pd_queries_outputs = {} if parameters["validation"] else None
-        if not parameters["no_pandas"]:
-            pandas_files_limit = parameters["dfiles_num"]
-            filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
-            etl_results = etl_pandas(
-                filename=filename,
-                files_limit=pandas_files_limit,
-                columns_names=columns_names,
-                columns_types=columns_types,
-                output_for_validation=pd_queries_outputs,
-                pandas_mode=parameters["pandas_mode"],
-            )
+    raise Exception
+    if not parameters["no_pandas"]:
+        import_pandas_into_module_namespace(
+            namespace=run_benchmark.__globals__,
+            mode=parameters["pandas_mode"],
+            ray_tmpdir=parameters["ray_tmpdir"],
+            ray_memory=parameters["ray_memory"],
+        )
 
-            print_results(results=etl_results, backend=parameters["pandas_mode"], unit="ms")
-            etl_results["Backend"] = parameters["pandas_mode"]
-            etl_results["dfiles_num"] = parameters["dfiles_num"]
-            etl_results["dataset_size"] = get_ny_taxi_dataset_size(parameters["dfiles_num"])
+    etl_results_ibis = None
+    etl_results = None
+    pd_queries_outputs = {} if parameters["validation"] else None
+    if not parameters["no_pandas"]:
+        pandas_files_limit = parameters["dfiles_num"]
+        filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
+        etl_results = etl_pandas(
+            filename=filename,
+            files_limit=pandas_files_limit,
+            columns_names=columns_names,
+            columns_types=columns_types,
+            output_for_validation=pd_queries_outputs,
+            pandas_mode=parameters["pandas_mode"],
+        )
 
-        if not parameters["no_ibis"]:
-            etl_results_ibis = etl_ibis(
-                filename=parameters["data_file"],
-                files_limit=parameters["dfiles_num"],
-                columns_names=columns_names,
-                columns_types=columns_types,
-                database_name=parameters["database_name"],
-                table_name=parameters["table"],
-                omnisci_server_worker=parameters["omnisci_server_worker"],
-                delete_old_database=not parameters["dnd"],
-                ipc_connection=parameters["ipc_connection"],
-                create_new_table=not parameters["dni"],
-                input_for_validation=pd_queries_outputs,
-                import_mode=parameters["import_mode"],
-                fragments_size=parameters["fragments_size"],
-                debug_mode=parameters["debug_mode"],
-            )
+        print_results(results=etl_results, backend=parameters["pandas_mode"], unit="ms")
+        etl_results["Backend"] = parameters["pandas_mode"]
+        etl_results["dfiles_num"] = parameters["dfiles_num"]
+        etl_results["dataset_size"] = get_ny_taxi_dataset_size(parameters["dfiles_num"])
 
-            print_results(results=etl_results_ibis, backend="Ibis", unit="ms")
-            etl_results_ibis["Backend"] = "Ibis"
-            etl_results_ibis["dfiles_num"] = parameters["dfiles_num"]
-            etl_results_ibis["dataset_size"] = get_ny_taxi_dataset_size(parameters["dfiles_num"])
+    if not parameters["no_ibis"]:
+        etl_results_ibis = etl_ibis(
+            filename=parameters["data_file"],
+            files_limit=parameters["dfiles_num"],
+            columns_names=columns_names,
+            columns_types=columns_types,
+            database_name=parameters["database_name"],
+            table_name=parameters["table"],
+            omnisci_server_worker=parameters["omnisci_server_worker"],
+            delete_old_database=not parameters["dnd"],
+            ipc_connection=parameters["ipc_connection"],
+            create_new_table=not parameters["dni"],
+            input_for_validation=pd_queries_outputs,
+            import_mode=parameters["import_mode"],
+            fragments_size=parameters["fragments_size"],
+            debug_mode=parameters["debug_mode"],
+        )
 
-        return {"ETL": [etl_results_ibis, etl_results], "ML": []}
-    except Exception:
-        traceback.print_exc(file=sys.stdout)
-        raise
+        print_results(results=etl_results_ibis, backend="Ibis", unit="ms")
+        etl_results_ibis["Backend"] = "Ibis"
+        etl_results_ibis["dfiles_num"] = parameters["dfiles_num"]
+        etl_results_ibis["dataset_size"] = get_ny_taxi_dataset_size(parameters["dfiles_num"])
+
+    return {"ETL": [etl_results_ibis, etl_results], "ML": []}
