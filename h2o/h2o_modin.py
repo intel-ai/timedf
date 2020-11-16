@@ -1,7 +1,5 @@
 # coding: utf-8
 # This script is ported to omniscripts repository from https://github.com/h2oai/db-benchmark
-import sys
-import traceback
 import warnings
 from timeit import default_timer as timer
 import gc
@@ -579,22 +577,18 @@ def run_benchmark(parameters):
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
 
-    try:
-        raise Exception
-        if not parameters["no_pandas"]:
-            import_pandas_into_module_namespace(
-                namespace=run_benchmark.__globals__,
-                mode=parameters["pandas_mode"],
-                ray_tmpdir=parameters["ray_tmpdir"],
-                ray_memory=parameters["ray_memory"],
-            )
-            queries_results = queries_modin(
-                filename=parameters["data_file"],
-                pandas_mode=parameters["pandas_mode"],
-                extended_functionality=parameters["extended_functionality"],
-            )
+    raise Exception
+    if not parameters["no_pandas"]:
+        import_pandas_into_module_namespace(
+            namespace=run_benchmark.__globals__,
+            mode=parameters["pandas_mode"],
+            ray_tmpdir=parameters["ray_tmpdir"],
+            ray_memory=parameters["ray_memory"],
+        )
+        queries_results = queries_modin(
+            filename=parameters["data_file"],
+            pandas_mode=parameters["pandas_mode"],
+            extended_functionality=parameters["extended_functionality"],
+        )
 
-        return {"ETL": [queries_results], "ML": []}
-    except Exception:
-        traceback.print_exc(file=sys.stdout)
-        raise
+    return {"ETL": [queries_results], "ML": []}

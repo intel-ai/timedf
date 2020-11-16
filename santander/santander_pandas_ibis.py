@@ -1,6 +1,4 @@
 # coding: utf-8
-import sys
-import traceback
 import warnings
 from timeit import default_timer as timer
 
@@ -266,7 +264,6 @@ def ml(ml_data, target, ml_keys, ml_score_keys):
 
 
 def run_benchmark(parameters):
-    raise Exception
     check_support(parameters, unsupported_params=["dfiles_num", "gpu_memory", "optimizer"])
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
@@ -285,88 +282,85 @@ def run_benchmark(parameters):
     etl_keys = ["t_readcsv", "t_etl", "t_connect"]
     ml_keys = ["t_train_test_split", "t_ml", "t_train", "t_inference", "t_dmatrix"]
     ml_score_keys = ["mse", "cod"]
-    try:
+
+    if not parameters["no_pandas"]:
+        import_pandas_into_module_namespace(
+            namespace=run_benchmark.__globals__,
+            mode=parameters["pandas_mode"],
+            ray_tmpdir=parameters["ray_tmpdir"],
+            ray_memory=parameters["ray_memory"],
+        )
+
+    if not parameters["no_ibis"]:
+        ml_data_ibis, etl_times_ibis = etl_ibis(
+            filename=parameters["data_file"],
+            columns_names=columns_names,
+            columns_types=columns_types_ibis,
+            database_name=parameters["database_name"],
+            table_name=parameters["table"],
+            omnisci_server_worker=parameters["omnisci_server_worker"],
+            delete_old_database=not parameters["dnd"],
+            create_new_table=not parameters["dni"],
+            ipc_connection=parameters["ipc_connection"],
+            validation=parameters["validation"],
+            etl_keys=etl_keys,
+            import_mode=parameters["import_mode"],
+            fragments_size=parameters["fragments_size"],
+        )
+
+        print_results(results=etl_times_ibis, backend="Ibis", unit="s")
+        etl_times_ibis["Backend"] = "Ibis"
+
+    if not parameters["no_pandas"]:
+        ml_data, etl_times = etl_pandas(
+            filename=parameters["data_file"],
+            columns_names=columns_names,
+            columns_types=columns_types_pd,
+            etl_keys=etl_keys,
+        )
+        print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
+        etl_times["Backend"] = parameters["pandas_mode"]
+
+    if not parameters["no_ml"]:
         if not parameters["no_pandas"]:
-            import_pandas_into_module_namespace(
-                namespace=run_benchmark.__globals__,
-                mode=parameters["pandas_mode"],
-                ray_tmpdir=parameters["ray_tmpdir"],
-                ray_memory=parameters["ray_memory"],
+            ml_scores, ml_times = ml(
+                ml_data=ml_data,
+                target="target",
+                ml_keys=ml_keys,
+                ml_score_keys=ml_score_keys,
             )
+            print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
+            ml_times["Backend"] = parameters["pandas_mode"]
+            print_results(results=ml_scores, backend=parameters["pandas_mode"])
+            ml_scores["Backend"] = parameters["pandas_mode"]
 
         if not parameters["no_ibis"]:
-            ml_data_ibis, etl_times_ibis = etl_ibis(
-                filename=parameters["data_file"],
-                columns_names=columns_names,
-                columns_types=columns_types_ibis,
-                database_name=parameters["database_name"],
-                table_name=parameters["table"],
-                omnisci_server_worker=parameters["omnisci_server_worker"],
-                delete_old_database=not parameters["dnd"],
-                create_new_table=not parameters["dni"],
-                ipc_connection=parameters["ipc_connection"],
-                validation=parameters["validation"],
-                etl_keys=etl_keys,
-                import_mode=parameters["import_mode"],
-                fragments_size=parameters["fragments_size"],
+            ml_scores_ibis, ml_times_ibis = ml(
+                ml_data=ml_data_ibis,
+                target="target0",
+                ml_keys=ml_keys,
+                ml_score_keys=ml_score_keys,
             )
+            print_results(results=ml_times_ibis, backend="Ibis", unit="s")
+            ml_times_ibis["Backend"] = "Ibis"
+            print_results(results=ml_scores_ibis, backend="Ibis")
+            ml_scores_ibis["Backend"] = "Ibis"
 
-            print_results(results=etl_times_ibis, backend="Ibis", unit="s")
-            etl_times_ibis["Backend"] = "Ibis"
+    # Results validation block (comparison of etl_ibis and etl_pandas outputs)
+    if parameters["validation"]:
+        print("Validation of ETL query results ...")
+        cols_to_sort = ["var_0", "var_1", "var_2", "var_3", "var_4"]
 
-        if not parameters["no_pandas"]:
-            ml_data, etl_times = etl_pandas(
-                filename=parameters["data_file"],
-                columns_names=columns_names,
-                columns_types=columns_types_pd,
-                etl_keys=etl_keys,
-            )
-            print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
-            etl_times["Backend"] = parameters["pandas_mode"]
+        ml_data_ibis = ml_data_ibis.rename(columns={"target0": "target"})
+        # compare_dataframes doesn't sort pandas dataframes
+        ml_data.sort_values(by=cols_to_sort, inplace=True)
 
-        if not parameters["no_ml"]:
-            if not parameters["no_pandas"]:
-                ml_scores, ml_times = ml(
-                    ml_data=ml_data,
-                    target="target",
-                    ml_keys=ml_keys,
-                    ml_score_keys=ml_score_keys,
-                )
-                print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
-                ml_times["Backend"] = parameters["pandas_mode"]
-                print_results(results=ml_scores, backend=parameters["pandas_mode"])
-                ml_scores["Backend"] = parameters["pandas_mode"]
+        compare_dataframes(
+            ibis_dfs=[ml_data_ibis],
+            pandas_dfs=[ml_data],
+            sort_cols=cols_to_sort,
+            drop_cols=[],
+            parallel_execution=True,
+        )
 
-            if not parameters["no_ibis"]:
-                ml_scores_ibis, ml_times_ibis = ml(
-                    ml_data=ml_data_ibis,
-                    target="target0",
-                    ml_keys=ml_keys,
-                    ml_score_keys=ml_score_keys,
-                )
-                print_results(results=ml_times_ibis, backend="Ibis", unit="s")
-                ml_times_ibis["Backend"] = "Ibis"
-                print_results(results=ml_scores_ibis, backend="Ibis")
-                ml_scores_ibis["Backend"] = "Ibis"
-
-        # Results validation block (comparison of etl_ibis and etl_pandas outputs)
-        if parameters["validation"]:
-            print("Validation of ETL query results ...")
-            cols_to_sort = ["var_0", "var_1", "var_2", "var_3", "var_4"]
-
-            ml_data_ibis = ml_data_ibis.rename(columns={"target0": "target"})
-            # compare_dataframes doesn't sort pandas dataframes
-            ml_data.sort_values(by=cols_to_sort, inplace=True)
-
-            compare_dataframes(
-                ibis_dfs=[ml_data_ibis],
-                pandas_dfs=[ml_data],
-                sort_cols=cols_to_sort,
-                drop_cols=[],
-                parallel_execution=True,
-            )
-
-        return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
-    except Exception:
-        traceback.print_exc(file=sys.stdout)
-        raise
+    return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
