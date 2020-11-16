@@ -577,7 +577,6 @@ def run_benchmark(parameters):
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
 
-    raise Exception
     if not parameters["no_pandas"]:
         import_pandas_into_module_namespace(
             namespace=run_benchmark.__globals__,
