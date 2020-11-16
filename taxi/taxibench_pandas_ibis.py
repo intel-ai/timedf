@@ -670,4 +670,4 @@ def run_benchmark(parameters):
         return {"ETL": [etl_results_ibis, etl_results], "ML": []}
     except Exception:
         traceback.print_exc(file=sys.stdout)
-        sys.exit(1)
+        raise

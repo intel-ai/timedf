@@ -1,6 +1,5 @@
 import gzip
 import subprocess
-import sys
 from timeit import default_timer as timer
 
 import ibis
@@ -146,8 +145,7 @@ class OmnisciServerWorker:
         elif not header:
             header_value = "false"
         else:
-            print("Wrong value of header argument!")
-            sys.exit(2)
+            raise ValueError("Wrong value of header argument!")
 
         schema_table = ibis.Schema(names=columns_names, types=columns_types)
 
@@ -313,8 +311,7 @@ class OmnisciServerWorker:
         if self._conn.exists_table(name=table_name, database=self.omnisci_server.database_name):
             return self._imported_pd_df[table_name]
         else:
-            print("Table", table_name, "doesn't exist!")
-            sys.exit(4)
+            raise ValueError("Table", table_name, "doesn't exist!")
 
     def execute_sql_query(self, query):
         "Execute SQL query directly in the OmniSciDB"

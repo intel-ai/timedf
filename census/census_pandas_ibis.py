@@ -278,8 +278,9 @@ def ml(X, y, random_state, n_runs, test_size, optimizer, ml_keys, ml_score_keys)
         print("Stock sklearn is used")
         import sklearn.linear_model as lm
     else:
-        print(f"Intel optimized and stock sklearn are supported. {optimizer} can't be recognized")
-        sys.exit(1)
+        raise NotImplementedError(
+            f"{optimizer} is not implemented, accessible optimizers are 'stcok' and 'intel'"
+        )
 
     clf = lm.Ridge()
 
@@ -543,4 +544,4 @@ def run_benchmark(parameters):
         return {"ETL": [etl_times_ibis, etl_times], "ML": [ml_times_ibis, ml_times]}
     except Exception:
         traceback.print_exc(file=sys.stdout)
-        sys.exit(1)
+        raise

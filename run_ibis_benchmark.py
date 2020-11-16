@@ -511,7 +511,7 @@ def main():
 
     except Exception:
         traceback.print_exc(file=sys.stdout)
-        sys.exit(1)
+        raise
     finally:
         if omnisci_server_worker:
             omnisci_server_worker.terminate()

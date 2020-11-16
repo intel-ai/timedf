@@ -1,7 +1,6 @@
 import os
 import pathlib
 import signal
-import sys
 import threading
 import time
 
@@ -126,7 +125,7 @@ class OmnisciServer:
             time.sleep(5)
         except Exception as err:
             print("Failed", err)
-            sys.exit(1)
+            raise
 
     def _print_omnisci_output(self, stdout):
         for line in iter(stdout.readline, b""):
@@ -146,6 +145,6 @@ class OmnisciServer:
                 self.server_process = None
         except Exception as err:
             print("Failed to terminate server, error occured:", err)
-            sys.exit(1)
+            raise
 
         print("Server is terminated")
