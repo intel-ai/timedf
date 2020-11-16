@@ -30,6 +30,8 @@ warnings.filterwarnings("ignore")
 def etl_pandas(filename, columns_names, columns_types, etl_keys, pandas_mode):
     etl_times = {key: 0.0 for key in etl_keys}
 
+    raise Exception
+
     t0 = timer()
     if pandas_mode == "Modin_on_omnisci":
         df = load_data_modin_on_omnisci(
