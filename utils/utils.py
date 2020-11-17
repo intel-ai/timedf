@@ -164,7 +164,6 @@ def compare_dataframes(
 
     t0 = timer()
     assert len(ibis_dfs) == len(pandas_dfs)
-
     # preparing step
     for idx in range(len(ibis_dfs)):
         # prepare ibis part

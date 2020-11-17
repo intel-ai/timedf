@@ -92,6 +92,13 @@ def main():
         help="validate queries results (by comparison with Pandas queries results).",
     )
     optional.add_argument(
+        "-validation_modin",
+        # dest="validation_modin",
+        default=False,
+        type=str_arg_to_bool,
+        help="validate Modin queries results (by comparison with Pandas queries results).",
+    )
+    optional.add_argument(
         "-import_mode",
         dest="import_mode",
         default="fsi",
@@ -374,6 +381,7 @@ def main():
             "ray_memory": args.ray_memory,
             "gpu_memory": args.gpu_memory,
             "validation": args.validation,
+            "validation_modin": args.validation_modin,
             "no_pandas": args.no_pandas,
             "debug_mode": args.debug_mode,
             "extended_functionality": args.extended_functionality,
@@ -412,6 +420,15 @@ def main():
         if parameters["validation"] and (parameters["no_pandas"] or parameters["no_ibis"]):
             parameters["validation"] = False
             print("WARNING: validation was turned off as it requires both sides to compare.")
+        if (
+            parameters["validation_modin"]
+            and not parameters["no_pandas"]
+            and parameters["pandas_mode"] == "Pandas"
+        ):
+            parameters["validation_modin"] = False
+            print(
+                "WARNING: modin results validation was turned off as it requires benchmark to be ran with flags -no_pandas False and pandas_mode != 'Pandas'."
+            )
 
         etl_results = []
         ml_results = []
