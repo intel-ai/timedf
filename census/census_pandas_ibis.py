@@ -35,7 +35,7 @@ def etl_pandas(
     etl_times = {key: 0.0 for key in etl_keys}
 
     t0 = timer()
-    if pandas_mode == "Modin_on_omnisci":
+    if pandas_mode == "Modin_on_omnisci" and not validation_modin:
         df = load_data_modin_on_omnisci(
             filename=filename,
             columns_names=columns_names,
