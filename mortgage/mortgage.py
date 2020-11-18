@@ -705,8 +705,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 if args.df <= 0:
-    print("Bad number of data files specified", args.df)
-    sys.exit(1)
+    raise ValueError("Bad number of data files specified", args.df)
 
 if args.iterations < 1:
     print("Bad number of iterations specified", args.t)

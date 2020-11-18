@@ -413,16 +413,14 @@ def main():
             tasks[task] = True if task in required_tasks else False
 
         if True not in list(tasks.values()):
-            print(
+            raise ValueError(
                 f"Only {list(tasks.keys())} are supported, {required_tasks} cannot find possible tasks"
             )
-            sys.exit(1)
 
         if args.python_version not in ["3.7", "3,6"]:
-            print(
+            raise NotImplementedError(
                 f"Only 3.7 and 3.6 python versions are supported, {args.python_version} is not supported"
             )
-            sys.exit(1)
 
         conda_env = CondaEnvironment(args.env_name)
         requirements_file = args.ci_requirements
@@ -601,10 +599,9 @@ def main():
             # sys.exit(1)
 
             if not args.data_file:
-                print(
+                raise ValueError(
                     "Parameter --data_file was received empty, but it is required for benchmarks"
                 )
-                sys.exit(1)
 
             benchmark_script_path = os.path.join(omniscript_path, "run_ibis_benchmark.py")
 
@@ -692,7 +689,7 @@ def main():
 
     except Exception:
         traceback.print_exc(file=sys.stdout)
-        sys.exit(1)
+        raise
 
     finally:
         if omnisci_server:

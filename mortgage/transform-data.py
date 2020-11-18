@@ -15,7 +15,7 @@ def main():
     try:
         source, dest = [os.path.abspath(x) for x in sys.argv[1:]]
     except TypeError:
-        sys.exit("Usage: %s source-path dest-path" % sys.argv[0])
+        raise ValueError("Usage: %s source-path dest-path" % sys.argv[0])
 
     for root, _, files in os.walk(source):
         if not files:

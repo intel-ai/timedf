@@ -1,8 +1,6 @@
 # coding: utf-8
 import argparse
 import os
-import sys
-import traceback
 import time
 
 import mysql.connector
@@ -90,13 +88,6 @@ def main():
         default=False,
         type=str_arg_to_bool,
         help="validate queries results (by comparison with Pandas queries results).",
-    )
-    optional.add_argument(
-        "-validation_modin",
-        # dest="validation_modin",
-        default=False,
-        type=str_arg_to_bool,
-        help="validate Modin queries results (by comparison with Pandas queries results).",
     )
     optional.add_argument(
         "-import_mode",
@@ -360,6 +351,10 @@ def main():
         launch_omnisci_server = (
             not args.no_ibis and args.bench_name in benchmarks_with_ibis_queries
         )
+        # for census we can compare pandas and modin outputs
+        turn_off_validation = (
+            args.bench_name != "census" and args.validation and (args.no_pandas or args.no_ibis)
+        )
 
         if args.port == port_default_value:
             args.port = find_free_port()
@@ -381,7 +376,6 @@ def main():
             "ray_memory": args.ray_memory,
             "gpu_memory": args.gpu_memory,
             "validation": args.validation,
-            "validation_modin": args.validation_modin,
             "no_pandas": args.no_pandas,
             "debug_mode": args.debug_mode,
             "extended_functionality": args.extended_functionality,
@@ -417,18 +411,9 @@ def main():
             parameters["import_mode"] = args.import_mode
             parameters["fragments_size"] = args.fragments_size
 
-        if parameters["validation"] and (parameters["no_pandas"] or parameters["no_ibis"]):
+        if turn_off_validation:
             parameters["validation"] = False
             print("WARNING: validation was turned off as it requires both sides to compare.")
-        if (
-            parameters["validation_modin"]
-            and not parameters["no_pandas"]
-            and parameters["pandas_mode"] == "Pandas"
-        ):
-            parameters["validation_modin"] = False
-            print(
-                "WARNING: modin results validation was turned off as it requires benchmark to be ran with flags -no_pandas False and pandas_mode != 'Pandas'."
-            )
 
         etl_results = []
         ml_results = []
@@ -526,9 +511,6 @@ def main():
                             remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
                             db_reporter_ml.submit(result_ml)
 
-    except Exception:
-        traceback.print_exc(file=sys.stdout)
-        sys.exit(1)
     finally:
         if omnisci_server_worker:
             omnisci_server_worker.terminate()
