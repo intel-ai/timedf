@@ -52,7 +52,7 @@ CREATE TEMPORARY TABLE trips (
     dropoff_ntacode TEXT ENCODING NONE,
     dropoff_ntaname TEXT ENCODING NONE,
     dropoff_puma INT
-) WITH (storage_type='CSV:trips-header-200.csv', fragment_size=5000000);
+) WITH (storage_type='CSV:trips-header-20.csv', fragment_size=250000);
 
 /itt_resume
 SELECT cab_type, count(*) FROM trips GROUP BY cab_type;
