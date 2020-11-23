@@ -1,0 +1,36 @@
+#
+#  This is benchmark execution recipe for Bearysta.
+#
+#  Install Bearysta:
+#     python -m pip install git+https://github.com/IntelPython/bearysta.git
+#
+#  Run recipe:
+#     python -m bearysta.run --bench-path run-omnisci-bench.yml
+#
+
+variables:
+    batch: [1, 2, 3, 4, 5]
+    affinity:
+        - 'all'
+        - 'all --no-ht'
+        - 'all --n0-only'
+        - 'all --n0-only --no-ht'
+        - 'half --no-ht'
+    rows:
+        - 20
+        - 200
+    frags:
+        - 250000
+        - 2500000
+        - 5000000
+    numa:
+        - ' -a'
+        #- '-m 0'
+        #- '-m 1'
+        - '-i 0,1'
+    OMP_NUM_THREADS: $(./list_cpu_affinity.py --total $affinity)
+    cpus: $(./list_cpu_affinity.py $affinity)
+
+commands:
+    taxi: ./run-tpc-h.sh
+    #directly it is: numactl $numa -C $cpus ../../build/bin/omnisci_server --config omnisci-bench-nyct-$rows.conf 2>&1
