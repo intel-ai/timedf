@@ -17,7 +17,6 @@ variables:
         - 'all --n0-only --no-ht'
         - 'half --no-ht'
     frags:
-        - 250000
         - 2500000
         - 5000000
     numa:
