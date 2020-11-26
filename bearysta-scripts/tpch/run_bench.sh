@@ -4,8 +4,8 @@ rm -rf generated
 mkdir data
 ../../../omniscidb/build/bin/initdb --data data
 
-bash generate_tables.bash $1
-bash prepare_tables.bash
+bash generate_tables.sh $1
+bash prepare_tables.sh
 
 
 python -m bearysta.run --bench-path run-tpc-h-bench.yml
