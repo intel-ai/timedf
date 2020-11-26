@@ -28,9 +28,11 @@ variables:
         - '-a'
         - '-p 0'
         - '-i 0,1'
+
+    scale:
+        - 10 
     OMP_NUM_THREADS: $(../list_cpu_affinity.py --total $affinity)
     cpus: $(../list_cpu_affinity.py $affinity)
-    #frags: $(echo $rows*1000000/$OMP_NUM_THREADS | bc -q)
     omnisci_server: '../../../omniscidb/build/bin/omnisci_server'
 
 commands:
