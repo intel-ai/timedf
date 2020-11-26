@@ -16,15 +16,14 @@ variables:
         - 'all --n0-only'
         - 'all --n0-only --no-ht'
         - 'half --no-ht'
-    frags:
-        - 2500000
-        - 5000000
     numa:
         - ' -a'
         - '-i 0,1'
-    OMP_NUM_THREADS: $(./list_cpu_affinity.py --total $affinity)
-    cpus: $(./list_cpu_affinity.py $affinity)
-    omnisci_server: '../../omniscidb/build/bin/omnisci_server'
+    frags:
+        - 5000000
+    OMP_NUM_THREADS: $(../list_cpu_affinity.py --total $affinity)
+    cpus: $(../list_cpu_affinity.py $affinity)
+    omnisci_server: '../../../omniscidb/build/bin/omnisci_server'
 
 commands:
     taxi: ./run-tpc-h.sh

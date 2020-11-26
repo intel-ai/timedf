@@ -1,0 +1,62 @@
+#
+#  This is statistics aggregation recipe for Bearysta.
+#
+#  Install Bearysta:
+#     python -m pip install git+https://github.com/IntelPython/bearysta.git
+#
+#  Run aggregation:
+#     python -m bearysta.aggregate tpch-query-times.yml -P
+#
+
+input:
+    # direct logs are in 'data/mapd_log/omnisci_server.INFO.*.log'
+    path: runs/*/run-tpc-h-bench/*/*.out
+    format: csv
+    csv-header: 'op,logID,queryID,execution_time_ms,total_time_ms'
+    # Transform lines from log text into csv format. Drop other, unused lines
+    filter:
+        '^(?!.+ ? ([0-9]+).+ stdlog)': append
+        '^.+ ? ([0-9]+).+ stdlog sql_execute ([0-9]+).+,"(\d+)","(\d+)"\}': 'sql_execute,\1,\2,\3,\4'
+        '^(?!sql_)': drop
+
+rename:
+    OMP_NUM_THREADS: threads
+
+# Aggregation method (e.g. min, median, max, mean)
+aggregation: max
+
+# Axis and series column names
+axis:
+    - query
+    - frags
+
+series:
+    - threads
+    - cpus
+    - affinity
+    - numa
+
+values:
+    #- GB_s
+    - execution_time_ms
+#    - total_time_ms
+
+# Create another table (or Excel filter) for each value in these columns
+variants:
+    - hostname
+
+precomputed:
+    query: "read_csv('tpc-h-queryID.csv', header=None, index_col=0, squeeze=True).to_dict().get(row['queryID'], row['queryID'])"
+    # bytes_perp_iter * rows(M) / ms / 1G(1`000`000`000)
+    # GB_s: "row['execution_time_ms']*read_csv('tpc-h-bytes4iter.csv', header=None, index_col=0, squeeze=True).to_dict().get(row['query'], -1)"
+
+# Are higher values better?
+higher-is-better: false
+
+# Number format in Python str.format() style, or the number of digits of
+# precision to show in numbers in pretty-printed pivot tables
+number-format: 2
+
+# Do we figure out the number of decimals only once, using the max value,
+# and disregard smaller precision numbers?
+number-format-max-only: false

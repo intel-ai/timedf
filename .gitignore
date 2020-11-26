@@ -4,3 +4,8 @@ dask-worker-space
 bearysta-scripts/data
 bearysta-scripts/r0*
 bearysta-scripts/runs*
+bearysta-scripts/tpch/generated
+bearysta-scripts/tpch/runs*
+bearysta-scripts/tpch/data*
+bearysta-scripts/tpch/tpc-h-dbgen
+*.tbl
