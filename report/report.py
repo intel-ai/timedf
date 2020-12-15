@@ -14,7 +14,7 @@ class DbReport:
         self.__predefined_field_values["Architecture"] = platform.architecture()[0]
         self.__predefined_field_values["Machine"] = platform.machine()
         self.__predefined_field_values["Node"] = platform.node()
-        self.__predefined_field_values["System"] = platform.system()
+        self.__predefined_field_values["OS"] = platform.system()
         self.__predefined_field_values["CPUCount"] = os.cpu_count()
 
         def match_and_assign(tag, pattern):
@@ -54,7 +54,7 @@ class DbReport:
             "Architecture": "VARCHAR(500) NOT NULL",
             "Machine": "VARCHAR(500) NOT NULL",
             "Node": "VARCHAR(500) NOT NULL",
-            "System": "VARCHAR(500) NOT NULL",
+            "OS": "VARCHAR(500) NOT NULL",
             "CPUCount": "VARCHAR(500) NOT NULL",
             "CPUModel": "VARCHAR(500) NOT NULL",
             "CPUMHz": "VARCHAR(500) NOT NULL",
