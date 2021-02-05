@@ -450,7 +450,7 @@ def main():
                     "--name",
                     f"{args.env_name}",
                     "--file",
-                    "environment.yml",
+                    "environment-dev.yml",
                 ]
                 if args.modin_pkgs_dir:
                     os.environ["PYTHONPATH"] = (
