@@ -10,7 +10,6 @@ dependencies:
   - numpy>=1.11
   - pandas>=1.0.0
   - conda
-  - xgboost==1.0.2
   - daal4py=0.2020.2
   - scikit-learn<0.23.0   # in 0.23.0 we see undefined symbols: ImportError: cannot import name '_infer_dimension_' from 'sklearn.decomposition._pca'
   - pip
@@ -21,3 +20,5 @@ dependencies:
   - pyarrow==1.0
   - arrow-cpp==1.0
   - cmake>=3.15
+  - pip:
+      - xgboost >=1.3
