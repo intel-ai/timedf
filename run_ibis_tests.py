@@ -7,7 +7,6 @@ import traceback
 from environment import CondaEnvironment
 from server import OmnisciServer
 from utils_base_env import (
-    combinate_requirements,
     find_free_port,
     KeyValueListParser,
     str_arg_to_bool,
@@ -423,24 +422,31 @@ def main():
             )
 
         conda_env = CondaEnvironment(args.env_name)
-        requirements_file = args.ci_requirements
-        if args.ibis_path:
-            ibis_requirements = os.path.join(
-                args.ibis_path, "ci", f"requirements-{args.python_version}-dev.yml"
-            )
-            requirements_file = "requirements.yml"
-            combinate_requirements(ibis_requirements, args.ci_requirements, requirements_file)
-
         print("PREPARING ENVIRONMENT")
-        conda_env.create(args.env_check, requirements_file=requirements_file)
-
+        conda_env.create(args.env_check, requirements_file=args.ci_requirements)
         if tasks["build"]:
             install_cmdline = ["python3", "setup.py", "install"]
 
             if args.ibis_path:
+                ibis_requirements = os.path.join(
+                    args.ibis_path, "ci", f"requirements-{args.python_version}-dev.yml"
+                )
+                install_ibis_reqs_cmdline = [
+                    "conda",
+                    "env",
+                    "update",
+                    "--name",
+                    f"{args.env_name}",
+                    "--file",
+                    ibis_requirements,
+                ]
+
+                print("INSTALLATION OF IBIS DEPENDENCIES")
+                conda_env.run(install_ibis_reqs_cmdline, print_output=False)
+
                 print("IBIS INSTALLATION")
                 conda_env.run(install_cmdline, cwd=args.ibis_path, print_output=False)
-                conda_env.run(["pip", "install", "--upgrade", "protobuf"], print_output=False)
+                # conda_env.run(["pip", "install", "--upgrade", "protobuf"], print_output=False)
 
             if args.modin_path:
                 install_modin_reqs_cmdline = [
@@ -467,10 +473,6 @@ def main():
                     )
                 except Exception:
                     print("INSTALLATION OF MODIN DEPENDENCIES PROCESSED WITH ERRORS")
-
-                # installation of Modin dependencies by pip causes hiyapyco package loss, so it is
-                # needed to be reinstalled
-                conda_env.run(["pip", "install", "hiyapyco"], print_output=False)
 
                 print("MODIN INSTALLATION")
                 # Modin installation handled this way because "conda run --name env_name python3 setup.py install"
