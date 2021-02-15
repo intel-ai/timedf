@@ -446,7 +446,6 @@ def main():
 
                 print("IBIS INSTALLATION")
                 conda_env.run(install_cmdline, cwd=args.ibis_path, print_output=False)
-                # conda_env.run(["pip", "install", "--upgrade", "protobuf"], print_output=False)
 
             if args.modin_path:
                 install_modin_reqs_cmdline = [
