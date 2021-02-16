@@ -491,6 +491,8 @@ def queries_modin(filename, pandas_mode, extended_functionality):
             # is under development
             del queries["groupby_query9"]  # core dumped issue
             del queries["groupby_query10"]  # core dumped issue
+        elif pandas_mode == "Modin_on_ray":
+            del queries["groupby_query10"]  # regression occured, issue is under investigation
 
         queries_results = {x: {y: 0.0 for y in queries_results_fields} for x in queries.keys()}
         x_data_file_size = getsize(data_for_groupby_queries[0])
