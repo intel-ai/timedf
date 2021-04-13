@@ -11,6 +11,7 @@ dependencies:
   - pandas>=1.0.0
   - conda
   - daal4py=0.2020.2
+  - daal=2020.2
   - scikit-learn<0.23.0   # in 0.23.0 we see undefined symbols: ImportError: cannot import name '_infer_dimension_' from 'sklearn.decomposition._pca'
   - pip
   - psutil
