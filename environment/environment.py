@@ -33,7 +33,9 @@ class CondaEnvironment:
         #             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         #             use_exception_handler=True)
 
-    def create(self, existence_check=False, name=None, requirements_file=None):
+    def create(
+        self, existence_check=False, name=None, requirements_file=None, python_version=None
+    ):
         env_name = name if name else self.name
         if self.is_env_exist(env_name):
             if existence_check:
@@ -41,15 +43,26 @@ class CondaEnvironment:
                 return
             else:
                 self.remove(env_name)
+        if python_version:
+            cmdline_create = [
+                "conda",
+                "create",
+                "--name",
+                env_name,
+                f"python={python_version}" if python_version else "",
+                "-y" if python_version else "",
+            ]
+            print("CREATING CONDA ENVIRONMENT")
+            execute_process(cmdline_create, print_output=False)
         cmdline = [
             "conda",
             "env",
-            "create",
+            "update" if python_version else "create",
             "--name",
             env_name,
             f"--file={requirements_file}" if requirements_file else "",
         ]
-        print("CREATING CONDA ENVIRONMENT")
+        print(f"{'UPDATING' if python_version else 'CREATING'} CONDA ENVIRONMENT")
         execute_process(cmdline, print_output=False)
         # TODO: replace with run_command
         # run_command(Commands.CREATE, self._add_conda_execution(cmdline, env_name),
