@@ -2,8 +2,6 @@
 import warnings
 from timeit import default_timer as timer
 
-import ibis
-
 from utils import (
     check_fragments_size,
     check_support,
@@ -79,6 +77,8 @@ def etl_ibis(
     import_mode,
     fragments_size,
 ):
+    import ibis
+
     etl_times = {key: 0.0 for key in etl_keys}
 
     fragments_size = check_fragments_size(fragments_size, count_table=1, import_mode=import_mode)
