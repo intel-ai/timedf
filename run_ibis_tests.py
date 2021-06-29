@@ -435,32 +435,14 @@ def main():
                 ibis_requirements = os.path.join(
                     args.ibis_path, "ci", f"requirements-{args.python_version}-dev.yml"
                 )
-                install_ibis_reqs_cmdline = [
-                    "conda",
-                    "env",
-                    "update",
-                    "--name",
-                    f"{args.env_name}",
-                    "--file",
-                    ibis_requirements,
-                ]
 
                 print("INSTALLATION OF IBIS DEPENDENCIES")
-                conda_env.run(install_ibis_reqs_cmdline)
+                conda_env.update(str(args.env_name), ibis_requirements)
 
                 print("IBIS INSTALLATION")
                 conda_env.run(install_cmdline, cwd=args.ibis_path)
 
             if args.modin_path:
-                install_modin_reqs_cmdline = [
-                    "conda",
-                    "env",
-                    "update",
-                    "--name",
-                    f"{args.env_name}",
-                    "--file",
-                    "environment-dev.yml",
-                ]
                 if args.modin_pkgs_dir:
                     os.environ["PYTHONPATH"] = (
                         os.getenv("PYTHONPATH") + os.pathsep + args.modin_pkgs_dir
@@ -468,7 +450,7 @@ def main():
                         else args.modin_pkgs_dir
                     )
                 print("INSTALLATION OF MODIN DEPENDENCIES")
-                conda_env.run(install_modin_reqs_cmdline, cwd=args.modin_path)
+                conda_env.run(str(args.env_name), "environment-dev.yml", cwd=args.modin_path)
 
                 print("MODIN INSTALLATION")
                 conda_env.run(install_cmdline, cwd=args.modin_path)
