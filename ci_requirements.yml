@@ -1,7 +1,7 @@
 channels:
   - conda-forge
   - intel
-  - anaconda
+  - default
 dependencies:
   - pytest-html
   - braceexpand
