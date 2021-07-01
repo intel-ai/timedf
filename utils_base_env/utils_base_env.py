@@ -1,5 +1,4 @@
 import argparse
-import re
 import socket
 import subprocess
 
@@ -27,12 +26,12 @@ def execute_process(cmdline, cwd=None, shell=False, daemon=False, print_output=T
         )
         if not daemon:
             output = process.communicate()[0].strip().decode()
-            if re.findall(r"\d fail", output) or re.findall(r"[e,E]rror", output):
-                process.returncode = 1
-            elif print_output:
+        # No `None` value indicates that the process has terminated
+        if process.returncode is not None:
+            if process.returncode != 0:
+                raise Exception(f"{output}\n\nCommand returned {process.returncode}.")
+            if print_output:
                 print(output)
-        if process.returncode != 0 and process.returncode is not None:
-            raise Exception(f"Command returned {process.returncode}. \n{output}")
         return process, output
     except OSError as err:
         print("Failed to start", cmdline, err)
