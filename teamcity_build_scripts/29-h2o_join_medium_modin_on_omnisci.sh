@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xe
 
 source ${CONDA_PREFIX}/bin/activate
 conda activate ${ENV_NAME}
