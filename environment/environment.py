@@ -83,7 +83,7 @@ class CondaEnvironment:
 
     def run(self, cmdline, name=None, cwd=None, print_output=False):
         env_name = name if name else self.name
-
+        print_output=True
         if print_output:
             cmd_print_list = ["conda", "list", "-n", env_name]
             print("PRINTING LIST OF PACKAGES")
