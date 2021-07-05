@@ -352,27 +352,31 @@ def load_data_ibis(
 
 
 def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, pandas_mode):
-    train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)
+    train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)  # noqa: F821
     # Currently we need to avoid skip_rows in Mode_on_omnisci mode since
     # pyarrow uses it in incompatible way
     if pandas_mode == "Modin_on_omnisci":
-        test = pd.read_csv(
+        test = pd.read_csv(  # noqa: F821
             "%s/test_set_skiprows.csv" % dataset_path,
             names=list(dtypes.keys()),
             dtype=dtypes,
             header=0,
         )
     else:
-        test = pd.read_csv(
+        test = pd.read_csv(  # noqa: F821
             "%s/test_set.csv" % dataset_path,
             names=list(dtypes.keys()),
             dtype=dtypes,
             skiprows=skip_rows,
         )
 
-    train_meta = pd.read_csv("%s/training_set_metadata.csv" % dataset_path, dtype=meta_dtypes)
+    train_meta = pd.read_csv(  # noqa: F821
+        "%s/training_set_metadata.csv" % dataset_path, dtype=meta_dtypes
+    )
     target = meta_dtypes.pop("target")
-    test_meta = pd.read_csv("%s/test_set_metadata.csv" % dataset_path, dtype=meta_dtypes)
+    test_meta = pd.read_csv(  # noqa: F821
+        "%s/test_set_metadata.csv" % dataset_path, dtype=meta_dtypes
+    )
     meta_dtypes["target"] = target
 
     return train, train_meta, test, test_meta
