@@ -1,3 +1,5 @@
+#!/bin/bash -e
+
 ROOT_DIR="${PWD}"
 cd omniscripts
 python3 run_omnisci_benchmark.py --env_name ${ENV_NAME} --env_check True --save_env True --mode synthetic                      \

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 if [ -z ${ADDITIONAL_OPTS+x} ]; then
     export "ADDITIONAL_OPTS=-dfiles_num 10 -no_pandas True"
