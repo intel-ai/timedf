@@ -352,6 +352,8 @@ def load_data_ibis(
 
 
 def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, pandas_mode):
+    # 'pd' module is defined implicitly in 'import_pandas_into_module_namespace'
+    # function so we should use 'noqa: F821' for flake8
     train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)  # noqa: F821
     # Currently we need to avoid skip_rows in Mode_on_omnisci mode since
     # pyarrow uses it in incompatible way
