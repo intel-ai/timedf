@@ -382,9 +382,9 @@ class SklearnImport:
             self.current_optimizer = optimizer
 
             if optimizer == "intel":
-                import daal4py.sklearn as sklearn
+                import sklearnex
 
-                sklearn.patch_sklearn()
+                sklearnex.patch_sklearn()
                 from sklearn.model_selection import train_test_split
             elif optimizer == "stock":
                 from sklearn.model_selection import train_test_split
