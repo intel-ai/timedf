@@ -155,7 +155,7 @@ def main():
     )
 
     # MySQL database parameters
-    add_mysql_arguments(mysql, etl_ml_tables=True)
+    add_mysql_arguments(optional, etl_ml_tables=True)
     # Omnisci server parameters
     optional.add_argument(
         "-executable",
