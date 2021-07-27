@@ -10,7 +10,7 @@ import os
 from server import OmnisciServer
 from report import DbReport
 from environment import CondaEnvironment
-from utils_base_env import str_arg_to_bool
+from utils_base_env import str_arg_to_bool, add_mysql_arguments
 
 omniscript_path = os.path.dirname(__file__)
 omnisci_server = None
@@ -268,22 +268,7 @@ optional.add_argument(
 )
 
 # MySQL database parameters
-optional.add_argument("-db-server", default="localhost", help="Host name of MySQL server.")
-optional.add_argument("-db-port", default=3306, type=int, help="Port number of MySQL server.")
-optional.add_argument(
-    "-db-user",
-    default="",
-    help="Username to use to connect to MySQL database. "
-    "If user name is specified, script attempts to store results in MySQL "
-    "database using other -db-* parameters.",
-)
-optional.add_argument(
-    "-db-pass", default="omniscidb", help="Password to use to connect to MySQL database."
-)
-optional.add_argument(
-    "-db-name", default="omniscidb", help="MySQL database to use to store benchmark results."
-)
-optional.add_argument("-db-table", help="Table to use to store results for this benchmark.")
+add_mysql_arguments(optional)
 
 optional.add_argument(
     "-commit",

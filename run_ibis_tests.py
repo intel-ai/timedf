@@ -10,6 +10,7 @@ from utils_base_env import (
     find_free_port,
     KeyValueListParser,
     str_arg_to_bool,
+    add_mysql_arguments,
 )
 
 
@@ -322,41 +323,7 @@ def main():
         help="Extends functionality of H2O benchmark by adding 'chk' functions and verbose local reporting of results",
     )
     # MySQL database parameters
-    mysql.add_argument(
-        "-db_server", dest="db_server", default="localhost", help="Host name of MySQL server."
-    )
-    mysql.add_argument(
-        "-db_port", dest="db_port", default=3306, type=int, help="Port number of MySQL server."
-    )
-    mysql.add_argument(
-        "-db_user",
-        dest="db_user",
-        help="Username to use to connect to MySQL database. "
-        "If user name is specified, script attempts to store results in MySQL "
-        "database using other -db-* parameters.",
-    )
-    mysql.add_argument(
-        "-db_pass",
-        dest="db_pass",
-        default="omniscidb",
-        help="Password to use to connect to MySQL database.",
-    )
-    mysql.add_argument(
-        "-db_name",
-        dest="db_name",
-        default="omniscidb",
-        help="MySQL database to use to store benchmark results.",
-    )
-    optional.add_argument(
-        "-db_table_etl",
-        dest="db_table_etl",
-        help="Table to use to store ETL results for this benchmark.",
-    )
-    optional.add_argument(
-        "-db_table_ml",
-        dest="db_table_ml",
-        help="Table to use to store ML results for this benchmark.",
-    )
+    add_mysql_arguments(mysql, etl_ml_tables=True)
     # Additional information
     commits.add_argument(
         "-commit_omnisci",

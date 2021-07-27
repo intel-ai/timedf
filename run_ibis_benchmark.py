@@ -10,6 +10,7 @@ from utils_base_env import (
     find_free_port,
     KeyValueListParser,
     str_arg_to_bool,
+    add_mysql_arguments,
 )
 from utils import (
     remove_fields_from_dict,
@@ -154,48 +155,7 @@ def main():
     )
 
     # MySQL database parameters
-    optional.add_argument(
-        "-db_server",
-        dest="db_server",
-        default="localhost",
-        help="Host name of MySQL server.",
-    )
-    optional.add_argument(
-        "-db_port",
-        dest="db_port",
-        default=3306,
-        type=int,
-        help="Port number of MySQL server.",
-    )
-    optional.add_argument(
-        "-db_user",
-        dest="db_user",
-        help="Username to use to connect to MySQL database. "
-        "If user name is specified, script attempts to store results in MySQL "
-        "database using other -db-* parameters.",
-    )
-    optional.add_argument(
-        "-db_pass",
-        dest="db_pass",
-        default="omniscidb",
-        help="Password to use to connect to MySQL database.",
-    )
-    optional.add_argument(
-        "-db_name",
-        dest="db_name",
-        default="omniscidb",
-        help="MySQL database to use to store benchmark results.",
-    )
-    optional.add_argument(
-        "-db_table_etl",
-        dest="db_table_etl",
-        help="Table to use to store ETL results for this benchmark.",
-    )
-    optional.add_argument(
-        "-db_table_ml",
-        dest="db_table_ml",
-        help="Table to use to store ML results for this benchmark.",
-    )
+    add_mysql_arguments(mysql, etl_ml_tables=True)
     # Omnisci server parameters
     optional.add_argument(
         "-executable",

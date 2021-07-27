@@ -70,3 +70,53 @@ class KeyValueListParser(argparse.Action):
             k, v = kv.split("=")
             kwargs[k] = v
         setattr(namespace, self.dest, kwargs)
+
+
+def add_mysql_arguments(parser, etl_ml_tables=False):
+    parser.add_argument(
+        "-db_server",
+        dest="db_server",
+        default="localhost",
+        help="Host name of MySQL server.",
+    )
+    parser.add_argument(
+        "-db_port",
+        dest="db_port",
+        default=3306,
+        type=int,
+        help="Port number of MySQL server.",
+    )
+    parser.add_argument(
+        "-db_user",
+        dest="db_user",
+        help="Username to use to connect to MySQL database. "
+        "If user name is specified, script attempts to store results in MySQL "
+        "database using other -db-* parameters.",
+    )
+    parser.add_argument(
+        "-db_pass",
+        dest="db_pass",
+        default="omniscidb",
+        help="Password to use to connect to MySQL database.",
+    )
+    parser.add_argument(
+        "-db_name",
+        dest="db_name",
+        default="omniscidb",
+        help="MySQL database to use to store benchmark results.",
+    )
+    if etl_ml_tables:
+        parser.add_argument(
+            "-db_table_etl",
+            dest="db_table_etl",
+            help="Table to use to store ETL results for this benchmark.",
+        )
+        parser.add_argument(
+            "-db_table_ml",
+            dest="db_table_ml",
+            help="Table to use to store ML results for this benchmark.",
+        )
+    else:
+        parser.add_argument(
+            "-db-table", dest="db_table", help="Table to use to store results for this benchmark."
+        )
