@@ -12,7 +12,7 @@
 # governing permissions and limitations under the License.
 
 # Build image from this dockerfile like this:
-# docker build -f modin-on-ray.dockerfile -t modin-on-ray:latest --build-arg https_proxy --build-arg http_proxy .
+# docker build -t modin-on-ray:latest --build-arg https_proxy --build-arg http_proxy .
 
 FROM ubuntu:20.04
 
