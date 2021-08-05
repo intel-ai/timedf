@@ -11,30 +11,24 @@
 # ANY KIND, either express or implied. See the License for the specific language
 # governing permissions and limitations under the License.
 
-FROM ubuntu:18.04
+# Build image from this dockerfile like this:
+# docker build -t modin-on-omnisci:latest --build-arg https_proxy --build-arg http_proxy .
+
+
+FROM ubuntu:20.04
 ENV http_proxy ${http_proxy}
 ENV https_proxy ${https_proxy}
-ENV no_proxy ${no_proxy}
 ENV MODIN_BACKEND "omnisci"
 ENV MODIN_EXPERIMENTAL "true"
 
 RUN apt-get update --yes \
-    && apt-get install wget --yes && \
+    && apt-get install wget less git --yes && \
     rm -rf /var/lib/apt/lists/*
 
-ENV USER modin
-ENV UID 1000
-ENV HOME /home/$USER
-
-RUN adduser --disabled-password \
-    --gecos "Non-root user" \
-    --uid $UID \
-    --home $HOME \
-    $USER
-
-ENV CONDA_DIR ${HOME}/miniconda
-
-SHELL ["/bin/bash", "--login", "-c"]
+RUN mkdir "/cnvrg"
+WORKDIR "/cnvrg"
+ENV CONDA_DIR /miniconda
+ENV PATH="${CONDA_DIR}/bin:${PATH}"
 
 RUN wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda3.sh && \
     bash /tmp/miniconda3.sh -b -p "${CONDA_DIR}" -f -u && \
@@ -44,14 +38,12 @@ RUN wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.
 
 RUN conda update -n base -c defaults conda -y && \
     conda config --set channel_priority strict && \
-    conda create -n modin --yes --no-default-packages && \
-    conda activate modin && \
-    conda install -c intel/label/modin -c conda-forge -c intel \
-        modin "ray>=1.0.0" "numpy==1.20.3" "scikit-learn<0.24.0" "daal4py>=2021.1" dpcpp_cpp_rt xgboost && \
+    conda install -c conda-forge python==3.7.10 && \
+    conda install -c intel/label/modin -c conda-forge -c intel modin "ray>=1.0.0" "numpy==1.20.3" "daal4py>=2021.1" && \
+    pip install -U jupyter "scikit-learn<0.24.0" xgboost && \
     conda clean --all --yes
 
-COPY plasticc-omnisci.py "${HOME}/plasticc-omnisci.py"
-RUN mkdir /dataset
-RUN echo 'conda activate modin && python -u ${HOME}/plasticc-omnisci.py $*' > /entrypoint.sh
+ENV http_proxy=
+ENV https_proxy=
+ENV RAY_OBJECT_STORE_ALLOW_SLOW_STORAGE=1
 
-ENTRYPOINT ["/bin/bash", "--login", "/entrypoint.sh"]
