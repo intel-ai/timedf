@@ -20,7 +20,7 @@ ENV http_proxy ${http_proxy}
 ENV https_proxy ${https_proxy}
 
 RUN apt-get update --yes && \
-    apt-get install wget less --yes && \
+    apt-get install wget less git --yes && \
     rm -rf /var/lib/apt/lists/*
 
 RUN mkdir "/cnvrg"
@@ -35,7 +35,7 @@ RUN wget --quiet --no-check-certificate https://repo.anaconda.com/miniconda/Mini
     echo ". '${CONDA_DIR}/etc/profile.d/conda.sh'" >> "${HOME}/.profile"
 
 RUN conda update -n base -c defaults conda -y && \
-    conda install -c conda-forge modin "ray-core>=1.0.0" "numpy>=1.16.5" scikit-learn "xgboost>=1.3" pip jupyter git && \
+    conda install -c conda-forge modin "ray-core>=1.0.0" "numpy>=1.16.5" scikit-learn "xgboost>=1.3" pip jupyter && \
     conda clean --all --yes
 
 ENV http_proxy=
