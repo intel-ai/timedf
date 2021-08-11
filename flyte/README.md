@@ -20,3 +20,26 @@ Scripts require to be installed:
 * or open  **scrips/ .py** in text redactor
 * replace default path in the input variables in the function decorated as `@workflow`
 * run sequentially notebook cells or run function scripts as `(venv) $ python <benchmark_file_name>`
+
+## Flyte app building
+As suggested on the <a href="https://docs.flyte.org/en/latest/getting_started.html">Flyte Getting Started page</a>, Flyte project should have the following structure:
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>.
+├── Dockerfile
+├── docker_build_and_tag.sh
+├── myapp
+│         ├── __init__.py
+│         └── workflows
+│             ├── __init__.py
+│             └── example.py
+└── requirements.txt
+</pre></div>
+
+There is available <a href="https://github.com/flyteorg/flytekit-python-template">flytekit-python-template</a>:
+* You should clone this repo (recommended using a virtual environment):
+
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>pip3 install flytekit --upgrade
+git clone https://github.com/flyteorg/flytekit-python-template.git myflyteapp
+cd myflyteapp
+</pre></div>
+
+You may also copy benchmark scripts into `myflyteapp/myapp/workflows/` to build flyte project further
