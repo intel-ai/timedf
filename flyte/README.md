@@ -1,6 +1,6 @@
 ## Benchmarking scripts that are used to run Flytekit benchmarks for performance analyzes in development cycle.
 
-## There are implemented following benchmarks:
+## There are the following benchmarks implemented:
 * taxi
 * census
 * plasticc
@@ -19,7 +19,7 @@ Scripts require to be installed:
 ## Running benchmarks instructions
 * copy and open **jupyter/** `.ipynb` scripts via `jupyter notebook`
 * or open  **scrips/** `.py` in text redactor
-* replace default path in the input variables in the function signature decorated as `@workflow`
+* replace default path to the dataset in the input variables in the function signature decorated as `@workflow`
 * run sequentially notebook cells or run benchmarks scripts as `(venv)$ python <benchmark_file_name>`
 
 ## Flyte app building
