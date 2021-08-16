@@ -35,7 +35,7 @@ RUN wget --quiet --no-check-certificate https://repo.anaconda.com/miniconda/Mini
     echo ". '${CONDA_DIR}/etc/profile.d/conda.sh'" >> "${HOME}/.profile"
 
 RUN conda update -n base -c defaults conda -y && \
-    conda install -c conda-forge modin "ray-core>=1.0.0" "numpy>=1.16.5" scikit-learn "xgboost>=1.3" pip jupyter && \
+    conda install -c conda-forge modin "ray-core>=1.0.0" "ray-dashboard>=1.0.0" "numpy>=1.16.5" scikit-learn "xgboost>=1.3" pip jupyter && \
     conda clean --all --yes
 
 ENV http_proxy=
