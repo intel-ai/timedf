@@ -45,11 +45,11 @@ RUN wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.
     rm -f /tmp/miniconda3.sh
 
 RUN conda update -n base -c defaults conda -y && \
-    conda create -n ${CONDA_ENV_NAME} --yes -c conda-forge ${CONDA_ENV_NAME} scikit-learn scikit-learn-intelex xgboost pip jupyter && \
+    conda create -n ${CONDA_ENV_NAME} --yes -c conda-forge modin-omnisci scikit-learn scikit-learn-intelex xgboost pip jupyter && \
     conda clean --all --yes
 
 # Activate ${CONDA_ENV_NAME} for interative shells
-RUN echo "source /opt/conda/bin/activate ${CONDA_ENV_NAME}" >> /root/.bashrc
+RUN echo "source ${CONDA_DIR}/bin/activate ${CONDA_ENV_NAME}" >> /root/.bashrc
 # Activate ${CONDA_ENV_NAME} for non-interative shells
 RUN sed -e 's,\(\[ -z "\$PS1" \] && return\),# \1,' -i /root/.bashrc
 ENV BASH_ENV=/root/.bashrc
