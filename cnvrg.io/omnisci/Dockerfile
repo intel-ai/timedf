@@ -16,34 +16,47 @@
 
 
 FROM ubuntu:20.04
-ENV http_proxy ${http_proxy}
-ENV https_proxy ${https_proxy}
-ENV MODIN_BACKEND "omnisci"
-ENV MODIN_EXPERIMENTAL "true"
+
+# Proxy settings
+ENV http_proxy=${http_proxy}
+ENV https_proxy=${https_proxy}
+
+# Modin settings
+ENV MODIN_BACKEND="omnisci"
+ENV MODIN_EXPERIMENTAL="true"
+ENV RAY_OBJECT_STORE_ALLOW_SLOW_STORAGE=1
+
+# Cnvrg.io settings
+RUN mkdir "/cnvrg"
+WORKDIR "/cnvrg"
+
+# Conda settings
+ENV CONDA_DIR=/opt/conda
+ENV CONDA_ENV_NAME=modin-omnisci
+ENV PATH="${CONDA_DIR}/bin:${PATH}"
 
 RUN apt-get update --yes \
     && apt-get install wget less git --yes && \
     rm -rf /var/lib/apt/lists/*
 
-RUN mkdir "/cnvrg"
-WORKDIR "/cnvrg"
-ENV CONDA_DIR /miniconda
-ENV PATH="${CONDA_DIR}/bin:${PATH}"
-
 RUN wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda3.sh && \
     bash /tmp/miniconda3.sh -b -p "${CONDA_DIR}" -f -u && \
     "${CONDA_DIR}/bin/conda" init bash && \
-    rm -f /tmp/miniconda3.sh && \
-    echo ". '${CONDA_DIR}/etc/profile.d/conda.sh'" >> "${HOME}/.profile"
+    rm -f /tmp/miniconda3.sh
 
 RUN conda update -n base -c defaults conda -y && \
-    conda config --set channel_priority strict && \
-    conda install -c conda-forge python==3.7.10 && \
-    conda install -c intel/label/modin -c conda-forge -c intel modin "ray>=1.0.0" "numpy==1.20.3" "daal4py>=2021.1" && \
-    pip install -U jupyter "scikit-learn<0.24.0" xgboost && \
+    conda create -n ${CONDA_ENV_NAME} --yes -c conda-forge ${CONDA_ENV_NAME} scikit-learn scikit-learn-intelex xgboost pip jupyter && \
     conda clean --all --yes
 
+# Activate ${CONDA_ENV_NAME} for interative shells
+RUN echo "source /opt/conda/bin/activate ${CONDA_ENV_NAME}" >> /root/.bashrc
+# Activate ${CONDA_ENV_NAME} for non-interative shells
+RUN sed -e 's,\(\[ -z "\$PS1" \] && return\),# \1,' -i /root/.bashrc
+ENV BASH_ENV=/root/.bashrc
+
+# Clean up proxy settings to publish on Docker Hub
 ENV http_proxy=
 ENV https_proxy=
-ENV RAY_OBJECT_STORE_ALLOW_SLOW_STORAGE=1
 
+# Set entrypoint with arguments expansion
+ENTRYPOINT ["/bin/bash", "-c", "exec $0 $*"]
