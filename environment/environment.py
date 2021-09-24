@@ -34,8 +34,19 @@ class CondaEnvironment:
         #             use_exception_handler=True)
 
     def create(
-        self, existence_check=False, name=None, requirements_file=None, python_version=None
+        self,
+        existence_check=False,
+        name=None,
+        requirements_file=None,
+        python_version=None,
+        channel=None,
     ):
+        """Create conda env.
+
+        Note
+        ----
+        `python_version` and `channel` parameters are used only during env creation.
+        """
         env_name = name if name else self.name
         if self.is_env_exist(env_name):
             if existence_check:
@@ -49,9 +60,11 @@ class CondaEnvironment:
                 "create",
                 "--name",
                 env_name,
-                f"python={python_version}" if python_version else "",
-                "-y" if python_version else "",
             ]
+            if python_version:
+                cmdline_create.extend([f"python={python_version}", "-y"])
+            if channel:
+                cmdline_create.extend(["-c", channel])
             print("CREATING CONDA ENVIRONMENT")
             execute_process(cmdline_create, print_output=False)
         cmdline = [

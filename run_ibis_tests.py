@@ -394,6 +394,7 @@ def main():
             args.env_check,
             requirements_file=args.ci_requirements,
             python_version=args.python_version,
+            channel="conda-forge",
         )
         if tasks["build"]:
             install_cmdline = ["python3", "setup.py", "install"]
