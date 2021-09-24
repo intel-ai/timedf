@@ -416,8 +416,6 @@ def main():
                         if os.getenv("PYTHONPATH")
                         else args.modin_pkgs_dir
                     )
-                print("INSTALLATION OF MODIN DEPENDENCIES")
-                conda_env.update(str(args.env_name), "environment-dev.yml", cwd=args.modin_path)
 
                 print("MODIN INSTALLATION")
                 conda_env.run(install_cmdline, cwd=args.modin_path)
