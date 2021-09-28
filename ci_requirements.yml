@@ -13,6 +13,7 @@ dependencies:
   - scikit-learn-intelex
   - pip
   - psutil
+  - cmake>=3.15
   # pip with old git failed build asv from master; conflict with PEP440
   - git>=2.0.0
   - pip:
