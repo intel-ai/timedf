@@ -5,8 +5,9 @@ from timeit import default_timer as timer
 from collections import OrderedDict
 import psutil
 from tempfile import mkstemp
+from utils_base_env import str_arg_to_bool
 
-use_s3 = os.environ.get("OMNISCRIPTS_USE_S3_CLIENT", True)
+use_s3 = str_arg_to_bool(os.environ.get("OMNISCRIPTS_USE_S3_CLIENT", True))
 if use_s3:
     from .s3_client import s3_client
 
