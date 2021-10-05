@@ -5,7 +5,10 @@ from timeit import default_timer as timer
 from collections import OrderedDict
 import psutil
 from tempfile import mkstemp
-import s3fs
+
+use_s3 = os.environ.get("OMNISCRIPTS_USE_S3_CLIENT", True)
+if use_s3:
+    from .s3_client import s3_client
 
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -281,59 +284,12 @@ def load_data_modin_on_omnisci(
     )
 
 
-class S3Client:
-    s3_aws_com = ".s3.amazonaws.com"
-
-    def __init__(self):
-        self.fs = s3fs.S3FileSystem(anon=True)
-
-    @classmethod
-    def s3like(cls, filename: str):
-        if filename.startswith("s3://"):
-            return True
-        elif filename.startswith("https://"):
-            if cls.s3_aws_com not in filename:
-                return False
-            return True
-        else:
-            return False
-
-    def _prepare_s3_link(self, https_link: str):
-        filename = https_link.replace("https://", "")
-        filename = filename.replace(self.s3_aws_com, "")
-        bucket_name = filename.split("/")[0]
-        return bucket_name, filename
-
-    def getsize(self, filename: str):
-        if filename.startswith("https://"):
-            _, filename = self._prepare_s3_link(filename)
-        return self.fs.info(filename)["Size"]
-
-    def glob(self, files_pattern: str):
-        if files_pattern.startswith("https://"):
-            bucket_name, s3_files_pattern = self._prepare_s3_link(files_pattern)
-            return [
-                f"https://{filename.replace(bucket_name, bucket_name+self.s3_aws_com)}"
-                for filename in self.fs.glob(s3_files_pattern)
-            ]
-        else:
-            return [f"s3://{filename}" for filename in self.fs.glob(files_pattern)]
-
-    def du(self, start_path: str):
-        if start_path.startswith("https://"):
-            _, start_path = self._prepare_s3_link(start_path)
-        return s3_client.fs.du(start_path) / 1024 / 1024
-
-
-s3_client = S3Client()
-
-
 def files_names_from_pattern(files_pattern):
     from braceexpand import braceexpand
 
     data_files_names = list(braceexpand(files_pattern))
 
-    if "://" in files_pattern:
+    if use_s3 and "://" in files_pattern:
         if all(map(s3_client.s3like, data_files_names)):
             data_files_names = sorted([x for f in data_files_names for x in s3_client.glob(f)])
         else:
@@ -530,7 +486,7 @@ def memory_usage():
 
 def getsize(filename: str):
     """Return size of filename in MB"""
-    if "://" in filename:
+    if use_s3 and "://" in filename:
         if s3_client.s3like(filename):
             return s3_client.getsize(filename) / 1024 / 1024
         raise ValueError(f"bad s3like link: {filename}")
@@ -703,7 +659,7 @@ def get_dir_size(start_path="."):
 
     """
     total_size = 0
-    if "://" in start_path:
+    if use_s3 and "://" in start_path:
         if s3_client.s3like(start_path):
             total_size = s3_client.du(start_path)
         else:

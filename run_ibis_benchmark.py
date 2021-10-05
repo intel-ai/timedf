@@ -3,9 +3,6 @@ import argparse
 import os
 import time
 
-import mysql.connector
-
-from report import DbReport
 from utils_base_env import (
     find_free_port,
     KeyValueListParser,
@@ -417,6 +414,9 @@ def main():
 
             # Reporting to MySQL database
             if args.db_user is not None:
+                import mysql.connector
+                from report import DbReport
+
                 if iter_num == 1:
                     db = mysql.connector.connect(
                         host=args.db_server,
