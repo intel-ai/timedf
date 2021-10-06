@@ -7,6 +7,8 @@ import psutil
 from tempfile import mkstemp
 from utils_base_env import str_arg_to_bool
 
+# in this specific mode omniscripts doesn't need any specific dependencies to
+# be installed
 no_deps_mode = str_arg_to_bool(os.environ.get("OMNISCRIPTS_NO_DEPS_MODE", False))
 if not no_deps_mode:
     from .s3_client import s3_client
