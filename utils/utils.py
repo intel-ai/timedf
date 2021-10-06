@@ -7,8 +7,8 @@ import psutil
 from tempfile import mkstemp
 from utils_base_env import str_arg_to_bool
 
-use_s3 = str_arg_to_bool(os.environ.get("OMNISCRIPTS_USE_S3_CLIENT", True))
-if use_s3:
+no_deps_mode = str_arg_to_bool(os.environ.get("OMNISCRIPTS_NO_DEPS_MODE", False))
+if not no_deps_mode:
     from .s3_client import s3_client
 
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
@@ -285,18 +285,54 @@ def load_data_modin_on_omnisci(
     )
 
 
+def expand_braces(pattern: str):
+    """
+    Expand braces of the provided string in Linux manner.
+
+    `pattern` should be passed in the next format:
+    pattern = "prefix{values_to_expand}suffix"
+
+    Notes
+    -----
+    `braceexpand` replacement for single string format type.
+    Can be used to avoid package import for single corner
+    case.
+
+    Examples
+    --------
+    >>> expand_braces("/taxi/trips_xa{a,b,c}.csv")
+    ['/taxi/trips_xaa.csv', '/taxi/trips_xab.csv', '/taxi/trips_xac.csv']
+    """
+    brace_open_idx = pattern.index("{")
+    brace_close_idx = pattern.index("}")
+    prefix = pattern[:brace_open_idx]
+
+    suffix = pattern[brace_close_idx + 1 :]
+    choices = pattern[brace_open_idx + 1 : brace_close_idx].split(",")
+    expanded = []
+    for choice in choices:
+        expanded.append(prefix + choice + suffix)
+
+    return expanded
+
+
 def files_names_from_pattern(files_pattern):
-    from braceexpand import braceexpand
+    data_files_names = None
+    if not no_deps_mode:
+        from braceexpand import braceexpand
 
-    data_files_names = list(braceexpand(files_pattern))
-
-    if use_s3 and "://" in files_pattern:
-        if all(map(s3_client.s3like, data_files_names)):
-            data_files_names = sorted([x for f in data_files_names for x in s3_client.glob(f)])
+        data_files_names = list(braceexpand(files_pattern))
+        if "://" in files_pattern:
+            if all(map(s3_client.s3like, data_files_names)):
+                data_files_names = sorted([x for f in data_files_names for x in s3_client.glob(f)])
+            else:
+                raise ValueError(f"some of s3like links are bad: {data_files_names}")
         else:
-            raise ValueError(f"some of s3like links are bad: {data_files_names}")
+            data_files_names = sorted([x for f in data_files_names for x in glob.glob(f)])
     else:
+        data_files_names = expand_braces(files_pattern)
         data_files_names = sorted([x for f in data_files_names for x in glob.glob(f)])
+
     return data_files_names
 
 
@@ -487,7 +523,7 @@ def memory_usage():
 
 def getsize(filename: str):
     """Return size of filename in MB"""
-    if use_s3 and "://" in filename:
+    if not no_deps_mode and "://" in filename:
         if s3_client.s3like(filename):
             return s3_client.getsize(filename) / 1024 / 1024
         raise ValueError(f"bad s3like link: {filename}")
@@ -660,7 +696,7 @@ def get_dir_size(start_path="."):
 
     """
     total_size = 0
-    if use_s3 and "://" in start_path:
+    if not no_deps_mode and "://" in start_path:
         if s3_client.s3like(start_path):
             total_size = s3_client.du(start_path)
         else:
