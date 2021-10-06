@@ -307,10 +307,11 @@ def expand_braces(pattern: str):
     """
     brace_open_idx = pattern.index("{")
     brace_close_idx = pattern.index("}")
-    prefix = pattern[:brace_open_idx]
 
+    prefix = pattern[:brace_open_idx]
     suffix = pattern[brace_close_idx + 1 :]
     choices = pattern[brace_open_idx + 1 : brace_close_idx].split(",")
+
     expanded = []
     for choice in choices:
         expanded.append(prefix + choice + suffix)
@@ -320,22 +321,20 @@ def expand_braces(pattern: str):
 
 def files_names_from_pattern(files_pattern):
     data_files_names = None
+    path_expander = glob.glob
     if not no_deps_mode:
         from braceexpand import braceexpand
 
         data_files_names = list(braceexpand(files_pattern))
         if "://" in files_pattern:
             if all(map(s3_client.s3like, data_files_names)):
-                data_files_names = sorted([x for f in data_files_names for x in s3_client.glob(f)])
+                path_expander = s3_client.glob
             else:
                 raise ValueError(f"some of s3like links are bad: {data_files_names}")
-        else:
-            data_files_names = sorted([x for f in data_files_names for x in glob.glob(f)])
     else:
         data_files_names = expand_braces(files_pattern)
-        data_files_names = sorted([x for f in data_files_names for x in glob.glob(f)])
 
-    return data_files_names
+    return sorted([x for f in data_files_names for x in path_expander(f)])
 
 
 def print_times(times, backend=None):
@@ -525,7 +524,9 @@ def memory_usage():
 
 def getsize(filename: str):
     """Return size of filename in MB"""
-    if not no_deps_mode and "://" in filename:
+    if "://" in filename:
+        if no_deps_mode:
+            raise RuntimeError(f"Size of '{filename}' can not be measured in no-deps mode")
         if s3_client.s3like(filename):
             return s3_client.getsize(filename) / 1024 / 1024
         raise ValueError(f"bad s3like link: {filename}")
@@ -698,7 +699,9 @@ def get_dir_size(start_path="."):
 
     """
     total_size = 0
-    if not no_deps_mode and "://" in start_path:
+    if "://" in start_path:
+        if no_deps_mode:
+            raise RuntimeError(f"Size of '{start_path}' can not be measured in no-deps mode")
         if s3_client.s3like(start_path):
             total_size = s3_client.du(start_path)
         else:
