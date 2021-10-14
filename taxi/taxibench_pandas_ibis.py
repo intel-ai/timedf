@@ -472,7 +472,9 @@ def etl_pandas(
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
     # this is to trigger data import in `MOdin_on_omnisci` mode
     if pandas_mode == "Modin_on_omnisci":
-        from modin.experimental.engines.omnisci_on_native.frame.omnisci_worker import OmnisciServer
+        from modin.experimental.core.execution.native.implementations.omnisci_on_native.omnisci_worker import (
+            OmnisciServer,
+        )
 
         concatenated_df.shape
         concatenated_df._query_compiler._modin_frame._partitions[0][
