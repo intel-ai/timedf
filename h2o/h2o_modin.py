@@ -548,7 +548,6 @@ def run_benchmark(parameters):
             "dfiles_num",
             "gpu_memory",
             "no_ml",
-            "no_ibis",
             "optimizer",
             "validation",
         ],
@@ -556,17 +555,16 @@ def run_benchmark(parameters):
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
 
-    if not parameters["no_pandas"]:
-        import_pandas_into_module_namespace(
-            namespace=run_benchmark.__globals__,
-            mode=parameters["pandas_mode"],
-            ray_tmpdir=parameters["ray_tmpdir"],
-            ray_memory=parameters["ray_memory"],
-        )
-        queries_results = queries_modin(
-            filename=parameters["data_file"],
-            pandas_mode=parameters["pandas_mode"],
-            extended_functionality=parameters["extended_functionality"],
-        )
+    import_pandas_into_module_namespace(
+        namespace=run_benchmark.__globals__,
+        mode=parameters["pandas_mode"],
+        ray_tmpdir=parameters["ray_tmpdir"],
+        ray_memory=parameters["ray_memory"],
+    )
+    queries_results = queries_modin(
+        filename=parameters["data_file"],
+        pandas_mode=parameters["pandas_mode"],
+        extended_functionality=parameters["extended_functionality"],
+    )
 
     return {"ETL": [queries_results], "ML": []}

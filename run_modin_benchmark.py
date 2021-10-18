@@ -20,7 +20,7 @@ def main():
         "mortgage": "mortgage",
         "h2o": "h2o",
     }
-    benchmarks_with_ibis_queries = ["ny_taxi", "santander", "census", "plasticc", "mortgage"]
+    benchmarks = ["ny_taxi", "santander", "census", "plasticc", "mortgage"]
 
     ignore_fields_for_bd_report_etl = ["t_connect"]
     ignore_fields_for_bd_report_ml = []
@@ -31,7 +31,7 @@ def main():
         "query_name",
     ]
 
-    parser = argparse.ArgumentParser(description="Run internal tests from ibis project")
+    parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
     optional = parser._action_groups.pop()
     required = parser.add_argument_group("required arguments")
     parser._action_groups.append(optional)
@@ -88,18 +88,6 @@ def main():
         dest="optimizer",
         default=None,
         help="Which optimizer is used",
-    )
-    optional.add_argument(
-        "-no_ibis",
-        default=False,
-        type=str_arg_to_bool,
-        help="Do not run Ibis benchmark, run only Pandas (or Modin) version",
-    )
-    optional.add_argument(
-        "-no_pandas",
-        default=False,
-        type=str_arg_to_bool,
-        help="Do not run Pandas version of benchmark",
     )
     optional.add_argument(
         "-pandas_mode",
@@ -262,12 +250,6 @@ def main():
         help="Omnisci commit hash used for benchmark.",
     )
     optional.add_argument(
-        "-commit_ibis",
-        dest="commit_ibis",
-        default="1234567890123456789012345678901234567890",
-        help="Ibis commit hash used for benchmark.",
-    )
-    optional.add_argument(
         "-commit_omniscripts",
         dest="commit_omniscripts",
         default="1234567890123456789012345678901234567890",
@@ -296,7 +278,7 @@ def main():
         args = parser.parse_args()
 
         launch_omnisci_server = (
-            not args.no_ibis and args.bench_name in benchmarks_with_ibis_queries
+            args.bench_name in benchmarks
         )
 
         if args.port == port_default_value:
@@ -313,14 +295,12 @@ def main():
             "dfiles_num": args.dfiles_num,
             "no_ml": args.no_ml,
             "use_modin_xgb": args.use_modin_xgb,
-            "no_ibis": args.no_ibis,
             "optimizer": args.optimizer,
             "pandas_mode": args.pandas_mode,
             "ray_tmpdir": args.ray_tmpdir,
             "ray_memory": args.ray_memory,
             "gpu_memory": args.gpu_memory,
             "validation": args.validation,
-            "no_pandas": args.no_pandas,
             "debug_mode": args.debug_mode,
             "extended_functionality": args.extended_functionality,
         }
@@ -328,7 +308,7 @@ def main():
         if launch_omnisci_server:
             if args.executable is None:
                 parser.error(
-                    "Omnisci executable should be specified with -e/--executable for Ibis part"
+                    "Omnisci executable should be specified with -e/--executable"
                 )
             from server import OmnisciServer
 
@@ -354,10 +334,6 @@ def main():
             parameters["dni"] = args.dni
             parameters["import_mode"] = args.import_mode
             parameters["fragments_size"] = args.fragments_size
-
-        if parameters["validation"] and (parameters["no_pandas"] or parameters["no_ibis"]):
-            parameters["validation"] = False
-            print("WARNING: validation was turned off as it requires both sides to compare.")
 
         etl_results = []
         ml_results = []
@@ -412,7 +388,6 @@ def main():
 
                     reporting_init_fields = {
                         "OmnisciCommitHash": args.commit_omnisci,
-                        "IbisCommitHash": args.commit_ibis,
                         "OmniscriptsCommitHash": args.commit_omniscripts,
                         "ModinCommitHash": args.commit_modin,
                     }

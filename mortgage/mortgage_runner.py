@@ -1,7 +1,5 @@
 import warnings
 
-import ibis
-
 from utils import (
     check_support,
     compare_dataframes,
@@ -9,7 +7,6 @@ from utils import (
     print_results,
     get_dir_size,
 )
-from .mortgage_ibis import etl_ibis
 from .mortgage_pandas import etl_pandas, ml
 
 warnings.filterwarnings("ignore")
@@ -17,25 +14,6 @@ warnings.filterwarnings("ignore")
 
 # Dataset link
 # https://rapidsai.github.io/demos/datasets/mortgage-data
-
-
-def _etl_ibis(parameters, acq_schema, perf_schema, etl_keys, do_validate=False):
-    return etl_ibis(
-        dataset_path=parameters["data_file"],
-        dfiles_num=parameters["dfiles_num"],
-        acq_schema=acq_schema,
-        perf_schema=perf_schema,
-        database_name=parameters["database_name"],
-        table_prefix=parameters["table"],
-        omnisci_server_worker=parameters["omnisci_server_worker"],
-        delete_old_database=not parameters["dnd"] and not do_validate,
-        create_new_table=not parameters["dni"] and not do_validate,
-        ipc_connection=parameters["ipc_connection"],
-        etl_keys=etl_keys,
-        import_mode=parameters["import_mode"],
-        fragments_size=parameters["fragments_size"],
-        leave_category_strings=do_validate,
-    )
 
 
 def _etl_pandas(parameters, acq_schema, perf_schema, etl_keys, do_validate=False):
@@ -70,19 +48,15 @@ def run_benchmark(parameters):
 
     if parameters["validation"]:
         print("WARNING: Validation not yet supported")
-    if not parameters["no_ibis"]:
-        if parameters["import_mode"] not in ("fsi",):
-            raise ValueError("Unsupported import mode: %s" % parameters["import_mode"])
 
-    if not parameters["no_pandas"]:
-        import_pandas_into_module_namespace(
-            namespace=[run_benchmark.__globals__, etl_pandas.__globals__],
-            mode=parameters["pandas_mode"],
-            ray_tmpdir=parameters["ray_tmpdir"],
-            ray_memory=parameters["ray_memory"],
-        )
+    import_pandas_into_module_namespace(
+        namespace=[run_benchmark.__globals__, etl_pandas.__globals__],
+        mode=parameters["pandas_mode"],
+        ray_tmpdir=parameters["ray_tmpdir"],
+        ray_memory=parameters["ray_memory"],
+    )
 
-    acq_schema = ibis.Schema(
+    acq_schema = OrderedDict(
         names=(
             "loan_id",
             "orig_channel",
@@ -140,7 +114,7 @@ def run_benchmark(parameters):
             "int32",
         ),
     )
-    perf_schema = ibis.Schema(
+    perf_schema = OrderedDict(
         names=(
             "loan_id",
             "monthly_reporting_period",
@@ -218,53 +192,15 @@ def run_benchmark(parameters):
     # gets data directory size in MB
     dataset_size = get_dir_size(parameters["data_file"])
 
-    if not parameters["no_ibis"]:
-        df_ibis, mb_ibis, etl_times_ibis = _etl_ibis(parameters, acq_schema, perf_schema, etl_keys)
-        print_results(results=etl_times_ibis, backend="Ibis", unit="s")
-        etl_times_ibis["Backend"] = "Ibis"
-        etl_times_ibis["dataset_size"] = dataset_size
-        result["ETL"].append(etl_times_ibis)
-        if not parameters["no_ml"]:
-            result["ML"].append(_run_ml(df_ibis, N_RUNS, mb_ibis, ml_keys, ml_score_keys, "Ibis"))
+    df_pd, mb_pd, etl_times_pd = _etl_pandas(parameters, acq_schema, perf_schema, etl_keys)
+    print_results(results=etl_times_pd, backend=parameters["pandas_mode"], unit="s")
+    etl_times_pd["Backend"] = parameters["pandas_mode"]
+    etl_times_pd["dataset_size"] = dataset_size
+    result["ETL"].append(etl_times_pd)
 
-    if not parameters["no_pandas"]:
-        df_pd, mb_pd, etl_times_pd = _etl_pandas(parameters, acq_schema, perf_schema, etl_keys)
-        print_results(results=etl_times_pd, backend=parameters["pandas_mode"], unit="s")
-        etl_times_pd["Backend"] = parameters["pandas_mode"]
-        etl_times_pd["dataset_size"] = dataset_size
-        result["ETL"].append(etl_times_pd)
-
-        if not parameters["no_ml"]:
-            result["ML"].append(
-                _run_ml(df_pd, N_RUNS, mb_pd, ml_keys, ml_score_keys, parameters["pandas_mode"])
-            )
-
-    if parameters["validation"]:
-        # recompute frames but leave categories as strings
-        idf, _, _ = _etl_ibis(parameters, acq_schema, perf_schema, etl_keys, do_validate=True)
-        pdf, _, _ = _etl_pandas(parameters, acq_schema, perf_schema, etl_keys, do_validate=True)
-        for df in (pdf, idf):
-            for colname, coltype in df.dtypes.items():
-                if str(coltype) == "category":
-                    df[colname] = (
-                        df[colname]
-                        .cat.reorder_categories(sorted(df[colname].cat.categories), True)
-                        .cat.add_categories("N/A")
-                        .fillna("N/A")
-                    )
-        sortBy = sorted(pdf.dtypes.index)
-        pdf.sort_values(by=sortBy, axis=0, inplace=True)
-        idf.sort_values(by=sortBy, axis=0, inplace=True)
-        pdf = pdf.reset_index().drop("index", axis=1)
-        idf = idf.reset_index().drop("index", axis=1)
-
-        compare_dataframes((idf,), (pdf,), [], [])
-    # pdf['servicer'] = pdf['servicer'].cat.add_categories('N/A').fillna('N/A')
-
-    #        pdb.set_trace()
-    #        # df_pd.drop(dropCols, axis=1, inplace=True)
-    #        compare_dataframes(
-    #            ibis_dfs=(df_ibis,), pandas_dfs=(df_pd,), sort_cols=sortBy, drop_cols=dropCols
-    #        )
+    if not parameters["no_ml"]:
+        result["ML"].append(
+            _run_ml(df_pd, N_RUNS, mb_pd, ml_keys, ml_score_keys, parameters["pandas_mode"])
+        )
 
     return result

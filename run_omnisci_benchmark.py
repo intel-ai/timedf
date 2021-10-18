@@ -101,7 +101,7 @@ parser._action_groups.append(optional)
 
 # Environment
 required.add_argument(
-    "-en", "--env_name", dest="env_name", default="ibis-tests", help="Conda env name."
+    "-en", "--env_name", dest="env_name", default="modin-tests", help="Conda env name."
 )
 optional.add_argument(
     "-ec",

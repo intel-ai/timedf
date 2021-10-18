@@ -97,7 +97,7 @@ python3 taxi/taxibench_pandas.py -df 2 -i 5 -dp '/datadir/taxi/trips_*.csv.gz'
 
 ## Ibis script
 
-Ibis build, tests and benchmarks run through `run_ibis_test.py`. It has three distinct
+Ibis build, tests and benchmarks run through `_test.py`. It has three distinct
 modes of operation: 
 * build and install ibis;
 * run ibis tests using pytest;
@@ -108,7 +108,7 @@ Parameters which can be used:
 Switch | Default value | Meaning
 ------ | ------------- | -------
 -t, --task | | Task for execute from supported list [build, test, benchmark]. Use "," separator for multiple tasks. 
--en, --env_name | ibis-tests | Conda env name.
+-en, --env_name | modin-tests | Conda env name.
 -ec, --env_check | False | Check if env exists. If it exists don't recreate.
 -s, --save_env | False | Save conda env after executing.
 -r, --report_path | parent dir of omnscripts | Path to report file.
@@ -151,20 +151,20 @@ removed or saved after executing.
 
 Sample build ibis command line:
 ```
-python3 run_ibis_tests.py --env_name ibis-test --env_check False --save_env True --python_version 3.7 --task build --name agent_test_ibis --ci_requirements /localdisk/username/omniscripts/ci_requirements.yml --ibis_path /localdisk/username/ibis/ --executable /localdisk/username/omniscidb/release/bin/omnisci_server
+python3 run_modin_tests.py --env_name ibis-test --env_check False --save_env True --python_version 3.7 --task build --name agent_test_ibis --ci_requirements /localdisk/username/omniscripts/ci_requirements.yml --ibis_path /localdisk/username/ibis/ --executable /localdisk/username/omniscidb/release/bin/omnisci_server
 ```
 
 Sample run ibis tests command line:
 ```
-python3 run_ibis_tests.py --env_name ibis-test --env_check True --save_env True --python_version 3.7 --task test --name agent_test_ibis --report /localdisk/username/ --ibis_path /localdisk/username/ibis/ --executable /localdisk/username/omniscidb/build/bin/omnisci_server --user admin --password HyperInteractive
+python3 run_modin_tests.py --env_name ibis-test --env_check True --save_env True --python_version 3.7 --task test --name agent_test_ibis --report /localdisk/username/ --ibis_path /localdisk/username/ibis/ --executable /localdisk/username/omniscidb/build/bin/omnisci_server --user admin --password HyperInteractive
 ```
 
 Sample run taxi benchmark command line:
 ```
-python3 run_ibis_tests.py --env_name ibis-test --env_check True --python_version 3.7 --task benchmark --ci_requirements /localdisk/username/omniscripts/ci_requirements.yml --save_env True --report /localdisk/username/ --ibis_path /localdisk/username/ibis/ --executable /localdisk/username/omniscidb/build/bin/omnisci_server -u admin -p HyperInteractive -n agent_test_ibis --bench_name ny_taxi --dfiles_num 20 --dpattern '/localdisk/username/benchmark_datasets/taxi/trips_xa{a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t}.csv.gz' --iters 5 -db-server localhost -db-port 3306 -db-user user -db-pass omniscidb -db-name omniscidb -db-table taxibench_ibis
+python3 run_modin_tests.py --env_name ibis-test --env_check True --python_version 3.7 --task benchmark --ci_requirements /localdisk/username/omniscripts/ci_requirements.yml --save_env True --report /localdisk/username/ --ibis_path /localdisk/username/ibis/ --executable /localdisk/username/omniscidb/build/bin/omnisci_server -u admin -p HyperInteractive -n agent_test_ibis --bench_name ny_taxi --dfiles_num 20 --dpattern '/localdisk/username/benchmark_datasets/taxi/trips_xa{a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t}.csv.gz' --iters 5 -db-server localhost -db-port 3306 -db-user user -db-pass omniscidb -db-name omniscidb -db-table taxibench_ibis
 ```
 
 Sample run santander benchmark command line:
 ```
-python3 run_ibis_tests.py --env_name ibis-test --env_check True --python_version 3.7 --task benchmark --ci_requirements /localdisk/username/omniscripts/ci_requirements.yml --save_env True --report /localdisk/username/ --ibis_path /localdisk/username/ibis/ --executable /localdisk/username/omniscidb/build/bin/omnisci_server -u admin -p HyperInteractive -n agent_test_ibis --bench_name santander --dpattern '/localdisk/benchmark_datasets/santander/train.csv.gz' --iters 5 -db-server localhost -db-port 3306 -db-user user -db-pass omniscidb -db-name omniscidb -db-table santander_ibis
+python3 run_modin_tests.py --env_name ibis-test --env_check True --python_version 3.7 --task benchmark --ci_requirements /localdisk/username/omniscripts/ci_requirements.yml --save_env True --report /localdisk/username/ --ibis_path /localdisk/username/ibis/ --executable /localdisk/username/omniscidb/build/bin/omnisci_server -u admin -p HyperInteractive -n agent_test_ibis --bench_name santander --dpattern '/localdisk/benchmark_datasets/santander/train.csv.gz' --iters 5 -db-server localhost -db-port 3306 -db-user user -db-pass omniscidb -db-name omniscidb -db-table santander_ibis
 ```

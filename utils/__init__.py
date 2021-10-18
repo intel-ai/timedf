@@ -3,7 +3,6 @@ from .utils import (
     check_support,
     cod,
     compare_dataframes,
-    convert_type_ibis2pandas,
     files_names_from_pattern,
     import_pandas_into_module_namespace,
     load_data_pandas,

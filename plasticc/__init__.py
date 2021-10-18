@@ -1,1 +1,1 @@
-from .plasticc_pandas_ibis import run_benchmark
+from .plasticc_pandas_modin import run_benchmark

@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 mkdir -p ${PWD}/tmp
-python3 run_ibis_tests.py --env_name ${ENV_NAME} --env_check True --save_env True -task benchmark                              \
+python3 run_modin_tests.py --env_name ${ENV_NAME} --env_check True --save_env True -task benchmark                              \
                           --ci_requirements "${PWD}/ci_requirements.yml" -bench_name plasticc -use_modin_xgb True              \
                           -data_file '${DATASETS_PWD}/plasticc/'                                                               \
                           -pandas_mode Modin_on_ray -ray_tmpdir ${PWD}/tmp                                                     \

@@ -15,7 +15,7 @@ def main():
     args = None
     port_default_value = -1
 
-    parser = argparse.ArgumentParser(description="Run internal tests from ibis project")
+    parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
     required = parser.add_argument_group("common")
     optional = parser.add_argument_group("optional arguments")
     omnisci = parser.add_argument_group("omnisci")
@@ -23,7 +23,7 @@ def main():
     mysql = parser.add_argument_group("mysql")
     commits = parser.add_argument_group("commits")
 
-    possible_tasks = ["build", "test", "benchmark"]
+    possible_tasks = ["build", "benchmark"]
     benchmarks = ["ny_taxi", "santander", "census", "plasticc", "mortgage", "h2o"]
 
     # Task
@@ -74,12 +74,7 @@ def main():
         help="File with ci requirements for conda env.",
     )
 
-    # Ibis
-    optional.add_argument(
-        "-i", "--ibis_path", dest="ibis_path", required=False, help="Path to ibis directory."
-    )
-
-    # Ibis tests
+    # Tests
     optional.add_argument(
         "-expression",
         dest="expression",
@@ -152,7 +147,7 @@ def main():
     omnisci.add_argument(
         "-database_name",
         dest="database_name",
-        default="agent_test_ibis",
+        default="agent_test_modin",
         help="Database name to use in omniscidb server.",
     )
     omnisci.add_argument(
@@ -266,18 +261,6 @@ def main():
         help="Which optimizer is used",
     )
     benchmark.add_argument(
-        "-no_ibis",
-        default=False,
-        type=str_arg_to_bool,
-        help="Do not run Ibis benchmark, run only Pandas (or Modin) version",
-    )
-    benchmark.add_argument(
-        "-no_pandas",
-        default=False,
-        type=str_arg_to_bool,
-        help="Do not run Pandas version of benchmark",
-    )
-    benchmark.add_argument(
         "-pandas_mode",
         choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python", "Modin_on_omnisci"],
         default="Pandas",
@@ -333,12 +316,6 @@ def main():
         help="Omnisci commit hash used for tests.",
     )
     commits.add_argument(
-        "-commit_ibis",
-        dest="commit_ibis",
-        default="1234567890123456789012345678901234567890",
-        help="Ibis commit hash used for tests.",
-    )
-    commits.add_argument(
         "-commit_omniscripts",
         dest="commit_omniscripts",
         default="1234567890123456789012345678901234567890",
@@ -361,9 +338,6 @@ def main():
     try:
         args = parser.parse_args()
 
-        os.environ["IBIS_TEST_OMNISCIDB_DATABASE"] = args.database_name
-        os.environ["IBIS_TEST_DATA_DB"] = args.database_name
-        os.environ["IBIS_TEST_OMNISCIDB_PORT"] = str(args.port)
         os.environ["PYTHONIOENCODING"] = "UTF-8"
         os.environ["PYTHONUNBUFFERED"] = "1"
 
@@ -399,17 +373,6 @@ def main():
         )
         if tasks["build"]:
             install_cmdline = ["python3", "setup.py", "install"]
-
-            if args.ibis_path:
-                ibis_requirements = os.path.join(
-                    args.ibis_path, "ci", f"requirements-{args.python_version}-dev.yml"
-                )
-
-                print("INSTALLATION OF IBIS DEPENDENCIES")
-                conda_env.update(str(args.env_name), ibis_requirements)
-
-                print("IBIS INSTALLATION")
-                conda_env.run(install_cmdline, cwd=args.ibis_path)
 
             if args.modin_path:
                 if args.modin_pkgs_dir:
@@ -483,58 +446,6 @@ def main():
             else:
                 print("Using Omnisci server")
 
-        if tasks["test"]:
-            ibis_data_script = os.path.join(args.ibis_path, "ci", "datamgr.py")
-            dataset_download_cmdline = ["python3", ibis_data_script, "download"]
-            dataset_import_cmdline = [
-                "python3",
-                ibis_data_script,
-                "omniscidb",
-                "-P",
-                str(args.port),
-                "--database",
-                args.database_name,
-            ]
-            report_file_name = f"report-{args.commit_ibis[:8]}-{args.commit_omnisci[:8]}.html"
-            if not os.path.isdir(args.report_path):
-                os.makedirs(args.report_path)
-            report_file_path = os.path.join(args.report_path, report_file_name)
-
-            ibis_tests_cmdline = [
-                "pytest",
-                "-m",
-                "omniscidb",
-                "--disable-pytest-warnings",
-                "-k",
-                args.expression,
-                f"--html={report_file_path}",
-            ]
-
-            print("STARTING OMNISCI SERVER")
-            omnisci_server = OmnisciServer(
-                omnisci_executable=args.executable,
-                omnisci_port=args.port,
-                http_port=args.http_port,
-                calcite_port=args.calcite_port,
-                database_name=args.database_name,
-                omnisci_cwd=args.omnisci_cwd,
-                user=args.user,
-                password=args.password,
-                debug_timer=args.debug_timer,
-                columnar_output=args.columnar_output,
-                lazy_fetch=args.lazy_fetch,
-                multifrag_rs=args.multifrag_rs,
-                omnisci_run_kwargs=args.omnisci_run_kwargs,
-            )
-            omnisci_server.launch()
-
-            print("PREPARING DATA")
-            conda_env.run(dataset_download_cmdline)
-            conda_env.run(dataset_import_cmdline)
-
-            print("RUNNING TESTS")
-            conda_env.run(ibis_tests_cmdline, cwd=args.ibis_path)
-
         if tasks["benchmark"]:
             # if not args.bench_name or args.bench_name not in benchmarks:
             #     print(
@@ -546,7 +457,7 @@ def main():
                     "Parameter --data_file was received empty, but it is required for benchmarks"
                 )
 
-            benchmark_script_path = os.path.join(omniscript_path, "run_ibis_benchmark.py")
+            benchmark_script_path = os.path.join(omniscript_path, "run_modin_benchmark.py")
 
             benchmark_cmd = ["python3", benchmark_script_path]
 
@@ -559,8 +470,6 @@ def main():
                 "dni",
                 "validation",
                 "optimizer",
-                "no_ibis",
-                "no_pandas",
                 "pandas_mode",
                 "ray_tmpdir",
                 "ray_memory",
@@ -585,7 +494,6 @@ def main():
                 "database_name",
                 "table",
                 "commit_omnisci",
-                "commit_ibis",
                 "import_mode",
                 "debug_timer",
                 "columnar_output",

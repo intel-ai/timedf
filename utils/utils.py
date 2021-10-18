@@ -42,11 +42,6 @@ ny_taxi_data_files_sizes_MB = OrderedDict(
 )
 
 
-def convert_type_ibis2pandas(types):
-    types = ["string_" if (x == "string") else x for x in types]
-    return types
-
-
 def init_modin_on_omnisci(pd):
     # Calcite initialization
     data = {"a": [1, 2, 3]}
@@ -104,13 +99,6 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
         space["pd"] = pd
 
 
-def equal_dfs(ibis_dfs, pandas_dfs):
-    for ibis_df, pandas_df in zip(ibis_dfs, pandas_dfs):
-        if not ibis_df.equals(pandas_df):
-            return False
-    return True
-
-
 def get_percentage(error_message):
     # parsing message like: lalalalal values are different (xxxxx%) lalalalal
     return float(error_message.split("values are different ")[1].split("%)")[0][1:])
@@ -160,66 +148,6 @@ def compare_columns(columns):
                 raise assert_err
         else:
             raise
-
-
-def compare_dataframes(
-    ibis_dfs, pandas_dfs, sort_cols=["id"], drop_cols=["id"], parallel_execution=False
-):
-    import pandas as pd
-
-    parallel_processes = os.cpu_count() // 2
-
-    t0 = timer()
-    assert len(ibis_dfs) == len(pandas_dfs)
-
-    # preparing step
-    for idx in range(len(ibis_dfs)):
-        # prepare ibis part
-        if isinstance(ibis_dfs[idx], pd.Series):
-            # that means, that indexes in Series must be the same
-            # as 'id' column in source dataframe
-            ibis_dfs[idx].sort_index(axis=0, inplace=True)
-        else:
-            if sort_cols:
-                ibis_dfs[idx].sort_values(by=sort_cols, axis=0, inplace=True)
-            if drop_cols:
-                ibis_dfs[idx].drop(drop_cols, axis=1, inplace=True)
-
-        ibis_dfs[idx].reset_index(drop=True, inplace=True)
-        # prepare pandas part
-        pandas_dfs[idx].reset_index(drop=True, inplace=True)
-
-    # fast check
-    if equal_dfs(ibis_dfs, pandas_dfs):
-        print("dataframes are equal")
-        return
-
-    print("Fast check took {:.2f} seconds".format(timer() - t0))
-
-    # comparing step
-    t0 = timer()
-    for ibis_df, pandas_df in zip(ibis_dfs, pandas_dfs):
-        assert ibis_df.shape == pandas_df.shape
-        if parallel_execution:
-            from multiprocessing import Pool
-
-            pool = Pool(parallel_processes)
-            pool.map(
-                compare_columns,
-                (
-                    (ibis_df[column_name], pandas_df[column_name])
-                    for column_name in ibis_df.columns
-                ),
-            )
-            pool.close()
-        else:
-            for column_name in ibis_df.columns:
-                compare_columns((ibis_df[column_name], pandas_df[column_name]))
-
-        print("Per-column check took {:.2f} seconds".format(timer() - t0))
-
-    print("dataframes are equal")
-
 
 def load_data_pandas(
     filename,

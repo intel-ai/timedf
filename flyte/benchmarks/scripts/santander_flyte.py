@@ -19,11 +19,6 @@ warnings.filterwarnings("ignore")
 # Dataset link
 # https://www.kaggle.com/c/santander-customer-transaction-prediction/data
 
-# Current script prerequisites:
-# 1) Patched OmniSci version (https://github.com/intel-go/omniscidb/tree/develop)
-# 2) Patched Ibis version (https://github.com/intel-go/ibis/tree/develop)
-
-
 ETL_KEYS = ["t_readcsv", "t_etl", "t_connect"]
 ML_KEYS = ["t_train_test_split", "t_dmatrix", "t_training", "t_infer", "t_ml"]
 ML_SCORE_KEYS = ["mse_mean", "cod_mean", "mse_dev"]

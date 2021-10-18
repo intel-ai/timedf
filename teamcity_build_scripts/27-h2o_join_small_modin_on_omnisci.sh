@@ -3,7 +3,7 @@
 source ${CONDA_PREFIX}/bin/activate
 conda activate ${ENV_NAME}
 mkdir -p ${PWD}/tmp
-python3 run_ibis_benchmark.py -bench_name h2o -data_file '${DATASETS_PWD}/h2o/J1_1e7_NA_0_0.csv'                                   \
+python3 run_modin_benchmark.py -bench_name h2o -data_file '${DATASETS_PWD}/h2o/J1_1e7_NA_0_0.csv'                                   \
                               -pandas_mode Modin_on_omnisci -ray_tmpdir ${PWD}/tmp                                                 \
                               -commit_omnisci ${BUILD_REVISION}                                                                    \
                               -commit_omniscripts ${BUILD_OMNISCRIPTS_REVISION}                                                    \

@@ -1,1 +1,1 @@
-from .santander_pandas_ibis import run_benchmark
+from .santander_pandas_modin import run_benchmark
