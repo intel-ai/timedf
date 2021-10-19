@@ -2,7 +2,6 @@ from .utils import (
     check_fragments_size,
     check_support,
     cod,
-    compare_dataframes,
     files_names_from_pattern,
     import_pandas_into_module_namespace,
     load_data_pandas,

@@ -20,7 +20,7 @@ def main():
         "mortgage": "mortgage",
         "h2o": "h2o",
     }
-    benchmarks = ["ny_taxi", "santander", "census", "plasticc", "mortgage"]
+    benchmarks_list = ["ny_taxi", "santander", "census", "plasticc", "mortgage"]
 
     ignore_fields_for_bd_report_etl = ["t_connect"]
     ignore_fields_for_bd_report_ml = []
@@ -277,9 +277,7 @@ def main():
 
         args = parser.parse_args()
 
-        launch_omnisci_server = (
-            args.bench_name in benchmarks
-        )
+        launch_omnisci_server = args.bench_name in benchmarks_list and args.pandas_mode == "Modin_on_omnisci"
 
         if args.port == port_default_value:
             args.port = find_free_port()

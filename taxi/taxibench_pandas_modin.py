@@ -3,9 +3,8 @@ from timeit import default_timer as timer
 
 import pandas as pd
 
-from utils import (  # noqa: F401 ("compare_dataframes" imported, but unused. Used in commented code.)
+from utils import (
     check_fragments_size,
-    compare_dataframes,
     files_names_from_pattern,
     import_pandas_into_module_namespace,
     load_data_pandas,

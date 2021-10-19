@@ -97,10 +97,9 @@ python3 taxi/taxibench_pandas.py -df 2 -i 5 -dp '/datadir/taxi/trips_*.csv.gz'
 
 ## Ibis script
 
-Ibis build, tests and benchmarks run through `_test.py`. It has three distinct
+Ibis build, tests and benchmarks run through `run_modin_test.py`. It has three distinct
 modes of operation: 
 * build and install ibis;
-* run ibis tests using pytest;
 * run benchmarks using Omnisci.
 
 Parameters which can be used:
