@@ -107,6 +107,12 @@ def main():
         help="Size of memory to allocate for Ray plasma store",
     )
     optional.add_argument(
+        "-no_ibis",
+        default=False,
+        type=str_arg_to_bool,
+        help="Do not run Ibis benchmark, run only Pandas (or Modin) version",
+    )
+    optional.add_argument(
         "-no_ml",
         default=None,
         type=str_arg_to_bool,
@@ -277,7 +283,9 @@ def main():
 
         args = parser.parse_args()
 
-        launch_omnisci_server = args.bench_name in benchmarks_list and args.pandas_mode == "Modin_on_omnisci"
+        launch_omnisci_server = (
+            args.bench_name in benchmarks_list and args.pandas_mode == "Modin_on_omnisci"
+        )
 
         if args.port == port_default_value:
             args.port = find_free_port()
