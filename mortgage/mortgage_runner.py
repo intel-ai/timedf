@@ -56,7 +56,7 @@ def run_benchmark(parameters):
         ray_memory=parameters["ray_memory"],
     )
 
-    acq_schema = OrderedDict(
+    acq_schema = dict(
         names=(
             "loan_id",
             "orig_channel",
@@ -114,7 +114,7 @@ def run_benchmark(parameters):
             "int32",
         ),
     )
-    perf_schema = OrderedDict(
+    perf_schema = dict(
         names=(
             "loan_id",
             "monthly_reporting_period",
