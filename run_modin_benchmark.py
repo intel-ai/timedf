@@ -20,7 +20,6 @@ def main():
         "mortgage": "mortgage",
         "h2o": "h2o",
     }
-    benchmarks_list = ["ny_taxi", "santander", "census", "plasticc", "mortgage"]
 
     ignore_fields_for_bd_report_etl = ["t_connect"]
     ignore_fields_for_bd_report_ml = []
@@ -283,10 +282,6 @@ def main():
 
         args = parser.parse_args()
 
-        launch_omnisci_server = (
-            args.bench_name in benchmarks_list and args.pandas_mode == "Modin_on_omnisci"
-        )
-
         if args.port == port_default_value:
             args.port = find_free_port()
         if args.http_port == port_default_value:
@@ -311,36 +306,6 @@ def main():
             "extended_functionality": args.extended_functionality,
         }
 
-        if launch_omnisci_server:
-            if args.executable is None:
-                parser.error(
-                    "Omnisci executable should be specified with -e/--executable"
-                )
-            from server import OmnisciServer
-
-            omnisci_server = OmnisciServer(
-                omnisci_executable=args.executable,
-                omnisci_port=args.port,
-                http_port=args.http_port,
-                calcite_port=args.calcite_port,
-                database_name=args.database_name,
-                omnisci_cwd=args.omnisci_cwd,
-                user=args.user,
-                password=args.password,
-                debug_timer=args.debug_timer,
-                columnar_output=args.columnar_output,
-                lazy_fetch=args.lazy_fetch,
-                multifrag_rs=args.multifrag_rs,
-                omnisci_run_kwargs=args.omnisci_run_kwargs,
-            )
-
-            parameters["database_name"] = args.database_name
-            parameters["table"] = args.table
-            parameters["dnd"] = args.dnd
-            parameters["dni"] = args.dni
-            parameters["import_mode"] = args.import_mode
-            parameters["fragments_size"] = args.fragments_size
-
         etl_results = []
         ml_results = []
         print(parameters)
@@ -348,22 +313,11 @@ def main():
         for iter_num in range(1, args.iterations + 1):
             print(f"Iteration #{iter_num}")
 
-            if launch_omnisci_server:
-                from server_worker import OmnisciServerWorker
-
-                omnisci_server_worker = OmnisciServerWorker(omnisci_server)
-                parameters["omnisci_server_worker"] = omnisci_server_worker
-                parameters["ipc_connection"] = args.ipc_conn
-                omnisci_server.launch()
             parameters = {
                 key: os.path.expandvars(value) if isinstance(value, str) else value
                 for key, value in parameters.items()
             }
             benchmark_results = run_benchmark(parameters)
-
-            if launch_omnisci_server:
-                omnisci_server_worker.terminate()
-                omnisci_server.terminate()
 
             additional_fields_for_reporting = {
                 "ETL": {"Iteration": iter_num, "run_id": run_id},
