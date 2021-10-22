@@ -66,12 +66,7 @@ class OmnisciServerWorker:
         )
 
     def import_data_by_pandas(
-        self,
-        data_files_names,
-        files_limit,
-        columns_names,
-        nrows=None,
-        compression_type="gzip",
+        self, data_files_names, files_limit, columns_names, nrows=None, compression_type="gzip"
     ):
         "Import CSV files using Pandas read_csv to the Pandas.DataFrame"
 
@@ -130,13 +125,7 @@ class OmnisciServerWorker:
             self._conn = None
 
     def import_data(
-        self,
-        table_name,
-        data_files_names,
-        files_limit,
-        columns_names,
-        columns_types,
-        header=False,
+        self, table_name, data_files_names, files_limit, columns_names, columns_types, header=False
     ):
         "Import CSV files to the OmniSciDB using COPY SQL statement"
 

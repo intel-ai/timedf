@@ -302,22 +302,13 @@ def load_data_ibis(
         elif import_mode == "fsi":
             t0 = timer()
             omnisci_server_worker._conn.create_table_from_csv(
-                "training",
-                training_file,
-                schema,
-                fragment_size=fragments_size[0],
+                "training", training_file, schema, fragment_size=fragments_size[0]
             )
             omnisci_server_worker._conn.create_table_from_csv(
-                "test",
-                test_file,
-                schema,
-                fragment_size=fragments_size[1],
+                "test", test_file, schema, fragment_size=fragments_size[1]
             )
             omnisci_server_worker._conn.create_table_from_csv(
-                "training_meta",
-                training_meta_file,
-                meta_schema,
-                fragment_size=fragments_size[2],
+                "training_meta", training_meta_file, meta_schema, fragment_size=fragments_size[2]
             )
             omnisci_server_worker._conn.create_table_from_csv(
                 "test_meta",
@@ -340,14 +331,7 @@ def load_data_ibis(
     training_meta_table = db.table("training_meta")
     test_meta_table = db.table("test_meta")
 
-    return (
-        training_table,
-        training_meta_table,
-        test_table,
-        test_meta_table,
-        t_readcsv,
-        t_connect,
-    )
+    return (training_table, training_meta_table, test_table, test_meta_table, t_readcsv, t_connect)
 
 
 def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, pandas_mode):

@@ -6,12 +6,7 @@ import traceback
 
 from environment import CondaEnvironment
 from server import OmnisciServer
-from utils_base_env import (
-    find_free_port,
-    KeyValueListParser,
-    str_arg_to_bool,
-    add_mysql_arguments,
-)
+from utils_base_env import find_free_port, KeyValueListParser, str_arg_to_bool, add_mysql_arguments
 
 
 def main():

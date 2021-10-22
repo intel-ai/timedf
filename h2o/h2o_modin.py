@@ -345,11 +345,7 @@ def groupby_query10_modin(x, queries_results, extended_functionality):
 def join_query1_modin(x, ys, queries_results, extended_functionality):
     query_name = "join_query1"
     question = "small inner on int"  # q1
-    query_args = {
-        "x": x,
-        "y": ys[0],
-        "on": "id1",
-    }
+    query_args = {"x": x, "y": ys[0], "on": "id1"}
 
     execute_query(
         query_args=query_args,
@@ -363,11 +359,7 @@ def join_query1_modin(x, ys, queries_results, extended_functionality):
 def join_query2_modin(x, ys, queries_results, extended_functionality):
     query_name = "join_query2"
     question = "medium inner on int"  # q2
-    query_args = {
-        "x": x,
-        "y": ys[1],
-        "on": "id2",
-    }
+    query_args = {"x": x, "y": ys[1], "on": "id2"}
 
     execute_query(
         query_args=query_args,
@@ -381,12 +373,7 @@ def join_query2_modin(x, ys, queries_results, extended_functionality):
 def join_query3_modin(x, ys, queries_results, extended_functionality):
     query_name = "join_query3"
     question = "medium outer on int"  # q3
-    query_args = {
-        "x": x,
-        "y": ys[1],
-        "how": "left",
-        "on": "id2",
-    }
+    query_args = {"x": x, "y": ys[1], "how": "left", "on": "id2"}
 
     execute_query(
         query_args=query_args,
@@ -400,11 +387,7 @@ def join_query3_modin(x, ys, queries_results, extended_functionality):
 def join_query4_modin(x, ys, queries_results, extended_functionality):
     query_name = "join_query4"
     question = "medium inner on factor"  # q4
-    query_args = {
-        "x": x,
-        "y": ys[1],
-        "on": "id5",
-    }
+    query_args = {"x": x, "y": ys[1], "on": "id5"}
 
     execute_query(
         query_args=query_args,
@@ -418,11 +401,7 @@ def join_query4_modin(x, ys, queries_results, extended_functionality):
 def join_query5_modin(x, ys, queries_results, extended_functionality):
     query_name = "join_query5"
     question = "big inner on int"  # q5
-    query_args = {
-        "x": x,
-        "y": ys[2],
-        "on": "id3",
-    }
+    query_args = {"x": x, "y": ys[2], "on": "id3"}
 
     execute_query(
         query_args=query_args,

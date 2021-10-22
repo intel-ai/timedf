@@ -133,11 +133,7 @@ def main():
     reporting_init_fields, results = parse_asv_results(result_path)
     db_table = "25_modin_funcs"
 
-    db_reporter = DbReport(
-        db_ops,
-        db_table,
-        reporting_init_fields,
-    )
+    db_reporter = DbReport(db_ops, db_table, reporting_init_fields)
     db_reporter.submit(results)
     print("Data was successfully reported!")
 

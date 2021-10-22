@@ -3,16 +3,8 @@ import argparse
 import os
 import time
 
-from utils_base_env import (
-    find_free_port,
-    KeyValueListParser,
-    str_arg_to_bool,
-    add_mysql_arguments,
-)
-from utils import (
-    remove_fields_from_dict,
-    refactor_results_for_reporting,
-)
+from utils_base_env import find_free_port, KeyValueListParser, str_arg_to_bool, add_mysql_arguments
+from utils import remove_fields_from_dict, refactor_results_for_reporting
 
 
 def main():
@@ -52,10 +44,7 @@ def main():
         required=True,
     )
     required.add_argument(
-        "-data_file",
-        dest="data_file",
-        help="A datafile that should be loaded.",
-        required=True,
+        "-data_file", dest="data_file", help="A datafile that should be loaded.", required=True
     )
     optional.add_argument(
         "-dfiles_num",
@@ -161,9 +150,7 @@ def main():
     add_mysql_arguments(optional, etl_ml_tables=True)
     # Omnisci server parameters
     optional.add_argument(
-        "-executable",
-        dest="executable",
-        help="Path to omnisci_server executable.",
+        "-executable", dest="executable", help="Path to omnisci_server executable."
     )
     optional.add_argument(
         "-omnisci_cwd",
@@ -194,10 +181,7 @@ def main():
         help="Calcite port number to run omnisci_server on.",
     )
     optional.add_argument(
-        "-user",
-        dest="user",
-        default="admin",
-        help="User name to use on omniscidb server.",
+        "-user", dest="user", default="admin", help="User name to use on omniscidb server."
     )
     optional.add_argument(
         "-password",

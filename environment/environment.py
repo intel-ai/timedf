@@ -55,12 +55,7 @@ class CondaEnvironment:
             else:
                 self.remove(env_name)
         if python_version:
-            cmdline_create = [
-                "conda",
-                "create",
-                "--name",
-                env_name,
-            ]
+            cmdline_create = ["conda", "create", "--name", env_name]
             if python_version:
                 cmdline_create.extend([f"python={python_version}", "-y"])
             if channel:

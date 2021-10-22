@@ -74,17 +74,10 @@ class KeyValueListParser(argparse.Action):
 
 def add_mysql_arguments(parser, etl_ml_tables=False):
     parser.add_argument(
-        "-db_server",
-        dest="db_server",
-        default="localhost",
-        help="Host name of MySQL server.",
+        "-db_server", dest="db_server", default="localhost", help="Host name of MySQL server."
     )
     parser.add_argument(
-        "-db_port",
-        dest="db_port",
-        default=3306,
-        type=int,
-        help="Port number of MySQL server.",
+        "-db_port", dest="db_port", default=3306, type=int, help="Port number of MySQL server."
     )
     parser.add_argument(
         "-db_user",
