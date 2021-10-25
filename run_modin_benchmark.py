@@ -9,7 +9,6 @@ from utils import remove_fields_from_dict, refactor_results_for_reporting
 
 def main():
     args = None
-    omnisci_server = None
     port_default_value = -1
 
     benchmarks = {
@@ -274,131 +273,122 @@ def main():
         help="Enable debug mode.",
     )
 
-    try:
-        os.environ["PYTHONIOENCODING"] = "UTF-8"
-        os.environ["PYTHONUNBUFFERED"] = "1"
-        omnisci_server_worker = None
-        omnisci_server = None
 
-        args = parser.parse_args()
+    os.environ["PYTHONIOENCODING"] = "UTF-8"
+    os.environ["PYTHONUNBUFFERED"] = "1"
 
-        if args.port == port_default_value:
-            args.port = find_free_port()
-        if args.http_port == port_default_value:
-            args.http_port = find_free_port()
-        if args.calcite_port == port_default_value:
-            args.calcite_port = find_free_port()
+    args = parser.parse_args()
 
-        run_benchmark = __import__(benchmarks[args.bench_name]).run_benchmark
+    if args.port == port_default_value:
+        args.port = find_free_port()
+    if args.http_port == port_default_value:
+        args.http_port = find_free_port()
+    if args.calcite_port == port_default_value:
+        args.calcite_port = find_free_port()
+
+    run_benchmark = __import__(benchmarks[args.bench_name]).run_benchmark
+
+    parameters = {
+        "data_file": args.data_file,
+        "dfiles_num": args.dfiles_num,
+        "no_ml": args.no_ml,
+        "use_modin_xgb": args.use_modin_xgb,
+        "optimizer": args.optimizer,
+        "pandas_mode": args.pandas_mode,
+        "ray_tmpdir": args.ray_tmpdir,
+        "ray_memory": args.ray_memory,
+        "gpu_memory": args.gpu_memory,
+        "validation": args.validation,
+        "debug_mode": args.debug_mode,
+        "extended_functionality": args.extended_functionality,
+    }
+
+    etl_results = []
+    ml_results = []
+    print(parameters)
+    run_id = int(round(time.time()))
+    for iter_num in range(1, args.iterations + 1):
+        print(f"Iteration #{iter_num}")
 
         parameters = {
-            "data_file": args.data_file,
-            "dfiles_num": args.dfiles_num,
-            "no_ml": args.no_ml,
-            "use_modin_xgb": args.use_modin_xgb,
-            "optimizer": args.optimizer,
-            "pandas_mode": args.pandas_mode,
-            "ray_tmpdir": args.ray_tmpdir,
-            "ray_memory": args.ray_memory,
-            "gpu_memory": args.gpu_memory,
-            "validation": args.validation,
-            "debug_mode": args.debug_mode,
-            "extended_functionality": args.extended_functionality,
+            key: os.path.expandvars(value) if isinstance(value, str) else value
+            for key, value in parameters.items()
         }
+        benchmark_results = run_benchmark(parameters)
 
-        etl_results = []
-        ml_results = []
-        print(parameters)
-        run_id = int(round(time.time()))
-        for iter_num in range(1, args.iterations + 1):
-            print(f"Iteration #{iter_num}")
+        additional_fields_for_reporting = {
+            "ETL": {"Iteration": iter_num, "run_id": run_id},
+            "ML": {"Iteration": iter_num, "run_id": run_id},
+        }
+        etl_ml_results = refactor_results_for_reporting(
+            benchmark_results=benchmark_results,
+            ignore_fields_for_results_unit_conversion=ignore_fields_for_results_unit_conversion,
+            additional_fields=additional_fields_for_reporting,
+            reporting_unit="ms",
+        )
+        etl_results = list(etl_ml_results["ETL"])
+        ml_results = list(etl_ml_results["ML"])
 
-            parameters = {
-                key: os.path.expandvars(value) if isinstance(value, str) else value
-                for key, value in parameters.items()
-            }
-            benchmark_results = run_benchmark(parameters)
+        # Reporting to MySQL database
+        if args.db_user is not None:
+            import mysql.connector
+            from report import DbReport
 
-            additional_fields_for_reporting = {
-                "ETL": {"Iteration": iter_num, "run_id": run_id},
-                "ML": {"Iteration": iter_num, "run_id": run_id},
-            }
-            etl_ml_results = refactor_results_for_reporting(
-                benchmark_results=benchmark_results,
-                ignore_fields_for_results_unit_conversion=ignore_fields_for_results_unit_conversion,
-                additional_fields=additional_fields_for_reporting,
-                reporting_unit="ms",
-            )
-            etl_results = list(etl_ml_results["ETL"])
-            ml_results = list(etl_ml_results["ML"])
+            if iter_num == 1:
+                db = mysql.connector.connect(
+                    host=args.db_server,
+                    port=args.db_port,
+                    user=args.db_user,
+                    passwd=args.db_pass,
+                    db=args.db_name,
+                )
 
-            # Reporting to MySQL database
-            if args.db_user is not None:
-                import mysql.connector
-                from report import DbReport
+                reporting_init_fields = {
+                    "OmnisciCommitHash": args.commit_omnisci,
+                    "OmniscriptsCommitHash": args.commit_omniscripts,
+                    "ModinCommitHash": args.commit_modin,
+                }
 
-                if iter_num == 1:
-                    db = mysql.connector.connect(
-                        host=args.db_server,
-                        port=args.db_port,
-                        user=args.db_user,
-                        passwd=args.db_pass,
-                        db=args.db_name,
+                reporting_fields_benchmark_etl = {
+                    x: "VARCHAR(500) NOT NULL" for x in etl_results[0]
+                }
+                if len(etl_results) != 1:
+                    reporting_fields_benchmark_etl.update(
+                        {x: "VARCHAR(500) NOT NULL" for x in etl_results[1]}
                     )
 
-                    reporting_init_fields = {
-                        "OmnisciCommitHash": args.commit_omnisci,
-                        "OmniscriptsCommitHash": args.commit_omniscripts,
-                        "ModinCommitHash": args.commit_modin,
-                    }
+                db_reporter_etl = DbReport(
+                    db,
+                    args.db_table_etl,
+                    reporting_fields_benchmark_etl,
+                    reporting_init_fields,
+                )
 
-                    reporting_fields_benchmark_etl = {
-                        x: "VARCHAR(500) NOT NULL" for x in etl_results[0]
+                if len(ml_results) != 0:
+                    reporting_fields_benchmark_ml = {
+                        x: "VARCHAR(500) NOT NULL" for x in ml_results[0]
                     }
-                    if len(etl_results) != 1:
-                        reporting_fields_benchmark_etl.update(
-                            {x: "VARCHAR(500) NOT NULL" for x in etl_results[1]}
+                    if len(ml_results) != 1:
+                        reporting_fields_benchmark_ml.update(
+                            {x: "VARCHAR(500) NOT NULL" for x in ml_results[1]}
                         )
 
-                    db_reporter_etl = DbReport(
+                    db_reporter_ml = DbReport(
                         db,
-                        args.db_table_etl,
-                        reporting_fields_benchmark_etl,
+                        args.db_table_ml,
+                        reporting_fields_benchmark_ml,
                         reporting_init_fields,
                     )
 
-                    if len(ml_results) != 0:
-                        reporting_fields_benchmark_ml = {
-                            x: "VARCHAR(500) NOT NULL" for x in ml_results[0]
-                        }
-                        if len(ml_results) != 1:
-                            reporting_fields_benchmark_ml.update(
-                                {x: "VARCHAR(500) NOT NULL" for x in ml_results[1]}
-                            )
+            if iter_num == args.iterations:
+                for result_etl in etl_results:
+                    remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)
+                    db_reporter_etl.submit(result_etl)
 
-                        db_reporter_ml = DbReport(
-                            db,
-                            args.db_table_ml,
-                            reporting_fields_benchmark_ml,
-                            reporting_init_fields,
-                        )
-
-                if iter_num == args.iterations:
-                    for result_etl in etl_results:
-                        remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)
-                        db_reporter_etl.submit(result_etl)
-
-                    if len(ml_results) != 0:
-                        for result_ml in ml_results:
-                            remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
-                            db_reporter_ml.submit(result_ml)
-
-    finally:
-        if omnisci_server_worker:
-            omnisci_server_worker.terminate()
-        if omnisci_server:
-            omnisci_server.terminate()
-
+                if len(ml_results) != 0:
+                    for result_ml in ml_results:
+                        remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
+                        db_reporter_ml.submit(result_ml)
 
 if __name__ == "__main__":
     main()

@@ -5,13 +5,11 @@ import sys
 import traceback
 
 from environment import CondaEnvironment
-from server import OmnisciServer
 from utils_base_env import find_free_port, KeyValueListParser, str_arg_to_bool, add_mysql_arguments
 
 
 def main():
     omniscript_path = os.path.dirname(__file__)
-    omnisci_server = None
     args = None
     port_default_value = -1
 
@@ -550,8 +548,6 @@ def main():
         raise
 
     finally:
-        if omnisci_server:
-            omnisci_server.terminate()
         if args and args.save_env is False:
             conda_env.remove()
 
