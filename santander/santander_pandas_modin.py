@@ -3,15 +3,12 @@ import warnings
 from timeit import default_timer as timer
 
 from utils import (
-    check_fragments_size,
     check_support,
     cod,
-    compare_dataframes,
     import_pandas_into_module_namespace,
     load_data_pandas,
     mse,
     print_results,
-    get_tmp_filepath,
 )
 
 warnings.filterwarnings("ignore")

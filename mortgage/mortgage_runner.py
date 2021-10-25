@@ -2,7 +2,6 @@ import warnings
 
 from utils import (
     check_support,
-    compare_dataframes,
     import_pandas_into_module_namespace,
     print_results,
     get_dir_size,

@@ -7,9 +7,7 @@ import pandas
 from sklearn.preprocessing import LabelEncoder
 
 from utils import (
-    check_fragments_size,
     check_support,
-    compare_dataframes,
     import_pandas_into_module_namespace,
     print_results,
     split,

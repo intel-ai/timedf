@@ -4,16 +4,13 @@ from timeit import default_timer as timer
 import pandas as pd
 
 from utils import (
-    check_fragments_size,
     files_names_from_pattern,
     import_pandas_into_module_namespace,
     load_data_pandas,
     load_data_modin_on_omnisci,
     print_results,
-    write_to_csv_by_chunks,
     get_ny_taxi_dataset_size,
     check_support,
-    get_tmp_filepath,
     FilesCombiner,
 )
 
