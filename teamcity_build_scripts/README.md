@@ -1,16 +1,8 @@
-1. TeamCity host should have OmnisSciDB dependencies installed. Either
-by using `scripts/mapd-deps-ubuntu.sh` ([see here for other
-distros](https://github.com/omnisci/omniscidb/wiki/OmniSciDB-Dependencies))
-or downloading and installing binaries from omnisci site.
-2. User should have high limit for open files. Using `ulimit -n 10000`
-in `~/.bashrc` is a good idea.
-3. The following python3 packages should be installed using `pip`:
-pymapd, braceexpand, mysql-connector-python.
-4. User should have permissions to connect to MySQL host and insert
+Some notes for teamcity processes:
+1. For results reporting user should have permissions to connect to MySQL host and insert
 records there. Modify test scripts with user credentials and MySQL
 server host name.
-5. User should have installed conda or miniconda. Modin tests and benchmarks
-run through run_modin_test.py script which initially creates environment with
-combined requirements from ([ibis](https://github.com/ibis-project/ibis/blob/master/ci/requirements-3.7-dev.yml))
-and your personal requirements, default is ci_requirements.yml.
-All subsequent tasks such as build, test or benchmarks running are being done in created conda env.
+2. To run test scripts user should have installed conda or miniconda.
+We are creating conda environment (specified by --env_name flag) from only ci_requirements.yml file
+by running run_modin_test.py script with -task build flag and then run benchmarks by run_modin_test.py
+script with -task benchmark flag. All runs are being done in created conda env.
