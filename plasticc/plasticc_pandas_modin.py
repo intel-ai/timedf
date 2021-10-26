@@ -132,7 +132,6 @@ def split_step(train_final, test_final):
     return (X_train, y_train, X_test, y_test, Xt, classes, class_weights), split_time
 
 def etl(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys, pandas_mode):
-    print("Pandas version")
     etl_times = {key: 0.0 for key in etl_keys}
 
     t0 = timer()
