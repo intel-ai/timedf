@@ -149,6 +149,7 @@ def compare_columns(columns):
         else:
             raise
 
+
 def load_data_pandas(
     filename,
     columns_names=None,

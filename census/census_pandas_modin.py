@@ -1,5 +1,4 @@
 # coding: utf-8
-import os
 import numpy as np
 from sklearn import config_context
 import warnings
@@ -101,6 +100,7 @@ def etl(filename, columns_names, columns_types, etl_keys, pandas_mode):
     print("DataFrame shape:", X.shape)
 
     return df, X, y, etl_times
+
 
 def ml(X, y, random_state, n_runs, test_size, optimizer, ml_keys, ml_score_keys):
     if optimizer == "intel":
@@ -296,7 +296,6 @@ def run_benchmark(parameters):
         # function on the ipums_education2income_1970-2010.csv file
         # (default Census benchmark data file)
         csv_size = 2100.0
-
 
     df, X, y, etl_times = etl(
         parameters["data_file"],

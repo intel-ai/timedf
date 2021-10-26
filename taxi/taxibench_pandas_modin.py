@@ -11,7 +11,6 @@ from utils import (
     print_results,
     get_ny_taxi_dataset_size,
     check_support,
-    FilesCombiner,
 )
 
 accepted_data_files_for_pandas_import_mode = ["trips_xaa", "trips_xab", "trips_xac"]
@@ -147,9 +146,7 @@ def q4(df, pandas_mode):
     return query_time, q4_output
 
 
-def etl(
-    filename, files_limit, columns_names, columns_types, output_for_validation, pandas_mode
-):
+def etl(filename, files_limit, columns_names, columns_types, output_for_validation, pandas_mode):
 
     if pandas_mode == "Modin_on_omnisci" and any(f.endswith(".gz") for f in filename):
         raise NotImplementedError(
@@ -358,6 +355,5 @@ def run_benchmark(parameters):
     etl_results["Backend"] = parameters["pandas_mode"]
     etl_results["dfiles_num"] = parameters["dfiles_num"]
     etl_results["dataset_size"] = get_ny_taxi_dataset_size(parameters["dfiles_num"])
-
 
     return {"ETL": [etl_results], "ML": []}

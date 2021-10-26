@@ -77,6 +77,7 @@ def etl_cpu(df, df_meta, etl_times):
 
     return df_meta
 
+
 def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, pandas_mode):
     # 'pd' module is defined implicitly in 'import_pandas_into_module_namespace'
     # function so we should use 'noqa: F821' for flake8
@@ -130,6 +131,7 @@ def split_step(train_final, test_final):
     )
 
     return (X_train, y_train, X_test, y_test, Xt, classes, class_weights), split_time
+
 
 def etl(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys, pandas_mode):
     etl_times = {key: 0.0 for key in etl_keys}
@@ -340,9 +342,7 @@ def run_benchmark(parameters):
 
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
-        ml_times = ml(
-            train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"]
-        )
+        ml_times = ml(train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"])
         print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
         ml_times["Backend"] = parameters["pandas_mode"]
         ml_times["Backend"] = (

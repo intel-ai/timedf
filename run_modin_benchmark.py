@@ -3,7 +3,7 @@ import argparse
 import os
 import time
 
-from utils_base_env import find_free_port, KeyValueListParser, str_arg_to_bool, add_mysql_arguments
+from utils_base_env import KeyValueListParser, str_arg_to_bool, add_mysql_arguments
 from utils import remove_fields_from_dict, refactor_results_for_reporting
 
 
@@ -273,7 +273,6 @@ def main():
         help="Enable debug mode.",
     )
 
-
     os.environ["PYTHONIOENCODING"] = "UTF-8"
     os.environ["PYTHONUNBUFFERED"] = "1"
 
@@ -382,6 +381,7 @@ def main():
                     for result_ml in ml_results:
                         remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
                         db_reporter_ml.submit(result_ml)
+
 
 if __name__ == "__main__":
     main()
