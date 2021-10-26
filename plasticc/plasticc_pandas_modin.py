@@ -36,7 +36,7 @@ def skew_workaround(table):
     return table
 
 
-def etl_cpu_pandas(df, df_meta, etl_times):
+def etl_cpu(df, df_meta, etl_times):
     t_etl_start = timer()
 
     # workaround for both Modin_on_ray and Modin_on_omnisci modes. Eventually this should be fixed
@@ -131,7 +131,7 @@ def split_step(train_final, test_final):
 
     return (X_train, y_train, X_test, y_test, Xt, classes, class_weights), split_time
 
-def etl_all_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys, pandas_mode):
+def etl(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys, pandas_mode):
     print("Pandas version")
     etl_times = {key: 0.0 for key in etl_keys}
 
@@ -146,8 +146,8 @@ def etl_all_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys, panda
     etl_times["t_readcsv"] += timer() - t0
 
     # update etl_times
-    train_final = etl_cpu_pandas(train, train_meta, etl_times)
-    test_final = etl_cpu_pandas(test, test_meta, etl_times)
+    train_final = etl_cpu(train, train_meta, etl_times)
+    test_final = etl_cpu(test, test_meta, etl_times)
 
     return train_final, test_final, etl_times
 
@@ -327,7 +327,7 @@ def run_benchmark(parameters):
     etl_times = None
     ml_times = None
 
-    train_final, test_final, etl_times = etl_all_pandas(
+    train_final, test_final, etl_times = etl(
         dataset_path=parameters["data_file"],
         skip_rows=skip_rows,
         dtypes=dtypes,

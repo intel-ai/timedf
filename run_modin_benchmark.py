@@ -91,7 +91,7 @@ def main():
         "-pandas_mode",
         choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python", "Modin_on_omnisci"],
         default="Pandas",
-        help="Specifies which version of Pandas to use: plain Pandas, Modin runing on Ray or on Dask or Omnisci",
+        help="Specifies which version of Pandas to use: plain Pandas, Modin runing on Ray or on Dask or on Omnisci",
     )
     optional.add_argument(
         "-ray_tmpdir",
@@ -278,13 +278,6 @@ def main():
     os.environ["PYTHONUNBUFFERED"] = "1"
 
     args = parser.parse_args()
-
-    if args.port == port_default_value:
-        args.port = find_free_port()
-    if args.http_port == port_default_value:
-        args.http_port = find_free_port()
-    if args.calcite_port == port_default_value:
-        args.calcite_port = find_free_port()
 
     run_benchmark = __import__(benchmarks[args.bench_name]).run_benchmark
 

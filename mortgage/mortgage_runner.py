@@ -6,7 +6,7 @@ from utils import (
     print_results,
     get_dir_size,
 )
-from .mortgage_pandas import etl_pandas, ml
+from .mortgage_pandas import etl, ml
 
 warnings.filterwarnings("ignore")
 
@@ -15,8 +15,8 @@ warnings.filterwarnings("ignore")
 # https://rapidsai.github.io/demos/datasets/mortgage-data
 
 
-def _etl_pandas(parameters, acq_schema, perf_schema, etl_keys, do_validate=False):
-    return etl_pandas(
+def _etl(parameters, acq_schema, perf_schema, etl_keys, do_validate=False):
+    return etl(
         dataset_path=parameters["data_file"],
         dfiles_num=parameters["dfiles_num"],
         acq_schema=acq_schema,
@@ -49,7 +49,7 @@ def run_benchmark(parameters):
         print("WARNING: Validation not yet supported")
 
     import_pandas_into_module_namespace(
-        namespace=[run_benchmark.__globals__, etl_pandas.__globals__],
+        namespace=[run_benchmark.__globals__, etl.__globals__],
         mode=parameters["pandas_mode"],
         ray_tmpdir=parameters["ray_tmpdir"],
         ray_memory=parameters["ray_memory"],
@@ -191,7 +191,7 @@ def run_benchmark(parameters):
     # gets data directory size in MB
     dataset_size = get_dir_size(parameters["data_file"])
 
-    df_pd, mb_pd, etl_times_pd = _etl_pandas(parameters, acq_schema, perf_schema, etl_keys)
+    df_pd, mb_pd, etl_times_pd = _etl(parameters, acq_schema, perf_schema, etl_keys)
     print_results(results=etl_times_pd, backend=parameters["pandas_mode"], unit="s")
     etl_times_pd["Backend"] = parameters["pandas_mode"]
     etl_times_pd["dataset_size"] = dataset_size

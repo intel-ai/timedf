@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 # https://rapidsai-data.s3.us-east-2.amazonaws.com/datasets/ipums_education2income_1970-2010.csv.gz
 
 
-def etl_pandas(filename, columns_names, columns_types, etl_keys, pandas_mode):
+def etl(filename, columns_names, columns_types, etl_keys, pandas_mode):
     etl_times = {key: 0.0 for key in etl_keys}
 
     t0 = timer()
@@ -298,7 +298,7 @@ def run_benchmark(parameters):
         csv_size = 2100.0
 
 
-    df, X, y, etl_times = etl_pandas(
+    df, X, y, etl_times = etl(
         parameters["data_file"],
         columns_names=columns_names,
         columns_types=columns_types,

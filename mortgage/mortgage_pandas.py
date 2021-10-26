@@ -14,7 +14,7 @@ except ImportError:
 import numpy as np
 
 
-class MortgagePandasBenchmark:
+class MortgageBenchmark:
     def __init__(
         self,
         mortgage_path,
@@ -442,7 +442,7 @@ class MortgagePandasBenchmark:
         return 2000 + num // 4, num % 4 + 1
 
 
-def etl_pandas(
+def etl(
     dataset_path,
     dfiles_num,
     acq_schema,
@@ -461,7 +461,7 @@ def etl_pandas(
     dataset_path = os.path.join(datasets_pwd, "mortgage")
     etl_times = {key: 0.0 for key in etl_keys}
 
-    mb = MortgagePandasBenchmark(
+    mb = MortgageBenchmark(
         dataset_path,
         "xgb",
         acq_schema.to_pandas(),
@@ -472,7 +472,7 @@ def etl_pandas(
     pd_dfs = []
     t0 = timer()
     for data_file_num in range(dfiles_num):
-        year, quarter = MortgagePandasBenchmark.split_year_quarter(data_file_num)
+        year, quarter = MortgageBenchmark.split_year_quarter(data_file_num)
         for fname in mb.list_perf_files(quarter=quarter, year=year):
             pd_dfs.append(mb.run_cpu_workflow(quarter=quarter, year=year, perf_file=fname))
 
@@ -653,7 +653,7 @@ def main():
         dataFilesNumber = 0
         pd_dfs = []
         time_ETL = timer()
-        mb = MortgagePandasBenchmark(data_directory, args.algo)
+        mb = MortgageBenchmark(data_directory, args.algo)
         print("RUNNING BENCHMARK NUMBER", benchName, "ITERATION NUMBER", iii)
         for quarter in range(0, args.df):
             year = 2000 + quarter // 4

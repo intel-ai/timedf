@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 # Dataset link
 # https://www.kaggle.com/c/santander-customer-transaction-prediction/data
 
-def etl_pandas(filename, columns_names, columns_types, etl_keys):
+def etl(filename, columns_names, columns_types, etl_keys):
     etl_times = {key: 0.0 for key in etl_keys}
 
     t0 = timer()
@@ -146,7 +146,7 @@ def run_benchmark(parameters):
         ray_memory=parameters["ray_memory"],
     )
 
-    ml_data, etl_times = etl_pandas(
+    ml_data, etl_times = etl(
         filename=parameters["data_file"],
         columns_names=columns_names,
         columns_types=columns_types_pd,
