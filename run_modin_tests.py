@@ -5,13 +5,12 @@ import sys
 import traceback
 
 from environment import CondaEnvironment
-from utils_base_env import find_free_port, KeyValueListParser, str_arg_to_bool, add_mysql_arguments
+from utils_base_env import str_arg_to_bool, add_mysql_arguments
 
 
 def main():
     omniscript_path = os.path.dirname(__file__)
     args = None
-    port_default_value = -1
 
     parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
     required = parser.add_argument_group("common")
@@ -51,13 +50,6 @@ def main():
         help="Save conda env after executing.",
     )
     optional.add_argument(
-        "-r",
-        "--report_path",
-        dest="report_path",
-        default=os.path.join(omniscript_path, ".."),
-        help="Path to report file.",
-    )
-    optional.add_argument(
         "-ci",
         "--ci_requirements",
         dest="ci_requirements",
@@ -71,17 +63,6 @@ def main():
         default="3.7",
         help="File with ci requirements for conda env.",
     )
-
-    # Tests
-    optional.add_argument(
-        "-expression",
-        dest="expression",
-        default=" ",
-        help="Run tests which match the given substring test names and their parent "
-        "classes. Example: 'test_other', while 'not test_method' matches those "
-        "that don't contain 'test_method' in their names.",
-    )
-
     # Modin
     optional.add_argument(
         "-m", "--modin_path", dest="modin_path", default=None, help="Path to modin directory."
@@ -104,108 +85,6 @@ def main():
     # Omnisci server parameters
     omnisci.add_argument(
         "-executable", dest="executable", required=False, help="Path to omnisci_server executable."
-    )
-    omnisci.add_argument(
-        "-omnisci_cwd",
-        dest="omnisci_cwd",
-        help="Path to omnisci working directory. "
-        "By default parent directory of executable location is used. "
-        "Data directory is used in this location.",
-    )
-    omnisci.add_argument(
-        "-port",
-        dest="port",
-        default=port_default_value,
-        type=int,
-        help="TCP port number to run omnisci_server on.",
-    )
-    omnisci.add_argument(
-        "-http_port",
-        dest="http_port",
-        default=port_default_value,
-        type=int,
-        help="HTTP port number to run omnisci_server on.",
-    )
-    omnisci.add_argument(
-        "-calcite_port",
-        dest="calcite_port",
-        default=port_default_value,
-        type=int,
-        help="Calcite port number to run omnisci_server on.",
-    )
-    omnisci.add_argument(
-        "-user", dest="user", default="admin", help="User name to use on omniscidb server."
-    )
-    omnisci.add_argument(
-        "-password",
-        dest="password",
-        default="HyperInteractive",
-        help="User password to use on omniscidb server.",
-    )
-    omnisci.add_argument(
-        "-database_name",
-        dest="database_name",
-        default="agent_test_modin",
-        help="Database name to use in omniscidb server.",
-    )
-    omnisci.add_argument(
-        "-table",
-        dest="table",
-        default="benchmark_table",
-        help="Table name name to use in omniscidb server.",
-    )
-    omnisci.add_argument(
-        "-ipc_conn",
-        dest="ipc_conn",
-        default=True,
-        type=str_arg_to_bool,
-        help="Connection type for ETL operations",
-    )
-    omnisci.add_argument(
-        "-debug_timer",
-        dest="debug_timer",
-        default=False,
-        type=str_arg_to_bool,
-        help="Enable fine-grained query execution timers for debug.",
-    )
-    omnisci.add_argument(
-        "-columnar_output",
-        dest="columnar_output",
-        default=True,
-        type=str_arg_to_bool,
-        help="Allows OmniSci Core to directly materialize intermediate projections \
-            and the final ResultSet in Columnar format where appropriate.",
-    )
-    omnisci.add_argument(
-        "-lazy_fetch",
-        dest="lazy_fetch",
-        default=None,
-        type=str_arg_to_bool,
-        help="[lazy_fetch help message]",
-    )
-    omnisci.add_argument(
-        "-multifrag_rs",
-        dest="multifrag_rs",
-        default=None,
-        type=str_arg_to_bool,
-        help="[multifrag_rs help message]",
-    )
-    omnisci.add_argument(
-        "-fragments_size",
-        dest="fragments_size",
-        default=None,
-        nargs="*",
-        type=int,
-        help="Number of rows per fragment that is a unit of the table for query processing. \
-            Should be specified for each table in workload",
-    )
-    omnisci.add_argument(
-        "-omnisci_run_kwargs",
-        dest="omnisci_run_kwargs",
-        default={},
-        metavar="KEY1=VAL1,KEY2=VAL2...",
-        action=KeyValueListParser,
-        help="options to start omnisci server",
     )
 
     # Benchmark parameters
@@ -325,26 +204,12 @@ def main():
         default="1234567890123456789012345678901234567890",
         help="Modin commit hash used for tests.",
     )
-    optional.add_argument(
-        "-debug_mode",
-        dest="debug_mode",
-        default=False,
-        type=str_arg_to_bool,
-        help="Enable debug mode.",
-    )
 
     try:
         args = parser.parse_args()
 
         os.environ["PYTHONIOENCODING"] = "UTF-8"
         os.environ["PYTHONUNBUFFERED"] = "1"
-
-        if args.port == port_default_value:
-            args.port = find_free_port()
-        if args.http_port == port_default_value:
-            args.http_port = find_free_port()
-        if args.calcite_port == port_default_value:
-            args.calcite_port = find_free_port()
 
         required_tasks = args.task.split(",")
         tasks = {}

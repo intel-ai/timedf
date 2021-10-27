@@ -3,13 +3,12 @@ import argparse
 import os
 import time
 
-from utils_base_env import KeyValueListParser, str_arg_to_bool, add_mysql_arguments
+from utils_base_env import str_arg_to_bool, add_mysql_arguments
 from utils import remove_fields_from_dict, refactor_results_for_reporting
 
 
 def main():
     args = None
-    port_default_value = -1
 
     benchmarks = {
         "ny_taxi": "taxi",
@@ -138,108 +137,7 @@ def main():
     optional.add_argument(
         "-executable", dest="executable", help="Path to omnisci_server executable."
     )
-    optional.add_argument(
-        "-omnisci_cwd",
-        dest="omnisci_cwd",
-        help="Path to omnisci working directory. "
-        "By default parent directory of executable location is used. "
-        "Data directory is used in this location.",
-    )
-    optional.add_argument(
-        "-port",
-        dest="port",
-        default=port_default_value,
-        type=int,
-        help="TCP port number to run omnisci_server on.",
-    )
-    optional.add_argument(
-        "-http_port",
-        dest="http_port",
-        default=port_default_value,
-        type=int,
-        help="HTTP port number to run omnisci_server on.",
-    )
-    optional.add_argument(
-        "-calcite_port",
-        dest="calcite_port",
-        default=port_default_value,
-        type=int,
-        help="Calcite port number to run omnisci_server on.",
-    )
-    optional.add_argument(
-        "-user", dest="user", default="admin", help="User name to use on omniscidb server."
-    )
-    optional.add_argument(
-        "-password",
-        dest="password",
-        default="HyperInteractive",
-        help="User password to use on omniscidb server.",
-    )
-    optional.add_argument(
-        "-database_name",
-        dest="database_name",
-        default="omnisci",
-        help="Database name to use in omniscidb server.",
-    )
-    optional.add_argument(
-        "-table",
-        dest="table",
-        default="benchmark_table",
-        help="Table name name to use in omniscidb server.",
-    )
-    optional.add_argument(
-        "-ipc_conn",
-        dest="ipc_conn",
-        default=True,
-        type=str_arg_to_bool,
-        help="Table name name to use in omniscidb server.",
-    )
-    optional.add_argument(
-        "-debug_timer",
-        dest="debug_timer",
-        default=False,
-        type=str_arg_to_bool,
-        help="Enable fine-grained query execution timers for debug.",
-    )
-    optional.add_argument(
-        "-columnar_output",
-        dest="columnar_output",
-        default=True,
-        type=str_arg_to_bool,
-        help="Allows OmniSci Core to directly materialize intermediate projections \
-            and the final ResultSet in Columnar format where appropriate.",
-    )
-    optional.add_argument(
-        "-lazy_fetch",
-        dest="lazy_fetch",
-        default=None,
-        type=str_arg_to_bool,
-        help="[lazy_fetch help message]",
-    )
-    optional.add_argument(
-        "-multifrag_rs",
-        dest="multifrag_rs",
-        default=None,
-        type=str_arg_to_bool,
-        help="[multifrag_rs help message]",
-    )
-    optional.add_argument(
-        "-fragments_size",
-        dest="fragments_size",
-        default=None,
-        nargs="*",
-        type=int,
-        help="Number of rows per fragment that is a unit of the table for query processing. \
-            Should be specified for each table in workload",
-    )
-    optional.add_argument(
-        "-omnisci_run_kwargs",
-        dest="omnisci_run_kwargs",
-        default={},
-        metavar="KEY1=VAL1,KEY2=VAL2...",
-        action=KeyValueListParser,
-        help="options to start omnisci server",
-    )
+
     # Additional information
     optional.add_argument(
         "-commit_omnisci",
@@ -258,13 +156,6 @@ def main():
         dest="commit_modin",
         default="1234567890123456789012345678901234567890",
         help="Modin commit hash used for benchmark.",
-    )
-    optional.add_argument(
-        "-debug_mode",
-        dest="debug_mode",
-        default=False,
-        type=str_arg_to_bool,
-        help="Enable debug mode.",
     )
 
     os.environ["PYTHONIOENCODING"] = "UTF-8"
