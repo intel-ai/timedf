@@ -259,12 +259,6 @@ def main():
         help="Which optimizer is used",
     )
     benchmark.add_argument(
-        "-no_ibis",
-        default=False,
-        type=str_arg_to_bool,
-        help="Do not run Ibis benchmark, run only Pandas (or Modin) version",
-    )
-    benchmark.add_argument(
         "-pandas_mode",
         choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python", "Modin_on_omnisci"],
         default="Pandas",
