@@ -176,7 +176,6 @@ def main():
         "ray_memory": args.ray_memory,
         "gpu_memory": args.gpu_memory,
         "validation": args.validation,
-        "debug_mode": args.debug_mode,
         "extended_functionality": args.extended_functionality,
     }
 
