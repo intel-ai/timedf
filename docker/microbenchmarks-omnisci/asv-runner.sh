@@ -4,7 +4,7 @@ eval source ${CONDA_PREFIX}/bin/activate ${ENV_NAME}
 
 # get performance of modin on omnisci
 export MODIN_ENGINE=native
-export MODIN_BACKEND=omnisci
+export MODIN_STORAGE_FORMAT=omnisci
 export MODIN_EXPERIMENTAL=true
 export MODIN_TEST_DATASET_SIZE=big
 export MODIN_ASV_DATASIZE_CONFIG=`pwd`/omniscripts/docker/microbenchmarks-omnisci/modin-asv-datasize-config.json

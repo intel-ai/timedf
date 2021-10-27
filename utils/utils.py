@@ -81,7 +81,7 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
             print("Pandas backend: Modin on pure Python")
         elif mode == "Modin_on_omnisci":
             os.environ["MODIN_ENGINE"] = "native"
-            os.environ["MODIN_BACKEND"] = "omnisci"
+            os.environ["MODIN_STORAGE_FORMAT"] = "omnisci"
             os.environ["MODIN_EXPERIMENTAL"] = "True"
             print("Pandas backend: Modin on OmniSci")
         else:
