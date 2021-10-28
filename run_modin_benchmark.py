@@ -58,26 +58,11 @@ def main():
         help="Number of iterations to run every query. Best result is selected.",
     )
     optional.add_argument(
-        "-dnd", default=False, type=str_arg_to_bool, help="Do not delete old table."
-    )
-    optional.add_argument(
-        "-dni",
-        default=False,
-        type=str_arg_to_bool,
-        help="Do not create new table and import any data from CSV files.",
-    )
-    optional.add_argument(
         "-validation",
         dest="validation",
         default=False,
         type=str_arg_to_bool,
         help="validate queries results (by comparison with Pandas queries results).",
-    )
-    optional.add_argument(
-        "-import_mode",
-        dest="import_mode",
-        default="fsi",
-        help="measure 'COPY FROM' import, FSI import, import through pandas",
     )
     optional.add_argument(
         "-optimizer",

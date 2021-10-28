@@ -282,12 +282,6 @@ def run_benchmark(parameters):
     etl_times = None
     ml_times = None
 
-    if parameters["validation"] and parameters["import_mode"] != "pandas":
-        print(
-            f"WARNING: validation can not be performed, it works only for 'pandas' \
-                import mode, '{parameters['import_mode']}' passed"
-        )
-
     if parameters["data_file"].endswith(".csv"):
         csv_size = getsize(parameters["data_file"])
     else:

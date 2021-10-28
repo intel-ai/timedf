@@ -125,12 +125,6 @@ def main():
         help="validate queries results (by comparison with Pandas queries results).",
     )
     benchmark.add_argument(
-        "-import_mode",
-        dest="import_mode",
-        default="fsi",
-        help="you can choose: {copy-from, pandas, fsi}",
-    )
-    benchmark.add_argument(
         "-optimizer",
         choices=["intel", "stock"],
         dest="optimizer",
@@ -348,7 +342,6 @@ def main():
                 "db_table_ml",
                 "executable",
                 "commit_omnisci",
-                "import_mode",
                 "commit_omniscripts",
                 "extended_functionality",
                 "commit_modin",

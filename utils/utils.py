@@ -353,20 +353,8 @@ def convert_units(dict_to_convert, ignore_fields, unit="ms"):
     }
 
 
-def check_fragments_size(fragments_size, count_table, import_mode, default_fragments_size=None):
+def check_fragments_size(fragments_size, count_table, default_fragments_size=None):
     result_fragments_size = []
-    check_options = {
-        "fragments_size": fragments_size,
-        "default_fragments_size": default_fragments_size,
-    }
-
-    for option_name, option in check_options.items():
-        if option:
-            if import_mode != "pandas" and len(option) != count_table:
-                raise ValueError(
-                    f"fragment size should be specified for each table; \
-                    {option_name}: {option}; count table: {count_table}"
-                )
 
     if fragments_size:
         result_fragments_size = fragments_size
