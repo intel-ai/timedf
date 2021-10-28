@@ -1,21 +1,20 @@
 # Scripts that are used to run modin-specific benchmarks in automated way in TeamCity and for performance analysis in development cycle.
 
 ## Requirements
-Scripts require to be installed:
-* the following python3 packages: pymapd, braceexpand, mysql-connector-python;
-* conda or miniconda for benchmarks.
 
-OmnisciDB server often requires a lot of open files, so it is a good idea to run it with
+Scripts require miniconda to be installed.
+
+OmnisciDB server which is used in corresponding Modin backend often requires a lot of open files, so it is a good idea to run it with
 `ulimit -n 10000`.
 
 ## Main benchmarks launching script
 
-Main script is called `run_modin_benchmark.py`.
+Main script is called `run_modin_tests.py`.
 
-Script automatically creates conda environment if it doesn't exist or you want to recreate it,
+Script automatically creates conda environment if it doesn't exist or you want to recreate it.
 All subsequent work is being done in created conda environment. Environment can be
 removed or saved after executing.
-Results can be stored in MySQL database and reported in Grafana.
+Results can be stored in MySQL database and visualized using Grafana charts.
 
 Sample run taxi benchmark command line:
 ```
