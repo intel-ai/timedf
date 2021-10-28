@@ -109,15 +109,6 @@ def main():
         help="Number of iterations to run every query. Best result is selected.",
     )
     benchmark.add_argument(
-        "-dnd", default=False, type=str_arg_to_bool, help="Do not delete old table."
-    )
-    benchmark.add_argument(
-        "-dni",
-        default=False,
-        type=str_arg_to_bool,
-        help="Do not create new table and import any data from CSV files.",
-    )
-    benchmark.add_argument(
         "-validation",
         dest="validation",
         default=False,
@@ -323,8 +314,6 @@ def main():
                 "data_file",
                 "dfiles_num",
                 "iterations",
-                "dnd",
-                "dni",
                 "validation",
                 "optimizer",
                 "pandas_mode",
