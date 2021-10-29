@@ -26,7 +26,8 @@ Sample run census benchmark command line:
 python3 run_modin_tests.py --env_name modin-test --env_check True --python_version 3.7 --task benchmark -bench_name census -data_file ./census/ipums_education2income_1970-2010.csv.gz -pandas_mode Modin_on_omnisci -ray_tmpdir ./tmp
 ```
 
-More examples could be find in scripts of `teamcity_build_scripts`.
+More examples could be find in scripts of `teamcity_build_scripts`. 
+Also there is `test_run_script.sh` which can be served as example of all steps that have to be done for benchmarks launching.
 
 ## Standalone benchmark launch
 
