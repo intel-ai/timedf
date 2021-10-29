@@ -147,34 +147,34 @@ def main():
     os.environ["PYTHONUNBUFFERED"] = "1"
 
     args = parser.parse_args()
+    args_dict = vars(args)
+    args_dict = {
+        key: os.path.expandvars(value) if isinstance(value, str) else value
+        for key, value in args_dict.items()
+    }
 
-    run_benchmark = __import__(benchmarks[args.bench_name]).run_benchmark
+    run_benchmark = __import__(benchmarks[args_dict["bench_name"]]).run_benchmark
 
     parameters = {
-        "data_file": args.data_file,
-        "dfiles_num": args.dfiles_num,
-        "no_ml": args.no_ml,
-        "use_modin_xgb": args.use_modin_xgb,
-        "optimizer": args.optimizer,
-        "pandas_mode": args.pandas_mode,
-        "ray_tmpdir": args.ray_tmpdir,
-        "ray_memory": args.ray_memory,
-        "gpu_memory": args.gpu_memory,
-        "validation": args.validation,
-        "extended_functionality": args.extended_functionality,
+        "data_file": args_dict["data_file"],
+        "dfiles_num": args_dict["dfiles_num"],
+        "no_ml": args_dict["no_ml"],
+        "use_modin_xgb": args_dict["use_modin_xgb"],
+        "optimizer": args_dict["optimizer"],
+        "pandas_mode": args_dict["pandas_mode"],
+        "ray_tmpdir": args_dict["ray_tmpdir"],
+        "ray_memory": args_dict["ray_memory"],
+        "gpu_memory": args_dict["gpu_memory"],
+        "validation": args_dict["validation"],
+        "extended_functionality": args_dict["extended_functionality"],
     }
 
     etl_results = []
     ml_results = []
     print(parameters)
     run_id = int(round(time.time()))
-    for iter_num in range(1, args.iterations + 1):
+    for iter_num in range(1, args_dict["iterations"] + 1):
         print(f"Iteration #{iter_num}")
-
-        parameters = {
-            key: os.path.expandvars(value) if isinstance(value, str) else value
-            for key, value in parameters.items()
-        }
         benchmark_results = run_benchmark(parameters)
 
         additional_fields_for_reporting = {
@@ -191,23 +191,23 @@ def main():
         ml_results = list(etl_ml_results["ML"])
 
         # Reporting to MySQL database
-        if args.db_user is not None:
+        if args_dict["db_user"] is not None:
             import mysql.connector
             from report import DbReport
 
             if iter_num == 1:
                 db = mysql.connector.connect(
-                    host=args.db_server,
-                    port=args.db_port,
-                    user=args.db_user,
-                    passwd=args.db_pass,
-                    db=args.db_name,
+                    host=args_dict["db_server"],
+                    port=args_dict["db_port"],
+                    user=args_dict["db_user"],
+                    passwd=args_dict["db_pass"],
+                    db=args_dict["db_name"],
                 )
 
                 reporting_init_fields = {
-                    "OmnisciCommitHash": args.commit_omnisci,
-                    "OmniscriptsCommitHash": args.commit_omniscripts,
-                    "ModinCommitHash": args.commit_modin,
+                    "OmnisciCommitHash": args_dict["commit_omnisci"],
+                    "OmniscriptsCommitHash": args_dict["commit_omniscripts"],
+                    "ModinCommitHash": args_dict["commit_modin"],
                 }
 
                 reporting_fields_benchmark_etl = {
@@ -220,7 +220,7 @@ def main():
 
                 db_reporter_etl = DbReport(
                     db,
-                    args.db_table_etl,
+                    args_dict["db_table_etl"],
                     reporting_fields_benchmark_etl,
                     reporting_init_fields,
                 )
@@ -236,12 +236,12 @@ def main():
 
                     db_reporter_ml = DbReport(
                         db,
-                        args.db_table_ml,
+                        args_dict["db_table_ml"],
                         reporting_fields_benchmark_ml,
                         reporting_init_fields,
                     )
 
-            if iter_num == args.iterations:
+            if iter_num == args_dict["iterations"]:
                 for result_etl in etl_results:
                     remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)
                     db_reporter_etl.submit(result_etl)
