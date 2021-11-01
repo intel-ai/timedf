@@ -17,8 +17,8 @@ dependencies:
   - black=19.10b0
   - flake8
   - Cython
-  - pyarrow==5.0
-  - arrow-cpp==5.0
+  - pyarrow<=5.0
+  - arrow-cpp<=5.0
   - cmake>=3.15
   # pip with old git failed build asv from master; conflict with PEP440
   - git>=2.0.0
