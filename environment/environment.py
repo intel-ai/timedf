@@ -72,6 +72,7 @@ class CondaEnvironment:
         ]
         print(f"{'UPDATING' if python_version else 'CREATING'} CONDA ENVIRONMENT")
         execute_process(cmdline, print_output=False)
+        execute_process(["conda", "list", "-n", env_name], print_output=True)
         # TODO: replace with run_command
         # run_command(Commands.CREATE, self._add_conda_execution(cmdline, env_name),
         #             stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
