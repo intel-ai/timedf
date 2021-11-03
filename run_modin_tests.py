@@ -230,7 +230,7 @@ def main():
                         else args.modin_pkgs_dir
                     )
 
-                install_cmdline_modin_pip = ["pip", "install", ".[ray]", "ray==1.7.0"]
+                install_cmdline_modin_pip = ["pip", "install", ".[ray]"]
 
                 print("MODIN INSTALLATION")
                 conda_env.run(install_cmdline_modin_pip, cwd=args.modin_path)
