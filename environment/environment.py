@@ -77,18 +77,6 @@ class CondaEnvironment:
         #             stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
         #             use_exception_handler=True)
 
-    def _add_full_conda_execution(self, cmdline, name=None):
-        env_name = name if name else self.name
-        cmd_res = ["conda", "run", "-n", env_name]
-        cmd_res.extend(cmdline)
-        return cmd_res
-
-    def _add_conda_execution(self, cmdline, name=None):
-        env_name = name if name else self.name
-        cmd_res = ["-n", env_name]
-        cmd_res.extend(cmdline)
-        return cmd_res
-
     def run(self, cmdline, name=None, cwd=None, print_output=False):
         env_name = name if name else self.name
         if print_output:
@@ -96,24 +84,22 @@ class CondaEnvironment:
             print("PRINTING LIST OF PACKAGES")
             execute_process(cmd_print_list, print_output=True)
 
+        print("CMD: ", " ".join(cmdline))
+        command = ["-n", env_name, "--live-stream"]
         if cwd:
-            # run_command doesn't have cwd
-            execute_process(
-                self._add_full_conda_execution(cmdline, env_name),
-                cwd=cwd,
-                print_output=print_output,
-            )
-        else:
-            print("CMD: ", " ".join(cmdline))
-            _, _, return_code = run_command(
-                Commands.RUN,
-                self._add_conda_execution(cmdline, env_name),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                use_exception_handler=True,
-            )
-            if return_code != 0:
-                raise Exception(f"Conda run returned {return_code}.")
+            command.extend(["--cwd", cwd])
+        command.extend(cmdline)
+        print("CONDA CMD", " ".join(command))
+
+        _, _, return_code = run_command(
+            Commands.RUN,
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            use_exception_handler=True,
+        )
+        if return_code != 0:
+            raise Exception(f"Conda run returned {return_code}.")
 
     def update(self, env_name, req_file, cwd=None):
         assert env_name is not None, req_file is not None
