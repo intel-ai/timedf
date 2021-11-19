@@ -85,7 +85,7 @@ class CondaEnvironment:
             execute_process(cmd_print_list, print_output=True)
 
         print("CMD: ", " ".join(cmdline))
-        command = ["-n", env_name, "--live-stream"]
+        command = ["-n", env_name]
         if cwd:
             command.extend(["--cwd", cwd])
         command.extend(cmdline)
