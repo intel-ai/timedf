@@ -4,8 +4,7 @@ import re
 import sys
 import traceback
 
-from environment import CondaEnvironment
-from utils_base_env import str_arg_to_bool, add_mysql_arguments
+from utils_base_env import str_arg_to_bool, add_mysql_arguments, execute_process
 
 
 def main():
@@ -32,7 +31,9 @@ def main():
     )
 
     # Environment
-    required.add_argument("-en", "--env_name", dest="env_name", help="Conda env name.")
+    optional.add_argument(
+        "-en", "--env_name", dest="env_name", default=None, help="Conda env name."
+    )
     optional.add_argument(
         "-ec",
         "--env_check",
@@ -211,14 +212,35 @@ def main():
                 f"Only 3.7 and 3.6 python versions are supported, {args.python_version} is not supported"
             )
 
-        conda_env = CondaEnvironment(args.env_name)
-        print("PREPARING ENVIRONMENT")
-        conda_env.create(
-            args.env_check,
-            requirements_file=args.ci_requirements,
-            python_version=args.python_version,
-            channel="conda-forge",
-        )
+        if args.env_name is not None:
+            from environment import CondaEnvironment
+
+            print("PREPARING ENVIRONMENT")
+            conda_env = CondaEnvironment(args.env_name)
+            conda_env.create(
+                python_version=args.python_version,
+                existence_check=args.env_check,
+                requirements_file=args.ci_requirements,
+                channel="conda-forge",
+            )
+            try:
+                env_name_idx = sys.argv.index("--env_name")
+            except ValueError:
+                env_name_idx = sys.argv.index("-en")
+            # drop env name: option and value
+            drop_env_name = env_name_idx + 2
+            benchmark_cmd = ["python3"] + sys.argv[:env_name_idx] + sys.argv[drop_env_name:]
+            print(" ".join(benchmark_cmd))
+
+            try:
+                conda_env.run(benchmark_cmd)
+            finally:
+                if args and args.save_env is False:
+                    conda_env.remove()
+
+        # just to ensure that we in right environment
+        execute_process(["conda", "env", "list"], print_output=True)
+
         if tasks["build"]:
             install_cmdline = ["python3", "setup.py", "install"]
 
@@ -233,7 +255,7 @@ def main():
                 install_cmdline_modin_pip = ["pip", "install", ".[ray]"]
 
                 print("MODIN INSTALLATION")
-                conda_env.run(install_cmdline_modin_pip, cwd=args.modin_path)
+                execute_process(install_cmdline_modin_pip, cwd=args.modin_path)
 
             # trying to install dbe extension if omnisci generated it
             executables_path = os.path.dirname(args.executable)
@@ -245,7 +267,7 @@ def main():
             if not os.path.isdir(data_dir) and args.manage_dbe_dir:
                 print("MANAGING OMNISCI DATA DIR", data_dir)
                 os.makedirs(data_dir)
-                conda_env.run(initdb_cmdline)
+                execute_process(initdb_cmdline)
 
             if os.path.exists(dbe_path):
                 print("DBE INSTALLATION")
@@ -286,11 +308,11 @@ def main():
                     "$CONDA_PREFIX",
                 ]
                 omniscidb_root = os.path.abspath(f"{executables_path}/../../")
-                conda_env.run(cmake_cmdline, cwd=omniscidb_root)
-                conda_env.run(cmake_qe_cmdline, cwd=omniscidb_root)
-                conda_env.run(cmake_thrift_cmdline, cwd=omniscidb_root)
-                conda_env.run(cmake_jar_cmdline, cwd=omniscidb_root)
-                conda_env.run(install_cmdline, cwd=dbe_path)
+                execute_process(cmake_cmdline, cwd=omniscidb_root)
+                execute_process(cmake_qe_cmdline, cwd=omniscidb_root)
+                execute_process(cmake_thrift_cmdline, cwd=omniscidb_root)
+                execute_process(cmake_jar_cmdline, cwd=omniscidb_root)
+                execute_process(install_cmdline, cwd=dbe_path)
             else:
                 print("Using Omnisci server")
 
@@ -366,15 +388,11 @@ def main():
 
             print(benchmark_cmd)
 
-            conda_env.run(benchmark_cmd)
+            execute_process(benchmark_cmd)
 
     except Exception:
         traceback.print_exc(file=sys.stdout)
         raise
-
-    finally:
-        if args and args.save_env is False:
-            conda_env.remove()
 
 
 if __name__ == "__main__":
