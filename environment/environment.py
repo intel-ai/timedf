@@ -1,5 +1,4 @@
 import re
-import subprocess
 from utils_base_env import execute_process
 
 try:
@@ -84,18 +83,15 @@ class CondaEnvironment:
             print("PRINTING LIST OF PACKAGES")
             execute_process(cmd_print_list, print_output=True)
 
-        print("CMD: ", " ".join(cmdline))
-        command = ["-n", env_name]
+        command = ["-n", env_name, "--no-capture-output"]
         if cwd:
             command.extend(["--cwd", cwd])
         command.extend(cmdline)
-        print("CONDA CMD", " ".join(command))
 
+        print("CMD: ", "conda run " + " ".join(command))
         _, _, return_code = run_command(
             Commands.RUN,
             command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
             use_exception_handler=True,
         )
         if return_code != 0:
