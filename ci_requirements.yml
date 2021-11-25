@@ -22,5 +22,7 @@ dependencies:
   - cmake>=3.15
   # pip with old git failed build asv from master; conflict with PEP440
   - git>=2.0.0
+  # benchmarks need one tbb component for performance improvement
+  - tbb
   - pip:
       - xgboost >=1.3
