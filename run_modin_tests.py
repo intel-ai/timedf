@@ -223,17 +223,20 @@ def main():
                 requirements_file=args.ci_requirements,
                 channel="conda-forge",
             )
+            test_cmd = sys.argv.copy()
             try:
-                env_name_idx = sys.argv.index("--env_name")
+                env_name_idx = test_cmd.index("--env_name")
             except ValueError:
-                env_name_idx = sys.argv.index("-en")
+                env_name_idx = test_cmd.index("-en")
             # drop env name: option and value
             drop_env_name = env_name_idx + 2
-            benchmark_cmd = ["python3"] + sys.argv[:env_name_idx] + sys.argv[drop_env_name:]
-            print(" ".join(benchmark_cmd))
+            test_cmd = ["python3"] + test_cmd[:env_name_idx] + test_cmd[drop_env_name:]
+            data_file_idx = test_cmd.index("-data_file") + 1
+            test_cmd[data_file_idx] = f'"{test_cmd[data_file_idx]}"'
+            print(" ".join(test_cmd))
 
             try:
-                conda_env.run(benchmark_cmd)
+                conda_env.run(test_cmd)
             finally:
                 if args and args.save_env is False:
                     conda_env.remove()
