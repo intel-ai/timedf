@@ -237,6 +237,7 @@ def main():
             finally:
                 if args and args.save_env is False:
                     conda_env.remove()
+            return
 
         # just to ensure that we in right environment
         execute_process(["conda", "env", "list"], print_output=True)
