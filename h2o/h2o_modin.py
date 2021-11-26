@@ -414,6 +414,8 @@ def join_query5_modin(x, ys, queries_results, extended_functionality):
 
 def queries_modin(filename, pandas_mode, extended_functionality):
     data_files_names = files_names_from_pattern(filename)
+    if not data_files_names:
+        raise ValueError(f"Incorrect filename is passed as -data_file flag: {filename}")
     data_for_groupby_queries = []
     data_for_join_queries = []
     for f in data_files_names:
