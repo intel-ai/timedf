@@ -415,7 +415,7 @@ def join_query5_modin(x, ys, queries_results, extended_functionality):
 def queries_modin(filename, pandas_mode, extended_functionality):
     data_files_names = files_names_from_pattern(filename)
     if not data_files_names:
-        raise ValueError(f"Incorrect filename is passed as -data_file flag: {filename}")
+        raise ValueError(f"Can't get file paths from filename pattern: '{filename}'")
     data_for_groupby_queries = []
     data_for_join_queries = []
     for f in data_files_names:
@@ -424,7 +424,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
         elif f.split("/")[-1].startswith("J1"):
             data_for_join_queries.append(f)
         else:
-            raise AttributeError(f"Unrecognized file is passed as -data_file flag argument: {f}")
+            raise AttributeError(f"Filename should start with 'G1' or 'J1' prefixes: '{f}'")
 
     groupby_queries_files_number = len(data_for_groupby_queries)
     join_queries_files_number = len(data_for_join_queries)
