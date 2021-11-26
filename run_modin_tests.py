@@ -231,10 +231,13 @@ def main():
             # drop env name: option and value
             drop_env_name = env_name_idx + 2
             test_cmd = ["python3"] + test_cmd[:env_name_idx] + test_cmd[drop_env_name:]
-            data_file_idx = test_cmd.index("-data_file") + 1
-            test_cmd[data_file_idx] = f'"{test_cmd[data_file_idx]}"'
-            print(" ".join(test_cmd))
+            try:
+                data_file_idx = test_cmd.index("-data_file") + 1
+                test_cmd[data_file_idx] = f'"{test_cmd[data_file_idx]}"'
+            except ValueError:
+                pass
 
+            print(" ".join(test_cmd))
             try:
                 conda_env.run(test_cmd)
             finally:
@@ -362,7 +365,8 @@ def main():
                 "commit_modin",
             ]
             args_dict = vars(args)
-            args_dict["data_file"] = f"'{args_dict['data_file']}'"
+            if not args_dict["data_file"].startswith('"'):
+                args_dict["data_file"] = '"{}"'.format(args_dict["data_file"])
             for arg_name in list(parser._option_string_actions.keys()):
                 try:
                     pure_arg = re.sub(r"^--*", "", arg_name)
