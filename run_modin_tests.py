@@ -40,7 +40,7 @@ def main():
         dest="env_check",
         default=False,
         type=str_arg_to_bool,
-        help="Check if env exists. If it exists don't recreate.",
+        help="Check if env exists. If it exists don't recreate. Ignored if `--env_name` isn't set.",
     )
     optional.add_argument(
         "-s",
@@ -48,7 +48,7 @@ def main():
         dest="save_env",
         default=False,
         type=str_arg_to_bool,
-        help="Save conda env after executing.",
+        help="Save conda env after executing. Ignored if `--env_name` isn't set.",
     )
     optional.add_argument(
         "-ci",
