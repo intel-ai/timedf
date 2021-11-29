@@ -233,6 +233,9 @@ def main():
             test_cmd = ["python3"] + test_cmd[:env_name_idx] + test_cmd[drop_env_name:]
             try:
                 data_file_idx = test_cmd.index("-data_file") + 1
+                # for some workloads, in the filename, we use "{", "}" characters that the shell
+                # itself can expands, for which our interface is not designed;
+                # "'" symbols disable expanding arguments by shell
                 test_cmd[data_file_idx] = f"'{test_cmd[data_file_idx]}'"
             except ValueError:
                 pass
