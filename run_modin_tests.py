@@ -9,7 +9,7 @@ def main(raw_args=None):
     os.environ["PYTHONUNBUFFERED"] = "1"
 
     parser, possible_tasks, omniscript_path = prepare_parser()
-    args = parser.parse_args(raw_args=None)
+    args = parser.parse_args(raw_args)
 
     required_tasks = args.task.split(",")
     tasks = {}
