@@ -707,6 +707,15 @@ def run_benchmarks(
     commit_modin : str, default: "1234567890123456789012345678901234567890"
         Modin commit hash used for benchmark.
     """
+    benchmarks = {
+        "ny_taxi": "taxi",
+        "santander": "santander",
+        "census": "census",
+        "plasticc": "plasticc",
+        "mortgage": "mortgage",
+        "h2o": "h2o",
+    }
+
     ignore_fields_for_bd_report_etl = ["t_connect"]
     ignore_fields_for_bd_report_ml = []
     ignore_fields_for_results_unit_conversion = [
@@ -716,7 +725,7 @@ def run_benchmarks(
         "query_name",
     ]
 
-    run_benchmark = __import__(bench_name).run_benchmark
+    run_benchmark = __import__(benchmarks[bench_name]).run_benchmark
 
     parameters = {
         "data_file": data_file,

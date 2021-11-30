@@ -1,16 +1,15 @@
 import os
-import re
 import sys
 
 from utils_base_env import execute_process, prepare_parser
 
 
-def main():
+def main(raw_args=None):
     os.environ["PYTHONIOENCODING"] = "UTF-8"
     os.environ["PYTHONUNBUFFERED"] = "1"
 
     parser, possible_tasks, omniscript_path = prepare_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(raw_args=None)
 
     required_tasks = args.task.split(",")
     tasks = {}
@@ -142,77 +141,39 @@ def main():
             print("Using Omnisci server")
 
     if tasks["benchmark"]:
-        # if not args.bench_name or args.bench_name not in benchmarks:
-        #     print(
-        #     f"Benchmark {args.bench_name} is not supported, only {benchmarks} are supported")
-        # sys.exit(1)
+        from utils import run_benchmarks
 
         if not args.data_file:
             raise ValueError(
                 "Parameter --data_file was received empty, but it is required for benchmarks"
             )
 
-        benchmark_script_path = os.path.join(omniscript_path, "run_modin_benchmark.py")
-
-        benchmark_cmd = ["python3", benchmark_script_path]
-
-        possible_benchmark_args = [
-            "bench_name",
-            "data_file",
-            "dfiles_num",
-            "iterations",
-            "validation",
-            "optimizer",
-            "pandas_mode",
-            "ray_tmpdir",
-            "ray_memory",
-            "no_ml",
-            "use_modin_xgb",
-            "gpu_memory",
-            "db_server",
-            "db_port",
-            "db_user",
-            "db_pass",
-            "db_name",
-            "db_table_etl",
-            "db_table_ml",
-            "executable",
-            "commit_omnisci",
-            "commit_omniscripts",
-            "extended_functionality",
-            "commit_modin",
-        ]
-        args_dict = vars(args)
-        if not args_dict["data_file"].startswith("'"):
-            args_dict["data_file"] = "'{}'".format(args_dict["data_file"])
-        for arg_name in list(parser._option_string_actions.keys()):
-            try:
-                pure_arg = re.sub(r"^--*", "", arg_name)
-                if pure_arg in possible_benchmark_args:
-                    arg_value = args_dict[pure_arg]
-                    # correct filling of arguments with default values
-                    if arg_value is not None:
-                        if isinstance(arg_value, dict):
-                            if arg_value:
-                                benchmark_cmd.extend(
-                                    [
-                                        arg_name,
-                                        ",".join(
-                                            f"{key}={value}" for key, value in arg_value.items()
-                                        ),
-                                    ]
-                                )
-                        elif isinstance(arg_value, (list, tuple)):
-                            if arg_value:
-                                benchmark_cmd.extend([arg_name] + [str(x) for x in arg_value])
-                        else:
-                            benchmark_cmd.extend([arg_name, str(arg_value)])
-
-            except KeyError:
-                pass
-
-        print(benchmark_cmd)
-        execute_process(benchmark_cmd)
+        run_benchmarks(
+            args.bench_name,
+            args.data_file,
+            args.dfiles_num,
+            args.iterations,
+            args.validation,
+            args.optimizer,
+            args.pandas_mode,
+            args.ray_tmpdir,
+            args.ray_memory,
+            args.no_ml,
+            args.use_modin_xgb,
+            args.gpu_memory,
+            args.extended_functionality,
+            args.db_server,
+            args.db_port,
+            args.db_user,
+            args.db_pass,
+            args.db_name,
+            args.db_table_etl,
+            args.db_table_ml,
+            args.executable,
+            args.commit_omnisci,
+            args.commit_omniscripts,
+            args.commit_modin,
+        )
 
 
 if __name__ == "__main__":

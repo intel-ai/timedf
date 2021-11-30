@@ -171,7 +171,7 @@ def prepare_parser():
         "--python_version",
         dest="python_version",
         default="3.7",
-        help="File with ci requirements for conda env.",
+        help="Python version that should be installed in conda env.",
     )
     # Modin
     optional.add_argument(
