@@ -662,13 +662,13 @@ def run_benchmarks(
     data_file : str
         A datafile that should be loaded.
     dfiles_num : int, optional
-        Number of datafiles to input into database for processing.
+        Number of datafiles to load into database for processing.
     iterations : int, default: 1
-        Number of iterations to run every query. Best result is selected.
+        Number of iterations to run every query. The best result is selected.
     validation : bool, default: False
         Validate queries results (by comparison with Pandas queries results).
     optimizer : str, optional
-        Which optimizer is used.
+        Optimizer to use.
     pandas_mode : str, default: "Pandas"
         Specifies which version of Pandas to use: plain Pandas, Modin runing on Ray or on Dask or on Omnisci.
     ray_tmpdir : str, default: "/tmp"
@@ -695,9 +695,9 @@ def run_benchmarks(
     db_name : str, default: "omniscidb"
         MySQL database to use to store benchmark results.
     db_table_etl : str, optional
-        Table to use to store ETL results for this benchmark.
+        Table to store ETL results for this benchmark.
     db_table_ml : str, optional
-        Table to use to store ML results for this benchmark.
+        Table to store ML results for this benchmark.
     executable : str, optional
         Path to omnisci server executable.
     commit_omnisci : str, default: "1234567890123456789012345678901234567890"

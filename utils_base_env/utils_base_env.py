@@ -103,12 +103,12 @@ def add_mysql_arguments(parser, etl_ml_tables=False):
         parser.add_argument(
             "-db_table_etl",
             dest="db_table_etl",
-            help="Table to use to store ETL results for this benchmark.",
+            help="Table to store ETL results for this benchmark.",
         )
         parser.add_argument(
             "-db_table_ml",
             dest="db_table_ml",
-            help="Table to use to store ML results for this benchmark.",
+            help="Table to store ML results for this benchmark.",
         )
     else:
         parser.add_argument(
@@ -209,14 +209,14 @@ def prepare_parser():
         dest="dfiles_num",
         default=None,
         type=int,
-        help="Number of datafiles to input into database for processing.",
+        help="Number of datafiles to load into database for processing.",
     )
     benchmark.add_argument(
         "-iterations",
         dest="iterations",
         default=1,
         type=int,
-        help="Number of iterations to run every query. Best result is selected.",
+        help="Number of iterations to run every query. The best result is selected.",
     )
     benchmark.add_argument(
         "-validation",
@@ -230,7 +230,7 @@ def prepare_parser():
         choices=["intel", "stock"],
         dest="optimizer",
         default=None,
-        help="Which optimizer is used",
+        help="Optimizer to use.",
     )
     benchmark.add_argument(
         "-pandas_mode",
