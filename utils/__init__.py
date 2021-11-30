@@ -24,4 +24,5 @@ from .utils import (
     refactor_results_for_reporting,
     get_dir_size,
     getsize,
+    run_benchmarks,
 )

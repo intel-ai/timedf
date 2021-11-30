@@ -1,15 +1,11 @@
-# coding: utf-8
 import argparse
 import os
-import time
 
 from utils_base_env import str_arg_to_bool, add_mysql_arguments
-from utils import remove_fields_from_dict, refactor_results_for_reporting
+from utils import run_benchmarks
 
 
 def main():
-    args = None
-
     benchmarks = {
         "ny_taxi": "taxi",
         "santander": "santander",
@@ -18,15 +14,6 @@ def main():
         "mortgage": "mortgage",
         "h2o": "h2o",
     }
-
-    ignore_fields_for_bd_report_etl = ["t_connect"]
-    ignore_fields_for_bd_report_ml = []
-    ignore_fields_for_results_unit_conversion = [
-        "Backend",
-        "dfiles_num",
-        "dataset_size",
-        "query_name",
-    ]
 
     parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
     optional = parser._action_groups.pop()
@@ -147,109 +134,33 @@ def main():
     os.environ["PYTHONUNBUFFERED"] = "1"
 
     args = parser.parse_args()
-    args_dict = vars(args)
-    args_dict = {
-        key: os.path.expandvars(value) if isinstance(value, str) else value
-        for key, value in args_dict.items()
-    }
 
-    run_benchmark = __import__(benchmarks[args_dict["bench_name"]]).run_benchmark
-
-    parameters = {
-        "data_file": args_dict["data_file"],
-        "dfiles_num": args_dict["dfiles_num"],
-        "no_ml": args_dict["no_ml"],
-        "use_modin_xgb": args_dict["use_modin_xgb"],
-        "optimizer": args_dict["optimizer"],
-        "pandas_mode": args_dict["pandas_mode"],
-        "ray_tmpdir": args_dict["ray_tmpdir"],
-        "ray_memory": args_dict["ray_memory"],
-        "gpu_memory": args_dict["gpu_memory"],
-        "validation": args_dict["validation"],
-        "extended_functionality": args_dict["extended_functionality"],
-    }
-
-    etl_results = []
-    ml_results = []
-    print(parameters)
-    run_id = int(round(time.time()))
-    for iter_num in range(1, args_dict["iterations"] + 1):
-        print(f"Iteration #{iter_num}")
-        benchmark_results = run_benchmark(parameters)
-
-        additional_fields_for_reporting = {
-            "ETL": {"Iteration": iter_num, "run_id": run_id},
-            "ML": {"Iteration": iter_num, "run_id": run_id},
-        }
-        etl_ml_results = refactor_results_for_reporting(
-            benchmark_results=benchmark_results,
-            ignore_fields_for_results_unit_conversion=ignore_fields_for_results_unit_conversion,
-            additional_fields=additional_fields_for_reporting,
-            reporting_unit="ms",
-        )
-        etl_results = list(etl_ml_results["ETL"])
-        ml_results = list(etl_ml_results["ML"])
-
-        # Reporting to MySQL database
-        if args_dict["db_user"] is not None:
-            import mysql.connector
-            from report import DbReport
-
-            if iter_num == 1:
-                db = mysql.connector.connect(
-                    host=args_dict["db_server"],
-                    port=args_dict["db_port"],
-                    user=args_dict["db_user"],
-                    passwd=args_dict["db_pass"],
-                    db=args_dict["db_name"],
-                )
-
-                reporting_init_fields = {
-                    "OmnisciCommitHash": args_dict["commit_omnisci"],
-                    "OmniscriptsCommitHash": args_dict["commit_omniscripts"],
-                    "ModinCommitHash": args_dict["commit_modin"],
-                }
-
-                reporting_fields_benchmark_etl = {
-                    x: "VARCHAR(500) NOT NULL" for x in etl_results[0]
-                }
-                if len(etl_results) != 1:
-                    reporting_fields_benchmark_etl.update(
-                        {x: "VARCHAR(500) NOT NULL" for x in etl_results[1]}
-                    )
-
-                db_reporter_etl = DbReport(
-                    db,
-                    args_dict["db_table_etl"],
-                    reporting_fields_benchmark_etl,
-                    reporting_init_fields,
-                )
-
-                if len(ml_results) != 0:
-                    reporting_fields_benchmark_ml = {
-                        x: "VARCHAR(500) NOT NULL" for x in ml_results[0]
-                    }
-                    if len(ml_results) != 1:
-                        reporting_fields_benchmark_ml.update(
-                            {x: "VARCHAR(500) NOT NULL" for x in ml_results[1]}
-                        )
-
-                    db_reporter_ml = DbReport(
-                        db,
-                        args_dict["db_table_ml"],
-                        reporting_fields_benchmark_ml,
-                        reporting_init_fields,
-                    )
-
-            if iter_num == args_dict["iterations"]:
-                for result_etl in etl_results:
-                    remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)
-                    db_reporter_etl.submit(result_etl)
-
-                if len(ml_results) != 0:
-                    for result_ml in ml_results:
-                        remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
-                        db_reporter_ml.submit(result_ml)
+    run_benchmarks(
+        benchmarks[args.bench_name],
+        args.data_file,
+        args.dfiles_num,
+        args.iterations,
+        args.validation,
+        args.optimizer,
+        args.pandas_mode,
+        args.ray_tmpdir,
+        args.ray_memory,
+        args.no_ml,
+        args.use_modin_xgb,
+        args.gpu_memory,
+        args.extended_functionality,
+        args.db_server,
+        args.db_port,
+        args.db_user,
+        args.db_pass,
+        args.db_name,
+        args.db_table_etl,
+        args.db_table_ml,
+        args.executable,
+        args.commit_omnisci,
+        args.commit_omniscripts,
+        args.commit_modin,
+    )
 
 
 if __name__ == "__main__":

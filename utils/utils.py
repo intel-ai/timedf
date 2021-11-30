@@ -1,5 +1,6 @@
 import glob
 import os
+import time
 import warnings
 from timeit import default_timer as timer
 from collections import OrderedDict
@@ -264,8 +265,8 @@ def files_names_from_pattern(files_pattern):
 def print_times(times, backend=None):
     if backend:
         print(f"{backend} times:")
-    for time_name, time in times.items():
-        print("{} = {:.5f} s".format(time_name, time))
+    for time_name, _time in times.items():
+        print("{} = {:.5f} s".format(time_name, _time))
 
 
 def print_results(results, backend=None, unit="", ignore_fields=[]):
@@ -623,3 +624,192 @@ def get_dir_size(start_path="."):
                 total_size += getsize(fp)
 
     return total_size
+
+
+def run_benchmarks(
+    bench_name: str,
+    data_file: str,
+    dfiles_num: int = None,
+    iterations: int = 1,
+    validation: bool = False,
+    optimizer: str = None,
+    pandas_mode: str = "Pandas",
+    ray_tmpdir: str = "/tmp",
+    ray_memory: int = 200 * 1024 * 1024 * 1024,
+    no_ml: bool = None,
+    use_modin_xgb: bool = False,
+    gpu_memory: int = None,
+    extended_functionality: bool = False,
+    db_server: str = "localhost",
+    db_port: int = 3306,
+    db_user: str = None,
+    db_pass: str = "omniscidb",
+    db_name: str = "omniscidb",
+    db_table_etl: str = None,
+    db_table_ml: str = None,
+    executable: str = None,
+    commit_omnisci: str = "1234567890123456789012345678901234567890",
+    commit_omniscripts: str = "1234567890123456789012345678901234567890",
+    commit_modin: str = "1234567890123456789012345678901234567890",
+):
+    """
+    Run benchmarks for Modin perf testing and report results.
+
+    Parameters
+    ----------
+    bench_name : str
+        Benchmark name.
+    data_file : str
+        A datafile that should be loaded.
+    dfiles_num : int, optional
+        Number of datafiles to input into database for processing.
+    iterations : int, default: 1
+        Number of iterations to run every query. Best result is selected.
+    validation : bool, default: False
+        Validate queries results (by comparison with Pandas queries results).
+    optimizer : str, optional
+        Which optimizer is used.
+    pandas_mode : str, default: "Pandas"
+        Specifies which version of Pandas to use: plain Pandas, Modin runing on Ray or on Dask or on Omnisci.
+    ray_tmpdir : str, default: "/tmp"
+        Location where to keep Ray plasma store. It should have enough space to keep `ray_memory`.
+    ray_memory : int, default: 200 * 1024 * 1024 * 1024
+        Size of memory to allocate for Ray plasma store.
+    no_ml : bool, optional
+        Do not run machine learning benchmark, only ETL part.
+    use_modin_xgb : bool, default: False
+        Whether to use Modin XGBoost for ML part, relevant for Plasticc benchmark only.
+    gpu_memory : int, optional
+        Specify the memory of your gpu(This controls the lines to be used. Also work for CPU version).
+    extended_functionality : bool, default: False
+        Extends functionality of H2O benchmark by adding 'chk' functions and verbose local reporting of results.
+    db_server : str, default: "localhost"
+        Host name of MySQL server.
+    db_port : int, default: 3306
+        Port number of MySQL server.
+    db_user : str, optional
+        Username to use to connect to MySQL database. If user name is specified, script attempts to store
+        results in MySQL database using other `db-*` parameters.
+    db_pass : str, default: "omniscidb"
+        Password to use to connect to MySQL database.
+    db_name : str, default: "omniscidb"
+        MySQL database to use to store benchmark results.
+    db_table_etl : str, optional
+        Table to use to store ETL results for this benchmark.
+    db_table_ml : str, optional
+        Table to use to store ML results for this benchmark.
+    executable : str, optional
+        Path to omnisci server executable.
+    commit_omnisci : str, default: "1234567890123456789012345678901234567890"
+        Omnisci commit hash used for benchmark.
+    commit_omniscripts : str, default: "1234567890123456789012345678901234567890"
+        Omniscripts commit hash used for benchmark.
+    commit_modin : str, default: "1234567890123456789012345678901234567890"
+        Modin commit hash used for benchmark.
+    """
+    ignore_fields_for_bd_report_etl = ["t_connect"]
+    ignore_fields_for_bd_report_ml = []
+    ignore_fields_for_results_unit_conversion = [
+        "Backend",
+        "dfiles_num",
+        "dataset_size",
+        "query_name",
+    ]
+
+    run_benchmark = __import__(bench_name).run_benchmark
+
+    parameters = {
+        "data_file": data_file,
+        "dfiles_num": dfiles_num,
+        "no_ml": no_ml,
+        "use_modin_xgb": use_modin_xgb,
+        "optimizer": optimizer,
+        "pandas_mode": pandas_mode,
+        "ray_tmpdir": ray_tmpdir,
+        "ray_memory": ray_memory,
+        "gpu_memory": gpu_memory,
+        "validation": validation,
+        "extended_functionality": extended_functionality,
+    }
+
+    etl_results = []
+    ml_results = []
+    print(parameters)
+    run_id = int(round(time.time()))
+    for iter_num in range(1, iterations + 1):
+        print(f"Iteration #{iter_num}")
+        benchmark_results = run_benchmark(parameters)
+
+        additional_fields_for_reporting = {
+            "ETL": {"Iteration": iter_num, "run_id": run_id},
+            "ML": {"Iteration": iter_num, "run_id": run_id},
+        }
+        etl_ml_results = refactor_results_for_reporting(
+            benchmark_results=benchmark_results,
+            ignore_fields_for_results_unit_conversion=ignore_fields_for_results_unit_conversion,
+            additional_fields=additional_fields_for_reporting,
+            reporting_unit="ms",
+        )
+        etl_results = list(etl_ml_results["ETL"])
+        ml_results = list(etl_ml_results["ML"])
+
+        # Reporting to MySQL database
+        if db_user is not None:
+            import mysql.connector
+            from report import DbReport
+
+            if iter_num == 1:
+                db = mysql.connector.connect(
+                    host=db_server,
+                    port=db_port,
+                    user=db_user,
+                    passwd=db_pass,
+                    db=db_name,
+                )
+
+                reporting_init_fields = {
+                    "OmnisciCommitHash": commit_omnisci,
+                    "OmniscriptsCommitHash": commit_omniscripts,
+                    "ModinCommitHash": commit_modin,
+                }
+
+                reporting_fields_benchmark_etl = {
+                    x: "VARCHAR(500) NOT NULL" for x in etl_results[0]
+                }
+                if len(etl_results) != 1:
+                    reporting_fields_benchmark_etl.update(
+                        {x: "VARCHAR(500) NOT NULL" for x in etl_results[1]}
+                    )
+
+                db_reporter_etl = DbReport(
+                    db,
+                    db_table_etl,
+                    reporting_fields_benchmark_etl,
+                    reporting_init_fields,
+                )
+
+                if len(ml_results) != 0:
+                    reporting_fields_benchmark_ml = {
+                        x: "VARCHAR(500) NOT NULL" for x in ml_results[0]
+                    }
+                    if len(ml_results) != 1:
+                        reporting_fields_benchmark_ml.update(
+                            {x: "VARCHAR(500) NOT NULL" for x in ml_results[1]}
+                        )
+
+                    db_reporter_ml = DbReport(
+                        db,
+                        db_table_ml,
+                        reporting_fields_benchmark_ml,
+                        reporting_init_fields,
+                    )
+
+            if iter_num == iterations:
+                for result_etl in etl_results:
+                    remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)
+                    db_reporter_etl.submit(result_etl)
+
+                if len(ml_results) != 0:
+                    for result_ml in ml_results:
+                        remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
+                        db_reporter_ml.submit(result_ml)
