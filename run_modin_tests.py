@@ -84,14 +84,6 @@ def main(raw_args=None):
         # trying to install dbe extension if omnisci generated it
         executables_path = os.path.dirname(args.executable)
         dbe_path = os.path.join(os.path.abspath(f"{executables_path}/.."), "Embedded")
-        initdb_path = os.path.join(executables_path, "initdb")
-        data_dir = os.path.join(os.path.dirname(__file__), "data")
-        initdb_cmdline = [initdb_path, "--data", data_dir]
-
-        if not os.path.isdir(data_dir) and args.manage_dbe_dir:
-            print("MANAGING OMNISCI DATA DIR", data_dir)
-            os.makedirs(data_dir)
-            execute_process(initdb_cmdline)
 
         if os.path.exists(dbe_path):
             print("DBE INSTALLATION")

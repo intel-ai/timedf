@@ -184,13 +184,6 @@ def prepare_parser():
         type=str,
         help="Path where to store built Modin dependencies (--target flag for pip), can be helpful if you have space limited home directory.",
     )
-    optional.add_argument(
-        "--manage_dbe_dir",
-        dest="manage_dbe_dir",
-        default=False,
-        type=str_arg_to_bool,
-        help="Manage (create and initialize) DBE data directory on the 'build' step.",
-    )
 
     # Omnisci server parameters
     omnisci.add_argument(
