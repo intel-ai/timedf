@@ -6,13 +6,16 @@ from timeit import default_timer as timer
 from collections import OrderedDict
 import psutil
 from tempfile import mkstemp
-from utils_base_env import str_arg_to_bool
 
-# in this specific mode omniscripts doesn't need any specific dependencies to
-# be installed
-no_deps_mode = str_arg_to_bool(os.environ.get("OMNISCRIPTS_NO_DEPS_MODE", False))
-if not no_deps_mode:
+try:
     from .s3_client import s3_client
+except ModuleNotFoundError:
+    s3_client = None
+
+try:
+    from braceexpand import braceexpand
+except ModuleNotFoundError:
+    braceexpand = None
 
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -40,6 +43,9 @@ ny_taxi_data_files_sizes_MB = OrderedDict(
         "trips_xas.csv": 8600,
         "trips_xat.csv": 8600,
     }
+)
+s3_client_abscence_error = (
+    "`s3_client` wasn't imported, please ensure `s3fs` package is installed."
 )
 
 
@@ -247,15 +253,17 @@ def expand_braces(pattern: str):
 def files_names_from_pattern(files_pattern):
     data_files_names = None
     path_expander = glob.glob
-    if not no_deps_mode:
-        from braceexpand import braceexpand
+    data_files_names = (
+        list(braceexpand(files_pattern)) if braceexpand else expand_braces(files_pattern)
+    )
 
-        data_files_names = list(braceexpand(files_pattern))
-        if "://" in files_pattern:
-            if all(map(s3_client.s3like, data_files_names)):
-                path_expander = s3_client.glob
-            else:
-                raise ValueError(f"some of s3like links are bad: {data_files_names}")
+    if "://" in files_pattern:
+        if not s3_client:
+            raise RuntimeError(s3_client_abscence_error)
+        if all(map(s3_client.s3like, data_files_names)):
+            path_expander = s3_client.glob
+        else:
+            raise ValueError(f"some of s3like links are bad: {data_files_names}")
     else:
         data_files_names = expand_braces(files_pattern)
 
@@ -438,8 +446,8 @@ def memory_usage():
 def getsize(filename: str):
     """Return size of filename in MB"""
     if "://" in filename:
-        if no_deps_mode:
-            raise RuntimeError(f"Size of '{filename}' can not be measured in no-deps mode")
+        if not s3_client:
+            raise RuntimeError(s3_client_abscence_error)
         if s3_client.s3like(filename):
             return s3_client.getsize(filename) / 1024 / 1024
         raise ValueError(f"bad s3like link: {filename}")
@@ -611,8 +619,8 @@ def get_dir_size(start_path="."):
     """
     total_size = 0
     if "://" in start_path:
-        if no_deps_mode:
-            raise RuntimeError(f"Size of '{start_path}' can not be measured in no-deps mode")
+        if not s3_client:
+            raise RuntimeError(s3_client_abscence_error)
         if s3_client.s3like(start_path):
             total_size = s3_client.du(start_path)
         else:
