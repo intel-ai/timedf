@@ -264,8 +264,6 @@ def files_names_from_pattern(files_pattern):
             path_expander = s3_client.glob
         else:
             raise ValueError(f"some of s3like links are bad: {data_files_names}")
-    else:
-        data_files_names = expand_braces(files_pattern)
 
     return sorted([x for f in data_files_names for x in path_expander(f)])
 
