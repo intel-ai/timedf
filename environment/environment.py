@@ -1,4 +1,5 @@
 import re
+import sys
 from utils_base_env import execute_process
 
 try:
@@ -34,10 +35,10 @@ class CondaEnvironment:
 
     def create(
         self,
+        python_version,
         existence_check=False,
         name=None,
         requirements_file=None,
-        python_version=None,
         channel=None,
     ):
         """Create conda env.
@@ -53,28 +54,41 @@ class CondaEnvironment:
                 return
             else:
                 self.remove(env_name)
-        if python_version:
-            cmdline_create = ["conda", "create", "--name", env_name]
-            if python_version:
-                cmdline_create.extend([f"python={python_version}", "-y"])
-            if channel:
-                cmdline_create.extend(["-c", channel])
-            print("CREATING CONDA ENVIRONMENT")
-            execute_process(cmdline_create, print_output=False)
+
+        cmdline = ["--name", env_name]
+        cmdline.extend([f"python={python_version}", "-y"])
+        if channel:
+            cmdline.extend(["-c", channel])
+        print("CREATING CONDA ENVIRONMENT")
+        print("CMD: ", "conda create " + " ".join(cmdline))
+        _, _, return_code = run_command(
+            Commands.CREATE,
+            cmdline,
+            stdout=sys.stdout,
+            stderr=sys.stdout,
+            use_exception_handler=True,
+        )
+        if return_code != 0:
+            raise Exception(f"Conda run returned {return_code}.")
+
         cmdline = [
-            "conda",
-            "env",
-            "update" if python_version else "create",
             "--name",
             env_name,
+            "--no-capture-output",
+            "conda",
+            "env",
+            "update",
             f"--file={requirements_file}" if requirements_file else "",
         ]
-        print(f"{'UPDATING' if python_version else 'CREATING'} CONDA ENVIRONMENT")
-        execute_process(cmdline, print_output=False)
-        # TODO: replace with run_command
-        # run_command(Commands.CREATE, self._add_conda_execution(cmdline, env_name),
-        #             stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
-        #             use_exception_handler=True)
+        print("UPDATING CONDA ENVIRONMENT")
+        print("CMD: ", "conda run " + " ".join(cmdline))
+        _, _, return_code = run_command(
+            Commands.RUN,
+            cmdline,
+            use_exception_handler=True,
+        )
+        if return_code != 0:
+            raise Exception(f"Conda run returned {return_code}.")
 
     def run(self, cmdline, name=None, cwd=None, print_output=False):
         env_name = name if name else self.name
