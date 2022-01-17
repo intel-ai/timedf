@@ -7,11 +7,6 @@ from collections import OrderedDict
 import psutil
 from tempfile import mkstemp
 
-try:
-    from braceexpand import braceexpand
-except ModuleNotFoundError:
-    braceexpand = None
-
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 directories = {"repository_root": repository_root_directory}
@@ -243,6 +238,11 @@ def expand_braces(pattern: str):
 
 
 def files_names_from_pattern(files_pattern):
+    try:
+        from braceexpand import braceexpand
+    except ModuleNotFoundError:
+        braceexpand = None
+
     data_files_names = None
     path_expander = glob.glob
     data_files_names = (
