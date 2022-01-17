@@ -31,3 +31,14 @@ Also there is `test_run_script.sh` which can be served as example of all steps t
 ## Standalone benchmark launch
 
 TBD
+
+## Optimization Note
+
+Provided in this repository benchmarks may have been optimized for performance metrics by enabling Linux Transparent
+Huge Pages (THP) as follows:
+
+```bash
+sudo sh -c "echo always > /sys/kernel/mm/transparent_hugepage/enabled"
+export TBB_MALLOC_USE_HUGE_PAGES=1
+sudo sh -c "echo 2000 > /proc/sys/vm/nr_hugepages"
+```
