@@ -8,11 +8,6 @@ import psutil
 from tempfile import mkstemp
 
 try:
-    from .s3_client import s3_client
-except ModuleNotFoundError:
-    s3_client = None
-
-try:
     from braceexpand import braceexpand
 except ModuleNotFoundError:
     braceexpand = None
@@ -43,9 +38,6 @@ ny_taxi_data_files_sizes_MB = OrderedDict(
         "trips_xas.csv": 8600,
         "trips_xat.csv": 8600,
     }
-)
-s3_client_abscence_error = (
-    "`s3_client` wasn't imported, please ensure `s3fs` package is installed."
 )
 
 
@@ -258,8 +250,8 @@ def files_names_from_pattern(files_pattern):
     )
 
     if "://" in files_pattern:
-        if not s3_client:
-            raise RuntimeError(s3_client_abscence_error)
+        from .s3_client import s3_client
+
         if all(map(s3_client.s3like, data_files_names)):
             path_expander = s3_client.glob
         else:
@@ -444,8 +436,8 @@ def memory_usage():
 def getsize(filename: str):
     """Return size of filename in MB"""
     if "://" in filename:
-        if not s3_client:
-            raise RuntimeError(s3_client_abscence_error)
+        from .s3_client import s3_client
+
         if s3_client.s3like(filename):
             return s3_client.getsize(filename) / 1024 / 1024
         raise ValueError(f"bad s3like link: {filename}")
@@ -617,8 +609,8 @@ def get_dir_size(start_path="."):
     """
     total_size = 0
     if "://" in start_path:
-        if not s3_client:
-            raise RuntimeError(s3_client_abscence_error)
+        from .s3_client import s3_client
+
         if s3_client.s3like(start_path):
             total_size = s3_client.du(start_path)
         else:
