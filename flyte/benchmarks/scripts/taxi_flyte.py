@@ -126,7 +126,7 @@ def taxi_wf(
     # alt large dataset: https://modin-datasets.s3.amazonaws.com/trips_xaa.csv.gz
     dataset: FlyteFile[
         "csv"  # noqa F821
-    ] = "https://modin-datasets.s3.amazonaws.com/trips_data.csv",
+    ] = "https://modin-datasets.s3.amazonaws.com/taxi/trips_xaa_5M.csv.gz",
     compression: str = "infer",
 ) -> pd.DataFrame:
     df = get_taxi_dataset_task(

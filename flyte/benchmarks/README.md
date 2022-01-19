@@ -9,8 +9,9 @@
 ## Requirements
 Scripts require to be installed:
 * <a href="https://git-scm.com/">`Git`</a> and <a href="https://www.python.org/downloads/">`python >= 3.7`</a> , `pip3`
-* `conda` or `miniconda` for flytekit tests and benchmarks;
-* the following python3 packages: `flytekit>=0.20.1` .
+* `conda` or `miniconda` for flytekit tests and benchmarks
+* the following python3 packages: `flytekit>=0.20.1`
+* awscli (`pip install awscli`)
 
 ## Flytekit installation (recommended using a virtual environment)
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>(venv)$ pip3 install flytekit --upgrade
