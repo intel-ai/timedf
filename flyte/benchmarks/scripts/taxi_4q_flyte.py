@@ -1,16 +1,11 @@
 import time
 
-# from collections import OrderedDict
-# from dataclasses import dataclass
 import typing
 
 import pandas as pd
 from flytekit import task, workflow
 
-# from flytekit import Resources
 from flytekit.types.file import FlyteFile
-
-# from flytekit.types.schema import FlyteSchema
 
 
 cols = [
@@ -70,24 +65,21 @@ cols = [
 parse_dates = ["pickup_datetime", "dropoff_datetime"]
 
 
-# @task(cache_version="1.0", cache=True, limits=Resources(cpu="100m", mem="2Gi"))
 @task
 def get_taxi_dataset_task(
-    data: FlyteFile[typing.TypeVar("csv")],
+    datapath: str,
     compression: str,
     names: typing.List[str],
     parse_dates: typing.List[str],
 ) -> pd.DataFrame:
-    return pd.read_csv(data, compression=compression, names=cols, parse_dates=parse_dates)
+    return pd.read_csv(datapath, compression=compression, names=cols, parse_dates=parse_dates)
 
 
-# @task(cache_version="1.0", cache=True, limits=Resources(cpu="100m", mem="2Gi"))
 @task
 def taxi_q1_task(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(df.groupby(["cab_type"]).count()["trip_id"])
 
 
-# @task(cache_version="1.0", cache=True, limits=Resources(cpu="100m", mem="2Gi"))
 @task
 def taxi_q2_task(df: pd.DataFrame) -> pd.DataFrame:
     return df.groupby("passenger_count", as_index=False).mean()[
@@ -124,19 +116,22 @@ def taxi_q4_task(df: pd.DataFrame) -> pd.DataFrame:
 @workflow
 def taxi_wf(
     # alt large dataset: https://modin-datasets.s3.amazonaws.com/trips_xaa.csv.gz
-    dataset: FlyteFile[
-        "csv"  # noqa F821
-    ] = "https://modin-datasets.s3.amazonaws.com/taxi/trips_xaa_5M.csv.gz",
+    datapath: str = "https://modin-datasets.s3.amazonaws.com/taxi/trips_xaa_5M.csv.gz",
     compression: str = "infer",
-) -> pd.DataFrame:
+) -> (
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame
+):
     df = get_taxi_dataset_task(
-        data=dataset, compression=compression, names=cols, parse_dates=parse_dates
+        datapath=datapath, compression=compression, names=cols, parse_dates=parse_dates
     )
-    res = taxi_q1_task(df=df)
-    # res = taxi_q2_task(df=df)
-    # res = taxi_q3_task(df=df)
-    # res = taxi_q4_task(df=df)
-    return res
+    res1 = taxi_q1_task(df=df)
+    res2 = taxi_q2_task(df=df)
+    res3 = taxi_q3_task(df=df)
+    res4 = taxi_q4_task(df=df)
+    return res1, res2, res3, res4
 
 
 if __name__ == "__main__":
