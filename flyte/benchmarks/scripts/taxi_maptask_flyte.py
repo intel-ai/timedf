@@ -2,14 +2,14 @@ import time
 # from collections import OrderedDict
 # from dataclasses import dataclass
 import typing
-import glob
-import os
+# import glob
+# import os
 
 import pandas as pd
 from flytekit import task, workflow, map_task, TaskMetadata, Resources
 
 # from flytekit import Resources
-from flytekit.types.file import FlyteFile
+#from flytekit.types.file import FlyteFile
 
 # from flytekit.types.schema import FlyteSchema
 
@@ -136,6 +136,7 @@ parse_dates = ["pickup_datetime", "dropoff_datetime"]
 
 compression = 'gzip'
 
+
 # @task(cache_version="1.0", cache=True, limits=Resources(cpu="100m", mem="2Gi"))
 @task(requests=Resources(cpu="1", mem="32Gi"), limits=Resources(mem="128Gi"))
 def get_taxi_dataset_task(
@@ -194,10 +195,10 @@ def taxi_wf(
     taxi_path: typing.List[str] = taxi_path,
 ) -> str:
     df = map_task(get_taxi_dataset_task, metadata=TaskMetadata(retries=1))(data=taxi_path)
-    res = map_task(taxi_q1_task)(df=df)
-    res = map_task(taxi_q2_task)(df=df)
-    res = map_task(taxi_q3_task)(df=df)
-    res = map_task(taxi_q4_task)(df=df)
+    res1 = map_task(taxi_q1_task)(df=df)
+    res2 = map_task(taxi_q2_task)(df=df)
+    res3 = map_task(taxi_q3_task)(df=df)
+    res4 = map_task(taxi_q4_task)(df=df)
     return "Ok"
 
 

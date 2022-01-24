@@ -5,8 +5,6 @@ import typing
 import pandas as pd
 from flytekit import task, workflow
 
-from flytekit.types.file import FlyteFile
-
 
 cols = [
     "trip_id",
