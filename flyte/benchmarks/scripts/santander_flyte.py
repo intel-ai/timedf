@@ -176,7 +176,7 @@ def ml(
 
 @workflow
 def santander_ml_wf(
-    filename: str = "/santander_train.csv",  # full path is to write
+    filename: str = "https://modin-datasets.s3.amazonaws.com/santander/train.csv",
     columns_names: typing.List[str] = COLUMNS_NAMES,
     columns_types: typing.List[str] = COLUMNS_TYPES,
     etl_keys: typing.List[str] = ETL_KEYS,

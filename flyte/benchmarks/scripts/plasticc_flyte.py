@@ -267,7 +267,7 @@ def ml(
 
 @workflow
 def plasticc_ml_wf(
-    dataset_path: str = "plasticc/",  # path do folder is to write
+    dataset_path: str = "s3://modin-datasets/plasticc",  # only 's3://' prefix can be used here: https://github.com/intel-ai/omniscripts/issues/282
     columns_names: typing.List[str] = COLUMNS_NAMES,
     dtypes: typing.Dict[str, str] = DTYPES,
     etl_keys: typing.List[str] = ETL_KEYS,
