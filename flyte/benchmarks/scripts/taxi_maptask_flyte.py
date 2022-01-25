@@ -1,17 +1,8 @@
 import time
-# from collections import OrderedDict
-# from dataclasses import dataclass
 import typing
-# import glob
-# import os
 
 import pandas as pd
 from flytekit import task, workflow, map_task, TaskMetadata, Resources
-
-# from flytekit import Resources
-# from flytekit.types.file import FlyteFile
-
-# from flytekit.types.schema import FlyteSchema
 
 
 taxi_path = [
@@ -20,6 +11,8 @@ taxi_path = [
              'https://modin-datasets.s3.us-west-2.amazonaws.com/taxi/trips_xbc.csv.gz',
              'https://modin-datasets.s3.us-west-2.amazonaws.com/taxi/trips_xbd.csv.gz'
             ]
+
+taxi_path = ["https://modin-datasets.s3.amazonaws.com/taxi/trips_xaa_5M.csv.gz"]
 
 
 cols = [
@@ -137,7 +130,6 @@ parse_dates = ["pickup_datetime", "dropoff_datetime"]
 compression = 'gzip'
 
 
-# @task(cache_version="1.0", cache=True, limits=Resources(cpu="100m", mem="2Gi"))
 @task(requests=Resources(cpu="1", mem="32Gi"), limits=Resources(mem="128Gi"))
 def get_taxi_dataset_task(
     data: str,
@@ -149,14 +141,12 @@ def get_taxi_dataset_task(
         return pd.DataFrame()
 
 
-# @task(cache_version="1.0", cache=True, limits=Resources(cpu="100m", mem="2Gi"))
 @task
 def taxi_q1_task(df: pd.DataFrame) -> str:
     print(df.columns)
     return pd.DataFrame(df.groupby(["cab_type"]).count()["trip_id"]).to_string()
 
 
-# @task(cache_version="1.0", cache=True, limits=Resources(cpu="100m", mem="2Gi"))
 @task
 def taxi_q2_task(df: pd.DataFrame) -> pd.DataFrame:
     return df.groupby("passenger_count", as_index=False).mean()[
@@ -195,10 +185,10 @@ def taxi_wf(
     taxi_path: typing.List[str] = taxi_path,
 ) -> str:
     df = map_task(get_taxi_dataset_task, metadata=TaskMetadata(retries=1))(data=taxi_path)
-    map_task(taxi_q1_task)(df=df)
-    map_task(taxi_q2_task)(df=df)
-    map_task(taxi_q3_task)(df=df)
-    map_task(taxi_q4_task)(df=df)
+    q1 = map_task(taxi_q1_task)(df=df)
+    q2 = map_task(taxi_q2_task)(df=df)
+    q3 = map_task(taxi_q3_task)(df=df)
+    q4 = map_task(taxi_q4_task)(df=df)
     return "Ok"
 
 
