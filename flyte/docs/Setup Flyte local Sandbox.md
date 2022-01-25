@@ -26,8 +26,7 @@ The Flyte Sandbox is a fully standalone minimal environment for running Flyte. I
 
 1. Clone repo with flytekit-python-template
 
-   >git clone https://github.com/flyteorg/flytekit-python-template.git myflyteapp
-   >cd myflyteapp
+   > cookiecutter https://github.com/flyteorg/flytekit-python-template.git --directory="simple-example" -c 005f8830448095a50e42c2e60e764d00fbed4eb8 && cd flyte_example
 
 2. Start Docker daemon
 
