@@ -145,7 +145,7 @@
 
 19. Edit `env.yaml` and `flyte.yaml` in `flyte/opta`
 
-    For `env.yaml`replace `<env_name>` with `flyte` and `<your_company>` with `orgname`,  `<account_id>` with  `980842202052`, `<region>` with  `us-east-2`, comment out or delete these lines:
+    For `env.yaml`replace `<env_name>` with `flyte` and `<your_company>` with `orgname`,  `<account_id>`, `<region>` with  `us-east-2`, comment out or delete these lines:
 
     ```  
     type: dns
