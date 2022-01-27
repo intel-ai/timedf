@@ -30,7 +30,7 @@
 3. Install flytekit
 
    ```
-   curl -sL https://ctl.flyte.org/install | sudo bash -s -- -b /usr/local/bin
+   curl -sL https://ctl.flyte.org/install | bash
    ```
 
 4. Install kubectl
@@ -143,7 +143,7 @@
     cd flyte/opta
     ```
 
-19. Edit `env.yaml` and `flyte.yaml` in `flyte/opta`
+19. Edit `env.yaml` and `flyte.yaml` in `flyte/opta/aws`
 
     For `env.yaml`replace `<env_name>` with `flyte` and `<your_company>` with `orgname`,  `<account_id>`, `<region>` with  `us-east-2`, comment out or delete these lines:
 
@@ -237,7 +237,7 @@
 
 20. Create CloudWatch log group.
 
-21. Edit `flyte\charts\flyte\values-eks.yaml`
+21. Edit `flyte\charts\flyte-core\values-eks.yaml`
 
     Change these lines
 
@@ -312,7 +312,7 @@
                      
     ```
 
-22. Edit `flyte\charts\flyte\values.yaml`
+22. Edit `flyte\charts\flyte-core\values.yaml`
 
     from:
 
@@ -406,7 +406,7 @@
 
 38. To destroy a cluster:
 
-    In `flyte/opta` directory
+    In `flyte/opta/aws` directory
 
     ```
     opta destroy -c flyte.yaml --auto-approve
