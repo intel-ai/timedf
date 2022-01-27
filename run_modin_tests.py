@@ -21,9 +21,9 @@ def main(raw_args=None):
             f"Only {list(tasks.keys())} are supported, {required_tasks} cannot find possible tasks"
         )
 
-    if args.python_version not in ["3.7", "3,6"]:
+    if args.python_version not in ["3.8"]:
         raise NotImplementedError(
-            f"Only 3.7 and 3.6 python versions are supported, {args.python_version} is not supported"
+            f"Only 3.8 python version is supported, {args.python_version} is not supported"
         )
 
     if args.env_name is not None:

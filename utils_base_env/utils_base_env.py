@@ -170,7 +170,7 @@ def prepare_parser():
         "-py",
         "--python_version",
         dest="python_version",
-        default="3.7",
+        default="3.8",
         help="Python version that should be installed in conda env.",
     )
     # Modin
