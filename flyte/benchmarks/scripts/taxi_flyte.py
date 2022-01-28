@@ -70,7 +70,9 @@ def get_taxi_dataset_task(
     names: typing.List[str],
     parse_dates: typing.List[str],
 ) -> pd.DataFrame:
-    return pd.read_csv(datapath, compression=compression, names=cols, parse_dates=parse_dates)
+    return pd.read_csv(
+        datapath, compression=compression, names=cols, parse_dates=parse_dates
+    )
 
 
 @task
@@ -116,12 +118,7 @@ def taxi_wf(
     # alt large dataset: https://modin-datasets.s3.amazonaws.com/trips_xaa.csv.gz
     datapath: str = "https://modin-datasets.s3.amazonaws.com/taxi/trips_xaa_5M.csv.gz",
     compression: str = "infer",
-) -> (
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame,
-    pd.DataFrame
-):
+) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame):
     df = get_taxi_dataset_task(
         datapath=datapath, compression=compression, names=cols, parse_dates=parse_dates
     )
