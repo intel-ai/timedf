@@ -70,9 +70,7 @@ def get_taxi_dataset_task(
     names: typing.List[str],
     parse_dates: typing.List[str],
 ) -> pd.DataFrame:
-    return pd.read_csv(
-        datapath, compression=compression, names=cols, parse_dates=parse_dates
-    )
+    return pd.read_csv(datapath, compression=compression, names=cols, parse_dates=parse_dates)
 
 
 @task
