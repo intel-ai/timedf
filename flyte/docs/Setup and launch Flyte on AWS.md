@@ -496,6 +496,6 @@
 
 ```
 cd flyte/opta/aws
-opta destroy -c flyte --auto-approve
-opta destroy -c env --auto-approve
+opta destroy -c flyte.yaml --auto-approve
+opta destroy -c env.yaml --auto-approve
 ```
