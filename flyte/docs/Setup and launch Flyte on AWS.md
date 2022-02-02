@@ -269,10 +269,9 @@
    1. Replace values:
 
       * <account_id>: your AWS account ID
-      	* \<region>: your AWS region
-
-       * <env_name>: a name for the new isolated cloud environment which is going to be created (e.g., test-name)
-       * <your_company>: your company or organization’s name (e.g., test-org-name)
+      * \<region>: your AWS region
+      * <env_name>: a name for the new isolated cloud environment which is going to be created (e.g., test-name)
+      * <your_company>: your company or organization’s name (e.g., test-org-name)
 
    2. Comment out lines:
 
@@ -298,7 +297,7 @@
    1. Replace values:
 
       * <account_id>: your AWS account ID
-       * \<region>: your AWS region
+      * \<region>: your AWS region
 
    2. Change default chart version:
 
