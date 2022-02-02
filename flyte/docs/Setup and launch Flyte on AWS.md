@@ -283,7 +283,7 @@
    1. Replace values:
 
       * <account_id>: your AWS account ID
-      * \<region>: your AWS region
+      * <region>: your AWS region
       * <env_name>: a name for the new isolated cloud environment which is going to be created (e.g., test-name)
       * <your_company>: your company or organization’s name (e.g., test-org-name)
 
@@ -311,7 +311,7 @@
    1. Replace values:
 
       * <account_id>: your AWS account ID
-      * \<region>: your AWS region
+      * <region>: your AWS region
 
    2. Change default chart version:
 
@@ -446,8 +446,11 @@
          auth_type: iam
          region: <REGION> # Example: us-east-2
      container: <BUCKET> # Example my-bucket. Flyte k8s cluster / service account for execution should have read access to this bucket
-   
    ```
+
+   `<REGION>` and `<BUCKET>` should be replaced with your aws region of choice and a bucket, created by opta. Bucket name is currently `<env-name>-service-flyte`, where `<env_name>` is a value of `name: ` in `env.yaml`.
+
+   \* Check that value of `endpoint:` has `dns:///` and not `dns://`.
 
 5. Get access for Flyte Dashboard
 
