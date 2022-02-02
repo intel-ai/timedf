@@ -1,55 +1,144 @@
 # Setup Flyte on AWS
 
-1. Install WSL2 Ubuntu
+## OS: Ubuntu 20.04
 
-   In PowerShell as admin
+## Installation
 
-   ```
-   wsl --install
-   ```
-
-   then, restart your computer
-
-   For the next steps use Ubuntu terminal
-
-2. Install Terraform
+1. Install Flytekit
 
    ```
-   sudo apt-get update && sudo apt-get install -y gnupg software-properties-common curl
-   curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-   sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-   sudo apt-get update && sudo apt-get install terraform
+   pip3 install flytekit --upgrade
    ```
 
-   Test installation
+   proven to work for version:
 
    ```
-   terraform -help
+   0.26.0version.BuildInfo{Version:"v3.8.0", GitCommit:"d14138609b01886f544b2025f5000351c9eb092e", GitTreeState:"clean", GoVersion:"go1.17.5"}
    ```
 
-3. Install flytekit
+2. Install FlyteCTL
 
    ```
    curl -sL https://ctl.flyte.org/install | bash
    ```
 
-4. Install kubectl
+   proven to work for version:
+
+   ```
+   {
+     "App": "flytectl",
+     "Build": "07e64fd",
+     "Version": "0.4.18",
+     "BuildTime": "2022-02-01 13:29:06.37101982 +0000 UTC m=+0.017102336"
+   }{
+     "App": "controlPlane",
+     "Build": "f52c51e",
+     "Version": "v0.6.83",
+     "BuildTime": "2022-02-01 10:59:08.71397555 +0000 UTC m=+0.096943684"
+   }
+   ```
+
+3. Install Docker
+
+   ```
+   sudo apt-get update
+   
+   sudo apt-get install \
+       ca-certificates \
+       curl \
+       gnupg \
+       lsb-release
+   
+   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+   
+   echo \
+     "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+     $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+   
+   sudo apt-get update
+   
+   apt-cache madison docker-ce
+   
+   sudo apt-get install docker-ce=<VERSION_STRING> docker-ce-cli=<VERSION_STRING> containerd.io
+   ```
+
+   Post-installation steps:
+
+   ```
+   sudo groupadd docker
+   
+   sudo usermod -aG docker $USER
+   
+   newgrp docker
+   
+   sudo systemctl enable docker.service
+   sudo systemctl enable containerd.service
+   ```
+
+   proven to work for version:
+
+   ```
+   Client: Docker Engine - Community
+    Version:           20.10.12
+    API version:       1.41
+    Go version:        go1.16.12
+    Git commit:        e91ed57
+    Built:             Mon Dec 13 11:45:33 2021
+    OS/Arch:           linux/amd64
+    Context:           default
+    Experimental:      true
+   
+   Server: Docker Engine - Community
+    Engine:
+     Version:          20.10.12
+     API version:      1.41 (minimum version 1.12)
+     Go version:       go1.16.12
+     Git commit:       459d0df
+     Built:            Mon Dec 13 11:43:42 2021
+     OS/Arch:          linux/amd64
+     Experimental:     false
+    containerd:
+     Version:          1.4.12
+     GitCommit:        7b11cfaabd73bb80907dd23182b9347b4245eb5d
+    runc:
+     Version:          1.0.2
+     GitCommit:        v1.0.2-0-g52b36a2
+    docker-init:
+     Version:          0.19.0
+     GitCommit:        de40ad0
+   ```
+
+4. Login to Docker
+
+   ```
+   docker login
+   ```
+
+5. Install kubectl
 
    ```
    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+   ```
+
+   To install specific version, for example, v1.21.0:
+
+   ```
+   curl -LO https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl
+   ```
+
+   
+
+   ```
    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-   kubectl version --client
    ```
 
-5. Register on DockerHub
-
-6. Install unzip package
+   proven to work for version:
 
    ```
-   sudo apt install unzip
+   Client Version: version.Info{Major:"1", Minor:"21", GitVersion:"v1.21.1", GitCommit:"5e58841cce77d4bc13713ad2b91fa0d961e69192", GitTreeState:"clean", BuildDate:"2021-05-12T14:18:45Z", GoVersion:"go1.16.4", Compiler:"gc", Platform:"linux/amd64"}
    ```
 
-7. Install AWS CLI
+6. Install AWS CLI
 
    ```
    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -57,359 +146,345 @@
    sudo ./aws/install
    ```
 
-8. Configure AWS CLI
+   proven to work for version:
 
-   ``` 
+   ```
+   aws-cli/2.4.14 Python/3.8.8 Linux/5.11.0-1027-aws exe/x86_64.ubuntu.20 prompt/off
+   ```
+
+7. Configure AWS CLI
+
+   ```
    aws configure
    ```
 
-   ```
-   AWS Access Key ID [None]: ****
-   AWS Secret Access Key [None]: ****
-   Default region name [None]: us-east-2
-   Default output format [None]: json
-   ```
+8. Install Opta
 
-9. Install Opta
+   To install latest vesion:
 
    ```
    /bin/bash -c "$(curl -fsSL https://docs.opta.dev/install.sh)"
    ```
 
-10. Add opta to PATH
+   To install specific version:
 
-    ```
-    nano ~/.bashrc
-    ```
+   ```
+   VERSION=0.x /bin/bash -c "$(curl -fsSL https://docs.opta.dev/install.sh)"
+   ```
 
-       add line:
+   proven to work for version:
 
-    ```
-    export PATH="$HOME/.opta:~/.local/bin:$PATH"
-    ```
+   ```
+   v0.24.3
+   ```
 
-       Save bashrc
+9. Initialize project
 
-       Restart Shell or use command
+   ```
+   pyflyte init myflyteapp
+   ```
 
-    ```
-    source ~/.bashrc
-    ```
-
-11. Delete or comment `resource "aws_s3_bucket_public_access_block" "block"` and `resource "aws_s3_bucket_policy" "log_bucket_policy"` in `~/.opta/config/tf_modules/aws-base/log_bucket.tf`,
-
-    `resource "aws_s3_bucket_public_access_block" "block"` in `~\.opta\config\tf_modules\aws-s3\bucket_tf`,
-
-    `resource "aws_s3_bucket_policy" "replica_bucket_policy"` in `~\.opta\config\tf_modules\aws-s3\replication.tf`
-
-    Do this if you don't have permissions to make private s3 buckets
-
-12. Create Python virtual environment
-
-    ```
-    sudo apt update && sudo apt upgrade
-    sudo apt install python3-pip
-    sudo apt install python3.8-venv
-    python3 -m venv ~/venv
-    ```
-
-13. Activate Python virtual environment
-
-    ```
-    source ~/venv/bin/activate
-    ```
-
-14. Install Flytekit
-
-    ```
-    pip install flytekit --upgrade
-    ```
-
-15. Clone Flyte template reository
-
-    ```
-    git clone https://github.com/flyteorg/flytekit-python-template.git myflyteapp
-    ```
-
-16. Copy `queries_on_flyte.py` to `~/myflyteapp/myapp/workflows/`
-
-17. Clone Flyte repository
+10. Clone Flyte repository
 
     ```
     git clone https://github.com/flyteorg/flyte.git
     ```
 
-18. ```
-    cd flyte/opta
-    ```
+    proven to work for commit `94327d6e9f29c3034e714577a9df27f6958ef170` 
 
-19. Edit `env.yaml` and `flyte.yaml` in `flyte/opta/aws`
+## Configuration
 
-    For `env.yaml`replace `<env_name>` with `flyte` and `<your_company>` with `orgname`,  `<account_id>`, `<region>` with  `us-east-2`, comment out or delete these lines:
+1. Disable changing public access blocks for s3 buckets
 
-    ```  
-    type: dns
-    domain: <domain>
-    delegated: false # set to true once ready https://docs.opta.dev/miscellaneous/ingress/
-    ```
+   1. Edit file `~/.opta/modules/aws_s3/aws-s3.yaml`:
 
-    Also, change `type: k8s-cluster`
+      ```
+        - name: block_public
+          user_facing: true
+          validator: bool(required=False)
+          description: Block all public access.
+          default: true
+      ```
 
-    ```
-      - type: k8s-cluster
-        max_nodes: 20
-        min_nodes: 18
-        node_instance_type: "r5.4xlarge"
-    ```
+      to:
 
-    For `flyte.yaml` replace `<region>` with `us-east-2`, `<account_id>` with your AWS account ID.
+      ```
+        - name: block_public
+          user_facing: true
+          validator: bool(required=False)
+          description: Block all public access.
+          default: false
+      ```
 
-    Also change `cluster_resources`:
+   2. Edit file `~/.opta/modules/aws_s3/tf_module/replication.tf`:
 
-    from:
+      Comment out these lines:
 
-    ```
-    cluster_resource_manager:
-            enabled: true
-            config:
-              cluster_resources:
-                customData:
-                  - production:
-                      - defaultIamRole:
-                          value: "${{module.userflyterole.role_arn}}"
-                      - projectQuotaCpu:
-                          value: "6"
-                      - projectQuotaMemory:
-                          value: "6000Mi"
-                  - staging:
-                      - defaultIamRole:
-                          value: "${{module.userflyterole.role_arn}}"
-                      - projectQuotaCpu:
-                          value: "6"
-                      - projectQuotaMemory:
-                          value: "6000Mi"
-                  - development:
-                      - defaultIamRole:
-                          value: "${{module.userflyterole.role_arn}}"
-                      - projectQuotaCpu:
-                          value: "6"
-                      - projectQuotaMemory:
-                          value: "6000Mi"
-    ```
+      ```
+      #resource "aws_s3_bucket_public_access_block" "block_for_replica" {
+      #  count  = var.same_region_replication ? 1 : 0
+      #  bucket = aws_s3_bucket.replica[0].id
+      #
+      #  block_public_acls       = true
+      #  block_public_policy     = true
+      #  ignore_public_acls      = true
+      #  restrict_public_buckets = true
+      #}
+      ```
 
-    to:
+      and these lines in `resource "aws_s3_bucket_policy" "replica_bucket_policy"`:
 
-    ```
-    cluster_resource_manager:
-            enabled: true
-            config:
-              cluster_resources:
-                customData:
-                  - x2:
-                      - defaultIamRole:
-                          value: "${{module.userflyterole.role_arn}}"
-                      - projectQuotaCpu:
-                          value: "32"
-                      - projectQuotaMemory:
-                          value: "256Gi"
-                  - x4:
-                      - defaultIamRole:
-                          value: "${{module.userflyterole.role_arn}}"
-                      - projectQuotaCpu:
-                          value: "64"
-                      - projectQuotaMemory:
-                          value: "512Gi"
-                  - x8:
-                      - defaultIamRole:
-                          value: "${{module.userflyterole.role_arn}}"
-                      - projectQuotaCpu:
-                          value: "128"
-                      - projectQuotaMemory:
-                          value: "1024Gi"
-                  - x16:
-                      - defaultIamRole:
-                          value: "${{module.userflyterole.role_arn}}"
-                      - projectQuotaCpu:
-                          value: "256"
-                      - projectQuotaMemory:
-                          value: "2048Gi"
-    ```
+      ```
+      #  depends_on = [
+      #    aws_s3_bucket_public_access_block.block[0]
+      #  ]
+      ```
 
-20. Create CloudWatch log group.
+   3. Edit `~/.opta/modules/aws_base/tf_module/log_bucket.tf`
 
-21. Edit `flyte\charts\flyte-core\values-eks.yaml`
+      Comment out these lines:
 
-    Change these lines
+      ```
+      #resource "aws_s3_bucket_public_access_block" "block" {
+      #  bucket = aws_s3_bucket.log_bucket.id
+      
+      #  block_public_acls       = false
+      #  block_public_policy     = false
+      #  ignore_public_acls      = false
+      #  restrict_public_buckets = false
+      #}
+      
+      ```
 
-    ```
-    userSettings:
-      accountNumber: <ACCOUNT_NUMBER>
-      accountRegion: <AWS_REGION>
-      certificateArn: <CERTIFICATE_ARN>
-      dbPassword: <DB_PASSWORD>
-      rdsHost: <RDS_HOST>
-      bucketName: <BUCKET_NAME>
-      logGroup: <LOG_GROUP_NAME>
-    ```
+      and these lines in `resource "aws_s3_bucket_policy" "log_bucket_policy"`:
 
-    You can safely delete lines:`certificateArn`, `dbPassword`, `rdsHost`
+      ```
+      #  depends_on = [
+      #    aws_s3_bucket_public_access_block.block
+      #  ]
+      ```
 
-    Fill `accountNumber`, `accountRegion`, `bucketName` and `logGroup` with your account ID, region, any of your s3 buckets an a CloudWatch log group.
+2. Edit `flyte/opta/aws/env.yaml`:
 
-    Edit `  task_resource_defaults:`
+   1. Replace values:
 
-    ```
-           limits:
-    		storage: 2000Mi
-    ```
+      * <account_id>: your AWS account ID
+      	* \<region>: your AWS region
 
-    to
+       * <env_name>: a name for the new isolated cloud environment which is going to be created (e.g., test-name)
+       * <your_company>: your company or organization’s name (e.g., test-org-name)
 
-    ```
-           limits:
-    		cpu: 16
-             memory: 128Gi
-             storage: 3Gi
-    ```
+   2. Comment out lines:
 
-    Edit `cluster_resource_manager` to look like this:
+      ```
+      #  - type: dns
+      #    domain: <domain>
+      #    delegated: false # set to true once ready https://docs.opta.dev/miscellaneous/ingress/
+      ```
 
-    ```
-    cluster_resource_manager:
-      # -- Enables the Cluster resource manager component
-      enabled: true
-      config:
-        cluster_resources:
-          customData:
-            - x2:
-                - projectQuotaCpu:
-                    value: "2"
-                - projectQuotaMemory:
-                    value: "128Gi"
-                - defaultIamRole:
-                    value: "arn:aws:iam::{{ .Values.userSettings.accountNumber }}:role/flyte-user-role"
-            - x4:
-                - projectQuotaCpu:
-                    value: "4"
-                - projectQuotaMemory:
-                    value: "128Gi"
-                - defaultIamRole:
-                    value: "arn:aws:iam::{{ .Values.userSettings.accountNumber }}:role/flyte-user-role"
-            - x8:
-                - projectQuotaCpu:
-                    value: "8"
-                - projectQuotaMemory:
-                    value: "128Gi"
-                - defaultIamRole:
-                    value: "arn:aws:iam::{{ .Values.userSettings.accountNumber }}:role/flyte-user-role"
-            - x16:
-                - projectQuotaCpu:
-                    value: "16"
-                - projectQuotaMemory:
-                    value: "128Gi"
-                - defaultIamRole:
-                     value: "arn:aws:iam::{{ .Values.userSettings.accountNumber }}:role/flyte-user-role"
-                     
-    ```
+   3. Change default k8s version and instance type
 
-22. Edit `flyte\charts\flyte-core\values.yaml`
+      ```
+        - type: k8s-cluster
+          max_nodes: 15
+          k8s_version: "1.21"
+          node_instance_type: "r5.large"
+      ```
 
-    from:
+      \* You can change node_instance_type to suit your needs 
 
-    ```
-    # -- Docker image tag
-         tag: v0.6.53 # FLYTEADMIN_TAG
-    ```
+3. Edit `flyte/opta/aws/flyte.env`:
 
-    to:
+   1. Replace values:
 
-    ```
-    # -- Docker image tag
-         tag: v0.6.33 # FLYTEADMIN_TAG
-    ```
+      * <account_id>: your AWS account ID
+       * \<region>: your AWS region
 
-    *There was a bug in v0.6.53, do not change the version if you know that it's fixed
+   2. Change default chart version:
 
-    
+      ```
+        - type: helm-chart
+          chart: "../../charts/flyte-core" # NOTE: relative path to chart
+          namespace: flyte
+          timeout: 600
+          create_namespace: true
+          values_file: "../../charts/flyte-core/values-eks.yaml" # NOTE: relative path to values yaml
+          chart_version: "v0.19.1"
+      ```
 
-23. ```
-    opta apply -c env.yaml
-    ```
+   3. (Optional) Change default values for task resource limits
 
-    This command can fail first time, if it does, try entering it again
+      paste these lines under `values:`
 
-24. ```
-    opta apply -c flyte.yaml
-    ```
+      ```
+            configmap:
+              task_resource_defaults:
+                task_resources:
+                  limits:
+                    memory: 20Gi
+      ```
 
-25. ```
-    aws eks --region us-east-2 update-kubeconfig --name opta-flyte
-    ```
+      \* Default limit for memory is `1Gi`. 
 
-26. ```
-    kubectl get service  -n flyte | grep flyteadmin
-    ```
+   4. (Optional) Change default values for task resource limits
 
-    Copy address
+      ```
+      cluster_resource_manager:
+              enabled: true
+              config:
+                cluster_resources:
+                  customData:
+                    - production:
+                        - defaultIamRole:
+                            value: "${{module.userflyterole.role_arn}}"
+                        - projectQuotaCpu:
+                            value: "6"
+                        - projectQuotaMemory:
+                            value: "6000Mi"
+                    - staging:
+                        - defaultIamRole:
+                            value: "${{module.userflyterole.role_arn}}"
+                        - projectQuotaCpu:
+                            value: "6"
+                        - projectQuotaMemory:
+                            value: "6000Mi"
+                    - development:
+                        - defaultIamRole:
+                            value: "${{module.userflyterole.role_arn}}"
+                        - projectQuotaCpu:
+                            value: "6"
+                        - projectQuotaMemory:
+                            value: "6000Mi"
+      ```
 
-27. ```
-    flytectl config init --host=<FLYTEADMIN_URL>:81 --storage --insecure
-    ```
+      `projectQuotaCpu`and `projectQuotaMemory` can be changed to suit your needs
 
-    Paste copied address instead of `<FLYTEADMIN_URL>`
+      For example:
 
-28. ```
-    export FLYTECTL_CONFIG=~/.flyte/config.yaml
-    ```
+      ```
+                    - development:
+                        - defaultIamRole:
+                            value: "${{module.userflyterole.role_arn}}"
+                        - projectQuotaCpu:
+                            value: "32"
+                        - projectQuotaMemory:
+                            value: "64Gi"
+      ```
 
-29. Edit `~/.flyte/config.yaml`
+## Deployment
 
-    ```
-    region: us-east-2
-    ```
+1. Deploy kubernetes cluster
 
-    ```
-    container: <S3_BUCKET>
-    ```
+   ```
+   cd flyte/opta/aws
+   opta apply -c env.yaml --auto-approve
+   ```
 
-    `<S3_BUCKET>` is the bucket in  `values-eks.yaml`
+2. Deploy Flyte on a cluster
 
-30. ```
-    kubectl get ingress -n flyte
-    ```
+   ```
+   opta apply -c flyte.yaml --auto-approve
+   ```
 
-    Copy address
+3. Update kubeconfig
 
-31. Paste `<address>/console` in browser 
+   ```
+   aws eks --region us-west-2 update-kubeconfig --name opta-test-name
+   ```
 
-32. ```
-    cd ../myflyteapp
-    ```
+4. Create or update Flyte config
 
-33. ```
-    docker build . --tag <DOCKERHUB_LOGIN>/flyte-test:001
-    ```
+   ```
+   kubectl get service  -n flyte | grep flyteadmin
+   ```
 
-34. ```
-    docker push <DOCKERHUB_LOGIN>/flyte-test:001
-    ```
+   Copy address.
 
-35. ```
-    pyflyte --pkgs myapp.workflows package -f --image <DOCKERHUB_LOGIN>/flyte-test:001
-    ```
+   If you do not have `~/.flyte/config.yaml` file:
 
-36. ```
-    flytectl register files --project x4 --domain x4 --archive flyte-package.tgz --version v1 --logger.level=6
-    ```
+   ```
+   flytectl config init --host=<FLYTEADMIN_URL>:81 --storage --insecure
+   ```
 
-37. Launch the workflow in browser
+   `<FLYTEADMIN_URL>` is the address from previous command
 
-38. To destroy a cluster:
+   If you already have `~/.flyte/config.yaml` file, edit it:
 
-    In `flyte/opta/aws` directory
+   ```
+     endpoint: dns:///<FLYTEADMIN_URL>:81
+   ```
 
-    ```
-    opta destroy -c flyte.yaml --auto-approve
-    opta destroy -c env.yaml --auto-approve
-    ```
+   `~/.flyte/config.yaml` should look like this:
 
+   ```
+   admin:
+     # For GRPC endpoints you might want to use dns:///flyte.myexample.com
+     endpoint: dns:///<FLYTEADMIN_URL>:81
+     authType: Pkce
+     insecure: true
+   logger:
+     show-source: true
+     level: 0
+   storage:
+     type: stow
+     stow:
+       kind: s3
+       config:
+         auth_type: iam
+         region: <REGION> # Example: us-east-2
+     container: <BUCKET> # Example my-bucket. Flyte k8s cluster / service account for execution should have read access to this bucket
+   
+   ```
+
+5. Get access for Flyte Dashboard
+
+   ```
+   kubectl get ingress -n flyte
+   ```
+
+   Paste the link to the browser to get access to Dashboard
+
+## Workflow execution
+
+1. Build and push docker container
+
+   ```
+   cd myflyteapp
+   docker build . --tag <registry/repo:version>
+   docker push <registry/repo:version>
+   ```
+
+   `registry` is your DockerHub login
+
+   For example:
+
+   ```
+   docker build . --tag myname/flyte-test:001
+   docker push myname/flyte-test:001
+   ```
+
+2. Package the workflow
+
+   ```
+   pyflyte --pkgs flyte.workflows package -f --image <registry/repo:version>
+   ```
+
+3. Upload this package to the Flyte backend
+
+   ```
+   flytectl register files --project flytesnacks --domain development --archive flyte-package.tgz --version v1
+   ```
+
+   `--project flytesnacks` and `--domain development` can be changed to other existing projects and domains.
+
+   After this command, you will be able to launch your workflow with Flyte Dashboard. 
+
+## Cluster Destruction
+
+```
+cd flyte/opta/aws
+opta destroy -c flyte --auto-approve
+opta destroy -c env --auto-approve
+```
+
+\* Even though there is a `--auto-approve` flag, you still need to confirm the destruction.
