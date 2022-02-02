@@ -292,7 +292,7 @@
 
       \* You can change node_instance_type to suit your needs 
 
-3. Edit `flyte/opta/aws/flyte.env`:
+3. Edit `flyte/opta/aws/flyte.yaml`:
 
    1. Replace values:
 
