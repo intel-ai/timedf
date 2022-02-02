@@ -178,13 +178,27 @@
    v0.24.3
    ```
 
-9. Initialize project
+9. Install Helm
+
+   ```
+   curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+   chmod 700 get_helm.sh
+   ./get_helm.sh
+   ```
+
+   proven to work for version:
+
+   ```
+   version.BuildInfo{Version:"v3.8.0", GitCommit:"d14138609b01886f544b2025f5000351c9eb092e", GitTreeState:"clean", GoVersion:"go1.17.5"}
+   ```
+
+10. Initialize project
 
    ```
    pyflyte init myflyteapp
    ```
 
-10. Clone Flyte repository
+11. Clone Flyte repository
 
     ```
     git clone https://github.com/flyteorg/flyte.git
