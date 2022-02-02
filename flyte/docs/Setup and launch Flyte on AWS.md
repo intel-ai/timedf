@@ -486,5 +486,3 @@ cd flyte/opta/aws
 opta destroy -c flyte --auto-approve
 opta destroy -c env --auto-approve
 ```
-
-\* Even though there is a `--auto-approve` flag, you still need to confirm the destruction.
