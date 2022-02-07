@@ -27,14 +27,9 @@
    ```
    {
      "App": "flytectl",
-     "Build": "07e64fd",
-     "Version": "0.4.18",
-     "BuildTime": "2022-02-01 13:29:06.37101982 +0000 UTC m=+0.017102336"
-   }{
-     "App": "controlPlane",
-     "Build": "f52c51e",
-     "Version": "v0.6.83",
-     "BuildTime": "2022-02-01 10:59:08.71397555 +0000 UTC m=+0.096943684"
+     "Build": "c726223",
+     "Version": "0.4.19",
+     "BuildTime": "2022-02-07 09:00:16.98933728 +0000 UTC m=+0.016159657"
    }
    ```
 
@@ -140,7 +135,10 @@
 
 6. Install AWS CLI
 
+   Install unzip
+
    ```
+   sudo apt install unzip
    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
    unzip awscliv2.zip
    sudo ./aws/install
@@ -158,7 +156,16 @@
    aws configure
    ```
 
-8. Install Opta
+8. Install Terraform
+
+   ```
+   sudo apt-get update && sudo apt-get install -y gnupg software-properties-common curl
+   curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+   sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+   sudo apt-get update && sudo apt-get install terraform
+   ```
+
+9. Install Opta
 
    To install latest vesion:
 
@@ -178,7 +185,13 @@
    v0.24.3
    ```
 
-9. Install Helm
+   Symlink the opta binary to one of your path directories
+
+   ```
+   sudo ln -fs ~/.opta/opta /usr/local/bin/opta
+   ```
+
+10. Install Helm
 
    ```
    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
@@ -192,11 +205,11 @@
    version.BuildInfo{Version:"v3.8.0", GitCommit:"d14138609b01886f544b2025f5000351c9eb092e", GitTreeState:"clean", GoVersion:"go1.17.5"}
    ```
 
-10. Initialize project
+11. Initialize project
 
-   ```
-   pyflyte init myflyteapp
-   ```
+    ```
+    pyflyte init myflyteapp
+    ```
 
 11. Clone Flyte repository
 
