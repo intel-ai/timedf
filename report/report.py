@@ -11,7 +11,7 @@ class DbReport:
     def __init_predefined_field_values(self, initial_values):
         # System parameters
         self.__predefined_field_values["ServerName"] = (
-            os.environ["HOST_NAME"] or socket.gethostname()
+            os.environ["HOST_NAME"] if "HOST_NAME" in os.environ else socket.gethostname()
         )
         self.__predefined_field_values["Architecture"] = platform.architecture()[0]
         self.__predefined_field_values["Machine"] = platform.machine()
