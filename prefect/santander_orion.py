@@ -1,5 +1,7 @@
-import typing
+# from prefect.task_runners import DaskTaskRunner, RayTaskRunner
+import sys
 import warnings
+from collections import OrderedDict
 from timeit import default_timer as timer
 
 import pandas as pd
@@ -11,8 +13,12 @@ from prefect.deployments import DeploymentSpec
 # from prefect.flow_runners import KubernetesFlowRunner, DockerFlowRunner
 from prefect.flow_runners import UniversalFlowRunner
 
-# from prefect.task_runners import DaskTaskRunner, RayTaskRunner
+module_path = "../utils/"
+if module_path not in sys.path:
+    sys.path.append(module_path)
 
+
+from utils import cod, mse
 
 warnings.filterwarnings("ignore")
 
@@ -28,40 +34,7 @@ ML_SCORE_KEYS = ["mse_mean", "cod_mean", "mse_dev"]
 VAR_COLS = ["var_%s" % i for i in range(200)]
 COLUMNS_NAMES = ["ID_code", "target"] + VAR_COLS
 COLUMNS_TYPES = ["object", "int64"] + ["float64" for _ in range(200)]
-
-
-def load_data_pandas(
-    filename,
-    columns_names=None,
-    columns_types=None,
-    header=None,
-    nrows=None,
-    use_gzip=False,
-    parse_dates=None,
-):
-    types = None
-    if columns_types:
-        types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
-    return pd.read_csv(
-        filename,
-        names=columns_names,
-        nrows=nrows,
-        header=header,
-        dtype=types,
-        compression="gzip" if use_gzip else None,
-        parse_dates=parse_dates,
-    )
-
-
-def mse(y_test, y_pred):
-    return ((y_test - y_pred) ** 2).mean()
-
-
-def cod(y_test, y_pred):
-    y_bar = y_test.mean()
-    total = ((y_test - y_bar) ** 2).sum()
-    residuals = ((y_test - y_pred) ** 2).sum()
-    return 1 - (residuals / total)
+COLUMNS_TYPES = OrderedDict((zip(COLUMNS_NAMES, COLUMNS_TYPES)))
 
 
 def split_step(data, target):
@@ -81,21 +54,12 @@ def split_step(data, target):
 
 
 @task
-def etl_pandas(
-    filename: str,
-    columns_names: typing.List[str],
-    columns_types: typing.List[str],
-    etl_keys: typing.List[str],
-) -> (pd.DataFrame, typing.Dict[str, float]):
+def etl_pandas(filename, columns_names, columns_types, etl_keys):
     etl_times = {key: 0.0 for key in etl_keys}
 
     t0 = timer()
-    train_pd = load_data_pandas(
-        filename=filename,
-        columns_names=columns_names,
-        columns_types=columns_types,
-        header=0,
-        use_gzip=filename.endswith(".gz"),
+    train_pd = pd.read_csv(
+        filename, names=columns_names, dtype=columns_types, header=0, nrows=1000
     )
     etl_times["t_readcsv"] = timer() - t0
 
@@ -123,9 +87,7 @@ def etl_pandas(
 
 
 @task
-def ml(
-    ml_data: pd.DataFrame, target: str, ml_keys: typing.List[str], ml_score_keys: typing.List[str]
-) -> (typing.Dict[str, float], typing.Dict[str, float]):
+def ml(ml_data, target, ml_keys, ml_score_keys):
     ml_times = {key: 0.0 for key in ml_keys}
     ml_scores = {key: 0.0 for key in ml_score_keys}
 

@@ -1,4 +1,4 @@
-import typing
+import sys
 import warnings
 from collections import OrderedDict
 from functools import partial
@@ -7,22 +7,26 @@ from timeit import default_timer as timer
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 from prefect import flow, task
 from prefect.deployments import DeploymentSpec
 
-# from prefect.flow_runners import KubernetesFlowRunner, DockerFlowRunner
+# from prefect.flow_runners import DockerFlowRunner, KubernetesFlowRunner
 from prefect.flow_runners import UniversalFlowRunner
 
 # from prefect.task_runners import DaskTaskRunner, RayTaskRunner
 
+module_path = "../utils/"
+if module_path not in sys.path:
+    sys.path.append(module_path)
+
+
+from utils import split
 
 warnings.filterwarnings("ignore")
 
 
-# dataset_path = "https://modin-datasets.s3.us-west-2.amazonaws.com/plasticc"
 dataset_path = "s3://modin-datasets/plasticc"
 ETL_KEYS = ["t_readcsv", "t_etl", "t_connect"]
 ML_KEYS = ["t_train_test_split", "t_dmatrix", "t_training", "t_infer", "t_ml"]
@@ -55,18 +59,6 @@ DTYPES = OrderedDict(
     ]
 )
 
-# functions from utils and external in terms of Flytekit workflow
-
-
-def split(X, y, test_size=0.1, stratify=None, random_state=None):
-    t0 = timer()
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, stratify=stratify, random_state=random_state
-    )
-    split_time = timer() - t0
-
-    return (X_train, y_train, X_test, y_test), split_time
-
 
 def ravel_column_names(cols):
     d0 = cols.get_level_values(0)
@@ -75,9 +67,9 @@ def ravel_column_names(cols):
 
 
 def load_data_pandas(dataset_path, dtypes, meta_dtypes):
-    train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)
+    train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes, nrows=1000)
 
-    test = pd.read_csv("%s/test_set_skiprows.csv" % dataset_path)
+    test = pd.read_csv("%s/test_set_skiprows.csv" % dataset_path, nrows=1000)
 
     train_meta = pd.read_csv("%s/training_set_metadata.csv" % dataset_path, dtype=meta_dtypes)
     target = meta_dtypes.pop("target")
@@ -176,9 +168,7 @@ def xgb_multi_weighted_logloss(y_predicted, y_true, classes, class_weights):
 
 
 @task
-def etl_all_pandas(
-    dataset_path, columns_names, dtypes, etl_keys
-) -> typing.Tuple[pd.DataFrame, pd.DataFrame, typing.Dict[str, float]]:
+def etl_all_pandas(dataset_path, columns_names, dtypes, etl_keys):
     dtypes = dict(zip(dtypes.keys(), list(map(eval, dtypes.values()))))
 
     meta_dtypes = [int] + [float] * 4 + [int] + [float] * 5 + [int]
@@ -261,7 +251,7 @@ def ml(train_final, test_final, ml_keys):
     return ml_times
 
 
-# Inside @flow() --- task_runner=DaskTaskRunner()
+# task_runner=DaskTaskRunner()
 
 
 @flow()

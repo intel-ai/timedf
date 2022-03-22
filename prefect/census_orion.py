@@ -1,4 +1,5 @@
-import typing
+# from prefect.task_runners import DaskTaskRunner, RayTaskRunner
+import sys
 import warnings
 from timeit import default_timer as timer
 
@@ -6,7 +7,6 @@ import numpy as np
 import pandas as pd
 import sklearn.linear_model as lm
 from sklearn import config_context
-from sklearn.model_selection import train_test_split
 
 from prefect import flow, task
 from prefect.deployments import DeploymentSpec
@@ -14,8 +14,11 @@ from prefect.deployments import DeploymentSpec
 # from prefect.flow_runners import KubernetesFlowRunner, DockerFlowRunner
 from prefect.flow_runners import UniversalFlowRunner
 
-# from prefect.task_runners import DaskTaskRunner, RayTaskRunner
+module_path = "../utils/"
+if module_path not in sys.path:
+    sys.path.append(module_path)
 
+from utils import cod, mse, split
 
 warnings.filterwarnings("ignore")
 
@@ -28,30 +31,6 @@ ML_SCORE_KEYS = ["mse_mean", "cod_mean", "mse_dev"]
 N_RUNS = 50
 TEST_SIZE = 0.1
 RANDOM_STATE = 777
-
-# Functions from utils
-
-
-def mse(y_test, y_pred):
-    return ((y_test - y_pred) ** 2).mean()
-
-
-def cod(y_test, y_pred):
-    y_bar = y_test.mean()
-    total = ((y_test - y_bar) ** 2).sum()
-    residuals = ((y_test - y_pred) ** 2).sum()
-    return 1 - (residuals / total)
-
-
-def split(X, y, test_size=0.1, stratify=None, random_state=None):
-    t0 = timer()
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, stratify=stratify, random_state=random_state
-    )
-    split_time = timer() - t0
-
-    return (X_train, y_train, X_test, y_test), split_time
-
 
 COLS = [
     "YEAR",
@@ -128,14 +107,11 @@ COLUMNS_TYPES = [
     "float",
 ]
 
-# X = OrderedDict((zip(cols, column_types)))
-# Y = OrderedDict({"EDUC": X.pop("EDUC")})
-
 
 @task
 def feature_eng_task(data, cols):
 
-    df = pd.read_csv(data, compression="infer")[cols]
+    df = pd.read_csv(data, compression="infer", nrows=1000)[cols]
 
     df = df[df["INCTOT"] != 9999999]
     df = df[df["EDUC"] != -1]
@@ -151,9 +127,7 @@ def feature_eng_task(data, cols):
 
 
 @task
-def ml_task(
-    df, random_state, n_runs, test_size, ml_keys, ml_score_keys
-) -> typing.Tuple[float, float]:
+def ml_task(df, random_state, n_runs, test_size, ml_keys, ml_score_keys):
 
     # Fetch the input and output data from train dataset
     y = np.ascontiguousarray(df["EDUC"], dtype=np.float64)
