@@ -1,5 +1,7 @@
 import sys
 
+import pandas
+
 from prefect import flow, task
 from prefect.deployments import DeploymentSpec
 from prefect.flow_runners import UniversalFlowRunner
@@ -13,7 +15,8 @@ module_path = "../utils/"
 if module_path not in sys.path:
     sys.path.append(module_path)
 
-from taxibench_pandas_modin import q1, q2, q3, q4, run_benchmark
+
+from taxibench_pandas_modin import q1, q2, q3, q4
 from utils import load_data_pandas
 
 # datapath = "https://modin-datasets.s3.amazonaws.com/taxi/trips_xaa_5M.csv.gz"
@@ -75,48 +78,22 @@ cols = [
 
 parse_dates = ["pickup_datetime", "dropoff_datetime"]
 
-
-@task
-def get_taxi_dataset_task(datapath, names, parse_dates):
-    return load_data_pandas(
-        filename=datapath,
-        columns_names=names,
-        header=None,
-        nrows=None,
-        use_gzip=datapath.endswith(".gz"),
-        parse_dates=parse_dates,
-        pd=run_benchmark.__globals__["pd"],
-        pandas_mode="Pandas",
-    )
-
-
-@task
-def taxi_q1_task(df, pandas_mode="Pandas"):
-    q1(df, pandas_mode)
-
-
-@task
-def taxi_q2_task(df, pandas_mode="Pandas"):
-    q2(df, pandas_mode)
-
-
-@task
-def taxi_q3_task(df, pandas_mode="Pandas"):
-    q3(df, pandas_mode)
-
-
-@task
-def taxi_q4_task(df, pandas_mode="Pandas"):
-    q4(df, pandas_mode)
+get_taxi_dataset_task = task(load_data_pandas)
+taxi_q1_task = task(q1)
+taxi_q2_task = task(q2)
+taxi_q3_task = task(q3)
+taxi_q4_task = task(q4)
 
 
 @flow
 def taxi_queries_flow():
-    df = get_taxi_dataset_task(datapath, cols, parse_dates)
-    q1 = taxi_q1_task(df)
-    q2 = taxi_q2_task(df)
-    q3 = taxi_q3_task(df)
-    q4 = taxi_q4_task(df)
+    df = get_taxi_dataset_task(
+        datapath, cols, parse_dates=parse_dates, pd=pandas, pandas_mode="Pandas"
+    )
+    q1 = taxi_q1_task(df, "Pandas")
+    q2 = taxi_q2_task(df, "Pandas")
+    q3 = taxi_q3_task(df, "Pandas")
+    q4 = taxi_q4_task(df, "Pandas")
     return q1, q2, q3, q4
 
 
