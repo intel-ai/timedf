@@ -186,16 +186,29 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
     # this is to trigger data import in `MOdin_on_omnisci` mode
     if pandas_mode == "Modin_on_omnisci":
-        from modin.experimental.core.execution.native.implementations.omnisci_on_native.omnisci_worker import (
-            OmnisciServer,
-        )
+        try:
+            from modin.experimental.core.execution.native.implementations.omnisci_on_native.db_worker import (
+                DbWorker,
+            )
 
-        concatenated_df.shape
-        concatenated_df._query_compiler._modin_frame._partitions[0][
-            0
-        ].frame_id = OmnisciServer().put_arrow_to_omnisci(
-            concatenated_df._query_compiler._modin_frame._partitions[0][0].get()
-        )
+            concatenated_df.shape
+            concatenated_df._query_compiler._modin_frame._partitions[0][
+                0
+            ].frame_id = DbWorker().import_arrow_table(
+                concatenated_df._query_compiler._modin_frame._partitions[0][0].get()
+            )
+        except ModuleNotFoundError: # fallback to omniscidbe4py package
+            from modin.experimental.core.execution.native.implementations.omnisci_on_native.omnisci_worker import (
+                OmnisciServer,
+            )
+
+            concatenated_df.shape
+            concatenated_df._query_compiler._modin_frame._partitions[0][
+                0
+            ].frame_id = OmnisciServer().put_arrow_to_omnisci(
+                concatenated_df._query_compiler._modin_frame._partitions[0][0].get()
+            )
+
     etl_results["t_readcsv"] = timer() - t0
 
     queries_parameters = {
