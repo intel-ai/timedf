@@ -1,6 +1,6 @@
 language: python
 python:
-  - "3.7"
+  - "3.7.x"
 # command to install dependencies
 install:
   - pip install black flake8 flake8-per-file-ignores
