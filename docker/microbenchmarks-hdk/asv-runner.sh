@@ -25,7 +25,7 @@ PANDAS_MACHINE_NAME=$HOST_NAME-pandas
 export MODIN_ENGINE=ray
 
 asv run --launch-method=spawn --config asv.conf.hdk.json \
-    -b ^hdk --machine $RAY_MACHINE_NAME -a repeat=3 -a number=1 -a warmup_time=1 \
+    -b ^hdk --machine $RAY_MACHINE_NAME -a repeat=3 -a number=1 \
     --show-stderr --python=same --set-commit-hash HEAD
 RAY_RESULT_NAME=`ls .asv/results/$RAY_MACHINE_NAME/ | grep existing`
 
@@ -40,7 +40,7 @@ export MODIN_STORAGE_FORMAT=hdk
 # 'number=1' allows for each bench run to get tables with different names (in `trigger_import`),
 # which eliminates caching inside HDK (`setup` is called before every run)
 asv run --launch-method=forkserver --config asv.conf.hdk.json \
-    -b ^hdk --machine $HDK_MACHINE_NAME -a repeat=3 -a number=1 -a warmup_time=1 \
+    -b ^hdk --machine $HDK_MACHINE_NAME -a repeat=3 -a number=1 \
     --show-stderr --python=same --set-commit-hash HEAD
 HDK_RESULT_NAME=`ls .asv/results/$HDK_MACHINE_NAME/ | grep existing`
 
@@ -51,7 +51,7 @@ HDK_RESULT_NAME=`ls .asv/results/$HDK_MACHINE_NAME/ | grep existing`
 export MODIN_ASV_USE_IMPL=pandas
 
 asv run --launch-method=forkserver --config asv.conf.hdk.json \
-    -b ^hdk --machine $PANDAS_MACHINE_NAME -a repeat=3 -a warmup_time=1 \
+    -b ^hdk --machine $PANDAS_MACHINE_NAME -a repeat=3 \
     --show-stderr --python=same --set-commit-hash HEAD
 PANDAS_RESULT_NAME=`ls .asv/results/$PANDAS_MACHINE_NAME/ | grep existing`
 
