@@ -1,269 +1,301 @@
 from collections import OrderedDict
-from functools import partial
+from functools import partial, wraps
 from timeit import default_timer as timer
+from pathlib import Path
+from typing import Any, Iterable, Tuple, Union, Dict
 
 import numpy as np
 import pandas
-from sklearn.preprocessing import LabelEncoder
+
 
 from utils import (
     check_support,
     import_pandas_into_module_namespace,
+    load_data_pandas,
+    load_data_modin_on_omnisci,
     print_results,
-    split,
 )
 
-
-def ravel_column_names(cols):
-    d0 = cols.get_level_values(0)
-    d1 = cols.get_level_values(1)
-    return ["%s_%s" % (i, j) for i, j in zip(d0, d1)]
+def get_pd():
+    return run_benchmark.__globals__["pd"]
 
 
-def skew_workaround(table):
-    n = table["flux_count"]
-    m = table["flux_mean"]
-    s1 = table["flux_sum1"]
-    s2 = table["flux_sum2"]
-    s3 = table["flux_sum3"]
-
-    # change column name: 'skew' -> 'flux_skew'
-    skew = (
-        n * (n - 1).sqrt() / (n - 2) * (s3 - 3 * m * s2 + 2 * m * m * s1) / (s2 - m * s1).pow(1.5)
-    ).name("flux_skew")
-    table = table.mutate(skew)
-
-    return table
+def realize(*dfs):
+    """Utility function to trigger execution for lazy pd libraries."""
+    for df in dfs:
+        a = df.shape
 
 
-def etl_cpu(df, df_meta, etl_times):
-    t_etl_start = timer()
-
-    # workaround for both Modin_on_ray and Modin_on_omnisci modes. Eventually this should be fixed
-    df["flux_ratio_sq"] = (df["flux"] / df["flux_err"]) * (
-        df["flux"] / df["flux_err"]
-    )  # np.power(df["flux"] / df["flux_err"], 2.0)
-    df["flux_by_flux_ratio_sq"] = df["flux"] * df["flux_ratio_sq"]
-
-    aggs = {
-        "passband": ["mean"],
-        "flux": ["min", "max", "mean", "skew"],
-        "flux_err": ["min", "max", "mean"],
-        "detected": ["mean"],
-        "mjd": ["max", "min"],
-        "flux_ratio_sq": ["sum"],
-        "flux_by_flux_ratio_sq": ["sum"],
-    }
-    agg_df = df.groupby("object_id", sort=False).agg(aggs)
-
-    agg_df.columns = ravel_column_names(agg_df.columns)
-
-    agg_df["flux_diff"] = agg_df["flux_max"] - agg_df["flux_min"]
-    agg_df["flux_dif2"] = agg_df["flux_diff"] / agg_df["flux_mean"]
-    agg_df["flux_w_mean"] = agg_df["flux_by_flux_ratio_sq_sum"] / agg_df["flux_ratio_sq_sum"]
-    agg_df["flux_dif3"] = agg_df["flux_diff"] / agg_df["flux_w_mean"]
-    agg_df["mjd_diff"] = agg_df["mjd_max"] - agg_df["mjd_min"]
-
-    agg_df = agg_df.drop(["mjd_max", "mjd_min"], axis=1)
-
-    agg_df = agg_df.reset_index()
-
-    df_meta = df_meta.drop(["ra", "decl", "gal_l", "gal_b"], axis=1)
-
-    df_meta = df_meta.merge(agg_df, on="object_id", how="left")
-
-    _ = df_meta.shape
-    etl_times["t_etl"] += timer() - t_etl_start
-
-    return df_meta
+def measure_time(func):
+    # @wraps(func)
+    def wrapper(*args, **kwargs) -> Union[float, Tuple[Any, float]]:
+        start = timer()
+        res = func(*args, **kwargs)
+        if res is None:
+            return timer() - start
+        else:
+            return res, timer() - start
+    return wrapper
 
 
-def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, pandas_mode):
-    # 'pd' module is defined implicitly in 'import_pandas_into_module_namespace'
-    # function so we should use 'noqa: F821' for flake8
-    train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)  # noqa: F821
-    # Currently we need to avoid skip_rows in Mode_on_omnisci mode since
-    # pyarrow uses it in incompatible way
-    if pandas_mode == "Modin_on_omnisci":
-        test = pd.read_csv(  # noqa: F821
-            "%s/test_set_skiprows.csv" % dataset_path,
-            names=list(dtypes.keys()),
-            dtype=dtypes,
-            header=0,
+def clean(ddf, keep_cols: Iterable):
+    # replace the extraneous spaces in column names and lower the font type
+    tmp = {col:col.strip().lower() for col in list(ddf.columns)}
+    ddf = ddf.rename(columns=tmp)
+
+    ddf = ddf.rename(columns={
+        'tpep_pickup_datetime': 'pickup_datetime',
+        'tpep_dropoff_datetime': 'dropoff_datetime',
+        'ratecodeid': 'rate_code'
+    })
+    to_drop = ddf.columns.difference(keep_cols)
+    if not to_drop.empty:
+        ddf = ddf.drop(columns=to_drop)
+    to_fillna = [col for dt, col in zip(ddf.dtypes, ddf.dtypes.index) if dt == "object"]
+    if to_fillna:
+        ddf[to_fillna] = ddf[to_fillna].fillna('-1')
+    return ddf
+
+
+def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict,
+             is_omniscidb_mode: bool):
+    pd = get_pd()
+
+    columns_names = list(col2dtype)
+    columns_types = [col2dtype[c] for c in columns_names]
+    is_gz = '.gz' in filepath.suffixes
+    
+    if is_omniscidb_mode:
+        if is_gz:
+            raise NotImplementedError(
+                "Modin_on_omnisci mode doesn't support import of compressed files yet"
+            )
+
+        df = load_data_modin_on_omnisci(
+            filename=filepath,
+            columns_names=columns_names,
+            columns_types=columns_types,
+            parse_dates=parse_dates,
+            skiprows=1,
+            pd=pd,
         )
     else:
-        test = pd.read_csv(  # noqa: F821
-            "%s/test_set.csv" % dataset_path,
-            names=list(dtypes.keys()),
-            dtype=dtypes,
-            skiprows=skip_rows,
+        df = load_data_pandas(
+            filename=filepath,
+            columns_names=columns_names,
+            columns_types=columns_types,
+            parse_dates=parse_dates,
+            header=0,
+            nrows=None,
+            use_gzip=is_gz,
+            pd=pd
         )
-
-    train_meta = pd.read_csv(  # noqa: F821
-        "%s/training_set_metadata.csv" % dataset_path, dtype=meta_dtypes
-    )
-    target = meta_dtypes.pop("target")
-    test_meta = pd.read_csv(  # noqa: F821
-        "%s/test_set_metadata.csv" % dataset_path, dtype=meta_dtypes
-    )
-    meta_dtypes["target"] = target
-
-    return train, train_meta, test, test_meta
+    return df
 
 
-def split_step(train_final, test_final):
+@measure_time
+def load_data(dirpath: Path, is_omniscidb_mode):
+    data_types_2014 = OrderedDict([
+        (' tolls_amount', 'float64'),
+        (' surcharge', 'float64'),
+        (' store_and_fwd_flag', 'object'),
+        (' tip_amount', 'float64'),
+        ('tolls_amount', 'float64'),
+    ])
 
-    X = train_final.drop(["object_id", "target"], axis=1).values
-    Xt = test_final.drop(["object_id"], axis=1).values
+    data_types_2015 = OrderedDict([
+        ('extra', 'float64'),
+        ('tolls_amount', 'float64'),
+    ])
 
-    y = train_final["target"]
-    assert X.shape[1] == Xt.shape[1]
-    classes = sorted(y.unique())
+    data_types_2016 = OrderedDict([
+        ('tip_amount', 'float64'),
+        ('tolls_amount', 'float64'),
+    ])
 
-    class_weights = {c: 1 for c in classes}
-    class_weights.update({c: 2 for c in [64, 15]})
+    #Dictionary of required columns and their datatypes
+    # Convert to list just to be clear that we only need column names, but keep types just in case
+    keep_cols = list({
+        'pickup_datetime': 'datetime64[s]',
+        'dropoff_datetime': 'datetime64[s]',
+        'passenger_count': 'int32',
+        'trip_distance': 'float32',
+        'pickup_longitude': 'float32',
+        'pickup_latitude': 'float32',
+        'rate_code': 'int32',
+        'dropoff_longitude': 'float32',
+        'dropoff_latitude': 'float32',
+        'fare_amount': 'float32'
+    })
 
-    lbl = LabelEncoder()
-    y = lbl.fit_transform(y)
+    df_2014 = [
+        clean(read_csv(dirpath / filename,
+                       parse_dates=[' pickup_datetime', ' dropoff_datetime'],
+                       col2dtype=data_types_2014,
+                       is_omniscidb_mode=is_omniscidb_mode), keep_cols)
+        for filename in (dirpath / '2014').iterdir()
+    ]
 
-    (X_train, y_train, X_test, y_test), split_time = split(
-        X, y, test_size=0.1, stratify=y, random_state=126
-    )
+    df_2015 = [
+        clean(read_csv(dirpath / filename,
+                       parse_dates=['tpep_pickup_datetime', 'tpep_dropoff_datetime'],
+                       col2dtype=data_types_2015,
+                       is_omniscidb_mode=is_omniscidb_mode), keep_cols)
+        for filename in (dirpath / '2015').iterdir()
+    ]
 
-    return (X_train, y_train, X_test, y_test, Xt, classes, class_weights), split_time
+    df_2016 = [
+        clean(read_csv(dirpath / filename,
+                       parse_dates=['tpep_pickup_datetime', 'tpep_dropoff_datetime'],
+                       col2dtype=data_types_2016,
+                       is_omniscidb_mode=is_omniscidb_mode), keep_cols)
+        for filename in (dirpath / '2016').iterdir()
+    ]
 
-
-def etl(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys, pandas_mode):
-    etl_times = {key: 0.0 for key in etl_keys}
-
-    t0 = timer()
-    train, train_meta, test, test_meta = load_data_pandas(
-        dataset_path=dataset_path,
-        skip_rows=skip_rows,
-        dtypes=dtypes,
-        meta_dtypes=meta_dtypes,
-        pandas_mode=pandas_mode,
-    )
-    etl_times["t_readcsv"] += timer() - t0
-
-    # update etl_times
-    train_final = etl_cpu(train, train_meta, etl_times)
-    test_final = etl_cpu(test, test_meta, etl_times)
-
-    return train_final, test_final, etl_times
-
-
-def multi_weighted_logloss(y_true, y_preds, classes, class_weights, use_modin_xgb=False):
-    """
-    refactor from
-    @author olivier https://www.kaggle.com/ogrellier
-    multi logloss for PLAsTiCC challenge
-    """
-    y_p = y_preds.reshape(y_true.shape[0], len(classes), order="F")
-    y_ohe = pandas.get_dummies(y_true)
-
-    if use_modin_xgb:
-        missed_columns = set(range(len(classes))) - set(np.unique(y_true))
-        y_missed = pandas.DataFrame(
-            np.zeros((len(y_ohe), len(missed_columns))), columns=missed_columns, index=y_ohe.index
-        )
-        y_ohe = pandas.concat([y_ohe, y_missed], axis=1)
-        y_ohe.sort_index(axis=1, inplace=True)
-
-    y_p = np.clip(a=y_p, a_min=1e-15, a_max=1 - 1e-15)
-    y_p_log = np.log(y_p)
-    y_log_ones = np.sum(y_ohe.values * y_p_log, axis=0)
-    nb_pos = y_ohe.sum(axis=0).values.astype(float)
-    class_arr = np.array([class_weights[k] for k in sorted(class_weights.keys())])
-    y_w = y_log_ones * class_arr / nb_pos
-
-    loss = -np.sum(y_w) / np.sum(class_arr)
-    return loss
-
-
-def xgb_multi_weighted_logloss(y_predicted, y_true, classes, class_weights, use_modin_xgb=False):
-    loss = multi_weighted_logloss(
-        y_true.get_label(), y_predicted, classes, class_weights, use_modin_xgb=use_modin_xgb
-    )
-    return "wloss", loss
+    #concatenate multiple DataFrames into one bigger one
+    pd = get_pd()
+    df = pd.concat(df_2014 + df_2015 + df_2016, ignore_index=True)
+    
+    # To trigger execution
+    realize(df)
+    
+    return df
 
 
-def ml(train_final, test_final, ml_keys, use_modin_xgb=False):
-    ml_times = {key: 0.0 for key in ml_keys}
+# #######################################
+# ### Exploratory Data Analysis (EDA) ###
+# #######################################
 
-    (
-        (X_train, y_train, X_test, y_test, Xt, classes, class_weights),
-        ml_times["t_train_test_split"],
-    ) = split_step(train_final, test_final)
+# start = timer()
 
+# # apply a list of filter conditions to throw out records with missing or outlier values
+# taxi_df  = taxi_df.query("(fare_amount > 1) & \
+#     (fare_amount < 500) & \
+#     (passenger_count > 0) & \
+#     (passenger_count < 6) & \
+#     (pickup_longitude > -75) & \
+#     (pickup_longitude < -73) & \
+#     (dropoff_longitude > -75) & \
+#     (dropoff_longitude < -73) & \
+#     (pickup_latitude > 40) & \
+#     (pickup_latitude < 42) & \
+#     (dropoff_latitude > 40) & \
+#     (dropoff_latitude < 42) & \
+#     (trip_distance > 0) & \
+#     (trip_distance < 500) & \
+#     ((trip_distance <= 50) | (fare_amount >= 50)) & \
+#     ((trip_distance >= 10) | (fare_amount <= 300)) & \
+#     (dropoff_datetime > pickup_datetime)")
+
+
+# # reset_index and drop index column
+# taxi_df = taxi_df.reset_index(drop=True)
+
+# end = timer()
+# print("Exploratory Data Analysis (EDA): ", end - start)
+@measure_time
+def feature_engineering(df):
+    ###################################
+    ### Adding Interesting Features ###
+    ###################################
+    ## add features
+    df['day'] = df['pickup_datetime'].dt.day
+
+    #calculate the time difference between dropoff and pickup.
+    df['diff'] = df['dropoff_datetime'].astype('int64') - df['pickup_datetime'].astype('int64')
+
+    for col in ["pickup_longitude", "pickup_latitude",
+                "dropoff_longitude", "dropoff_latitude"]:
+        df[col] = df[col + '_r'] // (0.01 * 0.01)
+
+    df = df.drop(['pickup_datetime', 'dropoff_datetime'], axis=1)
+
+    dlon = df['dropoff_longitude'] - df['pickup_longitude']
+    dlat = df['dropoff_latitude'] - df['pickup_latitude']
+    df['e_distance'] = dlon * dlon + dlat * dlat
+
+    realize(df)
+
+    return df
+
+
+@measure_time
+def split(df):
+    ###########################
+    ### Pick a Training Set ###
+    ###########################
+
+    #since we calculated the h_distance let's drop the trip_distance column, and then do model training with XGB.
+    df = df.drop('trip_distance', axis=1)
+
+    # this is the original data partition for train and test sets.
+    x_train = df[df.day < 25]
+
+    # create a Y_train ddf with just the target variable
+    y_train = x_train[['fare_amount']]
+    # drop the target variable from the training ddf
+    x_train = x_train.drop("fare_amount", axis=1)
+
+    realize(x_train, y_train)
+    
+    #######################
+    ### Pick a Test Set ###
+    #######################
+    x_test = df[df.day >= 25]
+
+    # Create Y_test with just the fare amount
+    y_test = x_test[['fare_amount']]
+
+    # Drop the fare amount from X_test
+    x_test = x_test.drop("fare_amount", axis=1)
+
+    realize(x_test, y_test)
+    
+    return {'x_train': x_train, 'x_test': x_test,
+            'y_train': y_train, 'y_test': y_test}
+
+
+@measure_time
+def train(data: dict, use_modin_xgb: bool):
+    
     if use_modin_xgb:
         import modin.experimental.xgboost as xgb
         import modin.pandas as pd
 
-        X_train = pd.DataFrame(X_train)
-        y_train = pd.Series(y_train)
-        X_test = pd.DataFrame(X_test)
-        y_test = pd.Series(y_test)
-        Xt = pd.DataFrame(Xt)
+        # FIXME: why is that?
+        # X_train = pd.DataFrame(X_train)
+        # y_train = pd.Series(y_train)
+        # X_test = pd.DataFrame(X_test)
+        # y_test = pd.Series(y_test)
     else:
         import xgboost as xgb
-    cpu_params = {
-        "objective": "multi:softprob",
-        "tree_method": "hist",
-        "nthread": 16,
-        "num_class": 14,
-        "max_depth": 7,
-        "silent": 1,
-        "subsample": 0.7,
-        "colsample_bytree": 0.7,
-    }
 
-    func_loss = partial(
-        xgb_multi_weighted_logloss,
-        classes=classes,
-        class_weights=class_weights,
-        use_modin_xgb=use_modin_xgb,
+    dtrain = xgb.DMatrix(data['x_train'], data['y_train'])
+
+    trained_model = xgb.train({
+        'learning_rate': 0.3,
+        'max_depth': 8,
+        'objective': 'reg:squarederror',
+        'subsample': 0.6,
+        'gamma': 1,
+        'silent': True,
+        'verbose_eval': True,
+        'tree_method':'hist'
+        },
+        dtrain,
+        num_boost_round=100, evals=[(dtrain, 'train')]
     )
 
-    t_ml_start = timer()
-    dtrain = xgb.DMatrix(data=X_train, label=y_train)
-    dvalid = xgb.DMatrix(data=X_test, label=y_test)
-    dtest = xgb.DMatrix(data=Xt)
-    ml_times["t_dmatrix"] += timer() - t_ml_start
+    # generate predictions on the test set
+    booster = trained_model
+    prediction = booster.predict(xgb.DMatrix(data['x_test']))
+    prediction = prediction.squeeze(axis=1)
 
-    watchlist = [(dvalid, "eval"), (dtrain, "train")]
+    # prediction = pd.Series(booster.predict(xgb.DMatrix(X_test)))
 
-    t0 = timer()
-    clf = xgb.train(
-        cpu_params,
-        dtrain=dtrain,
-        num_boost_round=60,
-        evals=watchlist,
-        feval=func_loss,
-        early_stopping_rounds=10,
-        verbose_eval=1000,
-    )
-    ml_times["t_training"] += timer() - t0
-
-    t0 = timer()
-    yp = clf.predict(dvalid)
-    ml_times["t_infer"] += timer() - t0
-
-    if use_modin_xgb:
-        y_test = y_test.values
-        yp = yp.values
-
-    cpu_loss = multi_weighted_logloss(y_test, yp, classes, class_weights)
-
-    t0 = timer()
-    ysub = clf.predict(dtest)  # noqa: F841 (unused variable)
-    ml_times["t_infer"] += timer() - t0
-
-    ml_times["t_ml"] = timer() - t_ml_start
-
-    print("validation cpu_loss:", cpu_loss)
-
-    return ml_times
+    actual = data['y_test']['fare_amount'].reset_index(drop=True)
+    realize(actual, prediction)
+    return None
 
 
 def compute_skip_rows(gpu_memory):
@@ -279,45 +311,12 @@ def run_benchmark(parameters):
     # FIXME: what is that??
     check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
 
-    parameters["data_file"] = parameters["data_file"].replace("'", "")
+    # parameters["data_path"] = parameters["data_file"]
     parameters["gpu_memory"] = parameters["gpu_memory"] or 16
     parameters["no_ml"] = parameters["no_ml"] or False
 
-    skip_rows = compute_skip_rows(parameters["gpu_memory"])
-
-    dtypes = OrderedDict(
-        [
-            ("object_id", "int32"),
-            ("mjd", "float32"),
-            ("passband", "int32"),
-            ("flux", "float32"),
-            ("flux_err", "float32"),
-            ("detected", "int32"),
-        ]
-    )
-
-    # load metadata
-    columns_names = [
-        "object_id",
-        "ra",
-        "decl",
-        "gal_l",
-        "gal_b",
-        "ddf",
-        "hostgal_specz",
-        "hostgal_photoz",
-        "hostgal_photoz_err",
-        "distmod",
-        "mwebv",
-        "target",
-    ]
-    meta_dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
-    meta_dtypes = OrderedDict(
-        [(columns_names[i], meta_dtypes[i]) for i in range(len(meta_dtypes))]
-    )
-
-    etl_keys = ["t_readcsv", "t_etl", "t_connect"]
-    ml_keys = ["t_train_test_split", "t_dmatrix", "t_training", "t_infer", "t_ml"]
+    # FIXME: do we need this?
+    # skip_rows = compute_skip_rows(parameters["gpu_memory"])
 
     import_pandas_into_module_namespace(
         namespace=run_benchmark.__globals__,
@@ -326,21 +325,21 @@ def run_benchmark(parameters):
         ray_memory=parameters["ray_memory"],
     )
 
-    etl_times = None
-    ml_times = None
+    benchmark2time = {}
 
-    train_final, test_final, etl_times = etl(
-        dataset_path=parameters["data_file"],
-        skip_rows=skip_rows,
-        dtypes=dtypes,
-        meta_dtypes=meta_dtypes,
-        etl_keys=etl_keys,
-        pandas_mode=parameters["pandas_mode"],
-    )
+    is_omniscidb_mode = (parameters["pandas_mode"] == "Modin_on_omnisci")
+    df, benchmark2time['load_data'] = load_data(parameters['data_file'], is_omniscidb_mode=is_omniscidb_mode)
+    df, benchmark2time['feature_engineering'] = feature_engineering(df)
+    data, benchmark2time['split_time'] = split(df)
+    data: Dict[str, Any]
 
-    print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
+    benchmark2time['train_time'] = train(data, use_modin_xgb=parameters["use_modin_xgb"])
+
+    print_results(results=benchmark2time, backend=parameters["pandas_mode"], unit="s")
+
     etl_times["Backend"] = parameters["pandas_mode"]
 
+    ml_times = None
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
         ml_times = ml(train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"])

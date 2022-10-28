@@ -152,10 +152,9 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
         raise NotImplementedError(
             "Modin_on_omnisci mode doesn't support import of compressed files yet"
         )
+    
 
-    queries = {"Query1": q1, "Query2": q2, "Query3": q3, "Query4": q4}
-    etl_results = {x: 0.0 for x in queries.keys()}
-
+    etl_results = {}
     t0 = timer()
     if pandas_mode == "Modin_on_omnisci":
         df_from_each_file = [
@@ -191,19 +190,22 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
         )
 
         concatenated_df.shape
-        concatenated_df._query_compiler._modin_frame._partitions[0][
-            0
-        ].frame_id = OmnisciServer().put_arrow_to_omnisci(
-            concatenated_df._query_compiler._modin_frame._partitions[0][0].get()
+        concatenated_df._query_compiler._modin_frame._partitions[0][0]\
+            .frame_id = OmnisciServer().put_arrow_to_omnisci(
+                concatenated_df._query_compiler._modin_frame._partitions[0][0].get()
         )
     etl_results["t_readcsv"] = timer() - t0
 
+
+    queries = {"Query1": q1, "Query2": q2, "Query3": q3, "Query4": q4}
+    etl_results.update({q: 0.0 for q in queries})
     queries_parameters = {
         query_name: {
+            # FIXME seems like such copy op can affect benchmark
             "df": concatenated_df.copy() if pandas_mode == "Modin_on_omnisci" else concatenated_df,
             "pandas_mode": pandas_mode,
         }
-        for query_name in list(queries.keys())
+        for query_name in queries
     }
 
     return run_queries(
@@ -337,7 +339,6 @@ def run_benchmark(parameters):
         ray_memory=parameters["ray_memory"],
     )
 
-    etl_results = None
     pd_queries_outputs = {} if parameters["validation"] else None
 
     pandas_files_limit = parameters["dfiles_num"]
