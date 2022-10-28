@@ -1,17 +1,18 @@
 import argparse
 import os
+import typing
 import socket
 import subprocess
 
 returned_port_numbers = []
 
 
-def str_arg_to_bool(v):
+def str_arg_to_bool(v: typing.Union[bool, str]) -> bool:
     if isinstance(v, bool):
         return v
-    if v.lower() in ("yes", "true", "True", "t", "y", "1"):
+    if v.lower() in ("yes", "true", "t", "y", "1"):
         return True
-    elif v.lower() in ("no", "false", "False", "f", "n", "0"):
+    elif v.lower() in ("no", "false", "f", "n", "0"):
         return False
     else:
         raise argparse.ArgumentTypeError("Cannot recognize boolean value.")
@@ -65,7 +66,7 @@ def find_free_port():
 
 
 class KeyValueListParser(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, parser, namespace, values: str, option_string=None):
         kwargs = {}
         for kv in values.split(","):
             k, v = kv.split("=")

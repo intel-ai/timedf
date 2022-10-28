@@ -2,6 +2,7 @@ import json
 import itertools as it
 import math
 import argparse
+from typing import Tuple
 from utils_base_env import add_mysql_arguments
 
 
@@ -66,21 +67,17 @@ def get_cmd_args():
     )
     add_mysql_arguments(parser)
     parsed_args = parser.parse_args()
-    db_ops = {}
-    for arg in (
+    db_ops = {name: getattr(parsed_args, param) for name, param in (
         ("host", "db_server"),
         ("port", "db_port"),
         ("user", "db_user"),
         ("passwd", "db_pass"),
         ("db", "db_name"),
-    ):
-        db_ops[arg[0]] = getattr(parsed_args, arg[1])
+    )}
     return parsed_args.result_path, db_ops
 
 
 def parse_asv_results(result_path):
-    results = []
-
     with open(result_path, "r") as f:
         res = json.load(f)
 
@@ -94,6 +91,7 @@ def parse_asv_results(result_path):
         "ModinCommitHash": res["commit_hash"],
     }
 
+    results = []
     for benchmark in res["results"]:
         counter = 0
         bench_result = res["results"][benchmark]
