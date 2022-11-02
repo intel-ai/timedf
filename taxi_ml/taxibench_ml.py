@@ -95,7 +95,7 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict,
 
 @measure_time
 def load_data(dirpath: str, is_omniscidb_mode):
-    dirpath = Path(dirpath)
+    dirpath = Path(dirpath.strip("'\""))
     data_types_2014 = OrderedDict([
         (' tolls_amount', 'float64'),
         (' surcharge', 'float64'),
