@@ -130,7 +130,7 @@ def prepare_parser():
     commits = parser.add_argument_group("commits")
 
     possible_tasks = ["build", "benchmark"]
-    benchmarks = ["ny_taxi", "santander", "census", "plasticc", "mortgage", "h2o"]
+    benchmarks = ["ny_taxi", "santander", "census", "plasticc", "mortgage", "h2o", "taxi_ml"]
 
     # Task
     required.add_argument(
