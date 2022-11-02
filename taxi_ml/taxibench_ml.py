@@ -330,25 +330,23 @@ def run_benchmark(parameters):
     is_omniscidb_mode = (parameters["pandas_mode"] == "Modin_on_omnisci")
     df, benchmark2time['load_data'] = load_data(parameters['data_file'], is_omniscidb_mode=is_omniscidb_mode)
     df, benchmark2time['feature_engineering'] = feature_engineering(df)
-    data, benchmark2time['split_time'] = split(df)
-    data: Dict[str, Any]
-
-    benchmark2time['train_time'] = train(data, use_modin_xgb=parameters["use_modin_xgb"])
-
     print_results(results=benchmark2time, backend=parameters["pandas_mode"], unit="s")
 
-    etl_times["Backend"] = parameters["pandas_mode"]
+    benchmark2time["Backend"] = parameters["pandas_mode"]
 
-    ml_times = None
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
-        ml_times = ml(train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"])
-        print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
-        ml_times["Backend"] = parameters["pandas_mode"]
-        ml_times["Backend"] = (
+
+        data, benchmark2time['split_time'] = split(df)
+        data: Dict[str, Any]
+
+        benchmark2time['train_time'] = train(data, use_modin_xgb=parameters["use_modin_xgb"])
+
+        print_results(results=benchmark2time, backend=parameters["pandas_mode"], unit="s")
+        benchmark2time["Backend"] = (
             parameters["pandas_mode"]
             if not parameters["use_modin_xgb"]
             else parameters["pandas_mode"] + "_modin_xgb"
         )
 
-    return {"ETL": [etl_times], "ML": [ml_times]}
+    return {"ETL": [None], "ML": [benchmark2time]}
