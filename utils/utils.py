@@ -705,6 +705,7 @@ def run_benchmarks(
         "plasticc": "plasticc",
         "mortgage": "mortgage",
         "h2o": "h2o",
+        "taxi_ml": "taxi_ml",
     }
 
     ignore_fields_for_bd_report_etl = ["t_connect"]
