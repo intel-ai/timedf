@@ -80,15 +80,11 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict,
             pd=pd,
         )
     else:
-        df = load_data_pandas(
-            filename=filepath,
-            columns_names=columns_names,
-            columns_types=columns_types,
+        df = pd.read_csv(
+            filepath,
+            dtype=col2dtype,
             parse_dates=parse_dates,
-            header=0,
-            nrows=None,
-            use_gzip=is_gz,
-            pd=pd
+            # use_gzip=is_gz,
         )
     return df
 
@@ -206,7 +202,7 @@ def feature_engineering(df):
     df['diff'] = df['dropoff_datetime'].astype('int64') - df['pickup_datetime'].astype('int64')
 
     cols = ["pickup_longitude", "pickup_latitude", "dropoff_longitude", "dropoff_latitude"]
-    df[cols] = df[c + '_r' for c in cols] // (0.01 * 0.01)
+    df[cols] = df[[c + '_r' for c in cols]] // (0.01 * 0.01)
 
     df = df.drop(['pickup_datetime', 'dropoff_datetime'], axis=1)
 
