@@ -811,6 +811,6 @@ def run_benchmarks(
                     remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)
                     db_reporter_etl.submit(result_etl)
 
-                    for result_ml in ml_results:
-                        remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
-                        db_reporter_ml.submit(result_ml)
+                for result_ml in ml_results:
+                    remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
+                    db_reporter_ml.submit(result_ml)
