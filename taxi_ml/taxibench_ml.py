@@ -205,9 +205,8 @@ def feature_engineering(df):
     #calculate the time difference between dropoff and pickup.
     df['diff'] = df['dropoff_datetime'].astype('int64') - df['pickup_datetime'].astype('int64')
 
-    for col in ["pickup_longitude", "pickup_latitude",
-                "dropoff_longitude", "dropoff_latitude"]:
-        df[col] = df[col + '_r'] // (0.01 * 0.01)
+    cols = ["pickup_longitude", "pickup_latitude", "dropoff_longitude", "dropoff_latitude"]
+    df[cols] = df[c + '_r' for c in cols] // (0.01 * 0.01)
 
     df = df.drop(['pickup_datetime', 'dropoff_datetime'], axis=1)
 
