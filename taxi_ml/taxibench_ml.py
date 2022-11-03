@@ -125,33 +125,24 @@ def load_data(dirpath: str, is_omniscidb_mode):
         'fare_amount': 'float32'
     })
 
-    df_2014 = [
-        clean(read_csv(dirpath / filename,
-                       parse_dates=[' pickup_datetime', ' dropoff_datetime'],
-                       col2dtype=data_types_2014,
-                       is_omniscidb_mode=is_omniscidb_mode), keep_cols)
-        for filename in (dirpath / '2014').iterdir()
-    ]
-
-    df_2015 = [
-        clean(read_csv(dirpath / filename,
-                       parse_dates=['tpep_pickup_datetime', 'tpep_dropoff_datetime'],
-                       col2dtype=data_types_2015,
-                       is_omniscidb_mode=is_omniscidb_mode), keep_cols)
-        for filename in (dirpath / '2015').iterdir()
-    ]
-
-    df_2016 = [
-        clean(read_csv(dirpath / filename,
-                       parse_dates=['tpep_pickup_datetime', 'tpep_dropoff_datetime'],
-                       col2dtype=data_types_2016,
-                       is_omniscidb_mode=is_omniscidb_mode), keep_cols)
-        for filename in (dirpath / '2016').iterdir()
-    ]
+    dfs = []
+    for name, dtypes, date_cols in (
+        ('2014', data_types_2014, [' pickup_datetime', ' dropoff_datetime']),
+        ('2015', data_types_2015, ['tpep_pickup_datetime', 'tpep_dropoff_datetime']),
+        ('2016', data_types_2016, ['tpep_pickup_datetime', 'tpep_dropoff_datetime']),
+    ):
+        dfs.extend([
+            clean(read_csv(dirpath / filename,
+                        parse_dates=date_cols,
+                        col2dtype=dtypes,
+                        is_omniscidb_mode=is_omniscidb_mode), keep_cols)
+            for filename in list((dirpath / name).iterdir())
+            # for filename in list((dirpath / name).iterdir())[:2]
+        ])
 
     #concatenate multiple DataFrames into one bigger one
     pd = get_pd()
-    df = pd.concat(df_2014 + df_2015 + df_2016, ignore_index=True)
+    df = pd.concat(dfs, ignore_index=True)
     
     # To trigger execution
     realize(df)
@@ -202,7 +193,7 @@ def feature_engineering(df):
     df['diff'] = df['dropoff_datetime'].astype('int64') - df['pickup_datetime'].astype('int64')
 
     cols = ["pickup_longitude", "pickup_latitude", "dropoff_longitude", "dropoff_latitude"]
-    df[cols] = df[[c + '_r' for c in cols]] // (0.01 * 0.01)
+    df[[c + '_r' for c in cols]] = df[cols] // (0.01 * 0.01)
 
     df = df.drop(['pickup_datetime', 'dropoff_datetime'], axis=1)
 
@@ -280,12 +271,15 @@ def train(data: dict, use_modin_xgb: bool):
         },
         dtrain,
         num_boost_round=100, evals=[(dtrain, 'train')]
+        # num_boost_round=10, evals=[(dtrain, 'train')]
     )
 
     # generate predictions on the test set
     booster = trained_model
     prediction = booster.predict(xgb.DMatrix(data['x_test']))
-    prediction = prediction.squeeze(axis=1)
+
+    # FIXME: returns an error with Pandas, because array only have 1 axis
+    # prediction = prediction.squeeze(axis=1)
 
     # prediction = pd.Series(booster.predict(xgb.DMatrix(X_test)))
 
@@ -328,8 +322,9 @@ def run_benchmark(parameters):
     df, benchmark2time['feature_engineering'] = feature_engineering(df)
     print_results(results=benchmark2time, backend=parameters["pandas_mode"], unit="s")
 
-    benchmark2time["Backend"] = parameters["pandas_mode"]
+    # benchmark2time["Backend"] = parameters["pandas_mode"]
 
+    backend_name = parameters["pandas_mode"]
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
 
@@ -339,10 +334,10 @@ def run_benchmark(parameters):
         benchmark2time['train_time'] = train(data, use_modin_xgb=parameters["use_modin_xgb"])
 
         print_results(results=benchmark2time, backend=parameters["pandas_mode"], unit="s")
-        benchmark2time["Backend"] = (
-            parameters["pandas_mode"]
-            if not parameters["use_modin_xgb"]
-            else parameters["pandas_mode"] + "_modin_xgb"
-        )
 
-    return {"ETL": [None], "ML": [benchmark2time]}
+        if parameters["use_modin_xgb"]:
+            backend_name = backend_name + "_modin_xgb"
+    
+    benchmark2time['Backend'] = backend_name
+
+    return {"ETL": [benchmark2time], "ML": [None]}
