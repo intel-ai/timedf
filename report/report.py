@@ -8,16 +8,18 @@ import subprocess
 class DbReport:
     "Initialize and submit reports to MySQL database"
 
-    def __init_predefined_field_values(self, initial_values):
+    @staticmethod
+    def get_predefined_field_values(initial_values, lscpu_patterns, proc_meminfo_patterns):
         # System parameters
-        self.__predefined_field_values["ServerName"] = (
+        predefined_field_values = {}
+        predefined_field_values["ServerName"] = (
             os.environ["HOST_NAME"] if "HOST_NAME" in os.environ else socket.gethostname()
         )
-        self.__predefined_field_values["Architecture"] = platform.architecture()[0]
-        self.__predefined_field_values["Machine"] = platform.machine()
-        self.__predefined_field_values["Node"] = platform.node()
-        self.__predefined_field_values["OS"] = platform.system()
-        self.__predefined_field_values["CPUCount"] = os.cpu_count()
+        predefined_field_values["Architecture"] = platform.architecture()[0]
+        predefined_field_values["Machine"] = platform.machine()
+        predefined_field_values["Node"] = platform.node()
+        predefined_field_values["OS"] = platform.system()
+        predefined_field_values["CPUCount"] = os.cpu_count()
 
         def match_and_assign(tag, pattern):
             matches = re.search(pattern, output)
@@ -31,26 +33,26 @@ class DbReport:
         # System data from lscpu
         data = subprocess.Popen(["lscpu"], stdout=subprocess.PIPE)
         output = str(data.communicate()[0].strip().decode())
-        lscpu_values = {t: match_and_assign(t, p) for (t, p) in self.__lscpu_patterns.items()}
-        self.__predefined_field_values.update(lscpu_values)
+        lscpu_values = {t: match_and_assign(t, p) for (t, p) in lscpu_patterns.items()}
+        predefined_field_values.update(lscpu_values)
         # System data from /proc/meminfo
         with open("/proc/meminfo", "r") as proc_meminfo:
             output = proc_meminfo.read().strip()
             proc_meminfo_values = {
-                t: match_and_assign(t, p) for (t, p) in self.__proc_meminfo_patterns.items()
+                t: match_and_assign(t, p) for (t, p) in proc_meminfo_patterns.items()
             }
-            self.__predefined_field_values.update(proc_meminfo_values)
+            predefined_field_values.update(proc_meminfo_values)
         # Script specific values
         if initial_values is not None:
-            self.__predefined_field_values.update(initial_values)
-        print("self.__predefined_field_values = ", self.__predefined_field_values)
+            predefined_field_values.update(initial_values)
+        return predefined_field_values
+
 
     def __init__(self, database, table_name, benchmark_specific_fields, initial_values=None):
-
         self.__predefined_fields = {
             "id": "BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT",
             "ServerName": "VARCHAR(500) NOT NULL",
-            "CommitHash": "VARCHAR(500) NOT NULL",
+            # "CommitHash": "VARCHAR(500) NOT NULL",
             "date": "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
             # System parameters
             "Architecture": "VARCHAR(500) NOT NULL",
@@ -74,6 +76,9 @@ class DbReport:
             "HugePages_Free": "VARCHAR(500) NOT NULL",
             "Hugepagesize": "VARCHAR(500) NOT NULL",
         }
+        self.__predefined_fields.update(
+            {name: "VARCHAR(500) NOT NULL" for name in initial_values or []}
+        )
 
         self.__lscpu_patterns = {
             "CPUModel": re.compile("^Model name: +(.+)$", flags=re.MULTILINE),
@@ -94,10 +99,13 @@ class DbReport:
             "HugePages_Free": re.compile("^HugePages_Free: +(.+)$", flags=re.MULTILINE),
             "Hugepagesize": re.compile("^Hugepagesize: +(.+)$", flags=re.MULTILINE),
         }
-        self.__predefined_field_values = {}
+
 
         self.__table_name = table_name
-        self.__init_predefined_field_values(initial_values)
+        
+        self.__predefined_field_values = self.get_predefined_field_values(initial_values, self.__lscpu_patterns, self.__proc_meminfo_patterns)
+        print("__predefined_field_values = ", self.__predefined_field_values)
+
         self.all_fields = self.__predefined_fields
         self.all_fields.update(benchmark_specific_fields)
         self.sql_statement = "CREATE TABLE IF NOT EXISTS %s (" % table_name

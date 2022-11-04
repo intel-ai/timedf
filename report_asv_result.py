@@ -67,13 +67,16 @@ def get_cmd_args():
     )
     add_mysql_arguments(parser)
     parsed_args = parser.parse_args()
-    db_ops = {name: getattr(parsed_args, param) for name, param in (
-        ("host", "db_server"),
-        ("port", "db_port"),
-        ("user", "db_user"),
-        ("passwd", "db_pass"),
-        ("db", "db_name"),
-    )}
+    db_ops = {
+        name: getattr(parsed_args, param)
+        for name, param in (
+            ("host", "db_server"),
+            ("port", "db_port"),
+            ("user", "db_user"),
+            ("passwd", "db_pass"),
+            ("db", "db_name"),
+        )
+    }
     return parsed_args.result_path, db_ops
 
 
