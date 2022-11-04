@@ -1,13 +1,13 @@
 import argparse
 import os
-import typing
 import socket
 import subprocess
+from typing import Union
 
 returned_port_numbers = []
 
 
-def str_arg_to_bool(v: typing.Union[bool, str]) -> bool:
+def str_arg_to_bool(v: Union[bool, str]) -> bool:
     if isinstance(v, bool):
         return v
     if v.lower() in ("yes", "true", "t", "y", "1"):

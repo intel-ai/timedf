@@ -8,16 +8,21 @@ from utils_base_env import execute_process, prepare_parser
 def parse_tasks(task_string: str, possible_tasks: Iterable[str]):
     required_tasks = set(task_string.split(","))
     possible_tasks = set(possible_tasks)
-    
+
     if len(required_tasks - possible_tasks) > 0:
-        raise ValueError(f"Discovered unrecognized task type. Received {required_tasks}, but only"
-                         f"{possible_tasks} are supported")
+        raise ValueError(
+            f"Discovered unrecognized task type. Received {required_tasks}, but only"
+            f"{possible_tasks} are supported"
+        )
 
     tasks = possible_tasks.intersection(required_tasks)
     if len(tasks) == 0:
-        raise ValueError(f"Only {possible_tasks} are supported, received {required_tasks} cannot find any possible task")
+        raise ValueError(
+            f"Only {possible_tasks} are supported, received {required_tasks} cannot find any possible task"
+        )
 
     return tasks
+
 
 def run_build_task(args):
     if args.modin_path:
@@ -39,9 +44,9 @@ def run_build_task(args):
 
     if os.path.exists(dbe_path):
         print("DBE INSTALLATION")
-        
+
         omniscidb_root = os.path.abspath(f"{executables_path}/../../")
-        for component in ("DBE", "QE", "thrift", "jar",):
+        for component in ("DBE", "QE", "thrift", "jar"):
             cmake_cmdline = [
                 "cmake",
                 "--install",
@@ -51,7 +56,7 @@ def run_build_task(args):
                 "--prefix",
                 "$CONDA_PREFIX",
             ]
-        
+
             execute_process(cmake_cmdline, cwd=omniscidb_root)
         execute_process(["python3", "setup.py", "install"], cwd=dbe_path)
     else:
@@ -149,7 +154,7 @@ def main(raw_args=None):
 
     if "build" in tasks:
         run_build_task(args)
-    
+
     if "benchmark" in tasks:
         run_benchmark_task(args)
 

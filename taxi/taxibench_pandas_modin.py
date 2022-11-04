@@ -152,7 +152,6 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
         raise NotImplementedError(
             "Modin_on_omnisci mode doesn't support import of compressed files yet"
         )
-    
 
     etl_results = {}
     t0 = timer()
@@ -190,12 +189,12 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
         )
 
         concatenated_df.shape
-        concatenated_df._query_compiler._modin_frame._partitions[0][0]\
-            .frame_id = OmnisciServer().put_arrow_to_omnisci(
-                concatenated_df._query_compiler._modin_frame._partitions[0][0].get()
+        concatenated_df._query_compiler._modin_frame._partitions[0][
+            0
+        ].frame_id = OmnisciServer().put_arrow_to_omnisci(
+            concatenated_df._query_compiler._modin_frame._partitions[0][0].get()
         )
     etl_results["t_readcsv"] = timer() - t0
-
 
     queries = {"Query1": q1, "Query2": q2, "Query3": q3, "Query4": q4}
     etl_results.update({q: 0.0 for q in queries})
