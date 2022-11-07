@@ -2,7 +2,6 @@ import json
 import itertools as it
 import math
 import argparse
-from typing import Tuple
 from utils_base_env import add_mysql_arguments
 
 
