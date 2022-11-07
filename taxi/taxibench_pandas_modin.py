@@ -184,7 +184,7 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
         ]
 
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
-    # this is to trigger data import in `MOdin_on_omnisci` mode
+    # this is to trigger data import in `Modin_on_omnisci` mode
     if pandas_mode == "Modin_on_omnisci":
         from modin.experimental.core.execution.native.implementations.hdk_on_native.db_worker import (
             DbWorker,
