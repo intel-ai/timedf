@@ -6,12 +6,7 @@ import numpy as np
 import pandas
 from sklearn.preprocessing import LabelEncoder
 
-from utils import (
-    check_support,
-    import_pandas_into_module_namespace,
-    print_results,
-    split,
-)
+from utils import check_support, import_pandas_into_module_namespace, print_results, split
 
 
 def ravel_column_names(cols):

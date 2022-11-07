@@ -47,7 +47,6 @@ class DbReport:
             predefined_field_values.update(initial_values)
         return predefined_field_values
 
-
     def __init__(self, database, table_name, benchmark_specific_fields, initial_values=None):
         self.__predefined_fields = {
             "id": "BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT",
@@ -100,10 +99,11 @@ class DbReport:
             "Hugepagesize": re.compile("^Hugepagesize: +(.+)$", flags=re.MULTILINE),
         }
 
-
         self.__table_name = table_name
-        
-        self.__predefined_field_values = self.get_predefined_field_values(initial_values, self.__lscpu_patterns, self.__proc_meminfo_patterns)
+
+        self.__predefined_field_values = self.get_predefined_field_values(
+            initial_values, self.__lscpu_patterns, self.__proc_meminfo_patterns
+        )
         print("__predefined_field_values = ", self.__predefined_field_values)
 
         self.all_fields = self.__predefined_fields

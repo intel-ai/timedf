@@ -10,7 +10,6 @@ import pandas
 from utils import (
     check_support,
     import_pandas_into_module_namespace,
-    load_data_pandas,
     load_data_modin_on_omnisci,
     print_results,
 )
@@ -21,11 +20,16 @@ class Config:
     MODIN_STORAGE_FORMAT = os.getenv("MODIN_STORAGE_FORMAT")
     MODIN_ENGINE = os.getenv("MODIN_ENGINE")
 
+    @staticmethod
+    def init():
+        Config.MODIN_IMPL = os.getenv("MODIN_IMPL")
+        Config.MODIN_STORAGE_FORMAT = os.getenv("MODIN_STORAGE_FORMAT")
+        Config.MODIN_ENGINE = os.getenv("MODIN_ENGINE")
 
 
 def get_pd():
     return run_benchmark.__globals__["pd"]
-    
+
 
 def trigger_import(*dfs):
     """
@@ -44,17 +48,12 @@ def trigger_import(*dfs):
 
     for df in dfs:
         df.shape  # to trigger real execution
-        df._query_compiler._modin_frame._partitions[0][
-            0
-        ].frame_id = DbWorker().import_arrow_table(
+        df._query_compiler._modin_frame._partitions[0][0].frame_id = DbWorker().import_arrow_table(
             df._query_compiler._modin_frame._partitions[0][0].get()
         )  # to trigger real execution
-    
 
-def execute(
-    df: pandas.DataFrame,
-    trigger_hdk_import: bool = False,
-):
+
+def execute(df: pandas.DataFrame, trigger_hdk_import: bool = False):
     """
     Make sure the calculations are finished.
     Parameters
@@ -79,12 +78,7 @@ def execute(
             return
 
         # compatibility with old Modin versions
-        all(
-            map(
-                lambda partition: partition.drain_call_queue() or True,
-                partitions,
-            )
-        )
+        all(map(lambda partition: partition.drain_call_queue() or True, partitions))
         if Config.MODIN_ENGINE == "ray":
             from ray import wait
 
@@ -103,7 +97,7 @@ def execute(
 def realize(*dfs):
     """Utility function to trigger execution for lazy pd libraries."""
     for df in dfs:
-        if not isinstance (df, (pandas.DataFrame, pandas.Series, numpy.ndarray)):
+        if not isinstance(df, (pandas.DataFrame, pandas.Series, numpy.ndarray)):
             execute(df)
 
 
@@ -174,7 +168,7 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_omnis
 
 @measure_time
 def load_data(dirpath: str, is_omniscidb_mode):
-    dirpath = Path(dirpath.strip("'\""))
+    dirpath: Path = Path(dirpath.strip("'\""))
     data_types_2014 = OrderedDict(
         [
             (" tolls_amount", "float64"),
@@ -266,10 +260,10 @@ def filter_df(df):
 
 @measure_time
 def feature_engineering(df):
-    ###################################
-    ### Adding Interesting Features ###
-    ###################################
-    ## add features
+    #################################
+    # Adding Interesting Features ###
+    #################################
+    # add features
     df["day"] = df["pickup_datetime"].dt.day
 
     # calculate the time difference between dropoff and pickup.
@@ -291,9 +285,9 @@ def feature_engineering(df):
 
 @measure_time
 def split(df):
-    ###########################
-    ### Pick a Training Set ###
-    ###########################
+    #######################
+    # Pick a Training Set #
+    #######################
 
     # since we calculated the h_distance let's drop the trip_distance column, and then do model training with XGB.
     df = df.drop("trip_distance", axis=1)
@@ -306,9 +300,9 @@ def split(df):
     # drop the target variable from the training ddf
     x_train = x_train.drop("fare_amount", axis=1)
 
-    #######################
-    ### Pick a Test Set ###
-    #######################
+    ###################
+    # Pick a Test Set #
+    ###################
     x_test = df[df.day >= 25]
 
     # Create Y_test with just the fare amount
@@ -327,7 +321,8 @@ def train(data: dict, use_modin_xgb: bool):
 
     if use_modin_xgb:
         import modin.experimental.xgboost as xgb
-        import modin.pandas as pd
+
+        # import modin.pandas as pd
 
         # FIXME: why is that?
         # X_train = pd.DataFrame(X_train)
@@ -380,6 +375,8 @@ def compute_skip_rows(gpu_memory):
 
 
 def run_benchmark(parameters):
+    # Update config in case some envs changed after the import
+    Config.init()
     # FIXME: what is that??
     check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
 

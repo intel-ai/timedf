@@ -89,11 +89,7 @@ class CondaEnvironment:
         command.extend(cmdline)
 
         print("CMD: ", "conda run " + " ".join(command))
-        _, _, return_code = run_command(
-            Commands.RUN,
-            command,
-            use_exception_handler=True,
-        )
+        _, _, return_code = run_command(Commands.RUN, command, use_exception_handler=True)
         if return_code != 0:
             raise Exception(f"Conda run returned {return_code}.")
 

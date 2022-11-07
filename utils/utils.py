@@ -761,11 +761,7 @@ def run_benchmarks(
 
             if iter_num == 1:
                 db = mysql.connector.connect(
-                    host=db_server,
-                    port=db_port,
-                    user=db_user,
-                    passwd=db_pass,
-                    db=db_name,
+                    host=db_server, port=db_port, user=db_user, passwd=db_pass, db=db_name
                 )
 
                 reporting_init_fields = {
@@ -783,10 +779,7 @@ def run_benchmarks(
                     )
 
                 db_reporter_etl = DbReport(
-                    db,
-                    db_table_etl,
-                    reporting_fields_benchmark_etl,
-                    reporting_init_fields,
+                    db, db_table_etl, reporting_fields_benchmark_etl, reporting_init_fields
                 )
 
                 if len(ml_results) != 0:
@@ -799,10 +792,7 @@ def run_benchmarks(
                         )
 
                     db_reporter_ml = DbReport(
-                        db,
-                        db_table_ml,
-                        reporting_fields_benchmark_ml,
-                        reporting_init_fields,
+                        db, db_table_ml, reporting_fields_benchmark_ml, reporting_init_fields
                     )
 
             # FIXME: looks like we can only submit last iteration

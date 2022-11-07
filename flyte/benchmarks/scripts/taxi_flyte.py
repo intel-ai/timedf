@@ -65,10 +65,7 @@ parse_dates = ["pickup_datetime", "dropoff_datetime"]
 
 @task
 def get_taxi_dataset_task(
-    datapath: str,
-    compression: str,
-    names: typing.List[str],
-    parse_dates: typing.List[str],
+    datapath: str, compression: str, names: typing.List[str], parse_dates: typing.List[str]
 ) -> pd.DataFrame:
     return pd.read_csv(datapath, compression=compression, names=cols, parse_dates=parse_dates)
 

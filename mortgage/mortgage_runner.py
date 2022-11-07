@@ -1,11 +1,6 @@
 import warnings
 
-from utils import (
-    check_support,
-    import_pandas_into_module_namespace,
-    print_results,
-    get_dir_size,
-)
+from utils import check_support, import_pandas_into_module_namespace, print_results, get_dir_size
 from .mortgage_pandas import etl, ml
 
 warnings.filterwarnings("ignore")

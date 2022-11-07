@@ -546,13 +546,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
 def run_benchmark(parameters):
     check_support(
         parameters,
-        unsupported_params=[
-            "dfiles_num",
-            "gpu_memory",
-            "no_ml",
-            "optimizer",
-            "validation",
-        ],
+        unsupported_params=["dfiles_num", "gpu_memory", "no_ml", "optimizer", "validation"],
     )
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
