@@ -402,7 +402,7 @@ class MortgageBenchmark:
             "reg_lambda": 1,
             "min_child_weight": 0,
             "max_depth": 8,
-            "max_leaves": 2 ** 8,
+            "max_leaves": 2**8,
             "tree_method": "hist",
             "predictor": "cpu_predictor",
         }

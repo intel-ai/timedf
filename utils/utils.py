@@ -430,7 +430,7 @@ def str_round(x):
 
 def memory_usage():
     process = psutil.Process(os.getpid())
-    return process.memory_info().rss / (1024 ** 3)  # GB units
+    return process.memory_info().rss / (1024**3)  # GB units
 
 
 def getsize(filename: str):
