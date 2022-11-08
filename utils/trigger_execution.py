@@ -1,5 +1,4 @@
 import pandas
-import numpy
 
 
 class Config:
