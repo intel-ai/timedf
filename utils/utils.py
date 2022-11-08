@@ -795,7 +795,7 @@ def run_benchmarks(
                         db, db_table_ml, reporting_fields_benchmark_ml, reporting_init_fields
                     )
 
-            # FIXME: looks like we can only submit last iteration
+            # TODO: Bug: we only submit last iteration https://github.com/intel-ai/omniscripts/issues/313
             if iter_num == iterations:
                 for result_etl in etl_results:
                     remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)

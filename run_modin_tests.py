@@ -6,22 +6,60 @@ from utils_base_env import execute_process, prepare_parser
 
 
 def parse_tasks(task_string: str, possible_tasks: Iterable[str]):
-    required_tasks = set(task_string.split(","))
+    required_tasks = task_string.split(",")
     possible_tasks = set(possible_tasks)
 
-    if len(required_tasks - possible_tasks) > 0:
+    if len(set(required_tasks) - possible_tasks) > 0:
         raise ValueError(
             f"Discovered unrecognized task type. Received {required_tasks}, but only"
             f"{possible_tasks} are supported"
         )
 
-    tasks = possible_tasks.intersection(required_tasks)
+    tasks = [t for t in required_tasks if t in required_tasks]
     if len(tasks) == 0:
         raise ValueError(
             f"Only {possible_tasks} are supported, received {required_tasks} cannot find any possible task"
         )
 
     return tasks
+
+
+def rerun_with_env(args):
+    """Activate the environment from the parameters and run the same script again without `--env_name -en` parameter"""
+    from environment import CondaEnvironment
+
+    print("PREPARING ENVIRONMENT")
+    conda_env = CondaEnvironment(args.env_name)
+    conda_env.create(
+        python_version=args.python_version,
+        existence_check=args.env_check,
+        requirements_file=args.ci_requirements,
+        channel="conda-forge",
+    )
+    main_cmd = sys.argv.copy()
+    try:
+        env_name_idx = main_cmd.index("--env_name")
+    except ValueError:
+        env_name_idx = main_cmd.index("-en")
+    # drop env name: option and value
+    drop_env_name = env_name_idx + 2
+    main_cmd = ["python3"] + main_cmd[:env_name_idx] + main_cmd[drop_env_name:]
+    try:
+        data_file_idx = main_cmd.index("-data_file") + 1
+        # for some workloads, in the filename, we use "{", "}" characters that the shell
+        # itself can expands, for which our interface is not designed;
+        # "'" symbols disable expanding arguments by shell
+        main_cmd[data_file_idx] = f"'{main_cmd[data_file_idx]}'"
+    except ValueError:
+        pass
+
+    print(" ".join(main_cmd))
+    try:
+        # Rerun the command after activating the envirinment
+        conda_env.run(main_cmd)
+    finally:
+        if args and args.save_env is False:
+            conda_env.remove()
 
 
 def run_build_task(args):
@@ -113,50 +151,16 @@ def main(raw_args=None):
         )
 
     if args.env_name is not None:
-        from environment import CondaEnvironment
+        rerun_with_env(args)
+    else:
+        # just to ensure that we in right environment
+        execute_process(["conda", "env", "list"], print_output=True)
 
-        print("PREPARING ENVIRONMENT")
-        conda_env = CondaEnvironment(args.env_name)
-        conda_env.create(
-            python_version=args.python_version,
-            existence_check=args.env_check,
-            requirements_file=args.ci_requirements,
-            channel="conda-forge",
-        )
-        test_cmd = sys.argv.copy()
-        try:
-            env_name_idx = test_cmd.index("--env_name")
-        except ValueError:
-            env_name_idx = test_cmd.index("-en")
-        # drop env name: option and value
-        drop_env_name = env_name_idx + 2
-        test_cmd = ["python3"] + test_cmd[:env_name_idx] + test_cmd[drop_env_name:]
-        try:
-            data_file_idx = test_cmd.index("-data_file") + 1
-            # for some workloads, in the filename, we use "{", "}" characters that the shell
-            # itself can expands, for which our interface is not designed;
-            # "'" symbols disable expanding arguments by shell
-            test_cmd[data_file_idx] = f"'{test_cmd[data_file_idx]}'"
-        except ValueError:
-            pass
+        if "build" in tasks:
+            run_build_task(args)
 
-        print(" ".join(test_cmd))
-        try:
-            conda_env.run(test_cmd)
-        finally:
-            if args and args.save_env is False:
-                conda_env.remove()
-        # FIXME: why would we stop at this point?
-        return
-
-    # just to ensure that we in right environment
-    execute_process(["conda", "env", "list"], print_output=True)
-
-    if "build" in tasks:
-        run_build_task(args)
-
-    if "benchmark" in tasks:
-        run_benchmark_task(args)
+        if "benchmark" in tasks:
+            run_benchmark_task(args)
 
 
 if __name__ == "__main__":

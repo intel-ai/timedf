@@ -7,24 +7,19 @@ from typing import Any, Iterable, Tuple, Union, Dict
 import numpy
 import pandas
 
-from utils import (
-    check_support,
-    import_pandas_into_module_namespace,
-    load_data_modin_on_omnisci,
-    print_results,
-)
+from utils import check_support, import_pandas_into_module_namespace, print_results
 
 
 class Config:
-    MODIN_IMPL = os.getenv("MODIN_IMPL")
-    MODIN_STORAGE_FORMAT = os.getenv("MODIN_STORAGE_FORMAT")
-    MODIN_ENGINE = os.getenv("MODIN_ENGINE")
+    MODIN_IMPL = None
+    MODIN_STORAGE_FORMAT = None
+    MODIN_ENGINE = None
 
     @staticmethod
-    def init():
-        Config.MODIN_IMPL = os.getenv("MODIN_IMPL")
-        Config.MODIN_STORAGE_FORMAT = os.getenv("MODIN_STORAGE_FORMAT")
-        Config.MODIN_ENGINE = os.getenv("MODIN_ENGINE")
+    def init(MODIN_IMPL, MODIN_STORAGE_FORMAT, MODIN_ENGINE):
+        Config.MODIN_IMPL = MODIN_IMPL
+        Config.MODIN_STORAGE_FORMAT = MODIN_STORAGE_FORMAT
+        Config.MODIN_ENGINE = MODIN_ENGINE
 
 
 def get_pd():
@@ -138,8 +133,8 @@ def clean(ddf, keep_cols: Iterable):
 def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_omniscidb_mode: bool):
     pd = get_pd()
 
-    columns_names = list(col2dtype)
-    columns_types = [col2dtype[c] for c in columns_names]
+    # columns_names = list(col2dtype)
+    # columns_types = [col2dtype[c] for c in columns_names]
     is_gz = ".gz" in filepath.suffixes
 
     if is_omniscidb_mode:
@@ -148,14 +143,16 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_omnis
                 "Modin_on_omnisci mode doesn't support import of compressed files yet"
             )
 
-        df = load_data_modin_on_omnisci(
-            filename=filepath,
-            columns_names=columns_names,
-            columns_types=columns_types,
-            parse_dates=parse_dates,
-            skiprows=1,
-            pd=pd,
-        )
+        # df = load_data_modin_on_omnisci(
+        #     filename=filepath,
+        #     columns_names=columns_names,
+        #     columns_types=columns_types,
+        #     parse_dates=parse_dates,
+        #     skiprows=1,
+        #     pd=pd,
+        # )
+        df = pd.read_csv(filepath, dtype=col2dtype, parse_dates=parse_dates)
+
     else:
         df = pd.read_csv(
             filepath,
@@ -365,18 +362,7 @@ def train(data: dict, use_modin_xgb: bool):
     return None
 
 
-def compute_skip_rows(gpu_memory):
-    # count rows inside test_set.csv
-    test_rows = 453653104
-
-    overhead = 1.2
-    skip_rows = int((1 - gpu_memory / (32.0 * overhead)) * test_rows)
-    return skip_rows
-
-
 def run_benchmark(parameters):
-    # Update config in case some envs changed after the import
-    Config.init()
     # FIXME: what is that??
     check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
 
@@ -384,14 +370,17 @@ def run_benchmark(parameters):
     parameters["gpu_memory"] = parameters["gpu_memory"] or 16
     parameters["no_ml"] = parameters["no_ml"] or False
 
-    # FIXME: do we need this?
-    # skip_rows = compute_skip_rows(parameters["gpu_memory"])
-
     import_pandas_into_module_namespace(
         namespace=run_benchmark.__globals__,
         mode=parameters["pandas_mode"],
         ray_tmpdir=parameters["ray_tmpdir"],
         ray_memory=parameters["ray_memory"],
+    )
+    # Update config in case some envs changed after the import
+    Config.init(
+        MODIN_IMPL="pandas" if parameters["pandas_mode"] == "Pandas" else "modin",
+        MODIN_STORAGE_FORMAT=os.getenv("MODIN_IMPL"),
+        MODIN_ENGINE=os.getenv("MODIN_ENGINE"),
     )
 
     benchmark2time = {}
@@ -403,8 +392,6 @@ def run_benchmark(parameters):
     df, benchmark2time["filter_df"] = filter_df(df)
     df, benchmark2time["feature_engineering"] = feature_engineering(df)
     print_results(results=benchmark2time, backend=parameters["pandas_mode"], unit="s")
-
-    # benchmark2time["Backend"] = parameters["pandas_mode"]
 
     backend_name = parameters["pandas_mode"]
     if not parameters["no_ml"]:
