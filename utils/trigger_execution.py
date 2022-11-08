@@ -46,6 +46,7 @@ def execute(df: pandas.DataFrame, trigger_hdk_import: bool = False):
     trigger_hdk_import : bool, default: False
         Whether `df` are obtained by import with HDK engine.
     """
+    df.shape
     if trigger_hdk_import:
         trigger_import(df)
         return
@@ -75,10 +76,11 @@ def execute(df: pandas.DataFrame, trigger_hdk_import: bool = False):
 
     elif Config.MODIN_IMPL == "pandas":
         pass
+    else:
+        raise ValueError(f"Unknown modin implementation used {Config.MODIN_IMPL}")
 
 
 def trigger_execution(*dfs):
     """Utility function to trigger execution for lazy pd libraries."""
     for df in dfs:
-        if not isinstance(df, (pandas.DataFrame, pandas.Series, numpy.ndarray)):
-            execute(df)
+        execute(df)
