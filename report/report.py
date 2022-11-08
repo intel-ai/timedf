@@ -51,7 +51,6 @@ class DbReport:
         self.__predefined_fields = {
             "id": "BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT",
             "ServerName": "VARCHAR(500) NOT NULL",
-            # "CommitHash": "VARCHAR(500) NOT NULL",
             "date": "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
             # System parameters
             "Architecture": "VARCHAR(500) NOT NULL",
