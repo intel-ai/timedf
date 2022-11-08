@@ -4,96 +4,17 @@ from timeit import default_timer as timer
 from pathlib import Path
 from typing import Any, Iterable, Tuple, Union, Dict
 
-import numpy
-import pandas
-
-from utils import check_support, import_pandas_into_module_namespace, print_results
-
-
-class Config:
-    MODIN_IMPL = None
-    MODIN_STORAGE_FORMAT = None
-    MODIN_ENGINE = None
-
-    @staticmethod
-    def init(MODIN_IMPL, MODIN_STORAGE_FORMAT, MODIN_ENGINE):
-        Config.MODIN_IMPL = MODIN_IMPL
-        Config.MODIN_STORAGE_FORMAT = MODIN_STORAGE_FORMAT
-        Config.MODIN_ENGINE = MODIN_ENGINE
+from utils import (
+    check_support,
+    import_pandas_into_module_namespace,
+    print_results,
+    trigger_execution,
+    Config,
+)
 
 
 def get_pd():
     return run_benchmark.__globals__["pd"]
-
-
-def trigger_import(*dfs):
-    """
-    Trigger import execution for DataFrames obtained by HDK engine.
-    Parameters
-    ----------
-    *dfs : iterable
-        DataFrames to trigger import.
-    """
-    if Config.MODIN_STORAGE_FORMAT != "hdk" or Config.MODIN_IMPL == "pandas":
-        return
-
-    from modin.experimental.core.execution.native.implementations.hdk_on_native.db_worker import (
-        DbWorker,
-    )
-
-    for df in dfs:
-        df.shape  # to trigger real execution
-        df._query_compiler._modin_frame._partitions[0][0].frame_id = DbWorker().import_arrow_table(
-            df._query_compiler._modin_frame._partitions[0][0].get()
-        )  # to trigger real execution
-
-
-def execute(df: pandas.DataFrame, trigger_hdk_import: bool = False):
-    """
-    Make sure the calculations are finished.
-    Parameters
-    ----------
-    df : modin.pandas.DataFrame or pandas.Datarame
-        DataFrame to be executed.
-    trigger_hdk_import : bool, default: False
-        Whether `df` are obtained by import with HDK engine.
-    """
-    if trigger_hdk_import:
-        trigger_import(df)
-        return
-
-    if Config.MODIN_IMPL == "modin":
-        if Config.MODIN_STORAGE_FORMAT == "hdk":
-            df._query_compiler._modin_frame._execute()
-            return
-
-        partitions = df._query_compiler._modin_frame._partitions.flatten()
-        if len(partitions) > 0 and hasattr(partitions[0], "wait"):
-            all(map(lambda partition: partition.wait(), partitions))
-            return
-
-        # compatibility with old Modin versions
-        all(map(lambda partition: partition.drain_call_queue() or True, partitions))
-        if Config.MODIN_ENGINE == "ray":
-            from ray import wait
-
-            all(map(lambda partition: wait([partition._data]), partitions))
-        elif Config.MODIN_ENGINE == "dask":
-            from dask.distributed import wait
-
-            all(map(lambda partition: wait(partition._data), partitions))
-        elif Config.MODIN_ENGINE == "python":
-            pass
-
-    elif Config.MODIN_IMPL == "pandas":
-        pass
-
-
-def realize(*dfs):
-    """Utility function to trigger execution for lazy pd libraries."""
-    for df in dfs:
-        if not isinstance(df, (pandas.DataFrame, pandas.Series, numpy.ndarray)):
-            execute(df)
 
 
 def measure_time(func):
@@ -224,7 +145,7 @@ def load_data(dirpath: str, is_omniscidb_mode):
     df = pd.concat(dfs, ignore_index=True)
 
     # To trigger execution
-    realize(df)
+    trigger_execution(df)
 
     return df
 
@@ -275,7 +196,7 @@ def feature_engineering(df):
     dlat = df["dropoff_latitude"] - df["pickup_latitude"]
     df["e_distance"] = dlon * dlon + dlat * dlat
 
-    realize(df)
+    trigger_execution(df)
 
     return df
 
@@ -308,7 +229,7 @@ def split(df):
     # Drop the fare amount from X_test
     x_test = x_test.drop("fare_amount", axis=1)
 
-    realize(x_train, y_train, x_test, y_test)
+    trigger_execution(x_train, y_train, x_test, y_test)
 
     return {"x_train": x_train, "x_test": x_test, "y_train": y_train, "y_test": y_test}
 
@@ -319,13 +240,6 @@ def train(data: dict, use_modin_xgb: bool):
     if use_modin_xgb:
         import modin.experimental.xgboost as xgb
 
-        # import modin.pandas as pd
-
-        # FIXME: why is that?
-        # X_train = pd.DataFrame(X_train)
-        # y_train = pd.Series(y_train)
-        # X_test = pd.DataFrame(X_test)
-        # y_test = pd.Series(y_test)
     else:
         import xgboost as xgb
 
@@ -358,12 +272,11 @@ def train(data: dict, use_modin_xgb: bool):
     # prediction = pd.Series(booster.predict(xgb.DMatrix(X_test)))
 
     actual = data["y_test"]["fare_amount"].reset_index(drop=True)
-    realize(actual, prediction)
+    trigger_execution(actual, prediction)
     return None
 
 
 def run_benchmark(parameters):
-    # FIXME: what is that??
     check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
 
     # parameters["data_path"] = parameters["data_file"]
@@ -409,4 +322,4 @@ def run_benchmark(parameters):
 
     benchmark2time["Backend"] = backend_name
 
-    return {"ETL": [benchmark2time], "ML": [None]}
+    return {"ETL": [benchmark2time], "ML": []}
