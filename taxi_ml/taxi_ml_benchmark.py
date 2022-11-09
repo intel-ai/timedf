@@ -291,7 +291,7 @@ def run_benchmark(parameters):
     # Update config in case some envs changed after the import
     Config.init(
         MODIN_IMPL="pandas" if parameters["pandas_mode"] == "Pandas" else "modin",
-        MODIN_STORAGE_FORMAT=os.getenv("MODIN_IMPL"),
+        MODIN_STORAGE_FORMAT=os.getenv("MODIN_STORAGE_FORMAT"),
         MODIN_ENGINE=os.getenv("MODIN_ENGINE"),
     )
 
