@@ -15,7 +15,7 @@ def parse_tasks(task_string: str, possible_tasks: Iterable[str]):
             f"{possible_tasks} are supported"
         )
 
-    tasks = [t for t in required_tasks if t in required_tasks]
+    tasks = [t for t in required_tasks if t in possible_tasks]
     if len(tasks) == 0:
         raise ValueError(
             f"Only {possible_tasks} are supported, received {required_tasks} cannot find any possible task"
