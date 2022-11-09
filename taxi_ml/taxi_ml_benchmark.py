@@ -3,6 +3,7 @@ from collections import OrderedDict
 from timeit import default_timer as timer
 from pathlib import Path
 from typing import Any, Iterable, Tuple, Union, Dict
+from itertools import islice
 
 from utils import (
     check_support,
@@ -18,7 +19,6 @@ def get_pd():
 
 
 def measure_time(func):
-    # @wraps(func)
     def wrapper(*args, **kwargs) -> Union[float, Tuple[Any, float]]:
         start = timer()
         res = func(*args, **kwargs)
@@ -52,40 +52,23 @@ def clean(ddf, keep_cols: Iterable):
 
 
 def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_omniscidb_mode: bool):
-    pd = get_pd()
-
-    # columns_names = list(col2dtype)
-    # columns_types = [col2dtype[c] for c in columns_names]
     is_gz = ".gz" in filepath.suffixes
-
-    if is_omniscidb_mode:
-        if is_gz:
-            raise NotImplementedError(
-                "Modin_on_omnisci mode doesn't support import of compressed files yet"
-            )
-
-        # df = load_data_modin_on_omnisci(
-        #     filename=filepath,
-        #     columns_names=columns_names,
-        #     columns_types=columns_types,
-        #     parse_dates=parse_dates,
-        #     skiprows=1,
-        #     pd=pd,
-        # )
-        df = pd.read_csv(filepath, dtype=col2dtype, parse_dates=parse_dates)
-
-    else:
-        df = pd.read_csv(
-            filepath,
-            dtype=col2dtype,
-            parse_dates=parse_dates,
-            # use_gzip=is_gz,
+    if is_omniscidb_mode and is_gz:
+        raise NotImplementedError(
+            "Modin_on_omnisci mode doesn't support import of compressed files yet"
         )
-    return df
+
+    pd = get_pd()
+    return pd.read_csv(
+        filepath,
+        dtype=col2dtype,
+        parse_dates=parse_dates,
+        use_gzip=is_gz,
+    )
 
 
 @measure_time
-def load_data(dirpath: str, is_omniscidb_mode):
+def load_data(dirpath: str, is_omniscidb_mode, debug=False):
     dirpath: Path = Path(dirpath.strip("'\""))
     data_types_2014 = OrderedDict(
         [
@@ -135,8 +118,7 @@ def load_data(dirpath: str, is_omniscidb_mode):
                     ),
                     keep_cols,
                 )
-                for filename in list((dirpath / name).iterdir())
-                # for filename in list((dirpath / name).iterdir())[:2]
+                for filename in islice((dirpath / name).iterdir(), 2 if debug else None)
             ]
         )
 
@@ -235,7 +217,7 @@ def split(df):
 
 
 @measure_time
-def train(data: dict, use_modin_xgb: bool):
+def train(data: dict, use_modin_xgb: bool, debug=False):
 
     if use_modin_xgb:
         import modin.experimental.xgboost as xgb
@@ -257,8 +239,7 @@ def train(data: dict, use_modin_xgb: bool):
             "tree_method": "hist",
         },
         dtrain,
-        num_boost_round=100,
-        # num_boost_round=10,
+        num_boost_round=10 if debug else 100,
         evals=[(dtrain, "train")],
     )
 
@@ -295,11 +276,12 @@ def run_benchmark(parameters):
         MODIN_ENGINE=os.getenv("MODIN_ENGINE"),
     )
 
-    benchmark2time = {}
+    debug = bool(os.getenv("DEBUG", False))
 
+    benchmark2time = {}
     is_omniscidb_mode = parameters["pandas_mode"] == "Modin_on_omnisci"
     df, benchmark2time["load_data"] = load_data(
-        parameters["data_file"], is_omniscidb_mode=is_omniscidb_mode
+        parameters["data_file"], is_omniscidb_mode=is_omniscidb_mode, debug=debug
     )
     df, benchmark2time["filter_df"] = filter_df(df)
     df, benchmark2time["feature_engineering"] = feature_engineering(df)
@@ -312,13 +294,13 @@ def run_benchmark(parameters):
         data, benchmark2time["split_time"] = split(df)
         data: Dict[str, Any]
 
-        benchmark2time["train_time"] = train(data, use_modin_xgb=parameters["use_modin_xgb"])
+        benchmark2time["train_time"] = train(
+            data, use_modin_xgb=parameters["use_modin_xgb"], debug=debug
+        )
 
         print_results(results=benchmark2time, backend=parameters["pandas_mode"], unit="s")
 
         if parameters["use_modin_xgb"]:
             backend_name = backend_name + "_modin_xgb"
 
-    benchmark2time["Backend"] = backend_name
-
-    return {"ETL": [benchmark2time], "ML": []}
+    return {"ETL": [{**benchmark2time, "Backend": backend_name}], "ML": []}
