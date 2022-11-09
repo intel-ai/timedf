@@ -155,7 +155,7 @@ def filter_df(df):
         (dropoff_datetime > pickup_datetime)"
     )
 
-    return df.reset_index(drop=True)
+    return trigger_execution(df.reset_index(drop=True))
 
 
 @measure_time
