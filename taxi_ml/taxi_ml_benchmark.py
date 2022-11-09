@@ -63,7 +63,6 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_omnis
         filepath,
         dtype=col2dtype,
         parse_dates=parse_dates,
-        use_gzip=is_gz,
     )
 
 
