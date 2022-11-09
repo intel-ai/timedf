@@ -280,7 +280,6 @@ def run_benchmark(parameters):
     check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
 
     # parameters["data_path"] = parameters["data_file"]
-    parameters["gpu_memory"] = parameters["gpu_memory"] or 16
     parameters["no_ml"] = parameters["no_ml"] or False
 
     import_pandas_into_module_namespace(
