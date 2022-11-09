@@ -55,7 +55,7 @@ def rerun_with_env(args):
 
     print(" ".join(main_cmd))
     try:
-        # Rerun the command after activating the envirinment
+        # Rerun the command after activating the environment
         conda_env.run(main_cmd)
     finally:
         if args and args.save_env is False:
