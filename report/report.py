@@ -7,6 +7,16 @@ from typing import Dict
 
 
 def enrich_predefined_col2value(col2value):
+    def get_basic_host_dict():
+        return {
+            "ServerName": os.environ.get("HOST_NAME", socket.gethostname()),
+            "Architecture": platform.architecture()[0],
+            "Machine": platform.machine(),
+            "Node": platform.node(),
+            "OS": platform.system(),
+            "CPUCount": os.cpu_count(),
+        }
+
     def match_and_assign(pattern, output):
         matches = re.search(pattern, output)
         if matches is None:
@@ -52,12 +62,7 @@ def enrich_predefined_col2value(col2value):
         return {t: match_and_assign(p, output) for t, p in proc_meminfo_patterns.items()}
 
     return {
-        "ServerName": os.environ.get("HOST_NAME", socket.gethostname()),
-        "Architecture": platform.architecture()[0],
-        "Machine": platform.machine(),
-        "Node": platform.node(),
-        "OS": platform.system(),
-        "CPUCount": os.cpu_count(),
+        **get_basic_host_dict(),
         **get_lspcu_dict(),
         **get_meminfo_dict(),
         **col2value,
@@ -87,22 +92,24 @@ def get_create_statement(table_name: str, benchmark_specific_col2sql_type, prede
 def get_insert_statement(table_name, col2val):
     def quote_string(n):
         if type(n) is str:
-            return "'" + n + "'"
-        elif type(n) is float:
-            if n == float("inf"):
-                return "4294967295"
-        return str(n)
+            return f"'{n}'"
+        elif type(n) is float and n == float("inf"):
+            return "4294967295"
+        else:
+            return str(n)
 
-    statement = "INSERT INTO %s (" % table_name
-    for n in list(col2val.keys())[:-1]:
-        statement += n + ","
-    statement += list(col2val)[-1] + ") VALUES("
-    for n in list(col2val.values())[:-1]:
-        statement += quote_string(n) + ","
-    n = list(col2val.values())[-1]
-    statement += quote_string(n) + ");"
-    return statement
-
+    def generate_insert_statement(table_name, col2val):
+        return "\n".join(
+            [
+                f"INSERT INTO {table_name} (",
+                ','.join(col2val),
+                ') VALUES(',
+                ','.join([quote_string(val) for _, val in col2val.items()]),
+                ');',
+            ]
+        )
+    return generate_insert_statement(table_name, col2val)
+    
 
 class DbReport:
     def __init__(
