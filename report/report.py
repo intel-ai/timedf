@@ -102,14 +102,15 @@ def get_insert_statement(table_name, col2val):
         return "\n".join(
             [
                 f"INSERT INTO {table_name} (",
-                ','.join(col2val),
-                ') VALUES(',
-                ','.join([quote_string(val) for _, val in col2val.items()]),
-                ');',
+                ",".join(col2val),
+                ") VALUES(",
+                ",".join([quote_string(val) for _, val in col2val.items()]),
+                ");",
             ]
         )
+
     return generate_insert_statement(table_name, col2val)
-    
+
 
 class DbReport:
     def __init__(
