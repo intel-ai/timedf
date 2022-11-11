@@ -3,7 +3,7 @@ import platform
 import re
 import socket
 import subprocess
-from typing import Dict, Any, Union, Iterable
+from typing import Dict, Any, Union, Iterable, Pattern
 
 
 def enrich_predefined_col2value(col2value: Dict[str, str]) -> Dict[str, str]:
@@ -17,7 +17,7 @@ def enrich_predefined_col2value(col2value: Dict[str, str]) -> Dict[str, str]:
             "CPUCount": os.cpu_count(),
         }
 
-    def match_and_assign(pattern: Union[str, re.Pattern[str]], output: str) -> str:
+    def match_and_assign(pattern: Union[str, Pattern[str]], output: str) -> str:
         matches = re.search(pattern, output)
         if matches is not None and len(matches.groups()) == 1:
             return matches.groups()[0]
