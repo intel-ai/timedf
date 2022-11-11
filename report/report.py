@@ -3,11 +3,11 @@ import platform
 import re
 import socket
 import subprocess
-from typing import Dict
+from typing import Dict, Any, Union, Iterable
 
 
-def enrich_predefined_col2value(col2value: dict) -> dict:
-    def get_basic_host_dict():
+def enrich_predefined_col2value(col2value: Dict[str, str]) -> Dict[str, str]:
+    def get_basic_host_dict() -> Dict[str, Any]:
         return {
             "ServerName": os.environ.get("HOST_NAME", socket.gethostname()),
             "Architecture": platform.architecture()[0],
@@ -17,7 +17,7 @@ def enrich_predefined_col2value(col2value: dict) -> dict:
             "CPUCount": os.cpu_count(),
         }
 
-    def match_and_assign(pattern: str, output: str) -> str:
+    def match_and_assign(pattern: Union[str, re.Pattern[str]], output: str) -> str:
         matches = re.search(pattern, output)
         if matches is None:
             return "N/A"
@@ -26,7 +26,7 @@ def enrich_predefined_col2value(col2value: dict) -> dict:
         else:
             return "N/A"
 
-    def get_lspcu_dict():
+    def get_lspcu_dict() -> Dict[str, str]:
         """System data from lscpu"""
 
         lscpu_patterns = {
@@ -43,7 +43,7 @@ def enrich_predefined_col2value(col2value: dict) -> dict:
         output = str(data.communicate()[0].strip().decode())
         return {t: match_and_assign(p, output) for t, p in lscpu_patterns.items()}
 
-    def get_meminfo_dict():
+    def get_meminfo_dict() -> Dict[str, str]:
         """System data from /proc/meminfo"""
 
         proc_meminfo_patterns = {
@@ -69,7 +69,11 @@ def enrich_predefined_col2value(col2value: dict) -> dict:
     }
 
 
-def get_create_statement(table_name: str, benchmark_specific_col2sql_type: dict, predefined_cols: list) -> str:
+def get_create_statement(
+    table_name: str,
+    benchmark_specific_col2sql_type: Dict[str, str],
+    predefined_cols: Iterable[str],
+) -> str:
     def generate_create_statement(table_name: str, col2sql_spec: dict) -> str:
         return "\n".join(
             [
@@ -89,22 +93,22 @@ def get_create_statement(table_name: str, benchmark_specific_col2sql_type: dict,
     return generate_create_statement(table_name, col2sql_spec)
 
 
-def get_insert_statement(table_name: str, col2val: dict) -> str:
-    def quote_string(string_to_quote: str) -> str:
-        if type(n) is str:
-            return f"'{string_to_quote}'"
-        elif type(string_to_quote) is float and string_to_quote == float("inf"):
+def get_insert_statement(table_name: str, col2val: Dict[str, str]) -> str:
+    def val2string(val) -> str:
+        if type(val) is str:
+            return f"'{val}'"
+        elif type(val) is float and val == float("inf"):
             return "4294967295"
         else:
-            return str(string_to_quote)
+            return str(val)
 
-    def generate_insert_statement(table_name: str, col2val: dict) -> str:
+    def generate_insert_statement(table_name: str, col2val: Dict[str, Any]) -> str:
         return "\n".join(
             [
                 f"INSERT INTO {table_name} (",
                 ",".join(col2val),
                 ") VALUES(",
-                ",".join([quote_string(val) for _, val in col2val.items()]),
+                ",".join([val2string(val) for _, val in col2val.items()]),
                 ");",
             ]
         )
@@ -149,7 +153,7 @@ class DbReport:
         print("Executing statement", statement)
         self._database.cursor().execute(statement)
 
-    def submit(self, benchmark_col2value: dict):
+    def submit(self, benchmark_col2value: Dict[str, Any]):
         statement = get_insert_statement(
             table_name=self._table_name,
             col2val={**self._predefined_col2value, **benchmark_col2value},
