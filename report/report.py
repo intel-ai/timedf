@@ -6,7 +6,7 @@ import subprocess
 from typing import Dict
 
 
-def enrich_predefined_col2value(col2value):
+def enrich_predefined_col2value(col2value: dict) -> dict:
     def get_basic_host_dict():
         return {
             "ServerName": os.environ.get("HOST_NAME", socket.gethostname()),
@@ -17,7 +17,7 @@ def enrich_predefined_col2value(col2value):
             "CPUCount": os.cpu_count(),
         }
 
-    def match_and_assign(pattern, output):
+    def match_and_assign(pattern: str, output: str) -> str:
         matches = re.search(pattern, output)
         if matches is None:
             return "N/A"
@@ -69,8 +69,8 @@ def enrich_predefined_col2value(col2value):
     }
 
 
-def get_create_statement(table_name: str, benchmark_specific_col2sql_type, predefined_cols):
-    def generate_create_statement(table_name, col2sql_spec):
+def get_create_statement(table_name: str, benchmark_specific_col2sql_type: dict, predefined_cols: list) -> str:
+    def generate_create_statement(table_name: str, col2sql_spec: dict) -> str:
         return "\n".join(
             [
                 f"CREATE TABLE IF NOT EXISTS {table_name} (",
@@ -89,16 +89,16 @@ def get_create_statement(table_name: str, benchmark_specific_col2sql_type, prede
     return generate_create_statement(table_name, col2sql_spec)
 
 
-def get_insert_statement(table_name, col2val):
-    def quote_string(n):
+def get_insert_statement(table_name: str, col2val: dict) -> str:
+    def quote_string(string_to_quote: str) -> str:
         if type(n) is str:
-            return f"'{n}'"
-        elif type(n) is float and n == float("inf"):
+            return f"'{string_to_quote}'"
+        elif type(string_to_quote) is float and string_to_quote == float("inf"):
             return "4294967295"
         else:
-            return str(n)
+            return str(string_to_quote)
 
-    def generate_insert_statement(table_name, col2val):
+    def generate_insert_statement(table_name: str, col2val: dict) -> str:
         return "\n".join(
             [
                 f"INSERT INTO {table_name} (",
@@ -149,7 +149,7 @@ class DbReport:
         print("Executing statement", statement)
         self._database.cursor().execute(statement)
 
-    def submit(self, benchmark_col2value):
+    def submit(self, benchmark_col2value: dict):
         statement = get_insert_statement(
             table_name=self._table_name,
             col2val={**self._predefined_col2value, **benchmark_col2value},
