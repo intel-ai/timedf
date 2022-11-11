@@ -19,9 +19,7 @@ def enrich_predefined_col2value(col2value: Dict[str, str]) -> Dict[str, str]:
 
     def match_and_assign(pattern: Union[str, re.Pattern[str]], output: str) -> str:
         matches = re.search(pattern, output)
-        if matches is None:
-            return "N/A"
-        if len(matches.groups()) == 1:
+        if matches is not None and len(matches.groups()) == 1:
             return matches.groups()[0]
         else:
             return "N/A"
