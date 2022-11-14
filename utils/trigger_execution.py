@@ -1,4 +1,5 @@
 import pandas
+import numpy
 
 
 class Config:
@@ -46,6 +47,10 @@ def execute(df: pandas.DataFrame, trigger_hdk_import: bool = False):
         Whether `df` are obtained by import with HDK engine.
     """
     df.shape
+
+    if isinstance(df, (pandas.DataFrame, numpy.ndarray)):
+        return
+
     if trigger_hdk_import:
         trigger_import(df)
         return

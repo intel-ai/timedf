@@ -73,7 +73,7 @@ def load_data(dirpath: str, is_omniscidb_mode, debug=False):
         [
             (" tolls_amount", "float64"),
             (" surcharge", "float64"),
-            (" store_and_fwd_flag", "object"),
+            # (" store_and_fwd_flag", "object"),
             (" tip_amount", "float64"),
             ("tolls_amount", "float64"),
         ]
@@ -117,7 +117,7 @@ def load_data(dirpath: str, is_omniscidb_mode, debug=False):
                     ),
                     keep_cols,
                 )
-                for filename in islice((dirpath / name).iterdir(), 2 if debug else None)
+                for filename in islice((dirpath / name).iterdir(), 1 if debug else None)
             ]
         )
 
