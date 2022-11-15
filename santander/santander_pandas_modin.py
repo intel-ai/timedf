@@ -129,9 +129,6 @@ def run_benchmark(parameters):
     parameters["data_file"] = parameters["data_file"].replace("'", "")
     parameters["no_ml"] = parameters["no_ml"] or False
 
-    etl_times = None
-    ml_times = None
-
     var_cols = ["var_%s" % i for i in range(200)]
     columns_names = ["ID_code", "target"] + var_cols
     columns_types_pd = ["object", "int64"] + ["float64" for _ in range(200)]
@@ -156,6 +153,7 @@ def run_benchmark(parameters):
     print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
     etl_times["Backend"] = parameters["pandas_mode"]
 
+    ml_times = None
     if not parameters["no_ml"]:
         ml_scores, ml_times = ml(
             ml_data=ml_data, target="target", ml_keys=ml_keys, ml_score_keys=ml_score_keys
@@ -165,4 +163,4 @@ def run_benchmark(parameters):
         print_results(results=ml_scores, backend=parameters["pandas_mode"])
         ml_scores["Backend"] = parameters["pandas_mode"]
 
-    return {"ETL": [etl_times], "ML": [ml_times]}
+    return {"ETL": [etl_times], "ML": [ml_times] if ml_times is not None else []}
