@@ -78,12 +78,12 @@ def q3(df, pandas_mode):
     if pandas_mode != "Modin_on_omnisci":
         transformed = pd.DataFrame(
             {
-                "passenger_count": df["passenger_count"],
                 "pickup_datetime": df["pickup_datetime"].dt.year,
+                "passenger_count": df["passenger_count"],
             }
         )
         q3_output = (
-            transformed.groupby(["passenger_count", "pickup_datetime"]).size().reset_index()
+            transformed.groupby(["pickup_datetime", "passenger_count"]).size().reset_index()
         )
     else:
         df["pickup_datetime"] = df["pickup_datetime"].dt.year
