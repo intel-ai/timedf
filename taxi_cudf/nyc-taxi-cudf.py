@@ -127,9 +127,7 @@ def read(filename):
 
     dtypes = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
     all_but_dates = {
-        col: valtype
-        for (col, valtype) in dtypes.items()
-        if valtype not in ["timestamp"]
+        col: valtype for (col, valtype) in dtypes.items() if valtype not in ["timestamp"]
     }
     dates_only = [col for (col, valtype) in dtypes.items() if valtype in ["timestamp"]]
 
@@ -174,9 +172,7 @@ def q4_hdk(df):
         df.groupby(["passenger_count", "pickup_datetime", "trip_distance"], sort=False)
         .size()
         .reset_index()
-        .sort_values(
-            by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False]
-        )
+        .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
     )
     q4_pandas_output.shape  # to trigger real execution
     return q4_pandas_output
@@ -185,7 +181,7 @@ def q4_hdk(df):
 def main():
     if len(sys.argv) != 2:
         print(
-            f"USAGE: docker run --rm -v /path/to/dataset:/dataset python nyc-taxi-hdk.py <data file name starting with /dataset>"
+            f'{"USAGE: docker run --rm -v /path/to/dataset:/dataset python nyc-taxi-hdk.py <data file name starting with /dataset>"}'
         )
         return
     df = read(sys.argv[1])
