@@ -134,25 +134,25 @@ def load_data(dirpath: str, is_omniscidb_mode, debug=False):
 @measure_time
 def filter_df(df):
     # apply a list of filter conditions to throw out records with missing or outlier values
-    df = df.query(
-        "(fare_amount > 1) & \
-        (fare_amount < 500) & \
-        (passenger_count > 0) & \
-        (passenger_count < 6) & \
-        (pickup_longitude > -75) & \
-        (pickup_longitude < -73) & \
-        (dropoff_longitude > -75) & \
-        (dropoff_longitude < -73) & \
-        (pickup_latitude > 40) & \
-        (pickup_latitude < 42) & \
-        (dropoff_latitude > 40) & \
-        (dropoff_latitude < 42) & \
-        (trip_distance > 0) & \
-        (trip_distance < 500) & \
-        ((trip_distance <= 50) | (fare_amount >= 50)) & \
-        ((trip_distance >= 10) | (fare_amount <= 300)) & \
-        (dropoff_datetime > pickup_datetime)"
-    )
+    df = df[
+        (df.fare_amount > 1)
+        & (df.fare_amount < 500)
+        & (df.passenger_count > 0)
+        & (df.passenger_count < 6)
+        & (df.pickup_longitude > -75)
+        & (df.pickup_longitude < -73)
+        & (df.dropoff_longitude > -75)
+        & (df.dropoff_longitude < -73)
+        & (df.pickup_latitude > 40)
+        & (df.pickup_latitude < 42)
+        & (df.dropoff_latitude > 40)
+        & (df.dropoff_latitude < 42)
+        & (df.trip_distance > 0)
+        & (df.trip_distance < 500)
+        & ((df.trip_distance <= 50) | (df.fare_amount >= 50))
+        & ((df.trip_distance >= 10) | (df.fare_amount <= 300))
+        & (df.dropoff_datetime > df.pickup_datetime)
+    ]
 
     df = df.reset_index(drop=True)
     trigger_execution(df)

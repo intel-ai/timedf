@@ -228,9 +228,11 @@ def prepare_parser():
     )
     benchmark.add_argument(
         "-pandas_mode",
+        # Maybe need to fix it
         choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python", "Modin_on_omnisci"],
         default="Pandas",
         help="Specifies which version of Pandas to use: "
+        # Maybe need to fix it
         "plain Pandas, Modin runing on Ray or on Dask or on Omnisci",
     )
     benchmark.add_argument(
@@ -276,9 +278,11 @@ def prepare_parser():
     add_mysql_arguments(mysql, etl_ml_tables=True)
     # Additional information
     commits.add_argument(
+        # maybe need to fix this
         "-commit_omnisci",
         dest="commit_omnisci",
         default="1234567890123456789012345678901234567890",
+        # maybe need to fix this
         help="Omnisci commit hash used for tests.",
     )
     commits.add_argument(
