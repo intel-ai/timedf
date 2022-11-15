@@ -9,9 +9,9 @@ OmnisciDB server which is used in corresponding Modin backend often requires a l
 
 ## Main benchmarks launching script
 
-Main script is called `run_modin_tests.py`.
-Script automatically creates conda environment if it doesn't exist or you want to recreate it (```--env_check``` flag controls this - ```False``` means env recreation).
-All subsequent work is being done in created conda environment. Environment can be removed or saved after executing (```--save_env``` flag is responsbile for this - ```False``` means removal).
+Main script is called `run_modin_tests.py`. ```run_modin_tests.py -h``` will show all script's parameters. 
+Script automatically creates conda environment if it doesn't exist or you want to recreate it.
+All subsequent work is being done in created conda environment. Environment can be removed or saved after executing.
 Results can be stored in MySQL database and visualized using Grafana charts.
 
 Sample run taxi benchmark command line (ci_requirements.yml should contain description for ```modin-test``` env):
