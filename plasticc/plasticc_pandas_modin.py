@@ -332,7 +332,7 @@ def run_benchmark(parameters):
     print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
     etl_times["Backend"] = parameters["pandas_mode"]
 
-    ml_times = None
+    ml_results = []
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
         ml_times = ml(train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"])
@@ -343,5 +343,6 @@ def run_benchmark(parameters):
             if not parameters["use_modin_xgb"]
             else parameters["pandas_mode"] + "_modin_xgb"
         )
-    
-    return {"ETL": [etl_times], "ML": [ml_times] if ml_times is not None else []}
+        ml_results.append(ml_times)
+
+    return {"ETL": [etl_times], "ML": ml_results}
