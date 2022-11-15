@@ -12,18 +12,9 @@
 # governing permissions and limitations under the License.
 
 import sys
-#from utils import measure  # not avail?!
-
-#import cudf, dask_cudf
 import cudf
 from timeit import default_timer as timer
 
-#from dask.distributed import Client, wait
-#from dask_cuda import LocalCUDACluster
-
-#cluster = LocalCUDACluster()
-#client = Client(cluster)
-#client
 
 def read(filename):
     columns_names = [
@@ -149,11 +140,10 @@ def read(filename):
         parse_dates=dates_only,
     )
 
-        
     # Read multiples files from directory
-    #import glob
-    #all_files = glob.glob("/data/datag/200M/*.csv")
-    #df = cudf.concat((cudf.read_csv(f, names=columns_names, dtype=all_but_dates, parse_dates=dates_only,) for f in all_files))	
+    # import glob
+    # all_files = glob.glob("/data/datag/200M/*.csv")
+    # df = cudf.concat((cudf.read_csv(f, names=columns_names, dtype=all_but_dates, parse_dates=dates_only,) for f in all_files))
 
     return df
 
@@ -216,10 +206,11 @@ def main():
     q4_hdk(df.copy())
     q4_time = timer() - t4
 
-    print("q1 time (ms)= ", q1_time*1e3)
-    print("q2 time (ms)= ", q2_time*1e3)
-    print("q3 time (ms)= ", q3_time*1e3)
-    print("q4 time (ms)= ", q4_time*1e3)
+    print("q1 time (ms)= ", q1_time * 1e3)
+    print("q2 time (ms)= ", q2_time * 1e3)
+    print("q3 time (ms)= ", q3_time * 1e3)
+    print("q4 time (ms)= ", q4_time * 1e3)
+
 
 if __name__ == "__main__":
     main()
