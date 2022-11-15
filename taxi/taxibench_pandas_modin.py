@@ -83,7 +83,7 @@ def q3(df, pandas_mode):
             }
         )
         q3_output = (
-            transformed.groupby(["pickup_datetime", "passenger_count"]).size().reset_index()
+            transformed.groupby(["pickup_datetime", "passenger_count"], as_index=False).size()
         )
     else:
         df["pickup_datetime"] = df["pickup_datetime"].dt.year
@@ -126,9 +126,8 @@ def q4(df, pandas_mode):
             }
         )
         q4_output = (
-            transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
+            transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"], as_index=False)
             .size()
-            .reset_index()
             .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
         )
     else:
