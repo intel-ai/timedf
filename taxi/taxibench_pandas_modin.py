@@ -78,13 +78,13 @@ def q3(df, pandas_mode):
     if pandas_mode != "Modin_on_omnisci":
         transformed = pd.DataFrame(
             {
-                "passenger_count": df["passenger_count"],
                 "pickup_datetime": df["pickup_datetime"].dt.year,
+                "passenger_count": df["passenger_count"],
             }
         )
-        q3_output = (
-            transformed.groupby(["pickup_datetime", "passenger_count"]).size().reset_index()
-        )
+        q3_output = transformed.groupby(
+            ["pickup_datetime", "passenger_count"], as_index=False
+        ).size()
     else:
         df["pickup_datetime"] = df["pickup_datetime"].dt.year
         q3_output = df.groupby(["passenger_count", "pickup_datetime"]).size()
@@ -126,10 +126,11 @@ def q4(df, pandas_mode):
             }
         )
         q4_output = (
-            transformed.groupby(["passenger_count", "pickup_datetime", "trip_distance"])
+            transformed.groupby(
+                ["passenger_count", "pickup_datetime", "trip_distance"], as_index=False
+            )
             .size()
-            .reset_index()
-            .sort_values(by=["pickup_datetime", 0], ascending=[True, False])
+            .sort_values(by=["pickup_datetime", "size"], ascending=[True, False])
         )
     else:
         df["pickup_datetime"] = df["pickup_datetime"].dt.year
