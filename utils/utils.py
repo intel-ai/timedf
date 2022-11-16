@@ -786,7 +786,7 @@ def run_benchmarks(
         "ModinCommitHash": commit_modin,
     }
     etl_reporter = ResultReporter(db_params, db_table_etl, predefined_fields, ["t_connect"])
-    ml_reporter = ResultReporter(db_params, db_table_ml, predefined_fields, tuple())
+    ml_reporter = ResultReporter(db_params, db_table_ml, predefined_fields, [])
 
     print(parameters)
     run_id = int(round(time.time()))
@@ -794,6 +794,10 @@ def run_benchmarks(
     for iter_num in range(1, iterations + 1):
         print(f"Iteration #{iter_num}")
         benchmark_results = run_benchmark(parameters)
+
+        # This is we do because some benchmarks miss ML part. It's a temporary solution, in the long run it's better to implement https://github.com/intel-ai/omniscripts/issues/317
+        if "ML" not in benchmark_results:
+            benchmark_results["ML"] = []
 
         additional_fields_for_reporting = {
             "ETL": {"Iteration": iter_num, "run_id": run_id},
