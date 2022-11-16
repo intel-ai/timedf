@@ -1,7 +1,9 @@
 import glob
 import os
 import time
+from typing import Dict, Iterable
 import warnings
+from dataclasses import dataclass
 from timeit import default_timer as timer
 from collections import OrderedDict
 import psutil
@@ -336,8 +338,7 @@ def timer_ms():
 
 def remove_fields_from_dict(dictonary, fields_to_remove):
     for key in fields_to_remove or ():
-        if key in dictonary:
-            dictonary.pop(key)
+        dictonary.pop(key, None)
 
 
 def convert_units(dict_to_convert, ignore_fields, unit="ms"):
@@ -617,6 +618,51 @@ def get_dir_size(start_path="."):
     return total_size
 
 
+@dataclass
+class DBParams:
+    server: str
+    port: int
+    user: str
+    password: str
+    name: str
+
+
+class ResultReporter:
+    def __init__(self, db_params: DBParams, table_name, predefined_fields, ignore_fields) -> None:
+        self.db_params = db_params
+        self.table_name = table_name
+        self.predefined_fields = predefined_fields
+        self.ignore_fields = ignore_fields
+        self.reporter = None
+
+    def _initialize_report(self, results):
+        """This function exists because currently we need the first result to talk to the database"""
+        from report import DbReport
+        import mysql.connector
+
+        self.db = mysql.connector.connect(
+            host=self.db_params.server,
+            port=self.db_params.port,
+            user=self.db_params.user,
+            passwd=self.db_params.password,
+            db=self.db_params.name,
+        )
+
+        benchmark_fields = {x: "VARCHAR(500) NOT NULL" for x in sum(map(list, results), [])}
+
+        self.reporter = DbReport(
+            self.db, self.table_name, benchmark_fields, self.predefined_fields
+        )
+
+    def report(self, results: Iterable[Dict[str, float]]):
+        if self.reporter is None:
+            self._initialize_report(results)
+
+        for result in results:
+            remove_fields_from_dict(result, self.ignore_fields)
+            self.reporter.submit(result)
+
+
 def run_benchmarks(
     bench_name: str,
     data_file: str,
@@ -708,8 +754,6 @@ def run_benchmarks(
         "taxi_ml": "taxi_ml",
     }
 
-    ignore_fields_for_bd_report_etl = ["t_connect"]
-    ignore_fields_for_bd_report_ml = []
     ignore_fields_for_results_unit_conversion = [
         "Backend",
         "dfiles_num",
@@ -733,10 +777,20 @@ def run_benchmarks(
         "extended_functionality": extended_functionality,
     }
 
-    etl_results = []
-    ml_results = []
+    db_params = DBParams(
+        server=db_server, port=db_port, user=db_user, password=db_pass, name=db_name
+    )
+    predefined_fields = {
+        "OmnisciCommitHash": commit_omnisci,
+        "OmniscriptsCommitHash": commit_omniscripts,
+        "ModinCommitHash": commit_modin,
+    }
+    etl_reporter = ResultReporter(db_params, db_table_etl, predefined_fields, ["t_connect"])
+    ml_reporter = ResultReporter(db_params, db_table_ml, predefined_fields, tuple())
+
     print(parameters)
     run_id = int(round(time.time()))
+
     for iter_num in range(1, iterations + 1):
         print(f"Iteration #{iter_num}")
         benchmark_results = run_benchmark(parameters)
@@ -754,53 +808,6 @@ def run_benchmarks(
         etl_results = list(etl_ml_results["ETL"])
         ml_results = list(etl_ml_results["ML"])
 
-        # Reporting to MySQL database
         if db_user is not None:
-            import mysql.connector
-            from report import DbReport
-
-            if iter_num == 1:
-                db = mysql.connector.connect(
-                    host=db_server, port=db_port, user=db_user, passwd=db_pass, db=db_name
-                )
-
-                reporting_init_fields = {
-                    "OmnisciCommitHash": commit_omnisci,
-                    "OmniscriptsCommitHash": commit_omniscripts,
-                    "ModinCommitHash": commit_modin,
-                }
-
-                reporting_fields_benchmark_etl = {
-                    x: "VARCHAR(500) NOT NULL" for x in etl_results[0]
-                }
-                if len(etl_results) != 1:
-                    reporting_fields_benchmark_etl.update(
-                        {x: "VARCHAR(500) NOT NULL" for x in etl_results[1]}
-                    )
-
-                db_reporter_etl = DbReport(
-                    db, db_table_etl, reporting_fields_benchmark_etl, reporting_init_fields
-                )
-
-                if len(ml_results) != 0:
-                    reporting_fields_benchmark_ml = {
-                        x: "VARCHAR(500) NOT NULL" for x in ml_results[0]
-                    }
-                    if len(ml_results) != 1:
-                        reporting_fields_benchmark_ml.update(
-                            {x: "VARCHAR(500) NOT NULL" for x in ml_results[1]}
-                        )
-
-                    db_reporter_ml = DbReport(
-                        db, db_table_ml, reporting_fields_benchmark_ml, reporting_init_fields
-                    )
-
-            # TODO: Bug: we only submit last iteration https://github.com/intel-ai/omniscripts/issues/313
-            if iter_num == iterations:
-                for result_etl in etl_results:
-                    remove_fields_from_dict(result_etl, ignore_fields_for_bd_report_etl)
-                    db_reporter_etl.submit(result_etl)
-
-                for result_ml in ml_results:
-                    remove_fields_from_dict(result_ml, ignore_fields_for_bd_report_ml)
-                    db_reporter_ml.submit(result_ml)
+            etl_reporter.report(etl_results)
+            ml_reporter.report(ml_results)

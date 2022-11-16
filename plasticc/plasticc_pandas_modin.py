@@ -320,9 +320,6 @@ def run_benchmark(parameters):
         ray_memory=parameters["ray_memory"],
     )
 
-    etl_times = None
-    ml_times = None
-
     train_final, test_final, etl_times = etl(
         dataset_path=parameters["data_file"],
         skip_rows=skip_rows,
@@ -335,6 +332,7 @@ def run_benchmark(parameters):
     print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
     etl_times["Backend"] = parameters["pandas_mode"]
 
+    ml_results = []
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
         ml_times = ml(train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"])
@@ -345,5 +343,6 @@ def run_benchmark(parameters):
             if not parameters["use_modin_xgb"]
             else parameters["pandas_mode"] + "_modin_xgb"
         )
+        ml_results.append(ml_times)
 
-    return {"ETL": [etl_times], "ML": [ml_times]}
+    return {"ETL": [etl_times], "ML": ml_results}

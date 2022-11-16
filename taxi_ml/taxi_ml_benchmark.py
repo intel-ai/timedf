@@ -245,7 +245,7 @@ def train(data: dict, use_modin_xgb: bool, debug=False):
             "tree_method": "hist",
         },
         dtrain,
-        num_boost_round=10 if debug else 100,
+        num_boost_round=3 if debug else 30,
         evals=[(dtrain, "train")],
     )
 
