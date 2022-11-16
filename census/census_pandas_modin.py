@@ -300,7 +300,7 @@ def run_benchmark(parameters):
     etl_times["Backend"] = parameters["pandas_mode"]
     etl_times["dataset_size"] = csv_size
 
-    ml_results = []
+    results = {"ETL": [etl_times]}
     if not parameters["no_ml"]:
         ml_scores, ml_times = ml(
             X=X,
@@ -316,6 +316,6 @@ def run_benchmark(parameters):
         ml_times["Backend"] = parameters["pandas_mode"]
         print_results(results=ml_scores, backend=parameters["pandas_mode"])
         ml_scores["Backend"] = parameters["pandas_mode"]
-        ml_results.append(ml_times)
+        results["ML"] = [ml_times]
 
-    return {"ETL": [etl_times], "ML": ml_results}
+    return results

@@ -796,8 +796,8 @@ def run_benchmarks(
         benchmark_results = run_benchmark(parameters)
 
         # This is we do because some benchmarks miss ML part. It's a temporary solution, in the long run it's better to implement https://github.com/intel-ai/omniscripts/issues/317
-        if 'ML' not in benchmark_results:
-            benchmark_results['ML'] = []
+        if "ML" not in benchmark_results:
+            benchmark_results["ML"] = []
 
         additional_fields_for_reporting = {
             "ETL": {"Iteration": iter_num, "run_id": run_id},
