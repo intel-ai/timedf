@@ -45,14 +45,13 @@ def init_modin_on_omnisci(pd):
 
 
 def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_memory=None):
-    mode = mode.lower()
-    mode = "modin_on_hdk" if mode == "modin_on_omnisci" else mode
+    mode = "Modin_on_hdk" if mode == "Modin_on_omnisci" else mode
 
-    if mode == "pandas":
+    if mode == "Pandas":
         print("Pandas backend: pure Pandas")
         import pandas as pd
     else:
-        if mode == "modin_on_ray":
+        if mode == "Modin_on_ray":
             import ray
 
             if not ray_tmpdir:
@@ -70,13 +69,13 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
             print(
                 f"Pandas backend: Modin on Ray with tmp directory {ray_tmpdir} and memory {ray_memory}"
             )
-        elif mode == "modin_on_dask":
+        elif mode == "Modin_on_dask":
             os.environ["MODIN_ENGINE"] = "dask"
             print("Pandas backend: Modin on Dask")
-        elif mode == "modin_on_python":
+        elif mode == "Modin_on_python":
             os.environ["MODIN_ENGINE"] = "python"
             print("Pandas backend: Modin on pure Python")
-        elif mode == "modin_on_hdk":
+        elif mode == "Modin_on_hdk":
             os.environ["MODIN_ENGINE"] = "native"
             os.environ["MODIN_STORAGE_FORMAT"] = "hdk"
             os.environ["MODIN_EXPERIMENTAL"] = "True"
@@ -88,7 +87,7 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
         # Some components of Modin with OmniSci engine are initialized only
         # at the moment of query execution, so for proper benchmarks performance
         # measurement we need to initialize these parts before any measurements
-        if mode == "modin_on_hdk":
+        if mode == "Modin_on_hdk":
             init_modin_on_omnisci(pd)
     if not isinstance(namespace, (list, tuple)):
         namespace = [namespace]
