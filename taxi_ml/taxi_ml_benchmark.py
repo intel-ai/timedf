@@ -51,11 +51,11 @@ def clean(ddf, keep_cols: Iterable):
     return ddf
 
 
-def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_omniscidb_mode: bool):
+def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_hdk_mode: bool):
     is_gz = ".gz" in filepath.suffixes
-    if is_omniscidb_mode and is_gz:
+    if is_hdk_mode and is_gz:
         raise NotImplementedError(
-            "Modin_on_omnisci mode doesn't support import of compressed files yet"
+            "Modin_on_hdk mode doesn't support import of compressed files yet"
         )
 
     pd = get_pd()
@@ -67,17 +67,22 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_omnis
 
 
 @measure_time
-def load_data(dirpath: str, is_omniscidb_mode, debug=False):
+def load_data(dirpath: str, is_hdk_mode, debug=False):
     dirpath: Path = Path(dirpath.strip("'\""))
     data_types_2014 = OrderedDict(
         [
             (" tolls_amount", "float64"),
             (" surcharge", "float64"),
-            # (" store_and_fwd_flag", "object"),
             (" tip_amount", "float64"),
+            (" store_and_fwd_flag", "object"),
             ("tolls_amount", "float64"),
         ]
     )
+    if is_hdk_mode:
+        # For HDK we need to remove this columnd because of "object" type
+        # see https://github.com/modin-project/modin/issues/5210
+        # But Ray backend requires fixed type to avoid inconsistent types across partitions
+        del data_types_2014[" store_and_fwd_flag"]
 
     data_types_2015 = OrderedDict([("extra", "float64"), ("tolls_amount", "float64")])
 
@@ -113,7 +118,7 @@ def load_data(dirpath: str, is_omniscidb_mode, debug=False):
                         dirpath / filename,
                         parse_dates=date_cols,
                         col2dtype=dtypes,
-                        is_omniscidb_mode=is_omniscidb_mode,
+                        is_hdk_mode=is_hdk_mode,
                     ),
                     keep_cols,
                 )
@@ -280,9 +285,9 @@ def run_benchmark(parameters):
     debug = bool(os.getenv("DEBUG", False))
 
     benchmark2time = {}
-    is_omniscidb_mode = parameters["pandas_mode"] == "Modin_on_omnisci"
+    is_omniscidb_mode = parameters["pandas_mode"] == "Modin_on_hdk"
     df, benchmark2time["load_data"] = load_data(
-        parameters["data_file"], is_omniscidb_mode=is_omniscidb_mode, debug=debug
+        parameters["data_file"], is_hdk_mode=is_omniscidb_mode, debug=debug
     )
     df, benchmark2time["filter_df"] = filter_df(df)
     df, benchmark2time["feature_engineering"] = feature_engineering(df)
