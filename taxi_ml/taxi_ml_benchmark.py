@@ -285,7 +285,7 @@ def run_benchmark(parameters):
     debug = bool(os.getenv("DEBUG", False))
 
     benchmark2time = {}
-    is_omniscidb_mode = parameters["pandas_mode"] == "Modin_on_hdk"
+    is_omniscidb_mode = parameters["pandas_mode"] in ("Modin_on_hdk", "Modin_on_omnisci")
     df, benchmark2time["load_data"] = load_data(
         parameters["data_file"], is_hdk_mode=is_omniscidb_mode, debug=debug
     )
