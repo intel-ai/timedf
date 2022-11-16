@@ -786,7 +786,7 @@ def run_benchmarks(
         "ModinCommitHash": commit_modin,
     }
     etl_reporter = ResultReporter(db_params, db_table_etl, predefined_fields, ["t_connect"])
-    ml_reporter = ResultReporter(db_params, db_table_ml, predefined_fields, tuple())
+    ml_reporter = ResultReporter(db_params, db_table_ml, predefined_fields, [])
 
     print(parameters)
     run_id = int(round(time.time()))
