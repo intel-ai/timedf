@@ -210,7 +210,7 @@ def prepare_parser():
         dest="iterations",
         default=1,
         type=int,
-        help="Number of iterations to run. All resutls will be submitted to the DB.",
+        help="Number of iterations to run. All results will be submitted to the DB.",
     )
     benchmark.add_argument(
         "-validation",
