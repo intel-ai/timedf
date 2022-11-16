@@ -534,7 +534,7 @@ class FilesCombiner:
 def refactor_results_for_reporting(
     benchmark_results: dict,
     ignore_fields_for_results_unit_conversion: list = None,
-    additional_fields: dict = None,
+    additional_fields: dict = {},
     reporting_unit: str = "ms",
 ) -> dict:
 

@@ -293,6 +293,8 @@ def run_benchmark(parameters):
     df, benchmark2time["feature_engineering"] = feature_engineering(df)
     print_results(results=benchmark2time, backend=parameters["pandas_mode"], unit="s")
 
+    benchmark2time["total_data_processing"] = sum(benchmark2time.values())
+
     backend_name = parameters["pandas_mode"]
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
@@ -309,4 +311,17 @@ def run_benchmark(parameters):
         if parameters["use_modin_xgb"]:
             backend_name = backend_name + "_modin_xgb"
 
-    return {"ETL": [{**benchmark2time, "Backend": backend_name}], "ML": []}
+        benchmark2time["total_data_processing_with_ml"] = (
+            benchmark2time["total_data_processing"]
+            + benchmark2time["train_time"]
+            + benchmark2time["split_time"]
+        )
+
+    results = [
+        {"query_name": b, "result": t, "Backend": backend_name} for b, t in benchmark2time.items()
+    ]
+
+    import pdb
+
+    pdb.set_trace()
+    return {"ETL": results, "ML": []}
