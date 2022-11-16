@@ -69,15 +69,22 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_omnis
 @measure_time
 def load_data(dirpath: str, is_omniscidb_mode, debug=False):
     dirpath: Path = Path(dirpath.strip("'\""))
+
+    
     data_types_2014 = OrderedDict(
         [
             (" tolls_amount", "float64"),
             (" surcharge", "float64"),
-            (" store_and_fwd_flag", "object"),
             (" tip_amount", "float64"),
+            (" store_and_fwd_flag", "object"),
             ("tolls_amount", "float64"),
         ]
     )
+    if is_omniscidb_mode:
+        # For HDK we need to remove this columnd because of "object" type
+        # see https://github.com/modin-project/modin/issues/5210
+        # But Ray backend requires fixed type to avoid inconsistent types across partitions
+        del data_types_2014[" store_and_fwd_flag"]
 
     data_types_2015 = OrderedDict([("extra", "float64"), ("tolls_amount", "float64")])
 
