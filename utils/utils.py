@@ -45,8 +45,6 @@ def init_modin_on_omnisci(pd):
 
 
 def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_memory=None):
-    mode = "Modin_on_hdk" if mode == "Modin_on_omnisci" else mode
-
     if mode == "Pandas":
         print("Pandas backend: pure Pandas")
         import pandas as pd
@@ -75,11 +73,11 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
         elif mode == "Modin_on_python":
             os.environ["MODIN_ENGINE"] = "python"
             print("Pandas backend: Modin on pure Python")
-        elif mode == "Modin_on_hdk":
+        elif mode == "Modin_on_omnisci":
             os.environ["MODIN_ENGINE"] = "native"
             os.environ["MODIN_STORAGE_FORMAT"] = "hdk"
             os.environ["MODIN_EXPERIMENTAL"] = "True"
-            print("Pandas backend: Modin on HDK")
+            print("Pandas backend: Modin on OmniSci")
         else:
             raise ValueError(f"Unknown pandas mode {mode}")
         import modin.pandas as pd
@@ -87,7 +85,7 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
         # Some components of Modin with OmniSci engine are initialized only
         # at the moment of query execution, so for proper benchmarks performance
         # measurement we need to initialize these parts before any measurements
-        if mode == "Modin_on_hdk":
+        if mode == "Modin_on_omnisci":
             init_modin_on_omnisci(pd)
     if not isinstance(namespace, (list, tuple)):
         namespace = [namespace]
