@@ -70,7 +70,6 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_omnis
 def load_data(dirpath: str, is_omniscidb_mode, debug=False):
     dirpath: Path = Path(dirpath.strip("'\""))
 
-    
     data_types_2014 = OrderedDict(
         [
             (" tolls_amount", "float64"),
@@ -315,6 +314,8 @@ def run_benchmark(parameters):
     df, benchmark2time["filter_df"] = filter_df(df, is_omniscidb_mode=is_omniscidb_mode)
     df, benchmark2time["feature_engineering"] = feature_engineering(df)
     print_results(results=benchmark2time, backend=parameters["pandas_mode"], unit="s")
+
+    benchmark2time["total_data_processing"] = sum(benchmark2time.values())
 
     backend_name = parameters["pandas_mode"]
     if not parameters["no_ml"]:
