@@ -306,41 +306,44 @@ def run_benchmark(parameters):
 
     debug = bool(os.getenv("DEBUG", False))
 
-    benchmark2time = {}
+    task2time = {}
     is_omniscidb_mode = parameters["pandas_mode"] == "Modin_on_omnisci"
-    df, benchmark2time["load_data"] = load_data(
+    df, task2time["load_data"] = load_data(
         parameters["data_file"], is_omniscidb_mode=is_omniscidb_mode, debug=debug
     )
-    df, benchmark2time["filter_df"] = filter_df(df, is_omniscidb_mode=is_omniscidb_mode)
-    df, benchmark2time["feature_engineering"] = feature_engineering(df)
-    print_results(results=benchmark2time, backend=parameters["pandas_mode"], unit="s")
+    df, task2time["filter_df"] = filter_df(df, is_omniscidb_mode=is_omniscidb_mode)
+    df, task2time["feature_engineering"] = feature_engineering(df)
+    print_results(results=task2time, backend=parameters["pandas_mode"], unit="s")
 
-    benchmark2time["total_data_processing"] = sum(benchmark2time.values())
+    task2time["total_data_processing_with_load"] = sum(task2time.values())
+    task2time["total_data_processing_no_load"] = (
+        task2time["total_data_processing_with_load"] - task2time["load_data"]
+    )
 
     backend_name = parameters["pandas_mode"]
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
 
-        data, benchmark2time["split_time"] = split(df)
+        data, task2time["split_time"] = split(df)
         data: Dict[str, Any]
 
-        benchmark2time["train_time"] = train(
+        task2time["train_time"] = train(
             data, use_modin_xgb=parameters["use_modin_xgb"], debug=debug
         )
 
-        print_results(results=benchmark2time, backend=parameters["pandas_mode"], unit="s")
+        print_results(results=task2time, backend=parameters["pandas_mode"], unit="s")
 
         if parameters["use_modin_xgb"]:
             backend_name = backend_name + "_modin_xgb"
 
-        benchmark2time["total_data_processing_with_ml"] = (
-            benchmark2time["total_data_processing"]
-            + benchmark2time["train_time"]
-            + benchmark2time["split_time"]
+        task2time["total_time_with_ml"] = (
+            task2time["total_data_processing_with_load"]
+            + task2time["train_time"]
+            + task2time["split_time"]
         )
 
     results = [
-        {"query_name": b, "result": t, "Backend": backend_name} for b, t in benchmark2time.items()
+        {"query_name": b, "result": t, "Backend": backend_name} for b, t in task2time.items()
     ]
 
     return {"ETL": results, "ML": []}
