@@ -80,7 +80,7 @@ def load_data(dirpath: str, is_omniscidb_mode, debug=False):
         ]
     )
     if is_omniscidb_mode:
-        # For HDK we need to remove this columnd because of "object" type
+        # For OmniSci we need to remove this column because of "object" type
         # see https://github.com/modin-project/modin/issues/5210
         # But Ray backend requires fixed type to avoid inconsistent types across partitions
         del data_types_2014[" store_and_fwd_flag"]
