@@ -139,7 +139,8 @@ def load_data(dirpath: str, is_omniscidb_mode, debug=False):
 
 @measure_time
 def filter_df(df, is_omniscidb_mode):
-    # apply a list of filter conditions to throw out records with missing or outlier values
+    """apply a list of filter conditions to throw out records with missing or outlier values"""
+    # Modin_on_omniscidb does not support query method, but Modin_on_ray works much faster using query method
     if is_omniscidb_mode:
         df = df[
             (df.fare_amount > 1)
