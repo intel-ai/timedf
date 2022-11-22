@@ -778,7 +778,7 @@ def run_benchmarks(
         server=db_server, port=db_port, user=db_user, password=db_pass, name=db_name
     )
     predefined_fields = {
-        "HDKCommitHash": commit_hdk,
+        "OmnisciCommitHash": commit_hdk,
         "OmniscriptsCommitHash": commit_omniscripts,
         "ModinCommitHash": commit_modin,
     }
