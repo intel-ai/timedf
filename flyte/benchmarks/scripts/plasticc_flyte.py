@@ -86,7 +86,7 @@ def load_data_pandas(dataset_path, dtypes, meta_dtypes):
 def etl_cpu_pandas(df, df_meta, etl_times):
     t_etl_start = timer()
 
-    # workaround for both Modin_on_ray and Modin_on_omnisci modes. Eventually this should be fixed
+    # workaround for both Modin_on_ray and Modin_on_hdk modes. Eventually this should be fixed
     df["flux_ratio_sq"] = (df["flux"] / df["flux_err"]) * (
         df["flux"] / df["flux_err"]
     )  # np.power(df["flux"] / df["flux_err"], 2.0)

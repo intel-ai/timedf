@@ -34,7 +34,7 @@ def skew_workaround(table):
 def etl_cpu(df, df_meta, etl_times):
     t_etl_start = timer()
 
-    # workaround for both Modin_on_ray and Modin_on_omnisci modes. Eventually this should be fixed
+    # workaround for both Modin_on_ray and Modin_on_hdk modes. Eventually this should be fixed
     df["flux_ratio_sq"] = (df["flux"] / df["flux_err"]) * (
         df["flux"] / df["flux_err"]
     )  # np.power(df["flux"] / df["flux_err"], 2.0)
@@ -77,9 +77,9 @@ def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, pandas_mode):
     # 'pd' module is defined implicitly in 'import_pandas_into_module_namespace'
     # function so we should use 'noqa: F821' for flake8
     train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)  # noqa: F821
-    # Currently we need to avoid skip_rows in Mode_on_omnisci mode since
+    # Currently we need to avoid skip_rows in Mode_on_hdk mode since
     # pyarrow uses it in incompatible way
-    if pandas_mode == "Modin_on_omnisci":
+    if pandas_mode == "Modin_on_hdk":
         test = pd.read_csv(  # noqa: F821
             "%s/test_set_skiprows.csv" % dataset_path,
             names=list(dtypes.keys()),

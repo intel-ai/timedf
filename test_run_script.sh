@@ -5,7 +5,6 @@ cd test_launch
 
 # cloning repos
 git clone https://github.com/modin-project/modin.git -b master
-# if you will use modin's omnisci backend
 git clone https://github.com/intel-ai/omniscripts.git -b master
 
 # setup miniconda

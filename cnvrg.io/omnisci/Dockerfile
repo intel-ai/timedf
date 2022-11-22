@@ -12,7 +12,7 @@
 # governing permissions and limitations under the License.
 
 # Build image from this dockerfile like this:
-# docker build -t modin-on-omnisci:latest --build-arg https_proxy --build-arg http_proxy .
+# docker build -t modin-on-hdk:latest --build-arg https_proxy --build-arg http_proxy .
 
 
 FROM ubuntu:20.04
@@ -22,7 +22,7 @@ ENV http_proxy=${http_proxy}
 ENV https_proxy=${https_proxy}
 
 # Modin settings
-ENV MODIN_BACKEND="omnisci"
+ENV MODIN_BACKEND="hdk"
 ENV MODIN_EXPERIMENTAL="true"
 ENV RAY_OBJECT_STORE_ALLOW_SLOW_STORAGE=1
 
@@ -32,7 +32,7 @@ WORKDIR "/cnvrg"
 
 # Conda settings
 ENV CONDA_DIR=/opt/conda
-ENV CONDA_ENV_NAME=modin-omnisci
+ENV CONDA_ENV_NAME=modin-hdk
 ENV PATH="${CONDA_DIR}/bin:${PATH}"
 
 RUN apt-get update --yes \
@@ -45,7 +45,7 @@ RUN wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.
     rm -f /tmp/miniconda3.sh
 
 RUN conda update -n base -c defaults conda -y && \
-    conda create -n ${CONDA_ENV_NAME} --yes -c conda-forge modin-omnisci scikit-learn scikit-learn-intelex xgboost pip jupyter && \
+    conda create -n ${CONDA_ENV_NAME} --yes -c conda-forge modin-hdk scikit-learn scikit-learn-intelex xgboost pip jupyter && \
     conda clean --all --yes
 
 # Activate ${CONDA_ENV_NAME} for interative shells

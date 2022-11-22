@@ -7,7 +7,7 @@ from utils import (
     files_names_from_pattern,
     import_pandas_into_module_namespace,
     load_data_pandas,
-    load_data_modin_on_omnisci,
+    load_data_modin_on_hdk,
     print_results,
     get_ny_taxi_dataset_size,
     check_support,
@@ -39,7 +39,7 @@ def run_queries(queries, parameters, etl_results, output_for_validation=None):
 # @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
 def q1(df, pandas_mode):
     t0 = timer()
-    if pandas_mode != "Modin_on_omnisci":
+    if pandas_mode != "Modin_on_hdk":
         q1_output = df.groupby("cab_type")["cab_type"].count()
     else:
         q1_output = df.groupby("cab_type").size()
@@ -55,7 +55,7 @@ def q1(df, pandas_mode):
 # GROUP BY passenger_count;
 def q2(df, pandas_mode):
     t0 = timer()
-    if pandas_mode != "Modin_on_omnisci":
+    if pandas_mode != "Modin_on_hdk":
         q2_output = df.groupby("passenger_count", as_index=False).mean()[
             ["passenger_count", "total_amount"]
         ]
@@ -75,7 +75,7 @@ def q2(df, pandas_mode):
 #         pickup_year;
 def q3(df, pandas_mode):
     t0 = timer()
-    if pandas_mode != "Modin_on_omnisci":
+    if pandas_mode != "Modin_on_hdk":
         transformed = pd.DataFrame(
             {
                 "pickup_datetime": df["pickup_datetime"].dt.year,
@@ -117,7 +117,7 @@ def q3(df, pandas_mode):
 # ORDER BY passenger_count, pickup_year, distance, the_count;
 def q4(df, pandas_mode):
     t0 = timer()
-    if pandas_mode != "Modin_on_omnisci":
+    if pandas_mode != "Modin_on_hdk":
         transformed = pd.DataFrame(
             {
                 "passenger_count": df["passenger_count"],
@@ -149,16 +149,16 @@ def q4(df, pandas_mode):
 
 def etl(filename, files_limit, columns_names, columns_types, output_for_validation, pandas_mode):
 
-    if pandas_mode == "Modin_on_omnisci" and any(f.endswith(".gz") for f in filename):
+    if pandas_mode == "Modin_on_hdk" and any(f.endswith(".gz") for f in filename):
         raise NotImplementedError(
-            "Modin_on_omnisci mode doesn't support import of compressed files yet"
+            "Modin_on_hdk mode doesn't support import of compressed files yet"
         )
 
     etl_results = {}
     t0 = timer()
-    if pandas_mode == "Modin_on_omnisci":
+    if pandas_mode == "Modin_on_hdk":
         df_from_each_file = [
-            load_data_modin_on_omnisci(
+            load_data_modin_on_hdk(
                 filename=f,
                 columns_names=columns_names,
                 columns_types=columns_types,
@@ -183,8 +183,8 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
         ]
 
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
-    # this is to trigger data import in `Modin_on_omnisci` mode
-    if pandas_mode == "Modin_on_omnisci":
+    # this is to trigger data import in `Modin_on_hdk` mode
+    if pandas_mode == "Modin_on_hdk":
         from modin.experimental.core.execution.native.implementations.hdk_on_native.db_worker import (
             DbWorker,
         )
@@ -202,7 +202,7 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
     queries_parameters = {
         query_name: {
             # FIXME seems like such copy op can affect benchmark
-            "df": concatenated_df.copy() if pandas_mode == "Modin_on_omnisci" else concatenated_df,
+            "df": concatenated_df.copy() if pandas_mode == "Modin_on_hdk" else concatenated_df,
             "pandas_mode": pandas_mode,
         }
         for query_name in queries

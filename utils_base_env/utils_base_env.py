@@ -124,12 +124,12 @@ def prepare_parser():
     parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
     required = parser.add_argument_group("common")
     optional = parser.add_argument_group("optional arguments")
-    omnisci = parser.add_argument_group("omnisci")
+    hdk = parser.add_argument_group("hdk")
     benchmark = parser.add_argument_group("benchmark")
     mysql = parser.add_argument_group("mysql")
     commits = parser.add_argument_group("commits")
 
-    possible_tasks = ["build", "benchmark"]
+    possible_tasks = ["benchmark"]
     benchmarks = ["ny_taxi", "santander", "census", "plasticc", "mortgage", "h2o", "taxi_ml"]
 
     # Task
@@ -186,11 +186,6 @@ def prepare_parser():
         help="Path where to store built Modin dependencies (--target flag for pip), can be helpful if you have space limited home directory.",
     )
 
-    # Omnisci server parameters
-    omnisci.add_argument(
-        "-executable", dest="executable", required=False, help="Path to omnisci_server executable."
-    )
-
     # Benchmark parameters
     benchmark.add_argument(
         "-bench_name", dest="bench_name", choices=benchmarks, help="Benchmark name."
@@ -228,10 +223,10 @@ def prepare_parser():
     )
     benchmark.add_argument(
         "-pandas_mode",
-        choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python", "Modin_on_omnisci"],
+        choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python", "Modin_on_hdk"],
         default="Pandas",
         help="Specifies which version of Pandas to use: "
-        "plain Pandas, Modin runing on Ray or on Dask or on Omnisci",
+        "plain Pandas, Modin runing on Ray or on Dask or on HDK",
     )
     benchmark.add_argument(
         "-ray_tmpdir",
@@ -276,10 +271,10 @@ def prepare_parser():
     add_mysql_arguments(mysql, etl_ml_tables=True)
     # Additional information
     commits.add_argument(
-        "-commit_omnisci",
-        dest="commit_omnisci",
+        "-commit_hdk",
+        dest="commit_hdk",
         default="1234567890123456789012345678901234567890",
-        help="Omnisci commit hash used for tests.",
+        help="HDK commit hash used for tests.",
     )
     commits.add_argument(
         "-commit_omniscripts",

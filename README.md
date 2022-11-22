@@ -4,9 +4,6 @@
 
 Scripts require miniconda to be installed.
 
-OmnisciDB server which is used in corresponding Modin backend often requires a lot of open files, so it is a good idea to run it with
-`ulimit -n 10000`.
-
 ## Main benchmarks launching script
 
 Main script is called `run_modin_tests.py`. ```run_modin_tests.py -h``` will show all script's parameters. 
@@ -21,7 +18,7 @@ python3 run_modin_tests.py --env_name modin-test --env_check True -task benchmar
 
 Sample run census benchmark command line (note that ```modin-test``` env will be deleted after test run finishes):
 ```
-python3 run_modin_tests.py --env_name modin-test --env_check True -task benchmark -bench_name census -data_file ./census/ipums_education2income_1970-2010.csv.gz -pandas_mode Modin_on_omnisci -ray_tmpdir ./tmp
+python3 run_modin_tests.py --env_name modin-test --env_check True -task benchmark -bench_name census -data_file ./census/ipums_education2income_1970-2010.csv.gz -pandas_mode Modin_on_hdk
 ```
 
 More examples could be find in scripts of `teamcity_build_scripts`. Those scripts contain actual examples for running each benchmark we have now.

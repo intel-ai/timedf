@@ -466,9 +466,9 @@ def queries_modin(filename, pandas_mode, extended_functionality):
             "groupby_query9": groupby_query9_modin,
             "groupby_query10": groupby_query10_modin,
         }
-        if pandas_mode == "Modin_on_omnisci":
+        if pandas_mode == "Modin_on_hdk":
             del queries["groupby_query6"]  # NotImplementedError: unsupported aggregate median
-            del queries["groupby_query8"]  # Query execution in `Modin_on_omnisci` mode
+            del queries["groupby_query8"]  # Query execution in `Modin_on_hdk` mode
             # is under development
             del queries["groupby_query9"]  # core dumped issue
             del queries["groupby_query10"]  # core dumped issue

@@ -38,7 +38,7 @@ ny_taxi_data_files_sizes_MB = OrderedDict(
 )
 
 
-def init_modin_on_omnisci(pd):
+def init_modin_on_hdk(pd):
     # Calcite initialization
     data = {"a": [1, 2, 3]}
     df = pd.DataFrame(data)
@@ -75,20 +75,20 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
         elif mode == "Modin_on_python":
             os.environ["MODIN_ENGINE"] = "python"
             print("Pandas backend: Modin on pure Python")
-        elif mode == "Modin_on_omnisci":
+        elif mode == "Modin_on_hdk":
             os.environ["MODIN_ENGINE"] = "native"
-            os.environ["MODIN_STORAGE_FORMAT"] = "omnisci"
+            os.environ["MODIN_STORAGE_FORMAT"] = "hdk"
             os.environ["MODIN_EXPERIMENTAL"] = "True"
-            print("Pandas backend: Modin on OmniSci")
+            print("Pandas backend: Modin on HDK")
         else:
             raise ValueError(f"Unknown pandas mode {mode}")
         import modin.pandas as pd
 
-        # Some components of Modin with OmniSci engine are initialized only
+        # Some components of Modin on HDK engine are initialized only
         # at the moment of query execution, so for proper benchmarks performance
         # measurement we need to initialize these parts before any measurements
-        if mode == "Modin_on_omnisci":
-            init_modin_on_omnisci(pd)
+        if mode == "Modin_on_hdk":
+            init_modin_on_hdk(pd)
     if not isinstance(namespace, (list, tuple)):
         namespace = [namespace]
     for space in namespace:
@@ -175,12 +175,12 @@ def load_data_pandas(
     )
 
 
-def load_data_modin_on_omnisci(
+def load_data_modin_on_hdk(
     filename, columns_names=None, columns_types=None, parse_dates=None, pd=None, skiprows=None
 ):
     if not pd:
         import_pandas_into_module_namespace(
-            namespace=load_data_pandas.__globals__, mode="Modin_on_omnisci"
+            namespace=load_data_pandas.__globals__, mode="Modin_on_hdk"
         )
     dtypes = None
     if columns_types:
@@ -685,7 +685,7 @@ def run_benchmarks(
     db_table_etl: str = None,
     db_table_ml: str = None,
     executable: str = None,
-    commit_omnisci: str = "1234567890123456789012345678901234567890",
+    commit_hdk: str = "1234567890123456789012345678901234567890",
     commit_omniscripts: str = "1234567890123456789012345678901234567890",
     commit_modin: str = "1234567890123456789012345678901234567890",
 ):
@@ -707,7 +707,7 @@ def run_benchmarks(
     optimizer : str, optional
         Optimizer to use.
     pandas_mode : str, default: "Pandas"
-        Specifies which version of Pandas to use: plain Pandas, Modin runing on Ray or on Dask or on Omnisci.
+        Specifies which version of Pandas to use: plain Pandas, Modin runing on Ray or on Dask or on HDK.
     ray_tmpdir : str, default: "/tmp"
         Location where to keep Ray plasma store. It should have enough space to keep `ray_memory`.
     ray_memory : int, default: 200 * 1024 * 1024 * 1024
@@ -735,10 +735,8 @@ def run_benchmarks(
         Table to store ETL results for this benchmark.
     db_table_ml : str, optional
         Table to store ML results for this benchmark.
-    executable : str, optional
-        Path to omnisci server executable.
-    commit_omnisci : str, default: "1234567890123456789012345678901234567890"
-        Omnisci commit hash used for benchmark.
+    commit_hdk : str, default: "1234567890123456789012345678901234567890"
+        HDK commit hash used for benchmark.
     commit_omniscripts : str, default: "1234567890123456789012345678901234567890"
         Omniscripts commit hash used for benchmark.
     commit_modin : str, default: "1234567890123456789012345678901234567890"
@@ -781,7 +779,7 @@ def run_benchmarks(
         server=db_server, port=db_port, user=db_user, password=db_pass, name=db_name
     )
     predefined_fields = {
-        "OmnisciCommitHash": commit_omnisci,
+        "HDKCommitHash": commit_hdk,
         "OmniscriptsCommitHash": commit_omniscripts,
         "ModinCommitHash": commit_modin,
     }

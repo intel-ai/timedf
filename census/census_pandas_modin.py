@@ -9,7 +9,7 @@ from utils import (
     cod,
     import_pandas_into_module_namespace,
     load_data_pandas,
-    load_data_modin_on_omnisci,
+    load_data_modin_on_hdk,
     mse,
     print_results,
     split,
@@ -27,8 +27,8 @@ def etl(filename, columns_names, columns_types, etl_keys, pandas_mode):
     etl_times = {key: 0.0 for key in etl_keys}
 
     t0 = timer()
-    if pandas_mode == "Modin_on_omnisci":
-        df = load_data_modin_on_omnisci(
+    if pandas_mode == "Modin_on_hdk":
+        df = load_data_modin_on_hdk(
             filename=filename,
             columns_names=columns_names,
             columns_types=columns_types,
