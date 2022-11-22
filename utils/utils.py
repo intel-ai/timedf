@@ -684,7 +684,6 @@ def run_benchmarks(
     db_name: str = "omniscidb",
     db_table_etl: str = None,
     db_table_ml: str = None,
-    executable: str = None,
     commit_hdk: str = "1234567890123456789012345678901234567890",
     commit_omniscripts: str = "1234567890123456789012345678901234567890",
     commit_modin: str = "1234567890123456789012345678901234567890",
