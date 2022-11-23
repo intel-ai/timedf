@@ -124,7 +124,6 @@ def prepare_parser():
     parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
     required = parser.add_argument_group("common")
     optional = parser.add_argument_group("optional arguments")
-    hdk = parser.add_argument_group("hdk")
     benchmark = parser.add_argument_group("benchmark")
     mysql = parser.add_argument_group("mysql")
     commits = parser.add_argument_group("commits")
