@@ -3,10 +3,10 @@
 source ${CONDA_PREFIX}/bin/activate
 conda activate ${ENV_NAME}
 mkdir -p ${PWD}/tmp
-python3 run_modin_tests.py -bench_name census -data_file "${DATASETS_PWD}/census/ipums_education2income_1970-2010.csv.gz"          \
-                              -task benchmark -pandas_mode Modin_on_hdk -ray_tmpdir ${PWD}/tmp                                     \
+python3 run_modin_tests.py -bench_name h2o -data_file "${DATASETS_PWD}/h2o/J1_1e7_NA_0_0.csv"                                      \
+                              -task benchmark -pandas_mode Modin_on_hdk                                                            \
                               ${ADDITIONAL_OPTS}                                                                                   \
                               ${ADDITIONAL_OPTS_NIGHTLY}                                                                           \
-                              ${DB_COMMON_OPTS} ${DB_CENSUS_OPTS}
+                              ${DB_COMMON_OPTS} ${DB_H2O_OPTS}
 
 conda deactivate
