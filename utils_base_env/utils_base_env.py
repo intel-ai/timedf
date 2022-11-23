@@ -129,7 +129,7 @@ def prepare_parser():
     mysql = parser.add_argument_group("mysql")
     commits = parser.add_argument_group("commits")
 
-    possible_tasks = ["benchmark"]
+    possible_tasks = ["build", "benchmark"]
     benchmarks = ["ny_taxi", "santander", "census", "plasticc", "mortgage", "h2o", "taxi_ml"]
 
     # Task
