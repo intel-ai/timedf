@@ -1,8 +1,3 @@
-# Create images from this container like this (up from modin and omniscripts repo roots):
-# 1. Clone latest omniscripts  into the current dir: `git clone `
-# 2. tar -cf omniscripts/docker/modin-and-omniscripts.tar  --exclude=omniscripts/docker/modin-and-omniscripts.tar modin omniscripts
-# 3. docker build -t modin-project/benchmarks-ci-hdk:1 -f omniscripts/docker/Dockerfile.hdk-from-conda omniscripts/docker --build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}
-#####docker build -t modin-project/benchmarks-ci-hdk:1 -f omniscripts/docker/Dockerfile.hdk-from-conda omniscripts/docker --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy
 FROM ubuntu:20.04
 
 ARG http_proxy=http://proxy-dmz.intel.com:912
@@ -47,24 +42,14 @@ RUN wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.
     rm -f /tmp/miniconda3.sh && \
     echo ". '${CONDA_DIR}/etc/profile.d/conda.sh'" >> "${HOME}/.profile"
 
-# Adding channel_priority strict to the following commands makes conda fail.
-# Luckily we don't need it here because conda resolves environment fairly quickly.
-# RUN conda update -n base -c defaults conda -y &&                                    \
-#     conda env create --file=modin/requirements/env_hdk.yml &&                   \
-#     conda activate modin_on_hdk &&                                              \
-#     conda env update -n modin_on_hdk --file=omniscripts/ci_requirements.yml &&  \
-#     conda clean --all --yes &&                                                      \
-#     cd modin && pip install -e .
-
 # conda env setup
-
 RUN conda update -n base -c defaults conda -y && \
     conda create --name modin_hdk && \
     conda activate modin_hdk && \
     conda install python=3.9 -c conda-forge -y && \
     conda install mamba -c conda-forge -y && \
-    mamba install modin-hdk -c conda-forge && \
-    conda clean --all --yes 
+    mamba install modin-hdk -c conda-forge -y && \
+    conda clean --all -y 
 
 ENV DATASETS_PWD /datasets
 ENV TBB_MALLOC_USE_HUGE_PAGES 1
