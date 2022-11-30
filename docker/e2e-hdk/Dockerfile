@@ -20,9 +20,7 @@ RUN adduser --disabled-password \
     --home $HOME \
     $USER
 
-WORKDIR ${HOME}
-
-RUN mkdir /datasets
+RUN mkdir /datasets && mkdir /results
 
 ADD omniscripts.tar omniscripts
 RUN chown -R ${USER}:${USER} omniscripts
@@ -48,8 +46,11 @@ RUN conda update -n base -c defaults conda -y && \
     conda activate modin_hdk && \
     conda install python=3.9 -c conda-forge -y && \
     conda install mamba -c conda-forge -y && \
-    mamba install modin-hdk -c conda-forge -y && \
-    conda clean --all -y 
+    mamba install modin-hdk -c conda-forge && \
+    conda clean --all --yes 
 
 ENV DATASETS_PWD /datasets
 ENV TBB_MALLOC_USE_HUGE_PAGES 1
+
+
+WORKDIR ${HOME}/omniscripts
