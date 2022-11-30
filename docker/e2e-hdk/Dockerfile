@@ -50,6 +50,7 @@ RUN conda update -n base -c defaults conda -y && \
     conda create --name modin_hdk && \
     conda activate modin_hdk && \
     conda install python=3.9 -c conda-forge -y && \
+    conda env update -n modin_on_hdk --file=omniscripts/ci_requirements.yml && \
     conda install mamba -c conda-forge -y && \
     mamba install modin-hdk -c conda-forge && \
     conda clean --all --yes 

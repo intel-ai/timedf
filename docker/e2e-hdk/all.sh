@@ -8,7 +8,7 @@ mkdir -p ${DATASETS_ROOT}
 mkdir -p ${RESULTS_DIR}
 
 # Archive omniscripts for the upload 
-tar -cf omniscripts.tar  --exclude=omniscripts.tar ../../.
+tar -cf omniscripts.tar  --exclude=e2e-hdk ../../.
 
 # Build the image, use optional `--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}` to configure proxy.
 docker build -t modin-project/benchmarks-reproduce:latest -f ./Dockerfile .
