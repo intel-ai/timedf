@@ -2,7 +2,7 @@
 # Set location to store datasets, 
 # WARNING: don't store them in the same folder as dockerfile, to avoid long context loading
 export DATASETS_ROOT=/localdisk/ekrivov/datasets
-export RESULTS_DIR=./results
+export RESULTS_DIR=results
 
 mkdir -p ${DATASETS_ROOT}
 mkdir -p ${RESULTS_DIR}
@@ -17,4 +17,4 @@ docker build -t modin-project/benchmarks-reproduce:latest -f ./Dockerfile .
 ./load_data.sh
 
 # Run experiments
-./run.sh
+./run_docker.sh

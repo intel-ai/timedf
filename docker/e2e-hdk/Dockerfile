@@ -22,6 +22,8 @@ RUN adduser --disabled-password \
 
 RUN mkdir /datasets && mkdir /results
 
+WORKDIR ${HOME}
+
 ADD omniscripts.tar omniscripts
 RUN chown -R ${USER}:${USER} omniscripts
 
@@ -52,5 +54,6 @@ RUN conda update -n base -c defaults conda -y && \
 ENV DATASETS_PWD /datasets
 ENV TBB_MALLOC_USE_HUGE_PAGES 1
 
+COPY run_benchmarks.sh ${HOME}
 
-WORKDIR ${HOME}/omniscripts
+ENTRYPOINT ["run_benchmarks.sh"]
