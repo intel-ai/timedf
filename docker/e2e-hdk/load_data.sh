@@ -1,6 +1,4 @@
 #!/bin/bash -e
-DATASETS_ROOT="./datasets"
-
 mkdir -p $DATASETS_ROOT
 
 aws s3 sync s3://modin-datasets/taxi ${DATASETS_ROOT}/taxi --no-sign-request --exclude "*" --include "trips_xa*.csv"
