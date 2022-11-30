@@ -21,6 +21,7 @@ RUN adduser --disabled-password \
     $USER
 
 RUN mkdir /datasets && mkdir /results
+RUN chown -R ${USER}:${USER} /datasets /results
 
 WORKDIR ${HOME}
 
@@ -32,15 +33,17 @@ RUN chown -R ${USER}:${USER} omniscripts
 USER ${USER}
 SHELL ["/bin/bash", "--login", "-c"]
 
-ENV CONDA_DIR=${HOME}/miniconda
+ENV CONDA_PREFIX=${HOME}/miniconda
 
 ENV ENV_NAME=modin_hdk
 
+
+
 RUN wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda3.sh && \
-    bash /tmp/miniconda3.sh -b -p "${CONDA_DIR}" -f -u && \
-    "${CONDA_DIR}/bin/conda" init bash && \
+    bash /tmp/miniconda3.sh -b -p "${CONDA_PREFIX}" -f -u && \
+    "${CONDA_PREFIX}/bin/conda" init bash && \
     rm -f /tmp/miniconda3.sh && \
-    echo ". '${CONDA_DIR}/etc/profile.d/conda.sh'" >> "${HOME}/.profile"
+    echo ". '${CONDA_PREFIX}/etc/profile.d/conda.sh'" >> "${HOME}/.profile"
 
 # conda env setup
 RUN conda update -n base -c defaults conda -y && \
@@ -54,6 +57,7 @@ RUN conda update -n base -c defaults conda -y && \
 ENV DATASETS_PWD /datasets
 ENV TBB_MALLOC_USE_HUGE_PAGES 1
 
+
 COPY run_benchmarks.sh ${HOME}
 
-ENTRYPOINT ["run_benchmarks.sh"]
+ENTRYPOINT ["bash", "run_benchmarks.sh"]
