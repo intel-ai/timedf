@@ -1,11 +1,5 @@
 FROM ubuntu:20.04
 
-ARG http_proxy=http://proxy-dmz.intel.com:912
-ARG https_proxy=http://proxy-dmz.intel.com:912
-
-ENV http_proxy ${http_proxy}
-ENV https_proxy ${https_proxy}
-
 RUN apt-get update --yes \
     && apt-get install wget git --yes && \
     rm -rf /var/lib/apt/lists/*
@@ -20,14 +14,11 @@ RUN adduser --disabled-password \
     --home $HOME \
     $USER
 
-RUN mkdir /datasets && mkdir /results
-RUN chown -R ${USER}:${USER} /datasets
-RUN chown -R ${USER}:${USER} /results
-
 WORKDIR ${HOME}
 
 ADD omniscripts.tar omniscripts
 RUN chown -R ${USER}:${USER} omniscripts
+RUN chmod -R 0777 omniscripts
 
 # Done with actions that require root, switching to user mode
 

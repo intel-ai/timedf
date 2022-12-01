@@ -5,9 +5,6 @@
 export DATASETS_ROOT=/localdisk/ekrivov/datasets
 export RESULTS_DIR=$(readlink -m results)
 
-mkdir -p ${DATASETS_ROOT}
-mkdir -p ${RESULTS_DIR}
-
 # Archive omniscripts for the upload 
 tar -cf omniscripts.tar  --exclude=e2e-hdk ../../.
 
@@ -16,9 +13,6 @@ docker build -t modin-project/benchmarks-reproduce:latest -f ./Dockerfile .
 
 # Download data
 ./load_data.sh
-
-# Set permissions so that container could read and write
-chmod 0777 ${DATASETS_ROOT} ${RESULTS_DIR}
 
 # Run experiments
 ./run_docker.sh
