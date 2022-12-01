@@ -21,7 +21,8 @@ RUN adduser --disabled-password \
     $USER
 
 RUN mkdir /datasets && mkdir /results
-RUN chown -R ${USER}:${USER} /datasets /results
+RUN chown -R ${USER}:${USER} /datasets
+RUN chown -R ${USER}:${USER} /results
 
 WORKDIR ${HOME}
 
@@ -37,8 +38,6 @@ ENV CONDA_PREFIX=${HOME}/miniconda
 
 ENV ENV_NAME=modin_hdk
 
-
-
 RUN wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda3.sh && \
     bash /tmp/miniconda3.sh -b -p "${CONDA_PREFIX}" -f -u && \
     "${CONDA_PREFIX}/bin/conda" init bash && \
@@ -49,16 +48,13 @@ RUN wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.
 RUN conda update -n base -c defaults conda -y && \
     conda create --name modin_hdk && \
     conda activate modin_hdk && \
-    conda install python=3.9 -c conda-forge -y && \
-    conda env update -n modin_on_hdk --file=omniscripts/ci_requirements.yml && \
-    conda install mamba -c conda-forge -y && \
-    mamba install modin-hdk -c conda-forge && \
-    conda clean --all --yes 
+    conda install -y python=3.9 mamba psutil braceexpand scikit-learn==1.0.2 xgboost scikit-learn-intelex -c conda-forge && \
+    conda activate modin_hdk && mamba install -y modin-hdk -c conda-forge && \
+    conda clean --all --yes
 
 ENV DATASETS_PWD /datasets
 ENV TBB_MALLOC_USE_HUGE_PAGES 1
 
-
 COPY run_benchmarks.sh ${HOME}
 
-ENTRYPOINT ["bash", "run_benchmarks.sh"]
+CMD ["bash", "run_benchmarks.sh"]

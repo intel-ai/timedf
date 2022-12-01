@@ -1,8 +1,9 @@
-#!/bin/bash -e
+#!/bin/bash -eu
 # Set location to store datasets, 
-# WARNING: don't store them in the same folder as dockerfile, to avoid long context loading
+# WARNING: paths need to be absolute, otherwise docker will not mount
+# WARNING: don't store datasets in the same folder as dockerfile, to avoid long context loading during docker build
 export DATASETS_ROOT=/localdisk/ekrivov/datasets
-export RESULTS_DIR=results
+export RESULTS_DIR=$(readlink -m results)
 
 mkdir -p ${DATASETS_ROOT}
 mkdir -p ${RESULTS_DIR}
@@ -15,6 +16,9 @@ docker build -t modin-project/benchmarks-reproduce:latest -f ./Dockerfile .
 
 # Download data
 ./load_data.sh
+
+# Set permissions so that container could read and write
+chmod 0777 ${DATASETS_ROOT} ${RESULTS_DIR}
 
 # Run experiments
 ./run_docker.sh
