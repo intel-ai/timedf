@@ -1,5 +1,6 @@
 # coding: utf-8
 import warnings
+from decimal import Decimal
 from timeit import default_timer as timer
 
 from utils import (
@@ -7,6 +8,7 @@ from utils import (
     cod,
     import_pandas_into_module_namespace,
     load_data_pandas,
+    load_data_modin_on_hdk,
     mse,
     print_results,
 )
@@ -17,24 +19,33 @@ warnings.filterwarnings("ignore")
 # https://www.kaggle.com/c/santander-customer-transaction-prediction/data
 
 
-def etl(filename, columns_names, columns_types, etl_keys):
+def etl(filename, columns_names, columns_types, etl_keys, pandas_mode):
     etl_times = {key: 0.0 for key in etl_keys}
 
     t0 = timer()
-    train_pd = load_data_pandas(
-        filename=filename,
-        columns_names=columns_names,
-        columns_types=columns_types,
-        header=0,
-        nrows=None,
-        use_gzip=filename.endswith(".gz"),
-        pd=run_benchmark.__globals__["pd"],
-    )
+    if pandas_mode == "Modin_on_hdk":
+        train_pd = load_data_modin_on_hdk(
+            filename=filename,
+            columns_names=columns_names,
+            columns_types=columns_types,
+            skiprows=1,
+            pd=run_benchmark.__globals__["pd"],
+        )
+    else:
+        train_pd = load_data_pandas(
+            filename=filename,
+            columns_names=columns_names,
+            columns_types=columns_types,
+            header=0,
+            nrows=None,
+            use_gzip=filename.endswith(".gz"),
+            pd=run_benchmark.__globals__["pd"],
+        )
     etl_times["t_readcsv"] = timer() - t0
 
     t_etl_begin = timer()
 
-    for i in range(200):
+    for i in range(1):
         col = "var_%d" % i
         var_count = train_pd.groupby(col).agg({col: "count"})
 
@@ -149,6 +160,7 @@ def run_benchmark(parameters):
         columns_names=columns_names,
         columns_types=columns_types_pd,
         etl_keys=etl_keys,
+        pandas_mode=parameters["pandas_mode"],
     )
     print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
     etl_times["Backend"] = parameters["pandas_mode"]
