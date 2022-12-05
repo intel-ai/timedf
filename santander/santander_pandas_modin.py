@@ -45,7 +45,7 @@ def etl(filename, columns_names, columns_types, etl_keys, pandas_mode):
 
     t_etl_begin = timer()
 
-    for i in range(1):
+    for i in range(200):
         col = "var_%d" % i
         var_count = train_pd.groupby(col).agg({col: "count"})
 
