@@ -1,7 +1,14 @@
 from preprocess import transform_data, create_user_ohe_agg
 from train_lfm_features import train_lfm
 
-from vars import n_weeks, raw_data_path, preprocessed_data_path, user_features_path, lfm_features_path, dim
+from vars import (
+    n_weeks,
+    raw_data_path,
+    preprocessed_data_path,
+    user_features_path,
+    lfm_features_path,
+    dim,
+)
 
 
 use_lfm = False
@@ -10,7 +17,9 @@ if __name__ == "__main__":
     transform_data(input_data_path=raw_data_path, result_path=preprocessed_data_path)
 
     for week in range(n_weeks):
-        create_user_ohe_agg(week, preprocessed_data_path=preprocessed_data_path, result_path=user_features_path)
+        create_user_ohe_agg(
+            week, preprocessed_data_path=preprocessed_data_path, result_path=user_features_path
+        )
 
     if use_lfm:
 

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
 # import modin.pandas as pd
 from logzero import logger
 from tqdm.auto import tqdm
@@ -16,10 +17,7 @@ from tqdm.auto import tqdm
 import schema
 
 
-def transform_data(
-    input_data_path,
-    result_path,
-):
+def transform_data(input_data_path, result_path):
     def _count_encoding_dict(df: pd.DataFrame, col_name: str) -> dict[Any, int]:
         v = (
             df.groupby(col_name)
@@ -40,9 +38,7 @@ def transform_data(
 
     logger.info("start reading dataframes")
     articles = pd.read_csv(input_data_path / "articles.csv", dtype=schema.ARTICLES_ORIGINAL)
-    customers = pd.read_csv(
-        input_data_path / "customers.csv", dtype=schema.CUSTOMERS_ORIGINAL
-    )
+    customers = pd.read_csv(input_data_path / "customers.csv", dtype=schema.CUSTOMERS_ORIGINAL)
     transactions = pd.read_csv(
         input_data_path / "transactions_train.csv",
         dtype=schema.TRANSACTIONS_ORIGINAL,
@@ -74,9 +70,7 @@ def transform_data(
 
     # 頻度順に番号を振る(既にintなものも連番のほうが都合が良いので振り直す)
     customers["club_member_status"] = customers["club_member_status"].fillna("NULL")
-    customers["fashion_news_frequency"] = customers["fashion_news_frequency"].fillna(
-        "NULL"
-    )
+    customers["fashion_news_frequency"] = customers["fashion_news_frequency"].fillna("NULL")
     count_encoding_columns = ["club_member_status", "fashion_news_frequency"]
     for col_name in count_encoding_columns:
         mp = _count_encoding_dict(customers, col_name)
@@ -115,15 +109,12 @@ def transform_data(
     # (1, 2) -> (0, 1)
     transactions["sales_channel_id"] = transactions["sales_channel_id"] - 1
     # transactions_trainに含まれる最後の1週間を0として、過去に行くに連れてインクリメント
-    transactions["week"] = (
-        transactions["t_dat"].max() - transactions["t_dat"]
-    ).dt.days // 7
+    transactions["week"] = (transactions["t_dat"].max() - transactions["t_dat"]).dt.days // 7
     transactions["day"] = (transactions["t_dat"].max() - transactions["t_dat"]).dt.days
     transactions.to_pickle(result_path / "transactions_train.pkl")
 
-def create_user_ohe_agg(
-    week, preprocessed_data_path, result_path
-):
+
+def create_user_ohe_agg(week, preprocessed_data_path, result_path):
     result_path.mkdir(exist_ok=True, parents=True)
 
     transactions = pd.read_pickle(preprocessed_data_path / "transactions_train.pkl")[
