@@ -16,7 +16,7 @@ use_lfm = False
 if __name__ == "__main__":
     transform_data(input_data_path=raw_data_path, result_path=preprocessed_data_path)
 
-    for week in range(n_weeks):
+    for week in range(n_weeks + 1):
         create_user_ohe_agg(
             week, preprocessed_data_path=preprocessed_data_path, result_path=user_features_path
         )

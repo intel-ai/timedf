@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 
 # import modin.pandas as pd
@@ -20,6 +21,28 @@ class CFG:
     age_volume_feature_weeks = 1
 
 
+def get_age_shifts(transactions, users):
+    """Finds a range for each age bin so that volume in that bean was equal or greater than bin 24 <= age <= 26"""
+    tr = transactions[["user", "item"]].merge(users[["user", "age"]], on="user")
+    age_volume_threshold = len(tr.query("24 <= age <= 26"))
+
+    age_volumes = {age: len(tr.query("age == @age")) for age in range(16, 100)}
+
+    age_shifts = {}
+    for age in range(16, 100):
+        for i in range(0, 100):
+            low = age - i
+            high = age + i
+            age_volume = 0
+            for j in range(low, high + 1):
+                age_volume += age_volumes.get(j, 0)
+            if age_volume >= age_volume_threshold:
+                age_shifts[age] = i
+                break
+    print(age_shifts)
+    return age_shifts
+
+
 def attach_features(
     transactions: pd.DataFrame,
     users: pd.DataFrame,
@@ -27,6 +50,8 @@ def attach_features(
     candidates: pd.DataFrame,
     week: int,
     pretrain_week: int,
+    age_shifts,
+    user_features_path: Path,
 ) -> pd.DataFrame:
     """
     user, itemに対して特徴を横付けする
@@ -156,7 +181,7 @@ def attach_features(
     with timer("user category most frequent"):
         for c in ["department_no_idx"]:
             tmp = pd.read_pickle(
-                f"artifacts/user_features/user_ohe_agg_dataset{dataset}_week{week}_{c}.pkl"
+                user_features_path / f"user_ohe_agg_week{week}_{c}.pkl"
             )
             cols = [c for c in tmp.columns if c != "user"]
             # tmp = tmp[['user'] + cols]
@@ -177,7 +202,7 @@ def attach_features(
         users_with_ohe = users[["user"]]
         for c in item_target_cols:
             tmp = pd.read_pickle(
-                f"artifacts/user_features/user_ohe_agg_dataset{dataset}_week{week}_{c}.pkl"
+                user_features_path / f"user_ohe_agg_week{week}_{c}.pkl"
             )
             assert tmp["user"].tolist() == users_with_ohe["user"].tolist()
             # tmp = tmp[['user'] + [c for c in tmp.columns if c.endswith('_mean')]]

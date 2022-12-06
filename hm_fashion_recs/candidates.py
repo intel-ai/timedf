@@ -1,3 +1,4 @@
+from pathlib import Path
 import faiss
 import numpy as np
 import pandas as pd
@@ -18,31 +19,10 @@ class CFG:
     ohe_distance_num_weeks = 20
 
 
-def get_age_shifts(transactions, users):
-    """Finds a range for each age bin so that volume in that bean was equal or greater than bin 24 <= age <= 26"""
-    tr = transactions[["user", "item"]].merge(users[["user", "age"]], on="user")
-    age_volume_threshold = len(tr.query("24 <= age <= 26"))
-
-    age_volumes = {age: len(tr.query("age == @age")) for age in range(16, 100)}
-
-    age_shifts = {}
-    for age in range(16, 100):
-        for i in range(0, 100):
-            low = age - i
-            high = age + i
-            age_volume = 0
-            for j in range(low, high + 1):
-                age_volume += age_volumes.get(j, 0)
-            if age_volume >= age_volume_threshold:
-                age_shifts[age] = i
-                break
-    print(age_shifts)
-    return age_shifts
-
-
 ##############
-def create_candidates(
-    transactions: pd.DataFrame, target_users: np.ndarray, week: int
+def create_candidates(*,
+    transactions: pd.DataFrame, users: pd.DataFrame, items: pd.DataFrame,
+     age_shifts, target_users: np.ndarray, week: int, user_features_path: Path
 ) -> pd.DataFrame:
     """
     transactions
@@ -57,9 +37,8 @@ def create_candidates(
 
     def create_candidates_repurchase(
         strategy: str,
-        transactions: pd.DataFrame,
-        target_users: np.ndarray,
         week_start: int,
+        target_users: np.ndarray,
         max_items_per_user: int = 1234567890,
     ) -> pd.DataFrame:
         tr = transactions.query("user in @target_users and @week_start <= week")[
@@ -96,9 +75,8 @@ def create_candidates(
         return candidates.drop_duplicates(ignore_index=True)
 
     def create_candidates_popular(
-        transactions: pd.DataFrame,
-        target_users: np.ndarray,
         week_start: int,
+        target_users: np.ndarray,
         num_weeks: int,
         num_items: int,
     ) -> pd.DataFrame:
@@ -121,10 +99,8 @@ def create_candidates(
         return candidates.drop_duplicates(ignore_index=True)
 
     def create_candidates_age_popular(
-        transactions: pd.DataFrame,
-        users: pd.DataFrame,
-        target_users: np.ndarray,
         week_start: int,
+        target_users: np.ndarray,
         num_weeks: int,
         num_items: int,
     ) -> pd.DataFrame:
@@ -153,8 +129,6 @@ def create_candidates(
         return candidates.drop_duplicates(ignore_index=True)
 
     def create_candidates_category_popular(
-        transactions: pd.DataFrame,
-        items: pd.DataFrame,
         base_candidates: pd.DataFrame,
         week_start: int,
         num_weeks: int,
@@ -177,7 +151,6 @@ def create_candidates(
         return candidates
 
     def create_candidates_cooc(
-        transactions: pd.DataFrame,
         base_candidates: pd.DataFrame,
         week_start: int,
         num_weeks: int,
@@ -214,7 +187,7 @@ def create_candidates(
         return candidates.drop_duplicates(ignore_index=True)
 
     def create_candidates_same_product_code(
-        items: pd.DataFrame, base_candidates: pd.DataFrame
+        base_candidates: pd.DataFrame
     ) -> pd.DataFrame:
         item2item = (
             items[["item", "product_code"]]
@@ -245,9 +218,6 @@ def create_candidates(
         return candidates.drop_duplicates(ignore_index=True)
 
     def create_candidates_ohe_distance(
-        transactions: pd.DataFrame,
-        users: pd.DataFrame,
-        items: pd.DataFrame,
         target_users: np.ndarray,
         week_start: int,
         num_weeks: int,
@@ -257,7 +227,7 @@ def create_candidates(
         cols = [c for c in items.columns if c.endswith("_idx")]
         for c in cols:
             tmp = pd.read_pickle(
-                f"artifacts/user_features/user_ohe_agg_dataset{dataset}_week{week_start}_{c}.pkl"
+                user_features_path / f"user_ohe_agg_week{week_start}_{c}.pkl"
             )
             # cs = [c for c in tmp.columns if c.endswith('_mean')]
             # tmp = tmp[['user'] + cs]
@@ -297,49 +267,50 @@ def create_candidates(
 
     with timer("repurchase"):
         candidates_repurchase = create_candidates_repurchase(
-            "repurchase", transactions, target_users, week
+            "repurchase", week, target_users=target_users,
         )
     with timer("popular"):
         candidates_popular = create_candidates_popular(
-            transactions, target_users, week, CFG.popular_weeks, CFG.popular_num_items
+            week_start=week, target_users=target_users,
+            num_weeks=CFG.popular_weeks,
+            num_items=CFG.popular_num_items
         )
     with timer("age popular"):
         candidates_age_popular = create_candidates_age_popular(
-            transactions, users, target_users, week, 1, 12
+            week_start=week, 
+            target_users=target_users,
+            num_weeks=1,
+            num_items=12,
         )
     with timer("item2item"):
         candidates_item2item = create_candidates_repurchase(
-            "item2item", transactions, target_users, week, CFG.item2item_num_items
+            "item2item", week, target_users, CFG.item2item_num_items
         )
     with timer("item2item2"):
         candidates_item2item2 = create_candidates_repurchase(
             "item2item2",
-            transactions,
-            target_users,
             week,
+            target_users,
             CFG.item2item_num_items_for_same_product_code,
         )
     with timer("cooccurrence"):
         candidates_cooc = create_candidates_cooc(
-            transactions, candidates_item2item, week, CFG.cooc_weeks, CFG.cooc_threshold
+            candidates_item2item, week, CFG.cooc_weeks, CFG.cooc_threshold
         )
     with timer("same_product_code"):
         candidates_same_product_code = create_candidates_same_product_code(
-            items, candidates_item2item2
+            candidates_item2item2
         )
     with timer("ohe distance"):
         candidates_ohe_distance = create_candidates_ohe_distance(
-            transactions,
-            users,
-            items,
-            target_users,
-            week,
-            CFG.ohe_distance_num_weeks,
-            CFG.ohe_distance_num_items,
+            target_users=target_users,
+            week_start=week,
+            num_weeks=CFG.ohe_distance_num_weeks,
+            num_items=CFG.ohe_distance_num_items,
         )
     with timer("category popular"):
         candidates_dept = create_candidates_category_popular(
-            transactions, items, candidates_item2item2, week, 1, 6, "department_no_idx"
+            candidates_item2item2, week, 1, 6, "department_no_idx"
         )
 
     def drop_common_user_item(
@@ -388,7 +359,7 @@ def create_candidates(
     return candidates.drop(meta_columns, axis=1)
 
 
-def merge_labels(candidates: pd.DataFrame, week: int) -> pd.DataFrame:
+def merge_labels(candidates: pd.DataFrame, transactions, week: int) -> pd.DataFrame:
     """
     candidatesに対してweekで指定される週のトランザクションからラベルを付与する
     """
@@ -441,7 +412,7 @@ def drop_trivial_users(labels):
     return df
 
 
-def make_candidates(transactions, train_weeks):
+def make_weekly_candidates(transactions, users, items, train_weeks, user_features_path, age_shifts):
     #################
     # valid: week=0
     # train: week=1..CFG.train_weeks
@@ -449,8 +420,9 @@ def make_candidates(transactions, train_weeks):
     for week in range(1 + train_weeks):
         target_users = transactions.query("week == @week")["user"].unique()
 
-        week_candiates = create_candidates(transactions, target_users, week + 1)
-        week_candiates = merge_labels(week_candiates, week)
+        week_candiates = create_candidates(transactions=transactions, users=users, items=items,
+                target_users=target_users, week=week + 1, user_features_path=user_features_path, age_shifts=age_shifts)
+        week_candiates = merge_labels(candidates=week_candiates, transactions=transactions, week=week)
         week_candiates["week"] = week
 
         candidates.append(week_candiates)

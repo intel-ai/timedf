@@ -43,12 +43,3 @@ def calc_embeddings(lfm_features_path, week: int, dim: int) -> tuple[pd.DataFram
     item_embeddings = pd.DataFrame(a, columns=[f"item_rep_{i}" for i in range(dim + 1)])
     item_embeddings = pd.concat([pd.DataFrame({"item": range(n_item)}), item_embeddings], axis=1)
     return user_embeddings, item_embeddings
-
-
-def calc_scores(
-    model_type: str, week: int, dim: int, user_idxs: np.ndarray, item_idxs: np.ndarray
-) -> np.ndarray:
-    model, user_features, item_features = _load_resources(model_type, week, dim)
-    return model.predict(
-        user_idxs, item_idxs, user_features=user_features, item_features=item_features
-    )
