@@ -14,7 +14,7 @@ import pandas as pd
 from logzero import logger
 from tqdm.auto import tqdm
 
-import schema
+import hm_fashion_recs.schema as schema
 
 
 def transform_data(input_data_path, result_path):

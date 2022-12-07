@@ -17,7 +17,8 @@ lfm_features_path.mkdir(exist_ok=True, parents=True)
 user_features_path.mkdir(exist_ok=True, parents=True)
 
 # n_weeks = 14 # original
-n_weeks = 1
+n_weeks = 2
 # train_weeks = 6 # orignial
-train_weeks = 0
+# We substract 1 because ???
+train_weeks = n_weeks - 1
 dim = 16

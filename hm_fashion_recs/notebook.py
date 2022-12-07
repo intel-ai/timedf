@@ -149,8 +149,9 @@ def predict(dataset, model):
     pred["pred"] = model.predict(dataset[feature_columns])
 
     pred = pred.groupby(["user", "item"])["pred"].max().reset_index()
-    pred = (
-        pred.sort_values(by=["user", "pred"], ascending=False)
+    return (
+        pred
+        .sort_values(by=["user", "pred"], ascending=False)
         .reset_index(drop=True)
         .groupby("user")["item"]
         .apply(lambda x: list(x)[:12])
@@ -279,35 +280,36 @@ def make_submission(candidates, transactions, users, items, best_iteration, age_
     )
     prepare_submission(pred=pred)
 
+if __name__ == '__main__':
 
-transactions, users, items = load_data()
+    transactions, users, items = load_data()
 
-age_shifts = get_age_shifts(transactions=transactions, users=users)
-candidates, candidates_valid = make_weekly_candidates(
-    transactions=transactions,
-    users=users,
-    items=items,
-    train_weeks=CFG.train_weeks,
-    user_features_path=CFG.user_features_path,
-    age_shifts=age_shifts,
-)
-best_iteration = train_eval(
-    candidates=candidates,
-    candidates_valid=candidates_valid,
-    transactions=transactions,
-    users=users,
-    items=items,
-    age_shifts=age_shifts,
-)
+    age_shifts = get_age_shifts(transactions=transactions, users=users)
+    candidates, candidates_valid = make_weekly_candidates(
+        transactions=transactions,
+        users=users,
+        items=items,
+        train_weeks=CFG.train_weeks,
+        user_features_path=CFG.user_features_path,
+        age_shifts=age_shifts,
+    )
+    best_iteration = train_eval(
+        candidates=candidates,
+        candidates_valid=candidates_valid,
+        transactions=transactions,
+        users=users,
+        items=items,
+        age_shifts=age_shifts,
+    )
 
-del candidates_valid
-gc.collect()
+    del candidates_valid
+    gc.collect()
 
-make_submission(
-    candidates=candidates,
-    transactions=transactions,
-    users=users,
-    items=items,
-    best_iteration=best_iteration,
-    age_shifts=age_shifts,
-)
+    make_submission(
+        candidates=candidates,
+        transactions=transactions,
+        users=users,
+        items=items,
+        best_iteration=best_iteration,
+        age_shifts=age_shifts,
+    )

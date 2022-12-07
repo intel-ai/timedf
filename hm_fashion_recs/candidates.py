@@ -3,7 +3,7 @@ import faiss
 import numpy as np
 import pandas as pd
 
-from utils import timer
+from hm_fashion_recs.recs_utils import timer
 
 
 class CFG:
@@ -395,6 +395,25 @@ def drop_trivial_users(labels):
     return df
 
 
+def make_one_week_candidates(transactions, users, items, week, user_features_path, age_shifts):
+    target_users = transactions.query("week == @week")["user"].unique()
+
+    candidates = create_candidates(
+        transactions=transactions,
+        users=users,
+        items=items,
+        target_users=target_users,
+        week=week + 1,
+        user_features_path=user_features_path,
+        age_shifts=age_shifts,
+    )
+    candidates = merge_labels(
+        candidates=candidates, transactions=transactions, week=week
+    )
+    candidates["week"] = week
+
+    return candidates
+
 def make_weekly_candidates(
     transactions, users, items, train_weeks, user_features_path, age_shifts
 ):
@@ -403,23 +422,12 @@ def make_weekly_candidates(
     # train: week=1..CFG.train_weeks
     candidates = []
     for week in range(1 + train_weeks):
-        target_users = transactions.query("week == @week")["user"].unique()
-
-        week_candiates = create_candidates(
-            transactions=transactions,
+        week_candidate = make_one_week_candidates(
+            transactions=transactions, 
             users=users,
-            items=items,
-            target_users=target_users,
-            week=week + 1,
-            user_features_path=user_features_path,
-            age_shifts=age_shifts,
-        )
-        week_candiates = merge_labels(
-            candidates=week_candiates, transactions=transactions, week=week
-        )
-        week_candiates["week"] = week
+             items=items, week=week, user_features_path=user_features_path, age_shifts=age_shifts)
 
-        candidates.append(week_candiates)
+        candidates.append(week_candidate)
 
     candidates_valid_all = candidates[0].copy()
     for idx, week_candidates in enumerate(candidates):

@@ -6,7 +6,7 @@ import pandas as pd
 from lightfm import LightFM
 from scipy import sparse
 
-from vars import lfm_features_path
+from hm_fashion_recs.vars import lfm_features_path
 
 
 LIGHTFM_PARAMS = {

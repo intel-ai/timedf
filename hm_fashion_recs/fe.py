@@ -6,8 +6,8 @@ import pandas as pd
 
 from lfm import calc_embeddings
 
-from vars import lfm_features_path, dim
-from utils import timer
+from hm_fashion_recs.recs_utils import timer
+from hm_fashion_recs.vars import lfm_features_path, dim
 
 
 class CFG:
@@ -180,9 +180,7 @@ def attach_features(
 
     with timer("user category most frequent"):
         for c in ["department_no_idx"]:
-            tmp = pd.read_pickle(
-                user_features_path / f"user_ohe_agg_week{week}_{c}.pkl"
-            )
+            tmp = pd.read_pickle(user_features_path / f"user_ohe_agg_week{week}_{c}.pkl")
             cols = [c for c in tmp.columns if c != "user"]
             # tmp = tmp[['user'] + cols]
             tmp[cols] = tmp[cols] / tmp[cols].mean()
@@ -201,9 +199,7 @@ def attach_features(
 
         users_with_ohe = users[["user"]]
         for c in item_target_cols:
-            tmp = pd.read_pickle(
-                user_features_path / f"user_ohe_agg_week{week}_{c}.pkl"
-            )
+            tmp = pd.read_pickle(user_features_path / f"user_ohe_agg_week{week}_{c}.pkl")
             assert tmp["user"].tolist() == users_with_ohe["user"].tolist()
             # tmp = tmp[['user'] + [c for c in tmp.columns if c.endswith('_mean')]]
             tmp = tmp.drop("user", axis=1)
