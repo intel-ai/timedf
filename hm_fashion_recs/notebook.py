@@ -150,8 +150,7 @@ def predict(dataset, model):
 
     pred = pred.groupby(["user", "item"])["pred"].max().reset_index()
     return (
-        pred
-        .sort_values(by=["user", "pred"], ascending=False)
+        pred.sort_values(by=["user", "pred"], ascending=False)
         .reset_index(drop=True)
         .groupby("user")["item"]
         .apply(lambda x: list(x)[:12])
@@ -280,7 +279,8 @@ def make_submission(candidates, transactions, users, items, best_iteration, age_
     )
     prepare_submission(pred=pred)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     transactions, users, items = load_data()
 

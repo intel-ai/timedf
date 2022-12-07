@@ -10,10 +10,9 @@ from hm_fashion_recs.vars import (
     user_features_path,
     lfm_features_path,
     dim,
-    working_dir
+    working_dir,
 )
 from hm_fashion_recs.tm import tm
-
 
 
 def feature_engieering(week):
@@ -27,7 +26,7 @@ def feature_engieering(week):
         items=items,
         week=week,
         user_features_path=CFG.user_features_path,
-        age_shifts=age_shifts
+        age_shifts=age_shifts,
     )
 
     candidates = drop_trivial_users(week_candidates)
@@ -38,10 +37,11 @@ def feature_engieering(week):
         items=items,
         candidates=candidates,
         # +1 because train data comes one week earlier
-        week=week+1,
-        pretrain_week=week+2,
+        week=week + 1,
+        pretrain_week=week + 2,
         age_shifts=age_shifts,
         user_features_path=CFG.user_features_path,
+        lfm_features_path=CFG.lfm_features_path if CFG.use_lfm else None,
     )
 
     dataset["query_group"] = dataset["week"].astype(str) + "_" + dataset["user"].astype(str)
@@ -55,26 +55,28 @@ class CFG:
     lfm_features_path = lfm_features_path
     working_dir = working_dir
     user_features_path = user_features_path
-    
+
     use_lfm = False
 
 
 if __name__ == "__main__":
-    with tm.timeit('1-initial_transform'):
+    with tm.timeit("1-initial_transform"):
         transform_data(input_data_path=CFG.raw_data_path, result_path=CFG.preprocessed_data_path)
 
     week = 0
-    with tm.timeit('2-create_user_ohe_agg'):
+    with tm.timeit("2-create_user_ohe_agg"):
         create_user_ohe_agg(
-        week + 1, preprocessed_data_path=CFG.preprocessed_data_path, result_path=CFG.user_features_path
-    )
+            week + 1,
+            preprocessed_data_path=CFG.preprocessed_data_path,
+            result_path=CFG.user_features_path,
+        )
 
     if CFG.use_lfm:
-        with tm.timeit('3-create_lfm_features'):
+        with tm.timeit("3-create_lfm_features"):
             # features are pretraied, that's why +2
-            train_lfm(week=week+2, lfm_features_path=CFG.lfm_features_path, dim=dim)
+            train_lfm(week=week + 2, lfm_features_path=CFG.lfm_features_path, dim=dim)
 
-    with tm.timeit('4-fe'):
+    with tm.timeit("4-fe"):
         feature_engieering(week=week)
 
     print(tm.get_results())

@@ -407,12 +407,11 @@ def make_one_week_candidates(transactions, users, items, week, user_features_pat
         user_features_path=user_features_path,
         age_shifts=age_shifts,
     )
-    candidates = merge_labels(
-        candidates=candidates, transactions=transactions, week=week
-    )
+    candidates = merge_labels(candidates=candidates, transactions=transactions, week=week)
     candidates["week"] = week
 
     return candidates
+
 
 def make_weekly_candidates(
     transactions, users, items, train_weeks, user_features_path, age_shifts
@@ -423,9 +422,13 @@ def make_weekly_candidates(
     candidates = []
     for week in range(1 + train_weeks):
         week_candidate = make_one_week_candidates(
-            transactions=transactions, 
+            transactions=transactions,
             users=users,
-             items=items, week=week, user_features_path=user_features_path, age_shifts=age_shifts)
+            items=items,
+            week=week,
+            user_features_path=user_features_path,
+            age_shifts=age_shifts,
+        )
 
         candidates.append(week_candidate)
 

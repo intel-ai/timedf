@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Union
 import numpy as np
 
 # import modin.pandas as pd
@@ -52,6 +53,7 @@ def attach_features(
     pretrain_week: int,
     age_shifts,
     user_features_path: Path,
+    lfm_features_path: Union[None, Path] = None,
 ) -> pd.DataFrame:
     """
     user, itemに対して特徴を横付けする
@@ -234,11 +236,12 @@ def attach_features(
         ohe = pd.concat(ohe)
         df = df.merge(ohe, on=["user", "item"])
 
-    with timer("lfm features"):
-        seen_users = transactions.query("week >= @pretrain_week")["user"].unique()
-        user_reps, _ = calc_embeddings(lfm_features_path, pretrain_week, dim=dim)
-        user_reps = user_reps.query("user in @seen_users")
-        df = df.merge(user_reps, on="user", how="left")
+    if lfm_features_path is not None:
+        with timer("lfm features"):
+            seen_users = transactions.query("week >= @pretrain_week")["user"].unique()
+            user_reps, _ = calc_embeddings(lfm_features_path, pretrain_week, dim=dim)
+            user_reps = user_reps.query("user in @seen_users")
+            df = df.merge(user_reps, on="user", how="left")
 
     assert len(df) == n_original
     return df
