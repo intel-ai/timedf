@@ -17,7 +17,13 @@ from metric import mapk
 from fe import get_age_shifts, attach_features
 from candidates import create_candidates, make_weekly_candidates
 
-from vars import preprocessed_data_path, train_weeks, lfm_features_path, working_dir, user_features_path
+from vars import (
+    preprocessed_data_path,
+    train_weeks,
+    lfm_features_path,
+    working_dir,
+    user_features_path,
+)
 
 
 # train params
@@ -25,13 +31,12 @@ from vars import preprocessed_data_path, train_weeks, lfm_features_path, working
 # n_iterations = 10_000
 
 
-
 class CFG:
     preprocessed_data_path = preprocessed_data_path
     train_weeks = train_weeks
     lfm_features_path = lfm_features_path
     working_dir = working_dir
-    user_features_path=user_features_path
+    user_features_path = user_features_path
     n_iterations = 50
 
 
@@ -61,7 +66,7 @@ def make_dataset(candidates, begin_shift=1, end_shift=1, *, age_shifts):
             begin_shift + i,
             train_weeks + end_shift,
             age_shifts=age_shifts,
-            user_features_path=CFG.user_features_path
+            user_features_path=CFG.user_features_path,
         )
 
         dataset["query_group"] = dataset["week"].astype(str) + "_" + dataset["user"].astype(str)
@@ -155,7 +160,14 @@ def predict(dataset, model):
 
 def validate_model(model, transactions, users, items, candidates_valid, age_shifts):
     dataset_valid_all = attach_features(
-        transactions, users, items, candidates_valid, 1, CFG.train_weeks + 1, age_shifts=age_shifts, user_features_path=CFG.user_features_path
+        transactions,
+        users,
+        items,
+        candidates_valid,
+        1,
+        CFG.train_weeks + 1,
+        age_shifts=age_shifts,
+        user_features_path=CFG.user_features_path,
     )
 
     pred = predict(dataset_valid_all, model)
@@ -187,9 +199,20 @@ def predict_new_week(*, model, transactions, users, items, age_shifts):
             users=users,
             transactions=transactions,
             items=items,
-            target_users=target_users, week=0, user_features_path=CFG.user_features_path, age_shifts=age_shifts)
+            target_users=target_users,
+            week=0,
+            user_features_path=CFG.user_features_path,
+            age_shifts=age_shifts,
+        )
         candidates = attach_features(
-            transactions, users, items, candidates, 0, train_weeks, age_shifts=age_shifts, user_features_path=CFG.user_features_path,
+            transactions,
+            users,
+            items,
+            candidates,
+            0,
+            train_weeks,
+            age_shifts=age_shifts,
+            user_features_path=CFG.user_features_path,
         )
 
         preds.append(predict(candidates, model))
@@ -261,20 +284,20 @@ transactions, users, items = load_data()
 
 age_shifts = get_age_shifts(transactions=transactions, users=users)
 candidates, candidates_valid = make_weekly_candidates(
-        transactions=transactions, 
-        users=users,
-        items=items,
-        train_weeks=CFG.train_weeks,
-        user_features_path=CFG.user_features_path,
-        age_shifts=age_shifts
-    )
+    transactions=transactions,
+    users=users,
+    items=items,
+    train_weeks=CFG.train_weeks,
+    user_features_path=CFG.user_features_path,
+    age_shifts=age_shifts,
+)
 best_iteration = train_eval(
     candidates=candidates,
     candidates_valid=candidates_valid,
     transactions=transactions,
     users=users,
     items=items,
-    age_shifts=age_shifts
+    age_shifts=age_shifts,
 )
 
 del candidates_valid
