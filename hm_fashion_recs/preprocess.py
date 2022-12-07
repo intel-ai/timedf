@@ -12,7 +12,6 @@ import pandas as pd
 
 # import modin.pandas as pd
 from logzero import logger
-from tqdm.auto import tqdm
 
 import hm_fashion_recs.schema as schema
 

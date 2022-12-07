@@ -1,35 +1,59 @@
 from __future__ import annotations
+import os
 import pickle
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy import sparse
+from lightfm import LightFM
 
 
-def _load_resources(lfm_features_path, model_type: str, week: int, dim: int):
-    path_prefix = lfm_features_path / f"lfm_{model_type}_week{week}_dim{dim}"
+LIGHTFM_PARAMS = {
+    "learning_schedule": "adadelta",
+    "loss": "bpr",
+    "learning_rate": 0.005,
+    "random_state": 42,
+}
+EPOCHS = 100
+
+
+def train_lfm(*, lfm_features_path: Path, week: int, dim: int = 16):
+    dataset = "100"
+
+    path_prefix = lfm_features_path / f"lfm_i_i_dataset{dataset}_week{week}_dim{dim}"
+    print(path_prefix)
+    transactions = pd.read_pickle(f"input/{dataset}/transactions_train.pkl")
+    users = pd.read_pickle(f"input/{dataset}/users.pkl")
+    items = pd.read_pickle(f"input/{dataset}/items.pkl")
+    n_user = len(users)
+    n_item = len(items)
+    a = transactions.query("@week <= week")[["user", "item"]].drop_duplicates(ignore_index=True)
+    a_train = sparse.lil_matrix((n_user, n_item))
+    a_train[a["user"], a["item"]] = 1
+
+    lightfm_params = LIGHTFM_PARAMS.copy()
+    lightfm_params["no_components"] = dim
+
+    model = LightFM(**lightfm_params)
+    model.fit(a_train, epochs=EPOCHS, num_threads=os.cpu_count(), verbose=True)
+    save_path = f"{path_prefix}_model.pkl"
+    with open(save_path, "wb") as f:
+        pickle.dump(model, f)
+
+
+def _load_resources(lfm_features_path, week: int, dim: int):
+    path_prefix = lfm_features_path / f"lfm_i_i_week{week}_dim{dim}"
     model_path = f"{path_prefix}_model.pkl"
-    user_features_path = f"{path_prefix}_user_features.npz"
-    item_features_path = f"{path_prefix}_item_features.npz"
     with open(model_path, "rb") as f:
         model = pickle.load(f)
     user_features = None
     item_features = None
-    if model_type == "i_i":
-        pass
-    elif model_type == "if_i":
-        user_features = sparse.load_npz(user_features_path)
-    elif model_type in ["if_f", "if_if"]:
-        user_features = sparse.load_npz(user_features_path)
-        item_features = sparse.load_npz(item_features_path)
-    else:
-        raise NotImplementedError()
     return model, user_features, item_features
 
 
 def calc_embeddings(lfm_features_path, week: int, dim: int) -> tuple[pd.DataFrame, pd.DataFrame]:
-    model, user_features, item_features = _load_resources(lfm_features_path, "i_i", week, dim)
+    model, user_features, item_features = _load_resources(lfm_features_path, week, dim)
 
     biases, embeddings = model.get_user_representations(user_features)
     n_user = len(biases)

@@ -4,7 +4,6 @@
 from contextlib import contextmanager
 import gc
 from pathlib import Path
-import pickle
 
 import catboost
 import matplotlib.pyplot as plt
