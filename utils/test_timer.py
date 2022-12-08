@@ -11,16 +11,16 @@ def test_timer():
     bt = TimerManager()
     time.sleep(1 * quant)
 
-    with bt.timer("total"):
-        with bt.timer("load_data"):
+    with bt.timeit("total"):
+        with bt.timeit("load_data"):
             time.sleep(1 * quant)
 
         time.sleep(1 * quant)
 
-        with bt.timer("fe"):
+        with bt.timeit("fe"):
             time.sleep(2 * quant)
 
-        with bt.timer("predict"):
+        with bt.timeit("predict"):
             time.sleep(3 * quant)
 
     time.sleep(1 * quant)

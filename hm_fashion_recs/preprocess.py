@@ -14,6 +14,7 @@ import pandas as pd
 from logzero import logger
 
 import hm_fashion_recs.schema as schema
+from hm_fashion_recs.tm import tm
 
 
 def transform_data(input_data_path, result_path):
@@ -127,6 +128,7 @@ def create_user_ohe_agg(week, preprocessed_data_path, result_path):
 
     target_columns = [c for c in items.columns if c.endswith("_idx")]
     for c in target_columns:
+        timer = tm.timeit(str(c))
         save_path = result_path / f"user_ohe_agg_week{week}_{c}.pkl"
 
         # used to be vaex
@@ -146,3 +148,4 @@ def create_user_ohe_agg(week, preprocessed_data_path, result_path):
         users = users.sort_values(by="user").reset_index(drop=True)
         users.to_pickle(save_path)
         print("saved", save_path)
+        timer.stop()

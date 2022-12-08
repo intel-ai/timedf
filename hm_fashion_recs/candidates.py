@@ -3,7 +3,7 @@ import faiss
 import numpy as np
 import pandas as pd
 
-from hm_fashion_recs.recs_utils import timer
+from hm_fashion_recs.tm import tm
 
 
 class CFG:
@@ -63,7 +63,7 @@ def create_candidates(
             gr_volume, on=["user", "item"]
         )
 
-        candidates["rank_meta"] = 10**9 * candidates["day_rank"] + candidates["volume_rank"]
+        candidates["rank_meta"] = 10 ** 9 * candidates["day_rank"] + candidates["volume_rank"]
         candidates["rank_meta"] = candidates.groupby("user")["rank_meta"].rank(method="min")
         # item2item is a heavy workload and not the mose useful one
         # Sort by dictionary order of size of day and size of volume and leave only top items
@@ -255,43 +255,43 @@ def create_candidates(
             }
         )
 
-    with timer("repurchase"):
+    with tm.timeit("repurchase"):
         candidates_repurchase = create_candidates_repurchase(
             "repurchase", week, target_users=target_users
         )
-    with timer("popular"):
+    with tm.timeit("popular"):
         candidates_popular = create_candidates_popular(
             week_start=week,
             target_users=target_users,
             num_weeks=CFG.popular_weeks,
             num_items=CFG.popular_num_items,
         )
-    with timer("age popular"):
+    with tm.timeit("age popular"):
         candidates_age_popular = create_candidates_age_popular(
             week_start=week, target_users=target_users, num_weeks=1, num_items=12
         )
-    with timer("item2item"):
+    with tm.timeit("item2item"):
         candidates_item2item = create_candidates_repurchase(
             "item2item", week, target_users, CFG.item2item_num_items
         )
-    with timer("item2item2"):
+    with tm.timeit("item2item2"):
         candidates_item2item2 = create_candidates_repurchase(
             "item2item2", week, target_users, CFG.item2item_num_items_for_same_product_code
         )
-    with timer("cooccurrence"):
+    with tm.timeit("cooccurrence"):
         candidates_cooc = create_candidates_cooc(
             candidates_item2item, week, CFG.cooc_weeks, CFG.cooc_threshold
         )
-    with timer("same_product_code"):
+    with tm.timeit("same_product_code"):
         candidates_same_product_code = create_candidates_same_product_code(candidates_item2item2)
-    with timer("ohe distance"):
+    with tm.timeit("ohe distance"):
         candidates_ohe_distance = create_candidates_ohe_distance(
             target_users=target_users,
             week_start=week,
             num_weeks=CFG.ohe_distance_num_weeks,
             num_items=CFG.ohe_distance_num_items,
         )
-    with timer("category popular"):
+    with tm.timeit("category popular"):
         candidates_dept = create_candidates_category_popular(
             candidates_item2item2, week, 1, 6, "department_no_idx"
         )

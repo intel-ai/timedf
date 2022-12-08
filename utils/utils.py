@@ -9,6 +9,9 @@ from collections import OrderedDict
 import psutil
 from tempfile import mkstemp
 
+from utils_base_env.benchmarks import benchmark_mapper
+
+
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 directories = {"repository_root": repository_root_directory}
@@ -431,7 +434,7 @@ def str_round(x):
 
 def memory_usage():
     process = psutil.Process(os.getpid())
-    return process.memory_info().rss / (1024**3)  # GB units
+    return process.memory_info().rss / (1024 ** 3)  # GB units
 
 
 def getsize(filename: str):
@@ -741,22 +744,14 @@ def run_benchmarks(
     commit_modin : str, default: "1234567890123456789012345678901234567890"
         Modin commit hash used for benchmark.
     """
-    benchmarks = {
-        "ny_taxi": "taxi",
-        "santander": "santander",
-        "census": "census",
-        "plasticc": "plasticc",
-        "mortgage": "mortgage",
-        "h2o": "h2o",
-        "taxi_ml": "taxi_ml",
-    }
-
     ignore_fields_for_results_unit_conversion = [
         "Backend",
         "dfiles_num",
         "dataset_size",
         "query_name",
     ]
+
+    benchmarks = benchmark_mapper
 
     run_benchmark = __import__(benchmarks[bench_name]).run_benchmark
 

@@ -1,5 +1,5 @@
 from hm_fashion_recs.preprocess import transform_data, create_user_ohe_agg
-from hm_fashion_recs.train_lfm_features import train_lfm
+from hm_fashion_recs.lfm import train_lfm
 
 from hm_fashion_recs.vars import (
     n_weeks,

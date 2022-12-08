@@ -4,6 +4,8 @@ import socket
 import subprocess
 from typing import Union
 
+from utils_base_env.benchmarks import benchmark_mapper
+
 returned_port_numbers = []
 
 
@@ -129,7 +131,7 @@ def prepare_parser():
     commits = parser.add_argument_group("commits")
 
     possible_tasks = ["build", "benchmark"]
-    benchmarks = ["ny_taxi", "santander", "census", "plasticc", "mortgage", "h2o", "taxi_ml"]
+    benchmarks = list(benchmark_mapper)
 
     # Task
     required.add_argument(

@@ -11,12 +11,12 @@ import numpy as np
 
 # import modin.pandas as pd
 import pandas as pd
-from metric import mapk
+from .metric import mapk
 
-from fe import get_age_shifts, attach_features
-from candidates import create_candidates, make_weekly_candidates
+from .fe import get_age_shifts, attach_features
+from .candidates import create_candidates, make_weekly_candidates
 
-from vars import (
+from .vars import (
     preprocessed_data_path,
     train_weeks,
     lfm_features_path,

@@ -1,0 +1,1 @@
+from .week_processing_benchmark import run_benchmark
