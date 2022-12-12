@@ -4,10 +4,14 @@ import numpy as np
 import pandas as pd
 
 from hm_fashion_recs.tm import tm
+from utils.pandas_backend import pb
+
+pb.register_pd_user(__name__)
 
 
 class CFG:
-    # candidates
+    """Configuration for candidate generaton."""
+
     popular_num_items = 60
     popular_weeks = 1
 
@@ -255,43 +259,43 @@ def create_candidates(
             }
         )
 
-    with tm.timeit("repurchase"):
+    with tm.timeit("01-repurchase"):
         candidates_repurchase = create_candidates_repurchase(
             "repurchase", week, target_users=target_users
         )
-    with tm.timeit("popular"):
+    with tm.timeit("02-popular"):
         candidates_popular = create_candidates_popular(
             week_start=week,
             target_users=target_users,
             num_weeks=CFG.popular_weeks,
             num_items=CFG.popular_num_items,
         )
-    with tm.timeit("age popular"):
+    with tm.timeit("03-age popular"):
         candidates_age_popular = create_candidates_age_popular(
             week_start=week, target_users=target_users, num_weeks=1, num_items=12
         )
-    with tm.timeit("item2item"):
+    with tm.timeit("04-item2item"):
         candidates_item2item = create_candidates_repurchase(
             "item2item", week, target_users, CFG.item2item_num_items
         )
-    with tm.timeit("item2item2"):
+    with tm.timeit("05-item2item2"):
         candidates_item2item2 = create_candidates_repurchase(
             "item2item2", week, target_users, CFG.item2item_num_items_for_same_product_code
         )
-    with tm.timeit("cooccurrence"):
+    with tm.timeit("06-cooccurrence"):
         candidates_cooc = create_candidates_cooc(
             candidates_item2item, week, CFG.cooc_weeks, CFG.cooc_threshold
         )
-    with tm.timeit("same_product_code"):
+    with tm.timeit("07-same_product_code"):
         candidates_same_product_code = create_candidates_same_product_code(candidates_item2item2)
-    with tm.timeit("ohe distance"):
+    with tm.timeit("08-ohe distance"):
         candidates_ohe_distance = create_candidates_ohe_distance(
             target_users=target_users,
             week_start=week,
             num_weeks=CFG.ohe_distance_num_weeks,
             num_items=CFG.ohe_distance_num_items,
         )
-    with tm.timeit("category popular"):
+    with tm.timeit("09-category popular"):
         candidates_dept = create_candidates_category_popular(
             candidates_item2item2, week, 1, 6, "department_no_idx"
         )

@@ -8,13 +8,28 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
-
 # import modin.pandas as pd
-from logzero import logger
+import logging
 
 import hm_fashion_recs.schema as schema
 from hm_fashion_recs.tm import tm
+from hm_fashion_recs.lfm import train_lfm
+
+from hm_fashion_recs.vars import (
+    n_weeks,
+    raw_data_path,
+    preprocessed_data_path,
+    user_features_path,
+    lfm_features_path,
+    dim,
+)
+
+import pandas as pd
+from utils.pandas_backend import pb
+
+pb.register_pd_user(__name__)
+
+logger = logging.getLogger(__name__)
 
 
 def transform_data(input_data_path, result_path):
@@ -149,3 +164,23 @@ def create_user_ohe_agg(week, preprocessed_data_path, result_path):
         users.to_pickle(save_path)
         print("saved", save_path)
         timer.stop()
+
+
+def main():
+    use_lfm = False
+
+    transform_data(input_data_path=raw_data_path, result_path=preprocessed_data_path)
+
+    for week in range(n_weeks + 1):
+        create_user_ohe_agg(
+            week, preprocessed_data_path=preprocessed_data_path, result_path=user_features_path
+        )
+
+    if use_lfm:
+
+        for week in range(1, n_weeks + 1):
+            train_lfm(week=week, lfm_features_path=lfm_features_path, dim=dim)
+
+
+if __name__ == "__main__":
+    main()

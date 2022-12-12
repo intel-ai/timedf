@@ -8,11 +8,14 @@ import pandas as pd
 from .lfm import calc_embeddings
 
 from hm_fashion_recs.tm import tm
-from hm_fashion_recs.vars import dim
+from utils.pandas_backend import pb
+
+pb.register_pd_user(__name__)
 
 
 class CFG:
-    # features
+    """Configuration for feature generation"""
+
     user_transaction_feature_weeks = 50
     item_transaction_feature_weeks = 16
     item_age_feature_weeks = 40
@@ -20,6 +23,8 @@ class CFG:
     item_volume_feature_weeks = 20
     user_item_volume_feature_weeks = 16
     age_volume_feature_weeks = 1
+
+    dim = 16
 
 
 def get_age_shifts(transactions, users):
@@ -62,15 +67,15 @@ def attach_features(
     print(f"attach features (week: {week})")
     n_original = len(candidates)
     df = candidates.copy()
-    with tm.timeit("user static fetaures"):
+    with tm.timeit("01-user static features"):
         user_features = ["age"]
         df = df.merge(users[["user"] + user_features], on="user")
 
-    with tm.timeit("item stacic features"):
+    with tm.timeit("02-item static features"):
         item_features = [c for c in items.columns if c.endswith("idx")]
         df = df.merge(items[["item"] + item_features], on="item")
 
-    with tm.timeit("user dynamic features (transactions)"):
+    with tm.timeit("03-user dynamic features (transactions)"):
         week_end = week + CFG.user_transaction_feature_weeks
         tmp = (
             transactions.query("@week <= week < @week_end")
@@ -80,7 +85,7 @@ def attach_features(
         tmp.columns = ["user_" + "_".join(a) for a in tmp.columns.to_flat_index()]
         df = df.merge(tmp, on="user", how="left")
 
-    with tm.timeit("item dynamic features (transactions)"):
+    with tm.timeit("04-item dynamic features (transactions)"):
         week_end = week + CFG.item_transaction_feature_weeks
         tmp = (
             transactions.query("@week <= week < @week_end")
@@ -90,7 +95,7 @@ def attach_features(
         tmp.columns = ["item_" + "_".join(a) for a in tmp.columns.to_flat_index()]
         df = df.merge(tmp, on="item", how="left")
 
-    with tm.timeit("item dynamic features (user features)"):
+    with tm.timeit("05-item dynamic features (user features)"):
         week_end = week + CFG.item_age_feature_weeks
         tmp = transactions.query("@week <= week < @week_end").merge(
             users[["user", "age"]], on="user"
@@ -99,7 +104,7 @@ def attach_features(
         tmp.columns = [f"age_{a}" for a in tmp.columns.to_flat_index()]
         df = df.merge(tmp, on="item", how="left")
 
-    with tm.timeit("item freshness features"):
+    with tm.timeit("06-item freshness features"):
         tmp = (
             transactions.query("@week <= week")
             .groupby("item")["day"]
@@ -109,7 +114,7 @@ def attach_features(
         tmp["item_day_min"] -= transactions.query("@week == week")["day"].min()
         df = df.merge(tmp, on="item", how="left")
 
-    with tm.timeit("item volume features"):
+    with tm.timeit("07-item volume features"):
         week_end = week + CFG.item_volume_feature_weeks
         tmp = (
             transactions.query("@week <= week < @week_end")
@@ -119,7 +124,7 @@ def attach_features(
         )
         df = df.merge(tmp, on="item", how="left")
 
-    with tm.timeit("user freshness features"):
+    with tm.timeit("08-user freshness features"):
         tmp = (
             transactions.query("@week <= week")
             .groupby("user")["day"]
@@ -129,7 +134,7 @@ def attach_features(
         tmp["user_day_min"] -= transactions.query("@week == week")["day"].min()
         df = df.merge(tmp, on="user", how="left")
 
-    with tm.timeit("user volume features"):
+    with tm.timeit("09-user volume features"):
         week_end = week + CFG.user_volume_feature_weeks
         tmp = (
             transactions.query("@week <= week < @week_end")
@@ -139,7 +144,7 @@ def attach_features(
         )
         df = df.merge(tmp, on="user", how="left")
 
-    with tm.timeit("user-item freshness features"):
+    with tm.timeit("10-user-item freshness features"):
         tmp = (
             transactions.query("@week <= week")
             .groupby(["user", "item"])["day"]
@@ -149,7 +154,7 @@ def attach_features(
         tmp["user_item_day_min"] -= transactions.query("@week == week")["day"].min()
         df = df.merge(tmp, on=["item", "user"], how="left")
 
-    with tm.timeit("user-item volume features"):
+    with tm.timeit("11-user-item volume features"):
         week_end = week + CFG.user_item_volume_feature_weeks
         tmp = (
             transactions.query("@week <= week < @week_end")
@@ -159,7 +164,7 @@ def attach_features(
         )
         df = df.merge(tmp, on=["user", "item"], how="left")
 
-    with tm.timeit("item age volume features"):
+    with tm.timeit("12-item age volume features"):
         week_end = week + CFG.age_volume_feature_weeks
         tr = transactions.query("@week <= week < @week_end")[["user", "item"]].merge(
             users[["user", "age"]], on="user"
@@ -180,7 +185,7 @@ def attach_features(
         item_age_volumes = pd.concat(item_age_volumes)
         df = df.merge(item_age_volumes, on=["item", "age"], how="left")
 
-    with tm.timeit("user category most frequent"):
+    with tm.timeit("13-user category most frequent"):
         for c in ["department_no_idx"]:
             tmp = pd.read_pickle(user_features_path / f"user_ohe_agg_week{week}_{c}.pkl")
             cols = [c for c in tmp.columns if c != "user"]
@@ -189,7 +194,7 @@ def attach_features(
             tmp[f"{c}_most_freq_idx"] = np.argmax(tmp[cols].values, axis=1)
             df = df.merge(tmp[["user", f"{c}_most_freq_idx"]])
 
-    with tm.timeit("ohe dot products"):
+    with tm.timeit("14-ohe dot products"):
         item_target_cols = [c for c in items.columns if c.endswith("_idx")]
 
         items_with_ohe = pd.get_dummies(
@@ -237,9 +242,9 @@ def attach_features(
         df = df.merge(ohe, on=["user", "item"])
 
     if lfm_features_path is not None:
-        with tm.timeit("lfm features"):
+        with tm.timeit("15-lfm features"):
             seen_users = transactions.query("week >= @pretrain_week")["user"].unique()
-            user_reps, _ = calc_embeddings(lfm_features_path, pretrain_week, dim=dim)
+            user_reps, _ = calc_embeddings(lfm_features_path, pretrain_week, dim=CFG.dim)
             user_reps = user_reps.query("user in @seen_users")
             df = df.merge(user_reps, on="user", how="left")
 

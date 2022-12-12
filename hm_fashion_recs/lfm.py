@@ -8,6 +8,10 @@ import pandas as pd
 from scipy import sparse
 from lightfm import LightFM
 
+from utils.pandas_backend import pb
+
+pb.register_pd_user(__name__)
+
 
 LIGHTFM_PARAMS = {
     "learning_schedule": "adadelta",
