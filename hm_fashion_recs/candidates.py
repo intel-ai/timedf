@@ -142,7 +142,9 @@ def create_candidates(
         tr = transactions.query("@week_start <= week < @week_start + @num_weeks")[
             ["user", "item"]
         ].drop_duplicates()
-        tr = tr.groupby("item").size().reset_index(name="volume")
+
+        # TODO: modin bug, that's why we use iloc[]
+        tr = tr.iloc[:1_000_000].groupby("item").size().reset_index(name="volume")
         tr = tr.merge(items[["item", category]], on="item")
         tr["cat_volume_rank"] = tr.groupby(category)["volume"].rank(ascending=False, method="min")
         tr = tr.query("cat_volume_rank <= @num_items_per_category").reset_index(drop=True)
