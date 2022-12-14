@@ -1,0 +1,67 @@
+name: Docker test
+on:
+  workflow_call:
+    inputs:
+      cuda_compiler_version:
+        type: string
+        default: None
+      name:
+        type: string
+        default: cpu
+      build-name:
+        type: string
+        default: build
+      reset-cache:
+        type: boolean
+        default: false
+    secrets:
+      token:
+        required: true        
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux, intel-ai.omniscripts.modin-containerized]
+    timeout-minutes: 1080
+    environment: modin
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/checkout@v3
+        with:
+          path: modin
+          repository: modin-project/modin
+
+      - name: Build docker image for modin tests
+        run: |
+          cd modin
+          git rev-parse HEAD >../.github/workflows/modin/git-rev
+          cd ..
+          tar cf .github/workflows/modin/modin.tar -C modin .
+
+          docker rm -f modin-project.modin-containerized || true
+          docker build -t modin-project/modin-containerized -f .github/workflows/modin/Dockerfile.ci .github/workflows/modin
+
+      - name: Run modin microbenchmarks and upload results
+        run:  |
+          set -vx
+          export MODIN_TEST_DATASET_SIZE=Big
+          export MODIN_CPUS=44
+          export MODIN_ENGINE=ray
+
+          docker run -d --name modin-project.modin-containerized \
+            -e MODIN_ENGINE=${MODIN_ENGINE} \
+            -e MODIN_CPUS=${MODIN_CPUS} \
+            --shm-size=128gb \
+            modin-project/modin-containerized tail -f /dev/null
+
+          docker exec -e MODIN_ENGINE=$MODIN_ENGINE \
+            -e MODIN_TEST_DATASET_SIZE=$MODIN_TEST_DATASET_SIZE \
+            -e MODIN_CPUS=$MODIN_CPUS \
+            -e AMYACHEV_GITHUB_TOKEN=${{ secrets.token }} \
+            modin-project.modin-containerized conda run -n modin bash /modin/asv-runner.sh
+
+      - name: Stop the container
+        if: always()
+        run: |
+          docker stop modin-project.modin-containerized || true
+
