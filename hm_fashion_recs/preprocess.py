@@ -11,6 +11,8 @@ from typing import Any
 # import modin.pandas as pd
 import logging
 
+from utils.pandas_backend import pd
+
 import hm_fashion_recs.schema as schema
 from hm_fashion_recs.tm import tm
 from hm_fashion_recs.lfm import train_lfm
@@ -24,10 +26,6 @@ from hm_fashion_recs.vars import (
     dim,
 )
 
-import pandas as pd
-from utils.pandas_backend import pb
-
-pb.register_pd_user(__name__)
 
 logger = logging.getLogger(__name__)
 

@@ -21,8 +21,6 @@ from hm_fashion_recs.tm import tm
 
 from utils import (
     check_support,
-    import_pandas_into_module_namespace,
-    print_results,
     trigger_execution,
     Config,
 )
@@ -103,11 +101,6 @@ def main(raw_data_path):
 def run_benchmark(parameters):
     check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
 
-    pb.set_backend(
-        pandas_mode=parameters["pandas_mode"],
-        ray_tmpdir=parameters["ray_tmpdir"],
-        ray_memory=parameters["ray_memory"],
-    )
     # Update config in case some envs changed after the import
     Config.init(
         MODIN_IMPL="pandas" if parameters["pandas_mode"] == "Pandas" else "modin",

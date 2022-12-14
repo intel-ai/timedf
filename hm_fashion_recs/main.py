@@ -8,8 +8,6 @@ import catboost
 import matplotlib.pyplot as plt
 import numpy as np
 
-# import modin.pandas as pd
-import pandas as pd
 from .metric import mapk
 
 from .fe import get_age_shifts, attach_features
@@ -23,9 +21,7 @@ from .vars import (
     working_dir,
     user_features_path,
 )
-from utils.pandas_backend import pb
-
-pb.register_pd_user(__name__)
+from utils.pandas_backend import pd
 
 
 class CFG:

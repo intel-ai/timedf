@@ -2,15 +2,10 @@ from pathlib import Path
 from typing import Union
 import numpy as np
 
-# import modin.pandas as pd
-import pandas as pd
+from utils.pandas_backend import pd
 
-from .lfm import calc_embeddings
-
+from hm_fashion_recs.lfm import calc_embeddings
 from hm_fashion_recs.tm import tm
-from utils.pandas_backend import pb
-
-pb.register_pd_user(__name__)
 
 
 class CFG:
@@ -100,6 +95,11 @@ def attach_features(
         tmp = transactions.query("@week <= week < @week_end").merge(
             users[["user", "age"]], on="user"
         )
+
+        import pdb
+        pdb.set_trace()
+
+        # FIXME: modin doesn't support list argument for agg
         tmp = tmp.groupby("item")["age"].agg(["mean", "std"])
         tmp.columns = [f"age_{a}" for a in tmp.columns.to_flat_index()]
         df = df.merge(tmp, on="item", how="left")

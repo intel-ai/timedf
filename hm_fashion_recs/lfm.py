@@ -4,13 +4,10 @@ import pickle
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 from scipy import sparse
 from lightfm import LightFM
 
-from utils.pandas_backend import pb
-
-pb.register_pd_user(__name__)
+from utils.pandas_backend import pd
 
 
 LIGHTFM_PARAMS = {

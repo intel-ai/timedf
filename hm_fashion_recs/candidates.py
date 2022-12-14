@@ -1,12 +1,10 @@
 from pathlib import Path
 import faiss
 import numpy as np
-import pandas as pd
+
+from utils.pandas_backend import pd
 
 from hm_fashion_recs.tm import tm
-from utils.pandas_backend import pb
-
-pb.register_pd_user(__name__)
 
 
 class CFG:
@@ -144,7 +142,8 @@ def create_candidates(
         ].drop_duplicates()
 
         # TODO: modin bug, that's why we use iloc[]
-        tr = tr.iloc[:1_000_000].groupby("item").size().reset_index(name="volume")
+        LARGE_NUMBER = 1_000_000_000 
+        tr = tr.iloc[:LARGE_NUMBER].groupby("item").size().reset_index(name="volume")
         tr = tr.merge(items[["item", category]], on="item")
         tr["cat_volume_rank"] = tr.groupby(category)["volume"].rank(ascending=False, method="min")
         tr = tr.query("cat_volume_rank <= @num_items_per_category").reset_index(drop=True)
