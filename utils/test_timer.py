@@ -1,7 +1,7 @@
 import time
 from functools import partial
 
-from pytest import approx
+from pytest import approx, raises
 
 from .timer import TimerManager
 
@@ -32,3 +32,18 @@ def test_timer():
     assert results["total.fe"] == appr(2 * quant)
     assert results["total.predict"] == appr(3 * quant)
     assert results["total"] == appr(7 * quant)
+    assert len(results) == 4
+
+
+def test_timer_state_noname():
+    bt = TimerManager()
+    with raises(ValueError):
+        with bt:
+            pass
+
+
+def test_timer_state_reopen():
+    bt = TimerManager()
+    bt.timeit("b")
+    with raises(ValueError):
+        bt.timeit("b")

@@ -1,28 +1,8 @@
 import time
 import logging
-from typing import Callable
-
-__all__ = ["TimerManager"]
 
 
 logger = logging.getLogger(__name__)
-
-
-class Timer:
-    """Utility timer for TimerManager."""
-
-    def __init__(self, report: Callable[[float], None]) -> None:
-        self.report = report
-        self.start_time = time.perf_counter()
-
-    def __enter__(self):
-        return self
-
-    def stop(self):
-        self.report(time.perf_counter() - self.start_time)
-
-    def __exit__(self, type, value, traceback):
-        self.stop()
 
 
 class TimerManager:
@@ -33,44 +13,75 @@ class TimerManager:
     TimeManager supports nested timings if called through the same object.
     """
 
-    SEPARATOR = "."
-
     def __init__(self, allow_overwrite=False) -> None:
-        self.stack = []
-        self.name2time = {}
-        self.allow_overwrite = allow_overwrite
+        """Initialize root timer.
 
-    def get_results(self):
-        return dict(self.name2time)
+        Parameters
+        ----------
+        allow_overwrite, optional
+            Allow rewriting of measured time, by default False
+        """
+        # name for the next timer to start, also acts as timer state
+        self.prepared_name = None
+        self.timer_stack = self.TimerStack(allow_overwrite=allow_overwrite)
 
     def timeit(self, name):
-        self._validate_name(name)
-        self._push(name)
+        if self.prepared_name is not None:
+            raise ValueError(f'Unfinished timer named "{name}" discovered')
 
-        full_name = self._get_full_name()
+        self.prepared_name = name
+        return self
 
-        def report(time):
-            self.report_timer(full_name, time)
-            self._pop()
+    def __enter__(self):
+        if self.prepared_name is None:
+            raise ValueError("Attempted to start timer, but it has no name")
 
-        return Timer(report)
+        self.timer_stack.push(self.prepared_name)
+        self.prepared_name = None
+        return self
 
-    def report_timer(self, name, time):
-        """Record timer result for a timer"""
-        if not self.allow_overwrite:
-            assert name not in self.name2time, f"Trying to rewrite measurment for {name}"
-        logger.debug("%s time: %s", name, time)
+    def __exit__(self, type, value, traceback):
+        self.timer_stack.pop()
 
-        self.name2time[name] = time
+    def get_results(self):
+        return self.timer_stack.get_results()
 
-    def _push(self, name):
-        self.stack.append(name)
+    class TimerStack:
+        """Keeps internal stack of running timers (time and name) and resulting report."""
 
-    def _pop(self):
-        self.stack.pop()
+        SEPARATOR = "."
 
-    def _validate_name(self, name):
-        assert self.SEPARATOR not in name
+        def __init__(self, allow_overwrite=False) -> None:
+            self.name_stack = []
+            self.start_stack = []
 
-    def _get_full_name(self):
-        return self.SEPARATOR.join(self.stack)
+            self.allow_overwrite = allow_overwrite
+            self.fullname2time = {}
+
+        def push(self, name):
+            self._check_name(name)
+            self.start_stack.append(time.perf_counter())
+            self.name_stack.append(name)
+
+        def pop(self):
+            fullname = self._get_full_name()
+            self.name_stack.pop()
+
+            self._check_overwrite(fullname)
+            self.fullname2time[fullname] = time.perf_counter() - self.start_stack.pop()
+
+        def _check_name(self, name):
+            if self.SEPARATOR in name:
+                raise ValueError(
+                    f'Provided name: "{name}" contains separator symbols "{self.SEPARATOR}"'
+                )
+
+        def _check_overwrite(self, fullname):
+            if not self.allow_overwrite and fullname in self.fullname2time:
+                raise ValueError(f"Trying to rewrite measurment for {fullname}")
+
+        def _get_full_name(self):
+            return self.SEPARATOR.join(self.name_stack)
+
+        def get_results(self):
+            return dict(self.fullname2time)
