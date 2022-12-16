@@ -1,8 +1,8 @@
 #!/bin/bash -eu
 # Set location to store datasets, 
-# WARNING: paths need to be absolute, otherwise docker will not mount
+# WARNING: paths need to be absolute, otherwise docker will not mount. The `($readlink -m ...)` part will make provided path absolute, so use it if necessary
 # WARNING: don't store datasets in the same folder as dockerfile, to avoid long context loading during docker build
-export DATASETS_ROOT=/localdisk/ekrivov/datasets
+export DATASETS_ROOT=$(readlink -m $DATASETS_ROOT)
 export RESULTS_DIR=$(readlink -m results)
 
 # Archive omniscripts for the upload 
