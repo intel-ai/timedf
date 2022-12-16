@@ -92,21 +92,25 @@ def attach_features(
 
     with tm.timeit("05-item dynamic features (user features)"):
         week_end = week + CFG.item_age_feature_weeks
-        tmp = transactions.query("@week <= week < @week_end").merge(
-            users[["user", "age"]], on="user"
+        # TODO: this is an error in modin, right after merge you cannot print tmp, it leads to error
+        # iloc solves this issue for some reason
+        LARGE = 10_000_000_000
+        tmp = (
+            transactions.query("@week <= week < @week_end")
+            .iloc[:LARGE]
+            .merge(users[["user", "age"]], on="user")
         )
 
-        import pdb
-        pdb.set_trace()
-
-        # FIXME: modin doesn't support list argument for agg
+        # FIXME: modin doesn't support list argument for agg??? But it works perfectly fine
         tmp = tmp.groupby("item")["age"].agg(["mean", "std"])
         tmp.columns = [f"age_{a}" for a in tmp.columns.to_flat_index()]
         df = df.merge(tmp, on="item", how="left")
 
     with tm.timeit("06-item freshness features"):
         tmp = (
+            # TODO modin bug
             transactions.query("@week <= week")
+            .iloc[:LARGE]
             .groupby("item")["day"]
             .min()
             .reset_index(name="item_day_min")
@@ -117,7 +121,9 @@ def attach_features(
     with tm.timeit("07-item volume features"):
         week_end = week + CFG.item_volume_feature_weeks
         tmp = (
+            # FIXME: modin bug
             transactions.query("@week <= week < @week_end")
+            .iloc[:LARGE]
             .groupby("item")
             .size()
             .reset_index(name="item_volume")
@@ -138,6 +144,7 @@ def attach_features(
         week_end = week + CFG.user_volume_feature_weeks
         tmp = (
             transactions.query("@week <= week < @week_end")
+            .iloc[:LARGE]
             .groupby("user")
             .size()
             .reset_index(name="user_volume")
@@ -166,8 +173,11 @@ def attach_features(
 
     with tm.timeit("12-item age volume features"):
         week_end = week + CFG.age_volume_feature_weeks
-        tr = transactions.query("@week <= week < @week_end")[["user", "item"]].merge(
-            users[["user", "age"]], on="user"
+        # FIXME: modin bug
+        tr = (
+            transactions.query("@week <= week < @week_end")[["user", "item"]]
+            .iloc[:LARGE]
+            .merge(users[["user", "age"]], on="user")
         )
         item_age_volumes = []
         for age in range(16, 100):

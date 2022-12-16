@@ -1,8 +1,6 @@
 """This script reproduces notebook from the original solution."""
 
-from contextlib import contextmanager
 import gc
-from pathlib import Path
 
 import catboost
 import matplotlib.pyplot as plt
@@ -48,7 +46,9 @@ def concat_train(datasets, begin, num):
     return train
 
 
-def make_dataset(candidates, begin_shift=1, end_shift=1, *, age_shifts):
+def make_dataset(
+    candidates, transactions, users, items, begin_shift=1, end_shift=1, *, age_shifts
+):
     # Since the learning period of the pretrained model is different at the time of evaluation and at the time of submission, leave candidates
 
     datasets = []
@@ -236,7 +236,13 @@ def prepare_submission(*, pred):
 
 def train_eval(candidates, transactions, users, items, candidates_valid, age_shifts):
     train, valid = make_dataset(
-        candidates=candidates, begin_shift=1, end_shift=1, age_shifts=age_shifts
+        candidates=candidates,
+        transactions=transactions,
+        users=users,
+        items=items,
+        begin_shift=1,
+        end_shift=1,
+        age_shifts=age_shifts,
     )
 
     model = train_model(train=train, valid=valid)
@@ -260,7 +266,13 @@ def train_eval(candidates, transactions, users, items, candidates_valid, age_shi
 def make_submission(candidates, transactions, users, items, best_iteration, age_shifts):
 
     train, valid = make_dataset(
-        candidates=candidates, begin_shift=1, end_shift=0, age_shifts=age_shifts
+        candidates=candidates,
+        transactions=transactions,
+        users=users,
+        items=items,
+        begin_shift=1,
+        end_shift=0,
+        age_shifts=age_shifts,
     )
 
     model = train_model(train=train, best_iteration=best_iteration)

@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import Callable, Iterator
+from typing import Callable
 
 __all__ = ["TimerManager"]
 
@@ -59,7 +59,7 @@ class TimerManager:
         """Record timer result for a timer"""
         if not self.allow_overwrite:
             assert name not in self.name2time, f"Trying to rewrite measurment for {name}"
-        logger.info("%s time: %s", name, time)
+        logger.debug("%s time: %s", name, time)
 
         self.name2time[name] = time
 

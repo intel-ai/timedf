@@ -696,12 +696,8 @@ def run_benchmarks(
     ]
 
     # Set current backend, !!!needs to be run before benchmark import!!!
-    pb.set_backend(
-        pandas_mode=pandas_mode,
-        ray_tmpdir=ray_tmpdir,
-        ray_memory=ray_memory,
-    )
-    
+    pb.set_backend(pandas_mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
+
     run_benchmark = __import__(benchmark_mapper[bench_name]).run_benchmark
 
     parameters = {
@@ -717,7 +713,6 @@ def run_benchmarks(
         "validation": validation,
         "extended_functionality": extended_functionality,
     }
-
 
     db_params = DBParams(
         server=db_server, port=db_port, user=db_user, password=db_pass, name=db_name

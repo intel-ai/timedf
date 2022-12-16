@@ -1,4 +1,3 @@
-
 import os
 
 import pandas as pd
@@ -72,13 +71,10 @@ class PB:
 
     def set_backend(self, pandas_mode, ray_tmpdir, ray_memory):
         import_pandas_into_module_namespace(
-            namespace=self.pd_store,
-            mode=pandas_mode,
-            ray_tmpdir=ray_tmpdir,
-            ray_memory=ray_memory,
+            namespace=self.pd_store, mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory
         )
 
-        globals()['pd'] = self.pd_store['pd']
+        globals()["pd"] = self.pd_store["pd"]
+
 
 pb = PB()
-

@@ -19,6 +19,6 @@ user_features_path.mkdir(exist_ok=True, parents=True)
 # n_weeks = 14 # original
 n_weeks = 2
 # train_weeks = 6 # orignial
-# We substract 1 because ???
+# We substract 1 because 1st week will be used for validation
 train_weeks = n_weeks - 1
 dim = 16

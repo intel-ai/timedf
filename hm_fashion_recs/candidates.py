@@ -98,7 +98,7 @@ def create_candidates(
         candidates = candidates.merge(popular_items, on="crossjoinkey").drop(
             "crossjoinkey", axis=1
         )
-        candidates = candidates.rename(columns={"rank": f"pop_rank"})
+        candidates = candidates.rename(columns={"rank": "pop_rank"})
 
         candidates["strategy"] = "pop"
         return candidates.drop_duplicates(ignore_index=True)
@@ -142,7 +142,7 @@ def create_candidates(
         ].drop_duplicates()
 
         # TODO: modin bug, that's why we use iloc[]
-        LARGE_NUMBER = 1_000_000_000 
+        LARGE_NUMBER = 1_000_000_000
         tr = tr.iloc[:LARGE_NUMBER].groupby("item").size().reset_index(name="volume")
         tr = tr.merge(items[["item", category]], on="item")
         tr["cat_volume_rank"] = tr.groupby(category)["volume"].rank(ascending=False, method="min")

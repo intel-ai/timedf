@@ -1,13 +1,11 @@
 import os
 from pathlib import Path
 
-from hm_fashion_recs.lfm import train_lfm
 from hm_fashion_recs.preprocess import transform_data, create_user_ohe_agg
 from hm_fashion_recs.main import get_age_shifts, load_data
 from hm_fashion_recs.candidates import make_one_week_candidates, drop_trivial_users
 from hm_fashion_recs.fe import attach_features
 
-# import hm_fashion_recs.modin_backend as pd
 
 from hm_fashion_recs.vars import (
     raw_data_path,
@@ -19,13 +17,7 @@ from hm_fashion_recs.vars import (
 from hm_fashion_recs.tm import tm
 
 
-from utils import (
-    check_support,
-    trigger_execution,
-    Config,
-)
-
-from utils.pandas_backend import pb
+from utils import check_support, trigger_execution, Config
 
 
 class CFG:
@@ -36,9 +28,6 @@ class CFG:
     user_features_path = user_features_path
 
     use_lfm = False
-
-    # def update(self, raw_data_path, ):
-    #     CFG.
 
 
 def feature_engieering(week):
@@ -59,6 +48,8 @@ def feature_engieering(week):
         )
 
         candidates = drop_trivial_users(week_candidates)
+
+        candidates.to_pickle(CFG.working_dir / "candidates.pkl")
 
     with tm.timeit("04-attach_features"):
         dataset = attach_features(
