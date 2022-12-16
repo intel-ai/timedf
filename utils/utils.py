@@ -6,8 +6,9 @@ import warnings
 from dataclasses import dataclass
 from timeit import default_timer as timer
 from collections import OrderedDict
-import psutil
 from tempfile import mkstemp
+
+import psutil
 
 from utils_base_env.benchmarks import benchmark_mapper
 

@@ -3,7 +3,7 @@ python:
   - "3.7.13"
 # command to install dependencies
 install:
-  - pip install black flake8 flake8-per-file-ignores pytest
+  - pip install black flake8 flake8-per-file-ignores pytest psutil
 # command to run tests
 script:
   - black . --check --diff
