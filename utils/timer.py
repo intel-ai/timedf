@@ -8,13 +8,13 @@ logger = logging.getLogger(__name__)
 class TimerManager:
     """
     Utility timer that can measure time using `timeit` function.
-    
+
     Intended use is through context manager like.
-    
+
     Notes
     ------
     TimeManager supports nested timings if called through the same object.
-    
+
     Examples
     ----------
     >>> tm = TimerManager
