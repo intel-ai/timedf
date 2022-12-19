@@ -26,4 +26,5 @@ from .utils import (
     getsize,
     run_benchmarks,
 )
+from .trigger_execution import trigger_execution, Config
 from .timer import TimerManager

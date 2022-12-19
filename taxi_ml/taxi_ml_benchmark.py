@@ -5,9 +5,13 @@ from pathlib import Path
 from typing import Any, Iterable, Tuple, Union, Dict
 from itertools import islice
 
-from utils import check_support, import_pandas_into_module_namespace, print_results
-
-from utils.trigger_execution import trigger_execution, Config
+from utils import (
+    check_support,
+    import_pandas_into_module_namespace,
+    print_results,
+    trigger_execution,
+    Config,
+)
 
 
 def get_pd():
@@ -55,7 +59,11 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_hdk_m
         )
 
     pd = get_pd()
-    return pd.read_csv(filepath, dtype=col2dtype, parse_dates=parse_dates)
+    return pd.read_csv(
+        filepath,
+        dtype=col2dtype,
+        parse_dates=parse_dates,
+    )
 
 
 @measure_time
