@@ -1,6 +1,6 @@
 """Holder of pandas backend. Intended use:
     1. Set correct pandas backend with `set_backend` call **before** any benchmark import.
-    2. Get pandas in each benchmark module with `import pd from utils.pandas_backend, this will use
+    2. Get pandas in each benchmark module with `from utils.pandas_backend import pd`, this will use
      correct version of backend.
 """
 import pandas as pd  # noqa: F401 this import exists to provide vscode support for backend users
