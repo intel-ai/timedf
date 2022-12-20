@@ -6,10 +6,12 @@ import warnings
 from dataclasses import dataclass
 from timeit import default_timer as timer
 from collections import OrderedDict
-import psutil
 from tempfile import mkstemp
 
-from .pandas_backend import pb, import_pandas_into_module_namespace
+import psutil
+
+from .namespace_utils import import_pandas_into_module_namespace
+from .pandas_backend import set_backend
 from utils_base_env.benchmarks import benchmark_mapper
 
 
@@ -696,7 +698,7 @@ def run_benchmarks(
     ]
 
     # Set current backend, !!!needs to be run before benchmark import!!!
-    pb.set_backend(pandas_mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
+    set_backend(pandas_mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
 
     run_benchmark = __import__(benchmark_mapper[bench_name]).run_benchmark
 
