@@ -248,7 +248,7 @@ def create_candidates(
         a_users = np.ascontiguousarray(a_users)
         a_items = np.ascontiguousarray(a_items)
         index = faiss.index_factory(a_items.shape[1], "Flat", faiss.METRIC_INNER_PRODUCT)
-        index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), 0, index)
+        # index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), 0, nidex)
         index.add(a_items)
         distances, idxs = index.search(a_users, num_items)
         return pd.DataFrame(
