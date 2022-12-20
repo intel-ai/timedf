@@ -65,7 +65,7 @@ def create_candidates(
             gr_volume, on=["user", "item"]
         )
 
-        candidates["rank_meta"] = 10 ** 9 * candidates["day_rank"] + candidates["volume_rank"]
+        candidates["rank_meta"] = 10**9 * candidates["day_rank"] + candidates["volume_rank"]
         candidates["rank_meta"] = candidates.groupby("user")["rank_meta"].rank(method="min")
         # item2item is a heavy workload and not the mose useful one
         # Sort by dictionary order of size of day and size of volume and leave only top items
