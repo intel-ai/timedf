@@ -139,27 +139,26 @@ def create_user_ohe_agg(week, preprocessed_data_path, result_path):
 
     target_columns = [c for c in items.columns if c.endswith("_idx")]
     for c in target_columns:
-        timer = tm.timeit(str(c))
-        save_path = result_path / f"user_ohe_agg_week{week}_{c}.pkl"
+        with tm.timeit(str(c)):
+            save_path = result_path / f"user_ohe_agg_week{week}_{c}.pkl"
 
-        # used to be vaex
-        right = pd.get_dummies(items[["item", c]], columns=[c])
+            # used to be vaex
+            right = pd.get_dummies(items[["item", c]], columns=[c])
 
-        tmp = pd.merge(tr, right, on="item")
-        tmp = tmp.drop(columns="item")
+            tmp = pd.merge(tr, right, on="item")
+            tmp = tmp.drop(columns="item")
 
-        tmp = tmp.groupby("user").agg("mean")
+            tmp = tmp.groupby("user").agg("mean")
 
-        # used to be vaex
-        users = users[["user"]].join(tmp, on="user", how="left")
-        users = users.rename(
-            columns={c: f"user_ohe_agg_{c}" for c in users.columns if c != "user"}
-        )
+            # used to be vaex
+            users = users[["user"]].join(tmp, on="user", how="left")
+            users = users.rename(
+                columns={c: f"user_ohe_agg_{c}" for c in users.columns if c != "user"}
+            )
 
-        users = users.sort_values(by="user").reset_index(drop=True)
-        users.to_pickle(save_path)
-        print("saved", save_path)
-        timer.stop()
+            users = users.sort_values(by="user").reset_index(drop=True)
+            users.to_pickle(save_path)
+            print("saved", save_path)
 
 
 def main():
