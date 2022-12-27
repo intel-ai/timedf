@@ -26,53 +26,52 @@ tables = [
 
 # Columns in SQL table that contain host-specific information that is expected to be the same for every run, this info will be placed in a separate sheet.
 host_cols = [
-        "ServerName",
-        "Architecture",
-        "Machine",
-        "Node",
-        "OS",
-        "CPUCount",
-        "CPUModel",
-        "CPUMaxMHz",
-        "L1dCache",
-        "L1iCache",
-        "L2Cache",
-        "L3Cache",
-        "MemTotal",
-        "SwapTotal",
-        "SwapFree",
-        "HugePages_Total",
-        "HugePages_Free",
-        "Hugepagesize",
-        "OmnisciCommitHash",
-        "OmniscriptsCommitHash",
-        "ModinCommitHash",
-        "IbisCommitHash",
-    ]
+    "ServerName",
+    "Architecture",
+    "Machine",
+    "Node",
+    "OS",
+    "CPUCount",
+    "CPUModel",
+    "CPUMaxMHz",
+    "L1dCache",
+    "L1iCache",
+    "L2Cache",
+    "L3Cache",
+    "MemTotal",
+    "SwapTotal",
+    "SwapFree",
+    "HugePages_Total",
+    "HugePages_Free",
+    "Hugepagesize",
+    "OmnisciCommitHash",
+    "OmniscriptsCommitHash",
+    "ModinCommitHash",
+    "IbisCommitHash",
+]
 
 # Columns in SQL tables that are run-specific, part of them will be compressed (`iteration`) and some need to be presented along benchmark results (`MemFree`)
 possible_run_cols = [
-            # will be removed
-            "id",
-            "run_id",
-            "date",
-            "Iteration",
-            # will become a header
-            "BackEnd",
-            # will be presended along with benchmark results in a hidden form
-            "CPUMHz",
-            "MemFree",
-            "MemAvailable",
-            "dataset_size",
-            "dfiles_num",
-        ]
+    # will be removed
+    "id",
+    "run_id",
+    "date",
+    "Iteration",
+    # will become a header
+    "BackEnd",
+    # will be presended along with benchmark results in a hidden form
+    "CPUMHz",
+    "MemFree",
+    "MemAvailable",
+    "dataset_size",
+    "dfiles_num",
+]
+
 
 class DBLoader:
     def __init__(self, driver, server, user, password, port, name):
-        self.engine = db.create_engine(
-            f"{driver}://{user}:{password}@{server}:{port}/{name}"
-        )
-        
+        self.engine = db.create_engine(f"{driver}://{user}:{password}@{server}:{port}/{name}")
+
     def load_latest_results(self, table_name, past_lookup_days=30):
         metadata = db.MetaData()
         table = db.Table(table_name, metadata, autoload=True, autoload_with=self.engine)
@@ -175,10 +174,10 @@ def parse_args():
     )
 
     parser.add_argument(
-        '-report_path',
+        "-report_path",
         dest="report_path",
         default="report.xlsx",
-        help="Path to the resulting file"
+        help="Path to the resulting file",
     )
     return parser.parse_args()
 
@@ -193,8 +192,15 @@ def main():
         os.unlink(args.report_path)
 
     writer = pd.ExcelWriter(args.report_path, engine="xlsxwriter")
-    
-    loader = DBLoader(driver=args.db_driver, server=args.db_server, user=args.db_user, password=args.db_pass, port=args.db_port, name=args.db_name)
+
+    loader = DBLoader(
+        driver=args.db_driver,
+        server=args.db_server,
+        user=args.db_user,
+        password=args.db_pass,
+        port=args.db_port,
+        name=args.db_name,
+    )
 
     host_params = []
     for table_name in tables:
