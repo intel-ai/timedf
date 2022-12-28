@@ -78,29 +78,35 @@ class KeyValueListParser(argparse.Action):
 
 def add_mysql_arguments(parser, etl_ml_tables=False):
     parser.add_argument(
-        "-db_server", dest="db_server", default="localhost", help="Host name of MySQL server."
+        "-db_driver",
+        dest="db_driver",
+        default="mysql+mysqlconnector",
+        help="Driver for the sql table in sqlalchemy format.",
     )
     parser.add_argument(
-        "-db_port", dest="db_port", default=3306, type=int, help="Port number of MySQL server."
+        "-db_server", dest="db_server", default="localhost", help="Host name of SQL server."
+    )
+    parser.add_argument(
+        "-db_port", dest="db_port", default=3306, type=int, help="Port number of SQL server."
     )
     parser.add_argument(
         "-db_user",
         dest="db_user",
-        help="Username to use to connect to MySQL database. "
-        "If user name is specified, script attempts to store results in MySQL "
+        help="Username to use to connect to SQL database. "
+        "If user name is specified, script attempts to store results in SQL "
         "database using other -db-* parameters.",
     )
     parser.add_argument(
         "-db_pass",
         dest="db_pass",
         default="omniscidb",
-        help="Password to use to connect to MySQL database.",
+        help="Password to use to connect to SQL database.",
     )
     parser.add_argument(
         "-db_name",
         dest="db_name",
         default="omniscidb",
-        help="MySQL database to use to store benchmark results.",
+        help="SQL database to use to store benchmark results.",
     )
     if etl_ml_tables:
         parser.add_argument(

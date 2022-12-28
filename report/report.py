@@ -5,6 +5,11 @@ import socket
 import subprocess
 from typing import Dict, Any, Union, Iterable, Pattern
 
+from sqlalchemy import MetaData, Table, Column, String, DateTime, Integer, func, insert
+
+
+DEFAULT_STRING_LEN = 500
+
 
 def enrich_predefined_col2value(col2value: Dict[str, str]) -> Dict[str, str]:
     def get_basic_host_dict() -> Dict[str, Any]:
@@ -59,75 +64,36 @@ def enrich_predefined_col2value(col2value: Dict[str, str]) -> Dict[str, str]:
             output = proc_meminfo.read().strip()
         return {t: match_and_assign(p, output) for t, p in proc_meminfo_patterns.items()}
 
-    return {
-        **get_basic_host_dict(),
-        **get_lspcu_dict(),
-        **get_meminfo_dict(),
-        **col2value,
-    }
+    return {**get_basic_host_dict(), **get_lspcu_dict(), **get_meminfo_dict(), **col2value}
 
 
-def get_create_statement(
+def get_table_meta(
     table_name: str,
-    benchmark_specific_col2sql_type: Dict[str, str],
-    predefined_cols: Iterable[str],
-) -> str:
-    def generate_create_statement(table_name: str, col2sql_spec: dict) -> str:
-        return "\n".join(
-            [
-                f"CREATE TABLE IF NOT EXISTS {table_name} (",
-                *[f"    {field} {spec}," for field, spec in col2sql_spec.items()],
-                "    PRIMARY KEY (id)" ");",
-            ]
-        )
-
-    col2sql_spec = {
-        "id": "BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT",
-        "date": "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
-        **{name: "VARCHAR(500) NOT NULL" for name in predefined_cols},
-        **benchmark_specific_col2sql_type,
-    }
-
-    return generate_create_statement(table_name, col2sql_spec)
-
-
-def get_insert_statement(table_name: str, col2val: Dict[str, str]) -> str:
-    def val2string(val) -> str:
-        if type(val) is str:
-            return f"'{val}'"
-        elif type(val) is float and val == float("inf"):
-            return "4294967295"
-        else:
-            return str(val)
-
-    def generate_insert_statement(table_name: str, col2val: Dict[str, Any]) -> str:
-        return "\n".join(
-            [
-                f"INSERT INTO {table_name} (",
-                ",".join(col2val),
-                ") VALUES(",
-                ",".join([val2string(val) for _, val in col2val.items()]),
-                ");",
-            ]
-        )
-
-    return generate_insert_statement(table_name, col2val)
+    str_cols: Iterable[str],
+) -> Table:
+    return Table(
+        table_name,
+        MetaData(),
+        Column("id", Integer(), primary_key=True),
+        Column("date", DateTime(), nullable=False, server_default=func.now()),
+        *[Column(name, String(DEFAULT_STRING_LEN), nullable=False) for name in str_cols],
+    )
 
 
 class DbReport:
     def __init__(
         self,
-        database,
+        engine,
         table_name: str,
-        benchmark_specific_col2sql_type: Dict[str, str],
+        benchmark_specific_cols: Iterable[str],
         predefined_col2value: Dict[str, str] = {},
     ):
         """Initialize and submit reports to MySQL database
 
         Parameters
         ----------
-        database
-            MySQL database from the connector
+        engine
+            Database engine
         table_name
             Table name
         benchmark_specific_col2sql_type
@@ -138,24 +104,21 @@ class DbReport:
             benchmark results, we assume string type for values.
         """
         self._table_name = table_name
-        self._database = database
+        self._engine = engine
 
         self._predefined_col2value = enrich_predefined_col2value(predefined_col2value)
         print("_predefined_field_values = ", self._predefined_col2value)
 
-        statement = get_create_statement(
+        self._table = get_table_meta(
             table_name=self._table_name,
-            benchmark_specific_col2sql_type=benchmark_specific_col2sql_type,
-            predefined_cols=list(self._predefined_col2value),
+            str_cols=[*self._predefined_col2value, *benchmark_specific_cols],
         )
-        print("Executing statement", statement)
-        self._database.cursor().execute(statement)
+
+        self._table.create(self._engine, checkfirst=True)
 
     def submit(self, benchmark_col2value: Dict[str, Any]):
-        statement = get_insert_statement(
-            table_name=self._table_name,
-            col2val={**self._predefined_col2value, **benchmark_col2value},
-        )
-        print("Executing statement", statement)
-        self._database.cursor().execute(statement)
-        self._database.commit()
+        with self._engine.connect() as conn:
+            conn.execute(
+                insert(self._table), [{**self._predefined_col2value, **benchmark_col2value}]
+            )
+            conn.commit()

@@ -569,6 +569,7 @@ def get_dir_size(start_path="."):
 
 @dataclass
 class DBParams:
+    driver: str
     server: str
     port: int
     user: str
@@ -584,23 +585,19 @@ class ResultReporter:
         self.ignore_fields = ignore_fields
         self.reporter = None
 
+    def _get_db_url(self):
+        return f"{self.db_params.driver}://{self.db_params.user}:{self.db_params.password}@{self.db_params.server}:{self.db_params.port}/{self.db_params.name}"
+
     def _initialize_report(self, results):
         """This function exists because currently we need the first result to talk to the database"""
         from report import DbReport
-        import mysql.connector
+        from sqlalchemy import create_engine
 
-        self.db = mysql.connector.connect(
-            host=self.db_params.server,
-            port=self.db_params.port,
-            user=self.db_params.user,
-            passwd=self.db_params.password,
-            db=self.db_params.name,
-        )
-
-        benchmark_fields = {x: "VARCHAR(500) NOT NULL" for x in sum(map(list, results), [])}
+        self.engine = create_engine(self._get_db_url(), future=True)
+        benchmark_fields = list({val for result_row in results for val in result_row})
 
         self.reporter = DbReport(
-            self.db, self.table_name, benchmark_fields, self.predefined_fields
+            self.engine, self.table_name, benchmark_fields, self.predefined_fields
         )
 
     def report(self, results: Iterable[Dict[str, float]]):
@@ -626,6 +623,7 @@ def run_benchmarks(
     use_modin_xgb: bool = False,
     gpu_memory: int = None,
     extended_functionality: bool = False,
+    db_driver: str = "mysql+mysqlconnector",
     db_server: str = "localhost",
     db_port: int = 3306,
     db_user: str = None,
@@ -717,7 +715,12 @@ def run_benchmarks(
     }
 
     db_params = DBParams(
-        server=db_server, port=db_port, user=db_user, password=db_pass, name=db_name
+        driver=db_driver,
+        server=db_server,
+        port=db_port,
+        user=db_user,
+        password=db_pass,
+        name=db_name,
     )
     predefined_fields = {
         "OmnisciCommitHash": commit_hdk,

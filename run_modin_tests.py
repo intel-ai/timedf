@@ -99,6 +99,7 @@ def run_benchmark_task(args):
         args.use_modin_xgb,
         args.gpu_memory,
         args.extended_functionality,
+        args.db_driver,
         args.db_server,
         args.db_port,
         args.db_user,
