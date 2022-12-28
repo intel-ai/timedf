@@ -1,7 +1,7 @@
 import glob
 import os
 import time
-from typing import Dict, Iterable
+from typing import Dict, List
 import warnings
 from dataclasses import dataclass
 from timeit import default_timer as timer
@@ -600,8 +600,8 @@ class ResultReporter:
             self.engine, self.table_name, benchmark_fields, self.predefined_fields
         )
 
-    def report(self, results: Iterable[Dict[str, float]]):
-        if self.reporter is None:
+    def report(self, results: List[Dict[str, float]]):
+        if self.reporter is None and len(results) > 0:
             self._initialize_report(results)
 
         for result in results:

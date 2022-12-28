@@ -103,6 +103,9 @@ class DbReport:
             Values that are knows before starting the benchmark, they will be submitted along with
             benchmark results, we assume string type for values.
         """
+        if not (isinstance(table_name, str) and len(table_name) > 0):
+            raise ValueError(f'Received invalid table name: "{table_name}"')
+
         self._table_name = table_name
         self._engine = engine
 
