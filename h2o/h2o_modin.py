@@ -483,8 +483,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
             "queries_results": queries_results,
             "extended_functionality": extended_functionality,
         }
-
-    if join_queries_files_number:
+    elif join_queries_files_number:
         data_name = next(
             (f for f in data_for_join_queries if "NA" in f), None
         )  # gets the file name with "NA" component
@@ -531,16 +530,16 @@ def queries_modin(filename, pandas_mode, extended_functionality):
             "join_query4": data_files_import_times["x"] + data_files_import_times["medium"],
             "join_query5": data_files_import_times["x"] + data_files_import_times["big"],
         }
+    else:
+        raise ValueError('Unexpected branch, expected either join or groupby task')
 
     for query_name, query_func in queries.items():
         query_func(**queries_parameters)
+        queries_results[query_name]["t_readcsv"] = query_data_file_import_times[query_name]
         print(f"{pandas_mode} {query_name} results:")
         print_results(results=queries_results[query_name], unit="s")
-        # TODO: add additional params
-        queries_results[query_name]["t_readcsv"] = query_data_file_import_times[query_name]
-        queries_results[query_name]["dataset_size"] = query_data_file_sizes[query_name]
 
-    return queries_results
+    return queries_results, {f'dataset_size_{name}': val for name, val in query_data_file_sizes}
 
 
 def run_benchmark(parameters):
@@ -557,10 +556,12 @@ def run_benchmark(parameters):
         ray_tmpdir=parameters["ray_tmpdir"],
         ray_memory=parameters["ray_memory"],
     )
-    results = queries_modin(
+    results, run_params = queries_modin(
         filename=parameters["data_file"],
         pandas_mode=parameters["pandas_mode"],
         extended_functionality=parameters["extended_functionality"],
     )
+    import pdb
+    pdb.set_trace()
 
-    return results
+    return results, run_params

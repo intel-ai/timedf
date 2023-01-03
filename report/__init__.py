@@ -1,1 +1,1 @@
-from .report import DbReport
+from .report import DbReporter, DbConfig

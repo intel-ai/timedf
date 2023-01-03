@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Dict, Any, Union, Iterable, Pattern
 
 from sqlalchemy.engine import Engine
@@ -8,7 +9,8 @@ from report.run_params import RunParams, HostParams
 from report.schema import Iteration, Measurement
 
 
-class DBConfig:
+@dataclass
+class DbConfig:
     driver: str
     server: str
     port: int
@@ -20,8 +22,8 @@ class DBConfig:
         url = f"{self.driver}://{self.user}:{self.password}@{self.server}:{self.port}/{self.name}"
         return create_engine(url, future=True)
 
-class DBReporter:
-    def __init__(self, db_config: DBConfig):
+class DbReporter:
+    def __init__(self, db_config: DbConfig, run_id: int, run_params):
         """Initialize and submit reports to MySQL database
 
         Parameters
@@ -38,16 +40,18 @@ class DBReporter:
             benchmark results, we assume string type for values.
         """
         self.engine = db_config.create_engine()
+        self.run_id = run_id
+        self.run_params = run_params
 
-    def report(self, run_id, run_params, results, params=None):
+    def report(self, results, params=None):
         params = params or {}
         with Session(self.engine, autocommit=True) as session:
             measurements = [Measurement(**results) for r in results]
             iteration = Iteration(
-                run_id=run_id,
+                run_id=self.run_id,
                 params=params,
                 **HostParams().report(),
-                **RunParams().report(run_params),
+                **RunParams().report(self.run_params),
                 measurements=measurements
             )
             session.add(iteration)

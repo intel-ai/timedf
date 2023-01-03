@@ -76,7 +76,7 @@ class KeyValueListParser(argparse.Action):
         setattr(namespace, self.dest, kwargs)
 
 
-def add_mysql_arguments(parser, etl_ml_tables=False):
+def add_sql_arguments(parser):
     parser.add_argument(
         "-db_driver",
         dest="db_driver",
@@ -108,21 +108,6 @@ def add_mysql_arguments(parser, etl_ml_tables=False):
         default="omniscidb",
         help="SQL database to use to store benchmark results.",
     )
-    if etl_ml_tables:
-        parser.add_argument(
-            "-db_table_etl",
-            dest="db_table_etl",
-            help="Table to store ETL results for this benchmark.",
-        )
-        parser.add_argument(
-            "-db_table_ml",
-            dest="db_table_ml",
-            help="Table to store ML results for this benchmark.",
-        )
-    else:
-        parser.add_argument(
-            "-db-table", dest="db_table", help="Table to use to store results for this benchmark."
-        )
 
 
 def prepare_parser():
@@ -133,7 +118,7 @@ def prepare_parser():
     required = parser.add_argument_group("common")
     optional = parser.add_argument_group("optional arguments")
     benchmark = parser.add_argument_group("benchmark")
-    mysql = parser.add_argument_group("mysql")
+    sql = parser.add_argument_group("sql")
     commits = parser.add_argument_group("commits")
 
     possible_tasks = ["build", "benchmark"]
@@ -274,8 +259,8 @@ def prepare_parser():
         type=str_arg_to_bool,
         help="Extends functionality of H2O benchmark by adding 'chk' functions and verbose local reporting of results",
     )
-    # MySQL database parameters
-    add_mysql_arguments(mysql, etl_ml_tables=True)
+    # SQL database parameters
+    add_sql_arguments(sql)
     # Additional information
     commits.add_argument(
         "-commit_hdk",

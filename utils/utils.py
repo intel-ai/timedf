@@ -10,9 +10,12 @@ from tempfile import mkstemp
 
 import psutil
 
+from report import DbConfig
+
 from .namespace_utils import import_pandas_into_module_namespace
 from .pandas_backend import set_backend
 from utils_base_env.benchmarks import benchmark_mapper
+from report import DbReporter
 
 
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
@@ -479,54 +482,16 @@ class FilesCombiner:
             except FileNotFoundError:
                 pass
 
-
-def refactor_results_for_reporting(
-    benchmark_results: dict,
-    ignore_fields_for_results_unit_conversion: list = None,
-    additional_fields: dict = None,
-    reporting_unit: str = "ms",
-) -> dict:
-
-    """Refactore benchmarks results in the way they can be easily reported to MySQL database.
-
-    Parameters
-    ----------
-    benchmark_results: dict
-        Dictionary with results reported by benchmark.
-        Dictionary should follow the next pattern: {"ETL": [<dicts_with_etl_results>], "ML": [<dicts_with_ml_results>]}.
-    ignore_fields_for_results_unit_conversion: list
-        List of fields that should be ignored during results unit conversion.
-    additional_fields: dict
-        Dictionary with fields that should be additionally reported to MySQL database.
-        Dictionary should follow the next pattern: {"ETL": {<dicts_with_etl_fields>}, "ML": {<dicts_with_ml_fields>}}.
-    reporting_unit: str
-        Time unit name for results reporting to MySQL database. Accepted values are "ms", "s", "m".
-
-    Return
-    ------
-    etl_ml_results: dict
-        Refactored benchmark results for reporting to MySQL database.
-        Dictionary follows the next pattern: {"ETL": [<etl_results>], "ML": [<ml_results>]}
-
-    """
-
-    etl_ml_results = {"ETL": [], "ML": []}
-    for results_category, results in dict(benchmark_results).items():  # ETL or ML part
-        for backend_result in results:
-            {'query1': 12, 'query2': 13, 'Backend': 12314}
-            if backend_result is not None and all(
-                isinstance(r, dict) for r in backend_result.values()
-            ):  # True if subqueries are used
-                backend_result_converted = []
-                for query_name, query_results in backend_result.items():
-                    query_results.update({"query_name": query_name})
-                    backend_result_converted.append(query_results)
-            else:
-                backend_result_converted = [backend_result]
-
-    return etl_ml_results
-    # Results must be in the same unit (currently we assume that results are in s and need to be converted to ms)
-    # --Done--: We sometimes want to add columns to benchmark results from additional fields 
+class Benchmark:
+    def run_benchmark(self):
+        """Results must be submited in seconds in a form {'q1': 12, 'q2': 13}, {'dataset_size': 122}
+        
+        Existing convention for benchmark results:
+        - time is in seconds
+        - Structure [{q1: x, q2: y}] what about notes?
+        - No reporting of backend and iteration 
+        """ 
+        pass
 
 
 def get_dir_size(start_path="."):
@@ -580,8 +545,6 @@ def run_benchmarks(
     db_user: str = None,
     db_pass: str = "omniscidb",
     db_name: str = "omniscidb",
-    db_table_etl: str = None,
-    db_table_ml: str = None,
     commit_hdk: str = "1234567890123456789012345678901234567890",
     commit_omniscripts: str = "1234567890123456789012345678901234567890",
     commit_modin: str = "1234567890123456789012345678901234567890",
@@ -643,11 +606,6 @@ def run_benchmarks(
     # Set current backend, !!!needs to be run before benchmark import!!!
     set_backend(pandas_mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
 
-    """Existing convention for benchmark results:
-    - time is in seconds
-    - Structure [{q1: x, q2: y}] what about notes?
-    - No reporting of backend and iteration 
-    """
     run_benchmark = __import__(benchmark_mapper[bench_name]).run_benchmark
 
     run_parameters = {
@@ -666,9 +624,11 @@ def run_benchmarks(
         "commit_omniscripts": commit_omniscripts,
         "commit_modin": commit_modin,
     }
+    
+    run_id = int(round(time.time()))
+    print(run_parameters)
 
-
-    db_params = DBParams(
+    db_params = DbConfig(
         driver=db_driver,
         server=db_server,
         port=db_port,
@@ -676,31 +636,14 @@ def run_benchmarks(
         password=db_pass,
         name=db_name,
     )
-    print(run_parameters)
-
-    engine = 
-
-    reporter = ResultReporter(db_params, run_id, run_parameters)
+    reporter = DbReporter(db_params, run_id=run_id, run_params=run_parameters)
 
     for iter_num in range(1, iterations + 1):
         print(f"Iteration #{iter_num}")
         benchmark_results = run_benchmark(run_parameters)
 
-        # This part is necessary because some benchmarks miss ML part. It's a temporary solution,
-        # in the long run it's better to implement https://github.com/intel-ai/omniscripts/issues/317
-        if "ETL" in benchmark_results:
+        # To prevent outdated benchmarks from passing, needs to be removed in the future
+        if "ETL" in benchmark_results or 'ML' in benchmark_results:
+            raise ValueError('Outdated benchmark that needs to be updated to a new format')
             
-            benchmark_results = 
-            benchmark_results["ML"] = []
-
-        etl_ml_results = refactor_results_for_reporting(
-            benchmark_results=benchmark_results,
-            ignore_fields_for_results_unit_conversion=ignore_fields_for_results_unit_conversion,
-            reporting_unit="ms",
-        )
-        etl_results = list(etl_ml_results["ETL"])
-        ml_results = list(etl_ml_results["ML"])
-
-        if db_user is not None:
-            etl_reporter.report(etl_results)
-            ml_reporter.report(ml_results)
+        reporter.report(benchmark_results)

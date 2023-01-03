@@ -105,8 +105,6 @@ def run_benchmark_task(args):
         args.db_user,
         args.db_pass,
         args.db_name,
-        args.db_table_etl,
-        args.db_table_ml,
         args.commit_hdk,
         args.commit_omniscripts,
         args.commit_modin,
