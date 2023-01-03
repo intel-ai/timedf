@@ -536,7 +536,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
         query_func(**queries_parameters)
         print(f"{pandas_mode} {query_name} results:")
         print_results(results=queries_results[query_name], unit="s")
-        queries_results[query_name]["Backend"] = pandas_mode
+        # TODO: add additional params
         queries_results[query_name]["t_readcsv"] = query_data_file_import_times[query_name]
         queries_results[query_name]["dataset_size"] = query_data_file_sizes[query_name]
 
@@ -557,10 +557,10 @@ def run_benchmark(parameters):
         ray_tmpdir=parameters["ray_tmpdir"],
         ray_memory=parameters["ray_memory"],
     )
-    queries_results = queries_modin(
+    results = queries_modin(
         filename=parameters["data_file"],
         pandas_mode=parameters["pandas_mode"],
         extended_functionality=parameters["extended_functionality"],
     )
 
-    return {"ETL": [queries_results], "ML": []}
+    return results

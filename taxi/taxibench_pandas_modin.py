@@ -343,7 +343,7 @@ def run_benchmark(parameters):
 
     pandas_files_limit = parameters["dfiles_num"]
     filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
-    etl_results = etl(
+    results = etl(
         filename=filename,
         files_limit=pandas_files_limit,
         columns_names=columns_names,
@@ -352,9 +352,10 @@ def run_benchmark(parameters):
         pandas_mode=parameters["pandas_mode"],
     )
 
-    print_results(results=etl_results, backend=parameters["pandas_mode"], unit="s")
-    etl_results["Backend"] = parameters["pandas_mode"]
-    etl_results["dfiles_num"] = parameters["dfiles_num"]
-    etl_results["dataset_size"] = get_ny_taxi_dataset_size(parameters["dfiles_num"])
+    print_results(results=results, backend=parameters["pandas_mode"], unit="s")
+    # TODO: add params as run params
+    run_params = {
+        'dataset_size': get_ny_taxi_dataset_size(parameters["dfiles_num"]),
+    }
 
-    return {"ETL": [etl_results], "ML": []}
+    return results, run_params

@@ -513,6 +513,7 @@ def refactor_results_for_reporting(
     etl_ml_results = {"ETL": [], "ML": []}
     for results_category, results in dict(benchmark_results).items():  # ETL or ML part
         for backend_result in results:
+            {'query1': 12, 'query2': 13, 'Backend': 12314}
             if backend_result is not None and all(
                 isinstance(r, dict) for r in backend_result.values()
             ):  # True if subqueries are used
@@ -523,17 +524,9 @@ def refactor_results_for_reporting(
             else:
                 backend_result_converted = [backend_result]
 
-            for result in backend_result_converted:
-                if result:
-                    result = convert_units(
-                        result,
-                        ignore_fields=ignore_fields_for_results_unit_conversion,
-                        unit=reporting_unit,
-                    )
-                    result.update(additional_fields.get(results_category, {}))
-                    etl_ml_results[results_category].append(result)
-
     return etl_ml_results
+    # Results must be in the same unit (currently we assume that results are in s and need to be converted to ms)
+    # --Done--: We sometimes want to add columns to benchmark results from additional fields 
 
 
 def get_dir_size(start_path="."):
@@ -565,48 +558,6 @@ def get_dir_size(start_path="."):
                 total_size += getsize(fp)
 
     return total_size
-
-
-@dataclass
-class DBParams:
-    driver: str
-    server: str
-    port: int
-    user: str
-    password: str
-    name: str
-
-
-class ResultReporter:
-    def __init__(self, db_params: DBParams, table_name, predefined_fields, ignore_fields) -> None:
-        self.db_params = db_params
-        self.table_name = table_name
-        self.predefined_fields = predefined_fields
-        self.ignore_fields = ignore_fields
-        self.reporter = None
-
-    def _get_db_url(self):
-        return f"{self.db_params.driver}://{self.db_params.user}:{self.db_params.password}@{self.db_params.server}:{self.db_params.port}/{self.db_params.name}"
-
-    def _initialize_report(self, results):
-        """This function exists because currently we need the first result to talk to the database"""
-        from report import DbReport
-        from sqlalchemy import create_engine
-
-        self.engine = create_engine(self._get_db_url(), future=True)
-        benchmark_fields = list({val for result_row in results for val in result_row})
-
-        self.reporter = DbReport(
-            self.engine, self.table_name, benchmark_fields, self.predefined_fields
-        )
-
-    def report(self, results: List[Dict[str, float]]):
-        if self.reporter is None and len(results) > 0:
-            self._initialize_report(results)
-
-        for result in results:
-            remove_fields_from_dict(result, self.ignore_fields)
-            self.reporter.submit(result)
 
 
 def run_benchmarks(
@@ -688,19 +639,18 @@ def run_benchmarks(
     commit_modin : str, default: "1234567890123456789012345678901234567890"
         Modin commit hash used for benchmark.
     """
-    ignore_fields_for_results_unit_conversion = [
-        "Backend",
-        "dfiles_num",
-        "dataset_size",
-        "query_name",
-    ]
 
     # Set current backend, !!!needs to be run before benchmark import!!!
     set_backend(pandas_mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
 
+    """Existing convention for benchmark results:
+    - time is in seconds
+    - Structure [{q1: x, q2: y}] what about notes?
+    - No reporting of backend and iteration 
+    """
     run_benchmark = __import__(benchmark_mapper[bench_name]).run_benchmark
 
-    parameters = {
+    run_parameters = {
         "data_file": data_file,
         "dfiles_num": dfiles_num,
         "no_ml": no_ml,
@@ -712,7 +662,11 @@ def run_benchmarks(
         "gpu_memory": gpu_memory,
         "validation": validation,
         "extended_functionality": extended_functionality,
+        "commit_hdk": commit_hdk,
+        "commit_omniscripts": commit_omniscripts,
+        "commit_modin": commit_modin,
     }
+
 
     db_params = DBParams(
         driver=db_driver,
@@ -722,34 +676,26 @@ def run_benchmarks(
         password=db_pass,
         name=db_name,
     )
-    predefined_fields = {
-        "OmnisciCommitHash": commit_hdk,
-        "OmniscriptsCommitHash": commit_omniscripts,
-        "ModinCommitHash": commit_modin,
-    }
-    etl_reporter = ResultReporter(db_params, db_table_etl, predefined_fields, ["t_connect"])
-    ml_reporter = ResultReporter(db_params, db_table_ml, predefined_fields, [])
+    print(run_parameters)
 
-    print(parameters)
-    run_id = int(round(time.time()))
+    engine = 
+
+    reporter = ResultReporter(db_params, run_id, run_parameters)
 
     for iter_num in range(1, iterations + 1):
         print(f"Iteration #{iter_num}")
-        benchmark_results = run_benchmark(parameters)
+        benchmark_results = run_benchmark(run_parameters)
 
         # This part is necessary because some benchmarks miss ML part. It's a temporary solution,
         # in the long run it's better to implement https://github.com/intel-ai/omniscripts/issues/317
-        if "ML" not in benchmark_results:
+        if "ETL" in benchmark_results:
+            
+            benchmark_results = 
             benchmark_results["ML"] = []
 
-        additional_fields_for_reporting = {
-            "ETL": {"Iteration": iter_num, "run_id": run_id},
-            "ML": {"Iteration": iter_num, "run_id": run_id},
-        }
         etl_ml_results = refactor_results_for_reporting(
             benchmark_results=benchmark_results,
             ignore_fields_for_results_unit_conversion=ignore_fields_for_results_unit_conversion,
-            additional_fields=additional_fields_for_reporting,
             reporting_unit="ms",
         )
         etl_results = list(etl_ml_results["ETL"])

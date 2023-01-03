@@ -343,8 +343,4 @@ def run_benchmark(parameters):
             + task2time["split_time"]
         )
 
-    results = [
-        {"query_name": b, "result": t, "Backend": backend_name} for b, t in task2time.items()
-    ]
-
-    return {"ETL": results}
+    return task2time, {}

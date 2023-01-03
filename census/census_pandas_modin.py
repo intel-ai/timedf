@@ -288,7 +288,7 @@ def run_benchmark(parameters):
         # (default Census benchmark data file)
         csv_size = 2100.0
 
-    df, X, y, etl_times = etl(
+    df, X, y, results = etl(
         parameters["data_file"],
         columns_names=columns_names,
         columns_types=columns_types,
@@ -296,11 +296,9 @@ def run_benchmark(parameters):
         pandas_mode=parameters["pandas_mode"],
     )
 
-    print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
-    etl_times["Backend"] = parameters["pandas_mode"]
-    etl_times["dataset_size"] = csv_size
+    print_results(results=results, backend=parameters["pandas_mode"], unit="s")
 
-    results = {"ETL": [etl_times]}
+
     if not parameters["no_ml"]:
         ml_scores, ml_times = ml(
             X=X,
@@ -313,9 +311,10 @@ def run_benchmark(parameters):
             ml_score_keys=ml_score_keys,
         )
         print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
-        ml_times["Backend"] = parameters["pandas_mode"]
         print_results(results=ml_scores, backend=parameters["pandas_mode"])
-        ml_scores["Backend"] = parameters["pandas_mode"]
-        results["ML"] = [ml_times]
+        results.update(ml_times)
 
-    return results
+    
+    run_params = {"dataset_size": csv_size}
+
+    return results, run_params

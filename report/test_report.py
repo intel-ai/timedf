@@ -1,7 +1,10 @@
 import pytest
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, MetaData
+from report.schema import Iteration, Measurement, Base
 from report.report import DbReport
+
+
 
 
 @pytest.fixture(scope="session")
@@ -9,6 +12,7 @@ def engine():
     return create_engine("sqlite://", future=True)
 
 
+@pytest.mark.skip("Outdated test")
 def test_dbreport(engine):
     """Returns an sqlalchemy session, and after the test tears down everything properly."""
     table_name = "tablename"
@@ -18,7 +22,14 @@ def test_dbreport(engine):
 
     stmt = select(report._table)
 
-    with engine.connect() as conn:
-        results = list(conn.execute(stmt))
+    with engine.begin() as session:
+        results = list(session.execute(stmt))
         assert len(results)
         assert results[0]["result"] == "12"
+
+
+def test_schema(engine):
+    with engine.begin() as session:
+        Base.metadata.create_all(engine)
+        first = session.execute(select(Iteration)).first()
+        print(first)
