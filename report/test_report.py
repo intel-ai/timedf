@@ -11,14 +11,14 @@ def engine():
 
 def test_dbreport(engine):
     """Returns an sqlalchemy session, and after the test tears down everything properly."""
-    table_name = 'tablename'
-    report = DbReport(engine, table_name, ['result'], {'setting1': 'param1'})
+    table_name = "tablename"
+    report = DbReport(engine, table_name, ["result"], {"setting1": "param1"})
 
-    report.submit({'result': 12})
-    
+    report.submit({"result": 12})
+
     stmt = select(report._table)
 
     with engine.connect() as conn:
         results = list(conn.execute(stmt))
         assert len(results)
-        assert results[0]['result'] == '12'
+        assert results[0]["result"] == "12"
