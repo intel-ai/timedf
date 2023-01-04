@@ -1,4 +1,5 @@
 # Original SQL queries can be found here https://tech.marksblogg.com/billion-nyc-taxi-rides-nvidia-pascal-titan-x-mapd.html
+from collections import OrderedDict
 from timeit import default_timer as timer
 
 import pandas as pd
@@ -9,11 +10,40 @@ from utils import (
     load_data_pandas,
     load_data_modin_on_hdk,
     print_results,
-    get_ny_taxi_dataset_size,
     check_support,
 )
 
 accepted_data_files_for_pandas_import_mode = ["trips_xaa", "trips_xab", "trips_xac"]
+
+
+ny_taxi_data_files_sizes_MB = OrderedDict(
+    {
+        "trips_xaa.csv": 8000,
+        "trips_xab.csv": 8100,
+        "trips_xac.csv": 4200,
+        "trips_xad.csv": 7300,
+        "trips_xae.csv": 8600,
+        "trips_xaf.csv": 8600,
+        "trips_xag.csv": 8600,
+        "trips_xah.csv": 8600,
+        "trips_xai.csv": 8600,
+        "trips_xaj.csv": 8600,
+        "trips_xak.csv": 8700,
+        "trips_xal.csv": 8700,
+        "trips_xam.csv": 8600,
+        "trips_xan.csv": 8600,
+        "trips_xao.csv": 8600,
+        "trips_xap.csv": 8600,
+        "trips_xaq.csv": 8600,
+        "trips_xar.csv": 8600,
+        "trips_xas.csv": 8600,
+        "trips_xat.csv": 8600,
+    }
+)
+
+
+def get_ny_taxi_dataset_size(dfiles_num):
+    return sum(list(ny_taxi_data_files_sizes_MB.values())[:dfiles_num])
 
 
 def run_queries(queries, parameters, etl_results, output_for_validation=None):
@@ -355,7 +385,7 @@ def run_benchmark(parameters):
     print_results(results=results, backend=parameters["pandas_mode"], unit="s")
     # TODO: add params as run params
     run_params = {
-        'dataset_size': get_ny_taxi_dataset_size(parameters["dfiles_num"]),
+        "dataset_size": get_ny_taxi_dataset_size(parameters["dfiles_num"]),
     }
 
     return results, run_params

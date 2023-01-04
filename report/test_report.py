@@ -2,9 +2,7 @@ import pytest
 
 from sqlalchemy import create_engine, select, MetaData
 from report.schema import Iteration, Measurement, Base
-from report.report import DbReport
-
-
+from report.report import DbReporter, DbConfig
 
 
 @pytest.fixture(scope="session")
@@ -16,7 +14,7 @@ def engine():
 def test_dbreport(engine):
     """Returns an sqlalchemy session, and after the test tears down everything properly."""
     table_name = "tablename"
-    report = DbReport(engine, table_name, ["result"], {"setting1": "param1"})
+    report = DbReporter(engine, table_name, ["result"], {"setting1": "param1"})
 
     report.submit({"result": 12})
 

@@ -298,7 +298,6 @@ def run_benchmark(parameters):
 
     print_results(results=results, backend=parameters["pandas_mode"], unit="s")
 
-
     if not parameters["no_ml"]:
         ml_scores, ml_times = ml(
             X=X,
@@ -314,7 +313,6 @@ def run_benchmark(parameters):
         print_results(results=ml_scores, backend=parameters["pandas_mode"])
         results.update(ml_times)
 
-    
     run_params = {"dataset_size": csv_size}
 
     return results, run_params

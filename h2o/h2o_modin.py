@@ -531,7 +531,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
             "join_query5": data_files_import_times["x"] + data_files_import_times["big"],
         }
     else:
-        raise ValueError('Unexpected branch, expected either join or groupby task')
+        raise ValueError("Unexpected branch, expected either join or groupby task")
 
     for query_name, query_func in queries.items():
         query_func(**queries_parameters)
@@ -539,7 +539,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
         print(f"{pandas_mode} {query_name} results:")
         print_results(results=queries_results[query_name], unit="s")
 
-    return queries_results, {f'dataset_size_{name}': val for name, val in query_data_file_sizes}
+    return queries_results, {f"dataset_size_{name}": val for name, val in query_data_file_sizes}
 
 
 def run_benchmark(parameters):
@@ -562,6 +562,7 @@ def run_benchmark(parameters):
         extended_functionality=parameters["extended_functionality"],
     )
     import pdb
+
     pdb.set_trace()
 
     return results, run_params

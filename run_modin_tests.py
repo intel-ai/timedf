@@ -1,6 +1,7 @@
 import os
 import sys
 from typing import Iterable
+from report.report import DbConfig
 
 from utils_base_env import execute_process, prepare_parser
 
@@ -85,6 +86,15 @@ def run_benchmark_task(args):
             "Parameter --data_file was received empty, but it is required for benchmarks"
         )
 
+    db_config = DbConfig(
+        driver=args.db_driver,
+        server=args.db_server,
+        port=args.db_port,
+        user=args.db_user,
+        password=args.db_pass,
+        name=args.db_name,
+    )
+
     run_benchmarks(
         args.bench_name,
         args.data_file,
@@ -99,12 +109,7 @@ def run_benchmark_task(args):
         args.use_modin_xgb,
         args.gpu_memory,
         args.extended_functionality,
-        args.db_driver,
-        args.db_server,
-        args.db_port,
-        args.db_user,
-        args.db_pass,
-        args.db_name,
+        db_config,
         args.commit_hdk,
         args.commit_omniscripts,
         args.commit_modin,

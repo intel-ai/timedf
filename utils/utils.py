@@ -3,48 +3,21 @@ import os
 import time
 from typing import Dict, List
 import warnings
-from dataclasses import dataclass
 from timeit import default_timer as timer
 from collections import OrderedDict
 from tempfile import mkstemp
 
 import psutil
 
-from report import DbConfig
-
 from .namespace_utils import import_pandas_into_module_namespace
 from .pandas_backend import set_backend
 from utils_base_env.benchmarks import benchmark_mapper
-from report import DbReporter
+from report import DbConfig, DbReporter
 
 
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 directories = {"repository_root": repository_root_directory}
-ny_taxi_data_files_sizes_MB = OrderedDict(
-    {
-        "trips_xaa.csv": 8000,
-        "trips_xab.csv": 8100,
-        "trips_xac.csv": 4200,
-        "trips_xad.csv": 7300,
-        "trips_xae.csv": 8600,
-        "trips_xaf.csv": 8600,
-        "trips_xag.csv": 8600,
-        "trips_xah.csv": 8600,
-        "trips_xai.csv": 8600,
-        "trips_xaj.csv": 8600,
-        "trips_xak.csv": 8700,
-        "trips_xal.csv": 8700,
-        "trips_xam.csv": 8600,
-        "trips_xan.csv": 8600,
-        "trips_xao.csv": 8600,
-        "trips_xap.csv": 8600,
-        "trips_xaq.csv": 8600,
-        "trips_xar.csv": 8600,
-        "trips_xas.csv": 8600,
-        "trips_xat.csv": 8600,
-    }
-)
 
 
 def get_percentage(error_message):
@@ -284,15 +257,6 @@ def split(X, y, test_size=0.1, stratify=None, random_state=None, optimizer="inte
     return (X_train, y_train, X_test, y_test), split_time
 
 
-def timer_ms():
-    return round(timer() * 1000)
-
-
-def remove_fields_from_dict(dictonary, fields_to_remove):
-    for key in fields_to_remove or ():
-        dictonary.pop(key, None)
-
-
 def convert_units(dict_to_convert, ignore_fields, unit="ms"):
     try:
         multiplier = conversions[unit]
@@ -364,10 +328,6 @@ def create_dir(dir_name):
         os.mkdir(directory)
 
     return directory
-
-
-def get_ny_taxi_dataset_size(dfiles_num):
-    return sum(list(ny_taxi_data_files_sizes_MB.values())[:dfiles_num])
 
 
 def make_chk(values):
@@ -482,15 +442,24 @@ class FilesCombiner:
             except FileNotFoundError:
                 pass
 
+
 class Benchmark:
-    def run_benchmark(self):
+    def _validate_results(self, results):
+        return True
+
+    def run(self, params):
+        results = self.run_benchmark(params)
+        self._validate_results(results)
+        return results
+
+    def run_benchmark(self, params):
         """Results must be submited in seconds in a form {'q1': 12, 'q2': 13}, {'dataset_size': 122}
-        
+
         Existing convention for benchmark results:
         - time is in seconds
         - Structure [{q1: x, q2: y}] what about notes?
-        - No reporting of backend and iteration 
-        """ 
+        - No reporting of backend and iteration
+        """
         pass
 
 
@@ -539,12 +508,7 @@ def run_benchmarks(
     use_modin_xgb: bool = False,
     gpu_memory: int = None,
     extended_functionality: bool = False,
-    db_driver: str = "mysql+mysqlconnector",
-    db_server: str = "localhost",
-    db_port: int = 3306,
-    db_user: str = None,
-    db_pass: str = "omniscidb",
-    db_name: str = "omniscidb",
+    db_config: DbConfig = None,
     commit_hdk: str = "1234567890123456789012345678901234567890",
     commit_omniscripts: str = "1234567890123456789012345678901234567890",
     commit_modin: str = "1234567890123456789012345678901234567890",
@@ -580,21 +544,8 @@ def run_benchmarks(
         Specify the memory of your gpu(This controls the lines to be used. Also work for CPU version).
     extended_functionality : bool, default: False
         Extends functionality of H2O benchmark by adding 'chk' functions and verbose local reporting of results.
-    db_server : str, default: "localhost"
-        Host name of MySQL server.
-    db_port : int, default: 3306
-        Port number of MySQL server.
-    db_user : str, optional
-        Username to use to connect to MySQL database. If user name is specified, script attempts to store
-        results in MySQL database using other `db-*` parameters.
-    db_pass : str, default: "omniscidb"
-        Password to use to connect to MySQL database.
-    db_name : str, default: "omniscidb"
-        MySQL database to use to store benchmark results.
-    db_table_etl : str, optional
-        Table to store ETL results for this benchmark.
-    db_table_ml : str, optional
-        Table to store ML results for this benchmark.
+    db_config: DbConfig
+        Configuration for the database
     commit_hdk : str, default: "1234567890123456789012345678901234567890"
         HDK commit hash used for benchmark.
     commit_omniscripts : str, default: "1234567890123456789012345678901234567890"
@@ -624,26 +575,23 @@ def run_benchmarks(
         "commit_omniscripts": commit_omniscripts,
         "commit_modin": commit_modin,
     }
-    
+
     run_id = int(round(time.time()))
     print(run_parameters)
 
-    db_params = DbConfig(
-        driver=db_driver,
-        server=db_server,
-        port=db_port,
-        user=db_user,
-        password=db_pass,
-        name=db_name,
+    reporter = (
+        None
+        if db_config is None
+        else DbReporter(db_config.create_engine(), run_id=run_id, run_params=run_parameters)
     )
-    reporter = DbReporter(db_params, run_id=run_id, run_params=run_parameters)
 
     for iter_num in range(1, iterations + 1):
         print(f"Iteration #{iter_num}")
         benchmark_results = run_benchmark(run_parameters)
 
         # To prevent outdated benchmarks from passing, needs to be removed in the future
-        if "ETL" in benchmark_results or 'ML' in benchmark_results:
-            raise ValueError('Outdated benchmark that needs to be updated to a new format')
-            
-        reporter.report(benchmark_results)
+        if "ETL" in benchmark_results or "ML" in benchmark_results:
+            raise ValueError("Outdated benchmark that needs to be updated to a new format")
+
+        if reporter is not None:
+            reporter.report(iteration_no=iter_num, results=benchmark_results, params=params)

@@ -1,16 +1,18 @@
 from dataclasses import dataclass
-from typing import Dict, Any, Union, Iterable, Pattern
+from typing import Dict, List, Union
 
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 
-from report.run_params import RunParams, HostParams
-from report.schema import Iteration, Measurement
+from report.schema import make_iteration
 
 
+# This can be written as just a function, but we keep the dataclass to add validation and arg parsing in the future.
 @dataclass
 class DbConfig:
+    """Class encapsulates DB configuration and connection."""
+
     driver: str
     server: str
     port: int
@@ -22,37 +24,49 @@ class DbConfig:
         url = f"{self.driver}://{self.user}:{self.password}@{self.server}:{self.port}/{self.name}"
         return create_engine(url, future=True)
 
+
 class DbReporter:
-    def __init__(self, db_config: DbConfig, run_id: int, run_params):
-        """Initialize and submit reports to MySQL database
+    def __init__(self, engine: Engine, run_id: int, run_params: Dict[str, str]):
+        """Initialize and submit reports to a database
 
         Parameters
         ----------
         db_config
-            Database engine from sqlalchemy
-        table_name
-            Table name
-        benchmark_specific_col2sql_type
-            Declaration of types that will be submitted during benchmarking along with type
-            information. For example {'load_data': 'BIGINT UNSIGNED'}.
-        predefined_col2value, optional
-            Values that are knows before starting the benchmark, they will be submitted along with
-            benchmark results, we assume string type for values.
+            database configuration
+        run_id
+            Unique id for the current run that will contain several iterations with results
+        run_params
+            Parameters of the current run, reporter will extract params that are relevant for
+            reporting, full list necessary params is available in RunParams class. If some of the
+            fields are missing, error will be reported, extra parameters will be ignored.
         """
-        self.engine = db_config.create_engine()
+        self.engine = engine
         self.run_id = run_id
         self.run_params = run_params
 
-    def report(self, results, params=None):
-        params = params or {}
+    def report(
+        self, iteration_no: int, results: List[Dict[str, float]], params: Union[None, Dict] = None
+    ):
+        """Report results of current iteration.
+
+        Parameters
+        ----------
+        iteration_no
+            Iteration number for the report
+        results
+            List with measurements
+        params
+            Additional params to report, will be added to a schemaless `params` column in the DB, can be used for
+            storing benchmark-specific infomation such as datset size.
+        """
         with Session(self.engine, autocommit=True) as session:
-            measurements = [Measurement(**results) for r in results]
-            iteration = Iteration(
-                run_id=self.run_id,
-                params=params,
-                **HostParams().report(),
-                **RunParams().report(self.run_params),
-                measurements=measurements
+            session.add(
+                make_iteration(
+                    run_id=self.run_id,
+                    iteration_no=iteration_no,
+                    run_params=self.run_params,
+                    measurements=results,
+                    params=params,
+                )
             )
-            session.add(iteration)
             session.commit()

@@ -1,9 +1,10 @@
+"""Module with classes that encapsulate generation and extraction of benchmark run parameters."""
 import os
 import platform
 import re
 import socket
 import subprocess
-from typing import Dict, Any, Union, Iterable, Pattern
+from typing import Dict, Any, Union, Pattern
 
 
 def _get_host_info() -> Dict[str, str]:
@@ -64,33 +65,36 @@ def _get_host_info() -> Dict[str, str]:
 
 class HostParams:
     fields = tuple(_get_host_info())
-    
-    def report(self, ):
+
+    def report(
+        self,
+    ):
         return _get_host_info()
 
 
 class RunParams:
     fields = (
-            "data_file",
-            "dfiles_num",
-            "no_ml",
-            "use_modin_xgb",
-            "optimizer",
-            "pandas_mode",
-            "ray_tmpdir",
-            "ray_memory",
-            "gpu_memory",
-            "validation",
-            "extended_functionality",
-            "commit_hash_hdk",
-            "omniscripts_commit_hash",
-            "modin_commit_hash",
-        )
+        "data_file",
+        "dfiles_num",
+        "no_ml",
+        "use_modin_xgb",
+        "optimizer",
+        "pandas_mode",
+        "ray_tmpdir",
+        "ray_memory",
+        "gpu_memory",
+        "validation",
+        "extended_functionality",
+        # Commit hashes
+        "commit_hash_hdk",
+        "omniscripts_commit_hash",
+        "modin_commit_hash",
+    )
 
     def _validate_params(self, params):
         diff = set(self.fields) - set(params)
         if len(diff) > 0:
-            raise ValueError(f'The following params are missing: {diff}')
+            raise ValueError(f"The following params are missing: {diff}")
 
     def report(self, params):
         self._validate_params(params)
