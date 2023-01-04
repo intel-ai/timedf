@@ -545,19 +545,22 @@ def queries_modin(filename, pandas_mode, extended_functionality):
     return queries_results, {f"dataset_size_{name}": val for name, val in query_data_file_sizes}
 
 
+def run_benchmark(parameters):
+    check_support(
+        parameters,
+        unsupported_params=["dfiles_num", "gpu_memory", "no_ml", "optimizer", "validation"],
+    )
+
+    parameters["data_file"] = parameters["data_file"].replace("'", "")
+
+    results, run_params = queries_modin(
+        filename=parameters["data_file"],
+        pandas_mode=parameters["pandas_mode"],
+        extended_functionality=parameters["extended_functionality"],
+    )
+
+    return BenchmarkResults(results, params=run_params)
+
 class Benchmark(BaseBenchmark):
-    def run_benchmark(self, parameters):
-        check_support(
-            parameters,
-            unsupported_params=["dfiles_num", "gpu_memory", "no_ml", "optimizer", "validation"],
-        )
-
-        parameters["data_file"] = parameters["data_file"].replace("'", "")
-
-        results, run_params = queries_modin(
-            filename=parameters["data_file"],
-            pandas_mode=parameters["pandas_mode"],
-            extended_functionality=parameters["extended_functionality"],
-        )
-
-        return BenchmarkResults(results, params=run_params)
+    def run_benchmark(self, params) -> BenchmarkResults:
+        return run_benchmark(params)

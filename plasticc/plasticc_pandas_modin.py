@@ -272,73 +272,76 @@ def compute_skip_rows(gpu_memory):
     return skip_rows
 
 
-class Benchmark(BaseBenchmark):
-    def run_benchmark(self, parameters):
-        check_support(parameters, unsupported_params=["dfiles_num"])
+def run_benchmark(parameters):
+    check_support(parameters, unsupported_params=["dfiles_num"])
 
-        parameters["data_file"] = parameters["data_file"].replace("'", "")
-        parameters["gpu_memory"] = parameters["gpu_memory"] or 16
-        parameters["no_ml"] = parameters["no_ml"] or False
+    parameters["data_file"] = parameters["data_file"].replace("'", "")
+    parameters["gpu_memory"] = parameters["gpu_memory"] or 16
+    parameters["no_ml"] = parameters["no_ml"] or False
 
-        skip_rows = compute_skip_rows(parameters["gpu_memory"])
+    skip_rows = compute_skip_rows(parameters["gpu_memory"])
 
-        dtypes = OrderedDict(
-            [
-                ("object_id", "int32"),
-                ("mjd", "float32"),
-                ("passband", "int32"),
-                ("flux", "float32"),
-                ("flux_err", "float32"),
-                ("detected", "int32"),
-            ]
-        )
-
-        # load metadata
-        columns_names = [
-            "object_id",
-            "ra",
-            "decl",
-            "gal_l",
-            "gal_b",
-            "ddf",
-            "hostgal_specz",
-            "hostgal_photoz",
-            "hostgal_photoz_err",
-            "distmod",
-            "mwebv",
-            "target",
+    dtypes = OrderedDict(
+        [
+            ("object_id", "int32"),
+            ("mjd", "float32"),
+            ("passband", "int32"),
+            ("flux", "float32"),
+            ("flux_err", "float32"),
+            ("detected", "int32"),
         ]
-        meta_dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
-        meta_dtypes = OrderedDict(
-            [(columns_names[i], meta_dtypes[i]) for i in range(len(meta_dtypes))]
+    )
+
+    # load metadata
+    columns_names = [
+        "object_id",
+        "ra",
+        "decl",
+        "gal_l",
+        "gal_b",
+        "ddf",
+        "hostgal_specz",
+        "hostgal_photoz",
+        "hostgal_photoz_err",
+        "distmod",
+        "mwebv",
+        "target",
+    ]
+    meta_dtypes = ["int32"] + ["float32"] * 4 + ["int32"] + ["float32"] * 5 + ["int32"]
+    meta_dtypes = OrderedDict(
+        [(columns_names[i], meta_dtypes[i]) for i in range(len(meta_dtypes))]
+    )
+
+    etl_keys = ["t_readcsv", "t_etl", "t_connect"]
+    ml_keys = ["t_train_test_split", "t_dmatrix", "t_training", "t_infer", "t_ml"]
+
+    train_final, test_final, results = etl(
+        dataset_path=parameters["data_file"],
+        skip_rows=skip_rows,
+        dtypes=dtypes,
+        meta_dtypes=meta_dtypes,
+        etl_keys=etl_keys,
+        pandas_mode=parameters["pandas_mode"],
+    )
+
+    print_results(results=results, backend=parameters["pandas_mode"], unit="s")
+
+    if not parameters["no_ml"]:
+        print("using ml with dataframes from Pandas")
+        ml_times = ml(
+            train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"]
         )
-
-        etl_keys = ["t_readcsv", "t_etl", "t_connect"]
-        ml_keys = ["t_train_test_split", "t_dmatrix", "t_training", "t_infer", "t_ml"]
-
-        train_final, test_final, results = etl(
-            dataset_path=parameters["data_file"],
-            skip_rows=skip_rows,
-            dtypes=dtypes,
-            meta_dtypes=meta_dtypes,
-            etl_keys=etl_keys,
-            pandas_mode=parameters["pandas_mode"],
+        print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
+        ml_times["Backend"] = parameters["pandas_mode"]
+        ml_times["Backend"] = (
+            parameters["pandas_mode"]
+            if not parameters["use_modin_xgb"]
+            else parameters["pandas_mode"] + "_modin_xgb"
         )
+        results.update(ml_times)
 
-        print_results(results=results, backend=parameters["pandas_mode"], unit="s")
+    return BenchmarkResults(results)
 
-        if not parameters["no_ml"]:
-            print("using ml with dataframes from Pandas")
-            ml_times = ml(
-                train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"]
-            )
-            print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
-            ml_times["Backend"] = parameters["pandas_mode"]
-            ml_times["Backend"] = (
-                parameters["pandas_mode"]
-                if not parameters["use_modin_xgb"]
-                else parameters["pandas_mode"] + "_modin_xgb"
-            )
-            results.update(ml_times)
-
-        return BenchmarkResults(results)
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, params) -> BenchmarkResults:
+        return run_benchmark(params)

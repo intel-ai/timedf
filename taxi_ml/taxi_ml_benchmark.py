@@ -282,56 +282,61 @@ def train(data: dict, use_modin_xgb: bool, debug=False):
     return None
 
 
-class Benchmark(BaseBenchmark):
-    def run_benchmark(self, parameters):
-        check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
+def run_benchmark(parameters):
+    check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
 
-        # parameters["data_path"] = parameters["data_file"]
-        parameters["no_ml"] = parameters["no_ml"] or False
+    # parameters["data_path"] = parameters["data_file"]
+    parameters["no_ml"] = parameters["no_ml"] or False
 
-        # Update config in case some envs changed after the import
-        Config.init(
-            MODIN_IMPL="pandas" if parameters["pandas_mode"] == "Pandas" else "modin",
-            MODIN_STORAGE_FORMAT=os.getenv("MODIN_STORAGE_FORMAT"),
-            MODIN_ENGINE=os.getenv("MODIN_ENGINE"),
+    # Update config in case some envs changed after the import
+    Config.init(
+        MODIN_IMPL="pandas" if parameters["pandas_mode"] == "Pandas" else "modin",
+        MODIN_STORAGE_FORMAT=os.getenv("MODIN_STORAGE_FORMAT"),
+        MODIN_ENGINE=os.getenv("MODIN_ENGINE"),
+    )
+
+    debug = bool(os.getenv("DEBUG", False))
+
+    task2time = {}
+    is_hdk_mode = parameters["pandas_mode"] == "Modin_on_hdk"
+    df, task2time["load_data"] = load_data(
+        parameters["data_file"], is_hdk_mode=is_hdk_mode, debug=debug
+    )
+    df, task2time["filter_df"] = filter_df(df, is_hdk_mode=is_hdk_mode)
+    df, task2time["feature_engineering"] = feature_engineering(df)
+    print_results(results=task2time, backend=parameters["pandas_mode"], unit="s")
+
+    task2time["total_data_processing_with_load"] = sum(task2time.values())
+    task2time["total_data_processing_no_load"] = (
+        task2time["total_data_processing_with_load"] - task2time["load_data"]
+    )
+
+    backend_name = parameters["pandas_mode"]
+    if not parameters["no_ml"]:
+        print("using ml with dataframes from Pandas")
+
+        data, task2time["split_time"] = split(df)
+        data: Dict[str, Any]
+
+        task2time["train_time"] = train(
+            data, use_modin_xgb=parameters["use_modin_xgb"], debug=debug
         )
 
-        debug = bool(os.getenv("DEBUG", False))
-
-        task2time = {}
-        is_hdk_mode = parameters["pandas_mode"] == "Modin_on_hdk"
-        df, task2time["load_data"] = load_data(
-            parameters["data_file"], is_hdk_mode=is_hdk_mode, debug=debug
-        )
-        df, task2time["filter_df"] = filter_df(df, is_hdk_mode=is_hdk_mode)
-        df, task2time["feature_engineering"] = feature_engineering(df)
         print_results(results=task2time, backend=parameters["pandas_mode"], unit="s")
 
-        task2time["total_data_processing_with_load"] = sum(task2time.values())
-        task2time["total_data_processing_no_load"] = (
-            task2time["total_data_processing_with_load"] - task2time["load_data"]
+        if parameters["use_modin_xgb"]:
+            backend_name = backend_name + "_modin_xgb"
+
+        task2time["total_time_with_ml"] = (
+            task2time["total_data_processing_with_load"]
+            + task2time["train_time"]
+            + task2time["split_time"]
         )
 
-        backend_name = parameters["pandas_mode"]
-        if not parameters["no_ml"]:
-            print("using ml with dataframes from Pandas")
+    return BenchmarkResults(task2time)
 
-            data, task2time["split_time"] = split(df)
-            data: Dict[str, Any]
 
-            task2time["train_time"] = train(
-                data, use_modin_xgb=parameters["use_modin_xgb"], debug=debug
-            )
 
-            print_results(results=task2time, backend=parameters["pandas_mode"], unit="s")
-
-            if parameters["use_modin_xgb"]:
-                backend_name = backend_name + "_modin_xgb"
-
-            task2time["total_time_with_ml"] = (
-                task2time["total_data_processing_with_load"]
-                + task2time["train_time"]
-                + task2time["split_time"]
-            )
-
-        return BenchmarkResults(task2time)
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, params) -> BenchmarkResults:
+        return run_benchmark(params)
