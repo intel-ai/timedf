@@ -277,9 +277,7 @@ def run_benchmark(parameters):
     if parameters["data_file"].endswith(".csv"):
         csv_size = getsize(parameters["data_file"])
     else:
-        print(
-            "WARNING: uncompressed datafile not found, default value for dataset_size is set"
-        )
+        print("WARNING: uncompressed datafile not found, default value for dataset_size is set")
         # deafault csv_size value (unit - MB) obtained by calling getsize
         # function on the ipums_education2income_1970-2010.csv file
         # (default Census benchmark data file)
@@ -311,7 +309,6 @@ def run_benchmark(parameters):
         results.update(ml_times)
 
     return BenchmarkResults(results, params={"dataset_size": csv_size})
-
 
 
 class Benchmark(BaseBenchmark):

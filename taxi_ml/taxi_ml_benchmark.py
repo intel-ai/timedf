@@ -336,7 +336,6 @@ def run_benchmark(parameters):
     return BenchmarkResults(task2time)
 
 
-
 class Benchmark(BaseBenchmark):
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)
