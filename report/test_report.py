@@ -1,8 +1,8 @@
 import pytest
 
-from sqlalchemy import create_engine, select, MetaData
-from report.schema import Iteration, Measurement, Base
-from report.report import DbReporter, DbConfig
+from sqlalchemy import create_engine, select
+from report.schema import Iteration, Base
+from report.report import DbReporter
 
 
 @pytest.fixture(scope="session")

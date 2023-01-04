@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List, Union
+from typing import Dict, Union
 
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
@@ -26,13 +26,15 @@ class DbConfig:
 
 
 class DbReporter:
-    def __init__(self, engine: Engine, run_id: int, run_params: Dict[str, str]):
+    def __init__(self, engine: Engine, benchmark: str, run_id: int, run_params: Dict[str, str]):
         """Initialize and submit reports to a database
 
         Parameters
         ----------
         db_config
             database configuration
+        benchmark
+            Name of the current benchmark
         run_id
             Unique id for the current run that will contain several iterations with results
         run_params
@@ -41,6 +43,7 @@ class DbReporter:
             fields are missing, error will be reported, extra parameters will be ignored.
         """
         self.engine = engine
+        self.benchmark = benchmark
         self.run_id = run_id
         self.run_params = run_params
 
@@ -63,10 +66,10 @@ class DbReporter:
             session.add(
                 make_iteration(
                     run_id=self.run_id,
+                    benchmark=self.benchmark,
                     iteration_no=iteration_no,
                     run_params=self.run_params,
                     name2time=name2time,
                     params=params,
                 )
             )
-            session.commit()

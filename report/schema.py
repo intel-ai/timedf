@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict
 from sqlalchemy import (
     Column,
     DateTime,
@@ -31,6 +31,8 @@ Iteration = type(
         "__tablename__": "iteration",
         # Iteration id
         "id": Column(Integer, primary_key=True),
+        # Name of the benchmark
+        "benchmark": make_string(),
         # Iteration counter
         "iteration_no": Column(Integer, nullable=False),
         # Run id, each run contains 1 or more iterations
@@ -64,11 +66,19 @@ class Measurement(Base):
 
 
 def make_iteration(
-    run_id: int, iteration_no: int, run_params, name2time: Dict[str, float], params=None
+    run_id: int,
+    benchmark: str,
+    iteration_no: int,
+    run_params,
+    name2time: Dict[str, float],
+    params=None,
 ) -> Iteration:
-    measurements_orm = [Measurement(name=name, duration_s=time) for name, time in name2time.items()]
+    measurements_orm = [
+        Measurement(name=name, duration_s=time) for name, time in name2time.items()
+    ]
     return Iteration(
         run_id=run_id,
+        benchmark=benchmark,
         iteration_no=iteration_no,
         params=params,
         **HostParams().report(),

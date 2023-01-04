@@ -541,8 +541,9 @@ def queries_modin(filename, pandas_mode, extended_functionality):
         print(f"{pandas_mode} {query_name} results:")
         print_results(results=queries_results[query_name], unit="s")
 
-    raise ValueError(f'Need to transorm queris_results {queries_results} into a flat form')
+    raise ValueError(f"Need to transorm queris_results {queries_results} into a flat form")
     return queries_results, {f"dataset_size_{name}": val for name, val in query_data_file_sizes}
+
 
 class Benchmark(BaseBenchmark):
     def run_benchmark(self, parameters):

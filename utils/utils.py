@@ -1,10 +1,8 @@
 import glob
 import os
 import time
-from typing import Dict, List
 import warnings
 from timeit import default_timer as timer
-from collections import OrderedDict
 from tempfile import mkstemp
 
 import psutil
@@ -561,12 +559,12 @@ def run_benchmarks(
     print(run_parameters)
 
     reporter = db_config and DbReporter(
-        db_config.create_engine(), run_id=run_id, run_params=run_parameters
+        db_config.create_engine(), benchmark=bench_name, run_id=run_id, run_params=run_parameters
     )
 
     for iter_num in range(1, iterations + 1):
         print(f"Iteration #{iter_num}")
-        results = benchmark.run(run_parameters)
+        results: BenchmarkResults = benchmark.run(run_parameters)
 
         if reporter is not None:
             reporter.report(
