@@ -45,7 +45,7 @@ class DbReporter:
         self.run_params = run_params
 
     def report(
-        self, iteration_no: int, results: List[Dict[str, float]], params: Union[None, Dict] = None
+        self, iteration_no: int, name2time: Dict[str, float], params: Union[None, Dict] = None
     ):
         """Report results of current iteration.
 
@@ -53,8 +53,8 @@ class DbReporter:
         ----------
         iteration_no
             Iteration number for the report
-        results
-            List with measurements
+        name2time
+            Dict with measurements: (name, time in seconds)
         params
             Additional params to report, will be added to a schemaless `params` column in the DB, can be used for
             storing benchmark-specific infomation such as datset size.
@@ -65,7 +65,7 @@ class DbReporter:
                     run_id=self.run_id,
                     iteration_no=iteration_no,
                     run_params=self.run_params,
-                    measurements=results,
+                    name2time=name2time,
                     params=params,
                 )
             )

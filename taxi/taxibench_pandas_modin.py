@@ -6,11 +6,12 @@ import pandas as pd
 
 from utils import (
     files_names_from_pattern,
-    import_pandas_into_module_namespace,
     load_data_pandas,
     load_data_modin_on_hdk,
     print_results,
     check_support,
+    BaseBenchmark,
+    BenchmarkResults,
 )
 
 accepted_data_files_for_pandas_import_mode = ["trips_xaa", "trips_xab", "trips_xac"]
@@ -193,7 +194,7 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
                 columns_names=columns_names,
                 columns_types=columns_types,
                 parse_dates=["timestamp"],
-                pd=run_benchmark.__globals__["pd"],
+                pd=pd,
             )
             for f in filename
         ]
@@ -206,7 +207,7 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
                 nrows=None,
                 use_gzip=f.endswith(".gz"),
                 parse_dates=["pickup_datetime", "dropoff_datetime"],
-                pd=run_benchmark.__globals__["pd"],
+                pd=pd,
                 pandas_mode=pandas_mode,
             )
             for f in filename
@@ -246,146 +247,137 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
     )
 
 
-def run_benchmark(parameters):
-    check_support(parameters, unsupported_params=["optimizer", "no_ml", "gpu_memory"])
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, parameters):
+        check_support(parameters, unsupported_params=["optimizer", "no_ml", "gpu_memory"])
 
-    parameters["data_file"] = parameters["data_file"].replace("'", "")
+        parameters["data_file"] = parameters["data_file"].replace("'", "")
 
-    columns_names = [
-        "trip_id",
-        "vendor_id",
-        "pickup_datetime",
-        "dropoff_datetime",
-        "store_and_fwd_flag",
-        "rate_code_id",
-        "pickup_longitude",
-        "pickup_latitude",
-        "dropoff_longitude",
-        "dropoff_latitude",
-        "passenger_count",
-        "trip_distance",
-        "fare_amount",
-        "extra",
-        "mta_tax",
-        "tip_amount",
-        "tolls_amount",
-        "ehail_fee",
-        "improvement_surcharge",
-        "total_amount",
-        "payment_type",
-        "trip_type",
-        "pickup",
-        "dropoff",
-        "cab_type",
-        "precipitation",
-        "snow_depth",
-        "snowfall",
-        "max_temperature",
-        "min_temperature",
-        "average_wind_speed",
-        "pickup_nyct2010_gid",
-        "pickup_ctlabel",
-        "pickup_borocode",
-        "pickup_boroname",
-        "pickup_ct2010",
-        "pickup_boroct2010",
-        "pickup_cdeligibil",
-        "pickup_ntacode",
-        "pickup_ntaname",
-        "pickup_puma",
-        "dropoff_nyct2010_gid",
-        "dropoff_ctlabel",
-        "dropoff_borocode",
-        "dropoff_boroname",
-        "dropoff_ct2010",
-        "dropoff_boroct2010",
-        "dropoff_cdeligibil",
-        "dropoff_ntacode",
-        "dropoff_ntaname",
-        "dropoff_puma",
-    ]
+        columns_names = [
+            "trip_id",
+            "vendor_id",
+            "pickup_datetime",
+            "dropoff_datetime",
+            "store_and_fwd_flag",
+            "rate_code_id",
+            "pickup_longitude",
+            "pickup_latitude",
+            "dropoff_longitude",
+            "dropoff_latitude",
+            "passenger_count",
+            "trip_distance",
+            "fare_amount",
+            "extra",
+            "mta_tax",
+            "tip_amount",
+            "tolls_amount",
+            "ehail_fee",
+            "improvement_surcharge",
+            "total_amount",
+            "payment_type",
+            "trip_type",
+            "pickup",
+            "dropoff",
+            "cab_type",
+            "precipitation",
+            "snow_depth",
+            "snowfall",
+            "max_temperature",
+            "min_temperature",
+            "average_wind_speed",
+            "pickup_nyct2010_gid",
+            "pickup_ctlabel",
+            "pickup_borocode",
+            "pickup_boroname",
+            "pickup_ct2010",
+            "pickup_boroct2010",
+            "pickup_cdeligibil",
+            "pickup_ntacode",
+            "pickup_ntaname",
+            "pickup_puma",
+            "dropoff_nyct2010_gid",
+            "dropoff_ctlabel",
+            "dropoff_borocode",
+            "dropoff_boroname",
+            "dropoff_ct2010",
+            "dropoff_boroct2010",
+            "dropoff_cdeligibil",
+            "dropoff_ntacode",
+            "dropoff_ntaname",
+            "dropoff_puma",
+        ]
 
-    columns_types = [
-        "int64",
-        "category",
-        "timestamp",
-        "timestamp",
-        "category",
-        "int64",
-        "float64",
-        "float64",
-        "float64",
-        "float64",
-        "int64",
-        "float64",
-        "float64",
-        "float64",
-        "float64",
-        "float64",
-        "float64",
-        "float64",
-        "float64",
-        "float64",
-        "category",
-        "float64",
-        "category",
-        "category",
-        "category",
-        "float64",
-        "int64",
-        "float64",
-        "int64",
-        "int64",
-        "float64",
-        "float64",
-        "float64",
-        "float64",
-        "category",
-        "float64",
-        "float64",
-        "category",
-        "category",
-        "category",
-        "float64",
-        "float64",
-        "float64",
-        "float64",
-        "category",
-        "float64",
-        "float64",
-        "category",
-        "category",
-        "category",
-        "float64",
-    ]
+        columns_types = [
+            "int64",
+            "category",
+            "timestamp",
+            "timestamp",
+            "category",
+            "int64",
+            "float64",
+            "float64",
+            "float64",
+            "float64",
+            "int64",
+            "float64",
+            "float64",
+            "float64",
+            "float64",
+            "float64",
+            "float64",
+            "float64",
+            "float64",
+            "float64",
+            "category",
+            "float64",
+            "category",
+            "category",
+            "category",
+            "float64",
+            "int64",
+            "float64",
+            "int64",
+            "int64",
+            "float64",
+            "float64",
+            "float64",
+            "float64",
+            "category",
+            "float64",
+            "float64",
+            "category",
+            "category",
+            "category",
+            "float64",
+            "float64",
+            "float64",
+            "float64",
+            "category",
+            "float64",
+            "float64",
+            "category",
+            "category",
+            "category",
+            "float64",
+        ]
 
-    if parameters["dfiles_num"] <= 0:
-        raise ValueError(f"Bad number of data files specified: {parameters['dfiles_num']}")
+        if parameters["dfiles_num"] <= 0:
+            raise ValueError(f"Bad number of data files specified: {parameters['dfiles_num']}")
 
-    import_pandas_into_module_namespace(
-        namespace=run_benchmark.__globals__,
-        mode=parameters["pandas_mode"],
-        ray_tmpdir=parameters["ray_tmpdir"],
-        ray_memory=parameters["ray_memory"],
-    )
+        pd_queries_outputs = {} if parameters["validation"] else None
 
-    pd_queries_outputs = {} if parameters["validation"] else None
+        pandas_files_limit = parameters["dfiles_num"]
+        filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
+        results = etl(
+            filename=filename,
+            files_limit=pandas_files_limit,
+            columns_names=columns_names,
+            columns_types=columns_types,
+            output_for_validation=pd_queries_outputs,
+            pandas_mode=parameters["pandas_mode"],
+        )
 
-    pandas_files_limit = parameters["dfiles_num"]
-    filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
-    results = etl(
-        filename=filename,
-        files_limit=pandas_files_limit,
-        columns_names=columns_names,
-        columns_types=columns_types,
-        output_for_validation=pd_queries_outputs,
-        pandas_mode=parameters["pandas_mode"],
-    )
-
-    print_results(results=results, backend=parameters["pandas_mode"], unit="s")
-    # TODO: add params as run params
-    run_params = {
-        "dataset_size": get_ny_taxi_dataset_size(parameters["dfiles_num"]),
-    }
-
-    return results, run_params
+        print_results(results=results, backend=parameters["pandas_mode"], unit="s")
+        return BenchmarkResults(
+            results, params={"dataset_size": get_ny_taxi_dataset_size(parameters["dfiles_num"])}
+        )

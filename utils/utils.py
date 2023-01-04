@@ -13,6 +13,7 @@ from .namespace_utils import import_pandas_into_module_namespace
 from .pandas_backend import set_backend
 from utils_base_env.benchmarks import benchmark_mapper
 from report import DbConfig, DbReporter
+from .benchmark import BaseBenchmark, BenchmarkResults
 
 
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
@@ -443,26 +444,6 @@ class FilesCombiner:
                 pass
 
 
-class Benchmark:
-    def _validate_results(self, results):
-        return True
-
-    def run(self, params):
-        results = self.run_benchmark(params)
-        self._validate_results(results)
-        return results
-
-    def run_benchmark(self, params):
-        """Results must be submited in seconds in a form {'q1': 12, 'q2': 13}, {'dataset_size': 122}
-
-        Existing convention for benchmark results:
-        - time is in seconds
-        - Structure [{q1: x, q2: y}] what about notes?
-        - No reporting of backend and iteration
-        """
-        pass
-
-
 def get_dir_size(start_path="."):
     """Get directory size including all subdirectories.
 
@@ -557,7 +538,7 @@ def run_benchmarks(
     # Set current backend, !!!needs to be run before benchmark import!!!
     set_backend(pandas_mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
 
-    run_benchmark = __import__(benchmark_mapper[bench_name]).run_benchmark
+    benchmark: BaseBenchmark = __import__(benchmark_mapper[bench_name]).Benchmark()
 
     run_parameters = {
         "data_file": data_file,
@@ -579,19 +560,15 @@ def run_benchmarks(
     run_id = int(round(time.time()))
     print(run_parameters)
 
-    reporter = (
-        None
-        if db_config is None
-        else DbReporter(db_config.create_engine(), run_id=run_id, run_params=run_parameters)
+    reporter = db_config and DbReporter(
+        db_config.create_engine(), run_id=run_id, run_params=run_parameters
     )
 
     for iter_num in range(1, iterations + 1):
         print(f"Iteration #{iter_num}")
-        benchmark_results = run_benchmark(run_parameters)
-
-        # To prevent outdated benchmarks from passing, needs to be removed in the future
-        if "ETL" in benchmark_results or "ML" in benchmark_results:
-            raise ValueError("Outdated benchmark that needs to be updated to a new format")
+        results = benchmark.run(run_parameters)
 
         if reporter is not None:
-            reporter.report(iteration_no=iter_num, results=benchmark_results, params=params)
+            reporter.report(
+                iteration_no=iter_num, name2time=results.measurements, params=results.params
+            )

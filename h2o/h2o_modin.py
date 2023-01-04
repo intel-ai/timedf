@@ -5,7 +5,6 @@ from timeit import default_timer as timer
 import gc
 
 from utils import (
-    import_pandas_into_module_namespace,
     print_results,
     make_chk,
     memory_usage,
@@ -13,7 +12,10 @@ from utils import (
     join_to_tbls,
     check_support,
     getsize,
+    BaseBenchmark,
+    BenchmarkResults,
 )
+from utils.pandas_backend import pd
 
 warnings.filterwarnings("ignore")
 
@@ -539,30 +541,22 @@ def queries_modin(filename, pandas_mode, extended_functionality):
         print(f"{pandas_mode} {query_name} results:")
         print_results(results=queries_results[query_name], unit="s")
 
+    raise ValueError(f'Need to transorm queris_results {queries_results} into a flat form')
     return queries_results, {f"dataset_size_{name}": val for name, val in query_data_file_sizes}
 
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, parameters):
+        check_support(
+            parameters,
+            unsupported_params=["dfiles_num", "gpu_memory", "no_ml", "optimizer", "validation"],
+        )
 
-def run_benchmark(parameters):
-    check_support(
-        parameters,
-        unsupported_params=["dfiles_num", "gpu_memory", "no_ml", "optimizer", "validation"],
-    )
+        parameters["data_file"] = parameters["data_file"].replace("'", "")
 
-    parameters["data_file"] = parameters["data_file"].replace("'", "")
+        results, run_params = queries_modin(
+            filename=parameters["data_file"],
+            pandas_mode=parameters["pandas_mode"],
+            extended_functionality=parameters["extended_functionality"],
+        )
 
-    import_pandas_into_module_namespace(
-        namespace=run_benchmark.__globals__,
-        mode=parameters["pandas_mode"],
-        ray_tmpdir=parameters["ray_tmpdir"],
-        ray_memory=parameters["ray_memory"],
-    )
-    results, run_params = queries_modin(
-        filename=parameters["data_file"],
-        pandas_mode=parameters["pandas_mode"],
-        extended_functionality=parameters["extended_functionality"],
-    )
-    import pdb
-
-    pdb.set_trace()
-
-    return results, run_params
+        return BenchmarkResults(results, params=run_params)

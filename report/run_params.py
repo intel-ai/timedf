@@ -86,9 +86,9 @@ class RunParams:
         "validation",
         "extended_functionality",
         # Commit hashes
-        "commit_hash_hdk",
-        "omniscripts_commit_hash",
-        "modin_commit_hash",
+        "commit_hdk",
+        "commit_omniscripts",
+        "commit_modin",
     )
 
     def _validate_params(self, params):

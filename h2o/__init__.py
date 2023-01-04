@@ -1,1 +1,1 @@
-from .h2o_modin import run_benchmark
+from .h2o_modin import Benchmark

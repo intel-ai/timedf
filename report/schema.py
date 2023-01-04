@@ -64,11 +64,12 @@ class Measurement(Base):
 
 
 def make_iteration(
-    run_id: int, iteration_no: int, run_params, measurements: List[Dict[str, float]], params=None
+    run_id: int, iteration_no: int, run_params, name2time: Dict[str, float], params=None
 ) -> Iteration:
-    measurements_orm = [Measurement(**m) for m in measurements]
+    measurements_orm = [Measurement(name=name, duration_s=time) for name, time in name2time.items()]
     return Iteration(
         run_id=run_id,
+        iteration_no=iteration_no,
         params=params,
         **HostParams().report(),
         **RunParams().report(run_params),
