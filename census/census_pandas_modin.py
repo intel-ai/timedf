@@ -163,152 +163,157 @@ def ml(X, y, random_state, n_runs, test_size, optimizer, ml_keys, ml_score_keys)
     return ml_scores, ml_times
 
 
-class Benchmark(BaseBenchmark):
-    def run_benchmark(self, parameters):
-        check_support(parameters, unsupported_params=["dfiles_num", "gpu_memory"])
+def run_benchmark(parameters):
+    check_support(parameters, unsupported_params=["dfiles_num", "gpu_memory"])
 
-        parameters["data_file"] = parameters["data_file"].replace("'", "")
-        parameters["optimizer"] = parameters["optimizer"] or "intel"
-        parameters["no_ml"] = parameters["no_ml"] or False
+    parameters["data_file"] = parameters["data_file"].replace("'", "")
+    parameters["optimizer"] = parameters["optimizer"] or "intel"
+    parameters["no_ml"] = parameters["no_ml"] or False
 
-        # ML specific
-        N_RUNS = 50
-        TEST_SIZE = 0.1
-        RANDOM_STATE = 777
+    # ML specific
+    N_RUNS = 50
+    TEST_SIZE = 0.1
+    RANDOM_STATE = 777
 
-        columns_names = [
-            "YEAR0",
-            "DATANUM",
-            "SERIAL",
-            "CBSERIAL",
-            "HHWT",
-            "CPI99",
-            "GQ",
-            "QGQ",
-            "PERNUM",
-            "PERWT",
-            "SEX",
-            "AGE",
-            "EDUC",
-            "EDUCD",
-            "INCTOT",
-            "SEX_HEAD",
-            "SEX_MOM",
-            "SEX_POP",
-            "SEX_SP",
-            "SEX_MOM2",
-            "SEX_POP2",
-            "AGE_HEAD",
-            "AGE_MOM",
-            "AGE_POP",
-            "AGE_SP",
-            "AGE_MOM2",
-            "AGE_POP2",
-            "EDUC_HEAD",
-            "EDUC_MOM",
-            "EDUC_POP",
-            "EDUC_SP",
-            "EDUC_MOM2",
-            "EDUC_POP2",
-            "EDUCD_HEAD",
-            "EDUCD_MOM",
-            "EDUCD_POP",
-            "EDUCD_SP",
-            "EDUCD_MOM2",
-            "EDUCD_POP2",
-            "INCTOT_HEAD",
-            "INCTOT_MOM",
-            "INCTOT_POP",
-            "INCTOT_SP",
-            "INCTOT_MOM2",
-            "INCTOT_POP2",
-        ]
-        columns_types = [
-            "int64",
-            "int64",
-            "int64",
-            "float64",
-            "int64",
-            "float64",
-            "int64",
-            "float64",
-            "int64",
-            "int64",
-            "int64",
-            "int64",
-            "int64",
-            "int64",
-            "int64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-            "float64",
-        ]
-        etl_keys = ["t_readcsv", "t_etl", "t_connect"]
-        ml_keys = ["t_train_test_split", "t_ml", "t_train", "t_inference"]
+    columns_names = [
+        "YEAR0",
+        "DATANUM",
+        "SERIAL",
+        "CBSERIAL",
+        "HHWT",
+        "CPI99",
+        "GQ",
+        "QGQ",
+        "PERNUM",
+        "PERWT",
+        "SEX",
+        "AGE",
+        "EDUC",
+        "EDUCD",
+        "INCTOT",
+        "SEX_HEAD",
+        "SEX_MOM",
+        "SEX_POP",
+        "SEX_SP",
+        "SEX_MOM2",
+        "SEX_POP2",
+        "AGE_HEAD",
+        "AGE_MOM",
+        "AGE_POP",
+        "AGE_SP",
+        "AGE_MOM2",
+        "AGE_POP2",
+        "EDUC_HEAD",
+        "EDUC_MOM",
+        "EDUC_POP",
+        "EDUC_SP",
+        "EDUC_MOM2",
+        "EDUC_POP2",
+        "EDUCD_HEAD",
+        "EDUCD_MOM",
+        "EDUCD_POP",
+        "EDUCD_SP",
+        "EDUCD_MOM2",
+        "EDUCD_POP2",
+        "INCTOT_HEAD",
+        "INCTOT_MOM",
+        "INCTOT_POP",
+        "INCTOT_SP",
+        "INCTOT_MOM2",
+        "INCTOT_POP2",
+    ]
+    columns_types = [
+        "int64",
+        "int64",
+        "int64",
+        "float64",
+        "int64",
+        "float64",
+        "int64",
+        "float64",
+        "int64",
+        "int64",
+        "int64",
+        "int64",
+        "int64",
+        "int64",
+        "int64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+        "float64",
+    ]
+    etl_keys = ["t_readcsv", "t_etl", "t_connect"]
+    ml_keys = ["t_train_test_split", "t_ml", "t_train", "t_inference"]
 
-        ml_score_keys = ["mse_mean", "cod_mean", "mse_dev", "cod_dev"]
+    ml_score_keys = ["mse_mean", "cod_mean", "mse_dev", "cod_dev"]
 
-        if parameters["data_file"].endswith(".csv"):
-            csv_size = getsize(parameters["data_file"])
-        else:
-            print(
-                "WARNING: uncompressed datafile not found, default value for dataset_size is set"
-            )
-            # deafault csv_size value (unit - MB) obtained by calling getsize
-            # function on the ipums_education2income_1970-2010.csv file
-            # (default Census benchmark data file)
-            csv_size = 2100.0
-
-        df, X, y, results = etl(
-            parameters["data_file"],
-            columns_names=columns_names,
-            columns_types=columns_types,
-            etl_keys=etl_keys,
-            pandas_mode=parameters["pandas_mode"],
+    if parameters["data_file"].endswith(".csv"):
+        csv_size = getsize(parameters["data_file"])
+    else:
+        print(
+            "WARNING: uncompressed datafile not found, default value for dataset_size is set"
         )
+        # deafault csv_size value (unit - MB) obtained by calling getsize
+        # function on the ipums_education2income_1970-2010.csv file
+        # (default Census benchmark data file)
+        csv_size = 2100.0
 
-        print_results(results=results, backend=parameters["pandas_mode"], unit="s")
+    df, X, y, results = etl(
+        parameters["data_file"],
+        columns_names=columns_names,
+        columns_types=columns_types,
+        etl_keys=etl_keys,
+        pandas_mode=parameters["pandas_mode"],
+    )
 
-        if not parameters["no_ml"]:
-            ml_scores, ml_times = ml(
-                X=X,
-                y=y,
-                random_state=RANDOM_STATE,
-                n_runs=N_RUNS,
-                test_size=TEST_SIZE,
-                optimizer=parameters["optimizer"],
-                ml_keys=ml_keys,
-                ml_score_keys=ml_score_keys,
-            )
-            print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
-            print_results(results=ml_scores, backend=parameters["pandas_mode"])
-            results.update(ml_times)
+    print_results(results=results, backend=parameters["pandas_mode"], unit="s")
 
-        return BenchmarkResults(results, params={"dataset_size": csv_size})
+    if not parameters["no_ml"]:
+        ml_scores, ml_times = ml(
+            X=X,
+            y=y,
+            random_state=RANDOM_STATE,
+            n_runs=N_RUNS,
+            test_size=TEST_SIZE,
+            optimizer=parameters["optimizer"],
+            ml_keys=ml_keys,
+            ml_score_keys=ml_score_keys,
+        )
+        print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
+        print_results(results=ml_scores, backend=parameters["pandas_mode"])
+        results.update(ml_times)
+
+    return BenchmarkResults(results, params={"dataset_size": csv_size})
+
+
+
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, params) -> BenchmarkResults:
+        return run_benchmark(params)
