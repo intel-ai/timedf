@@ -558,6 +558,8 @@ def run_benchmark(parameters):
         pandas_mode=parameters["pandas_mode"],
         extended_functionality=parameters["extended_functionality"],
     )
+    # Flatten results into `query.subquery` form
+    results = {f'{q}.{sq}': t for sq, t in subq2time for q, subq2time in results.items()}
 
     return BenchmarkResults(results, params=run_params)
 
