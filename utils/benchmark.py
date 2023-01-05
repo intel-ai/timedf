@@ -1,22 +1,35 @@
 import abc
+from typing import Dict
 
 
 class BenchmarkResults:
-    def __init__(self, measurements, params=None) -> None:
-        """Results must be submited in seconds in a form {'q1': 12, 'q2': 13}, {'dataset_size': 122}
+    def __init__(self, measurements: Dict[str, float], params=None) -> None:
+        """Structure with benchmark results that is enforcing benchmark output format.
 
-        Existing convention for benchmark results:
-        - time is in seconds
-        - Structure [{q1: x, q2: y}] what about notes?
-        - No reporting of backend and iteration
+        Parameters
+        ----------
+        measurements
+            Benchmark results in seconds in (query, time_s) form.
+            Example: `{'load_data': 12.2, 'fe': 20.1}`
+        params
+            Additinal parameters of the current benchmark that need to be saved as well.
+            Example: `{'dataset_size': 122, 'dfiles_n': 99}`
         """
-        self._validate_measurements(measurements)
+        self._validate_dict(measurements, float)
         self.measurements = measurements
+        self._validate_dict(params or {}, str)
         self.params = params
 
     @staticmethod
-    def _validate_measurements(measurements):
-        return True
+    def _validate_dict(measurements, val_type):
+        if not isinstance(measurements, dict):
+            raise ValueError(
+                f"Measurements have to be of dict type, but they are {type(measurements)}"
+            )
+
+        for key, val in measurements.items():
+            if not isinstance(val, float):
+                raise ValueError(f'Value for key="{key} is not float! type={type(val)}"')
 
 
 class BaseBenchmark(abc.ABC):
