@@ -1,28 +1,9 @@
-from dataclasses import dataclass
 from typing import Dict, Union
 
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
 
 from report.schema import make_iteration
-
-
-# This can be written as just a function, but we keep the dataclass to add validation and arg parsing in the future.
-@dataclass
-class DbConfig:
-    """Class encapsulates DB configuration and connection."""
-
-    driver: str
-    server: str
-    port: int
-    user: str
-    password: str
-    name: str
-
-    def create_engine(self) -> Engine:
-        url = f"{self.driver}://{self.user}:{self.password}@{self.server}:{self.port}/{self.name}"
-        return create_engine(url, future=True)
 
 
 class DbReporter:
