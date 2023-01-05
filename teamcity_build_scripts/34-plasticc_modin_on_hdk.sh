@@ -10,6 +10,6 @@ python3 run_modin_tests.py -bench_name plasticc -data_file "${DATASETS_PWD}/plas
                               -task benchmark -pandas_mode Modin_on_hdk                                                            \
                               ${ADDITIONAL_OPTS}                                                                                   \
                               ${ADDITIONAL_OPTS_NIGHTLY}                                                                           \
-                              ${DB_COMMON_OPTS} ${DB_PLASTICC_OPTS}
+                              ${DB_COMMON_OPTS}
 
 conda deactivate

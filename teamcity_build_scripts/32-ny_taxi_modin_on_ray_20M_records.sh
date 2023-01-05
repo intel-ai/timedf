@@ -7,4 +7,4 @@ python3 run_modin_tests.py --env_name ${ENV_NAME} --env_check True --save_env Tr
                           -dfiles_num 1 -pandas_mode Modin_on_ray -ray_tmpdir ${PWD}/tmp                                       \
                           ${ADDITIONAL_OPTS_NIGHTLY}                                                                           \
                           ${ADDITIONAL_OPTS}                                                                                   \
-                          ${DB_COMMON_OPTS} ${DB_TAXI_OPTS}
+                          ${DB_COMMON_OPTS}
