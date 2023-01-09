@@ -101,7 +101,6 @@ def attach_features(
             .merge(users[["user", "age"]], on="user")
         )
 
-        # FIXME: modin doesn't support list argument for agg??? But it works perfectly fine
         tmp = tmp.groupby("item")["age"].agg(["mean", "std"])
         tmp.columns = [f"age_{a}" for a in tmp.columns.to_flat_index()]
         df = df.merge(tmp, on="item", how="left")
