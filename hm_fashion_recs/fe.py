@@ -216,7 +216,7 @@ def attach_features(
         users_with_ohe = users[["user"]]
         for c in item_target_cols:
             tmp = pd.read_pickle(user_features_path / f"user_ohe_agg_week{week}_{c}.pkl")
-            assert tmp["user"].tolist() == users_with_ohe["user"].tolist()
+            assert tmp["user"].equals(users_with_ohe["user"])
             # tmp = tmp[['user'] + [c for c in tmp.columns if c.endswith('_mean')]]
             tmp = tmp.drop("user", axis=1)
             users_with_ohe = pd.concat([users_with_ohe, tmp], axis=1)
