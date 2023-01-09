@@ -28,8 +28,8 @@ class BenchmarkResults:
             )
 
         for key, val in measurements.items():
-            if not isinstance(val, float):
-                raise ValueError(f'Value for key="{key} is not float! type={type(val)}"')
+            if not isinstance(val, val_type):
+                raise ValueError(f'Value for key="{key} is not {val_type}! type={type(val)}"')
 
 
 class BaseBenchmark(abc.ABC):
