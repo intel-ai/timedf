@@ -1,7 +1,7 @@
 ### Into
-(Kaggle H&M fashion competition)[https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations] represents typical recommendation task for e-commerce. We need to predict what users are likely to buy in the next week based on past activity. We are provided with customer features, item features and transaction history.
+[Kaggle H&M fashion competition](https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations) represents typical recommendation task for e-commerce. We need to predict what users are likely to buy in the next week based on past activity. We are provided with customer features, item features and transaction history.
 
-This is a benchmark with a solution to H&M fashion recommendation competition. It is based on the following (solution)[https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations/discussion/324084] and it's (source code)[https://github.com/ryowk/kaggle-h-and-m-personalized-fashion-recommendations]. Authors of the original solution were 11th in that competition and provided source code to their solution under Apache license 2.0. Original solution requires combination of 4 ipython notebooks, but we only use one of them for simplicity (`local6.ipynb`). Authors claim that such solution achieves the score of `0.03391`, which is enough to score in top 15 in the competition. Authors of the original code didn't know about modin and hence, didn't try to optimize source code for modin use.
+This is a benchmark with a solution to H&M fashion recommendation competition. It is based on the following [solution](https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations/discussion/324084) and it's [source code](https://github.com/ryowk/kaggle-h-and-m-personalized-fashion-recommendations). Authors of the original solution were 11th in that competition and provided source code to their solution under Apache license 2.0. Original solution requires combination of 4 ipython notebooks, but we only use one of them for simplicity (`local6.ipynb`). Authors claim that such solution achieves the score of `0.03391`, which is enough to score in top 15 in the competition. Authors of the original code didn't know about modin and hence, didn't try to optimize source code for modin use.
 
 ### Data
 - user features (`customers.csv` 207MB)
@@ -54,7 +54,7 @@ Steps of the solution:
 - `lfm.py` - funcitons for lightfm embedding training and extraction of embeddings for FE, also script for LFM training.
 - `preprocess.py` - functions as well as script for data processing. You need to run it if you want to run `notebook.py`
 - `week_processing_benchmark.py` - main benchmark, contains dataset preparation starting from raw data. Intended benchmark, relatively easy to enterpret.
-- `notebook.py` - script, based on (local6.ipynb)[https://github.com/ryowk/kaggle-h-and-m-personalized-fashion-recommendations/blob/main/local6.ipynb], reproducing it. You only need to work with it directly if you want to reporduce the whole benchmark, including model training, could take about 24hrs to complete in full.
+- `notebook.py` - script, based on [local6.ipynb](https://github.com/ryowk/kaggle-h-and-m-personalized-fashion-recommendations/blob/main/local6.ipynb), reproducing it. You only need to work with it directly if you want to reporduce the whole benchmark, including model training, could take about 24hrs to complete in full.
 - `metric.py` - utility metrics
 - `schema.py` - utility schema
 - `tm.py` - configured timer for benchmark measurements
@@ -66,9 +66,4 @@ Steps of the solution:
 
 ### Additional dependencies
 - `lightfm` is turned off by default and is used for generating user embeddings for feature engineering
-- `faiss` is used for candidate generation to speed up 
-logzero
-# conda install -c conda-forge lightfm  catboost
-fire
-# conda install -c pytorch faiss-gpu
-lightgbm
+- `faiss` is used for candidate generation to speed up search in mean OHE space
