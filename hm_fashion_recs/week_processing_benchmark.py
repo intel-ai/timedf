@@ -1,8 +1,7 @@
-import os
 from pathlib import Path
 
 from hm_fashion_recs.preprocess import transform_data, create_user_ohe_agg
-from hm_fashion_recs.main import get_age_shifts, load_data
+from hm_fashion_recs.notebook import get_age_shifts, load_data
 from hm_fashion_recs.candidates import make_one_week_candidates, drop_trivial_users
 from hm_fashion_recs.fe import attach_features
 
@@ -16,7 +15,7 @@ from hm_fashion_recs.vars import (
 from hm_fashion_recs.tm import tm
 
 
-from utils import check_support, trigger_execution, Config
+from utils import check_support
 
 
 class CFG:
@@ -90,15 +89,6 @@ def main(raw_data_path):
 def run_benchmark(parameters):
     check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
 
-    # Update config in case some envs changed after the import
-    Config.init(
-        MODIN_IMPL="pandas" if parameters["pandas_mode"] == "Pandas" else "modin",
-        MODIN_STORAGE_FORMAT=os.getenv("MODIN_STORAGE_FORMAT"),
-        MODIN_ENGINE=os.getenv("MODIN_ENGINE"),
-    )
-
-    is_hdk_mode = parameters["pandas_mode"] == "Modin_on_hdk"
-
     raw_data_path = Path(parameters["data_file"].strip("'"))
     main(raw_data_path=raw_data_path)
 
@@ -110,7 +100,3 @@ def run_benchmark(parameters):
     ]
 
     return {"ETL": results}
-
-
-if __name__ == "__main__":
-    main(raw_data_path=raw_data_path)

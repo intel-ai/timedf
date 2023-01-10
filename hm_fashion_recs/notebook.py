@@ -6,13 +6,12 @@ import catboost
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .metric import mapk
+from hm_fashion_recs.metric import mapk
+from hm_fashion_recs.fe import get_age_shifts, attach_features
+from hm_fashion_recs.candidates import create_candidates, make_weekly_candidates
 
-from .fe import get_age_shifts, attach_features
-from .candidates import create_candidates, make_weekly_candidates
 
-
-from .vars import (
+from hm_fashion_recs.vars import (
     preprocessed_data_path,
     train_weeks,
     lfm_features_path,
@@ -188,7 +187,7 @@ def predict_new_week(*, model, transactions, users, items, age_shifts):
     n_chunk = (len(all_users) + n_split_prediction - 1) // n_split_prediction
     for i in range(0, len(all_users), n_chunk):
         print(f"chunk: {i}")
-        target_users = all_users[i : i + n_chunk]
+        target_users = all_users[i : i + n_chunk]  # noqa: E203
 
         candidates = create_candidates(
             users=users,

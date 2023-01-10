@@ -1,5 +1,4 @@
 from pathlib import Path
-import faiss
 import numpy as np
 
 from utils.pandas_backend import pd
@@ -9,6 +8,8 @@ from hm_fashion_recs.tm import tm
 
 class CFG:
     """Configuration for candidate generaton."""
+
+    use_ohe_distance = False
 
     popular_num_items = 60
     popular_weeks = 1
@@ -112,8 +113,8 @@ def create_candidates(
 
         pops = []
         for age in range(16, 100):
-            low = age - age_shifts[age]
-            high = age + age_shifts[age]
+            low = age - age_shifts[age]  # noqa: F841 used in pandas query
+            high = age + age_shifts[age]  # noqa: F841 used in pandas query
             pop = tr.query("@low <= age <= @high")["item"].value_counts().index.values[:num_items]
             pops.append(
                 pd.DataFrame({"age": age, "item": pop, "age_popular_rank": range(num_items)})
@@ -157,7 +158,7 @@ def create_candidates(
     def create_candidates_cooc(
         base_candidates: pd.DataFrame, week_start: int, num_weeks: int, pair_count_threshold: int
     ) -> pd.DataFrame:
-        week_end = week_start + num_weeks
+        week_end = week_start + num_weeks  # noqa: F841 used in pandas query
         tr = transactions.query("@week_start <= week < @week_end")[
             ["user", "item", "week"]
         ].drop_duplicates(ignore_index=True)
@@ -181,7 +182,7 @@ def create_candidates(
         base_candidates_replace = {c: f"cooc_{c}" for c in base_candidates_columns}
         candidates = candidates.rename(columns=base_candidates_replace)
         candidates = candidates.rename(
-            columns={"ratio": "cooc_ratio", "item_count": f"cooc_item_count"}
+            columns={"ratio": "cooc_ratio", "item_count": "cooc_item_count"}
         )
 
         candidates["strategy"] = "cooc"
@@ -219,6 +220,8 @@ def create_candidates(
     def create_candidates_ohe_distance(
         target_users: np.ndarray, week_start: int, num_weeks: int, num_items: int
     ) -> pd.DataFrame:
+        import faiss
+
         users_with_ohe = users[["user"]].query("user in @target_users")
         cols = [c for c in items.columns if c.endswith("_idx")]
         for c in cols:
@@ -230,9 +233,9 @@ def create_candidates(
         users_with_ohe = users_with_ohe.dropna().reset_index(drop=True)
         limited_users = users_with_ohe["user"].values
 
-        recent_items = transactions.query("@week_start <= week < @week_start + @num_weeks")[
-            "item"
-        ].unique()
+        recent_items = transactions.query(  # noqa: F841 used in pandas query
+            "@week_start <= week < @week_start + @num_weeks"
+        )["item"].unique()
         items_with_ohe = pd.get_dummies(items[["item"] + cols], columns=cols)
         items_with_ohe = items_with_ohe.query("item in @recent_items").reset_index(drop=True)
         limited_items = items_with_ohe["item"].values
@@ -289,12 +292,15 @@ def create_candidates(
     with tm.timeit("07-same_product_code"):
         candidates_same_product_code = create_candidates_same_product_code(candidates_item2item2)
     with tm.timeit("08-ohe distance"):
-        candidates_ohe_distance = create_candidates_ohe_distance(
-            target_users=target_users,
-            week_start=week,
-            num_weeks=CFG.ohe_distance_num_weeks,
-            num_items=CFG.ohe_distance_num_items,
-        )
+        if CFG.use_ohe_distance:
+            candidates_ohe_distance = create_candidates_ohe_distance(
+                target_users=target_users,
+                week_start=week,
+                num_weeks=CFG.ohe_distance_num_weeks,
+                num_items=CFG.ohe_distance_num_items,
+            )
+        else:
+            candidates_ohe_distance = pd.DataFrame()
     with tm.timeit("09-category popular"):
         candidates_dept = create_candidates_category_popular(
             candidates_item2item2, week, 1, 6, "department_no_idx"
@@ -315,7 +321,10 @@ def create_candidates(
     candidates_same_product_code = drop_common_user_item(
         candidates_same_product_code, candidates_repurchase
     )
-    candidates_ohe_distance = drop_common_user_item(candidates_ohe_distance, candidates_repurchase)
+    if len(candidates_ohe_distance) > 0:
+        candidates_ohe_distance = drop_common_user_item(
+            candidates_ohe_distance, candidates_repurchase
+        )
     candidates_dept = drop_common_user_item(candidates_dept, candidates_repurchase)
 
     candidates = [

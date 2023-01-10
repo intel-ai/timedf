@@ -171,7 +171,7 @@ def attach_features(
         df = df.merge(tmp, on=["user", "item"], how="left")
 
     with tm.timeit("12-item age volume features"):
-        week_end = week + CFG.age_volume_feature_weeks
+        week_end = week + CFG.age_volume_feature_weeks  # noqa: F841 used in pandas query
         # FIXME: modin bug
         tr = (
             transactions.query("@week <= week < @week_end")[["user", "item"]]
@@ -180,8 +180,8 @@ def attach_features(
         )
         item_age_volumes = []
         for age in range(16, 100):
-            low = age - age_shifts[age]
-            high = age + age_shifts[age]
+            low = age - age_shifts[age]  # noqa: F841 used in pandas query
+            high = age + age_shifts[age]  # noqa: F841 used in pandas query
             tmp = (
                 tr.query("@low <= age <= @high")
                 .groupby("item")
@@ -229,7 +229,9 @@ def attach_features(
         n_chunk = (len(users_items) + n_split - 1) // n_split
         ohe = []
         for i in range(0, len(users_items), n_chunk):
-            users_items_small = users_items.iloc[i : i + n_chunk].reset_index(drop=True)
+            users_items_small = users_items.iloc[i : i + n_chunk].reset_index(  # noqa: E203
+                drop=True
+            )
             users_small = users_items_small["user"].values
             items_small = users_items_small["item"].values
 
@@ -252,7 +254,9 @@ def attach_features(
 
     if lfm_features_path is not None:
         with tm.timeit("15-lfm features"):
-            seen_users = transactions.query("week >= @pretrain_week")["user"].unique()
+            seen_users = transactions.query(  # noqa: F841 used in pandas query
+                "week >= @pretrain_week"
+            )["user"].unique()
             user_reps, _ = calc_embeddings(lfm_features_path, pretrain_week, dim=CFG.dim)
             user_reps = user_reps.query("user in @seen_users")
             df = df.merge(user_reps, on="user", how="left")
