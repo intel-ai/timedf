@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Union
+from typing import Union
 from configparser import ConfigParser
 
 import numpy as np
@@ -69,7 +69,7 @@ def trigger_import(*dfs):
     Parameters
     ----------
     *dfs : iterable
-        DataFrames to trigger import. 
+        DataFrames to trigger import.
     """
     from modin.experimental.core.execution.native.implementations.hdk_on_native.db_worker import (
         DbWorker,
@@ -82,7 +82,9 @@ def trigger_import(*dfs):
         )  # to trigger real execution
 
 
-def execute(df: pd.DataFrame, *, trigger_hdk_import: bool = False, modin_cfg: Union[None, ConfigParser]):
+def execute(
+    df: pd.DataFrame, *, trigger_hdk_import: bool = False, modin_cfg: Union[None, ConfigParser]
+):
     """Make sure the calculations are finished.
 
     Parameters
@@ -97,7 +99,7 @@ def execute(df: pd.DataFrame, *, trigger_hdk_import: bool = False, modin_cfg: Un
     """
     if modin_cfg is None:
         return
-    
+
     df.shape
 
     if isinstance(df, (pd.DataFrame, np.ndarray)):
@@ -132,10 +134,10 @@ def execute(df: pd.DataFrame, *, trigger_hdk_import: bool = False, modin_cfg: Un
 
 def trigger_execution_base(*dfs, modin_cfg=Union[None, ConfigParser]):
     """Utility function to trigger execution for lazy pd libraries.
-    
+
     Parameters
     ----------
-    dfs: 
+    dfs:
         Dataframes or numpy arrays to materialize
     modin_cfg:
         Modin configuration that defines values for `StorageFormat` and `Engine`.
