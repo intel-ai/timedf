@@ -8,7 +8,6 @@ from hm_fashion_recs.fe import attach_features
 
 
 from hm_fashion_recs.vars import (
-    raw_data_path,
     preprocessed_data_path,
     user_features_path,
     lfm_features_path,
@@ -21,7 +20,6 @@ from utils import check_support, trigger_execution, Config
 
 
 class CFG:
-    raw_data_path = raw_data_path
     preprocessed_data_path = preprocessed_data_path
     lfm_features_path = lfm_features_path
     working_dir = working_dir
