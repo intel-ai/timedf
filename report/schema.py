@@ -19,8 +19,8 @@ Base = declarative_base()
 STRING_LENGTH = 200
 
 
-def make_string():
-    return Column(String(STRING_LENGTH), nullable=False)
+def make_string(nullable=False):
+    return Column(String(STRING_LENGTH), nullable=nullable)
 
 
 # Equivalent of defining a class, but with variable class attributes
@@ -43,7 +43,7 @@ Iteration = type(
         # host info
         **{name: make_string() for name in HostParams.fields},
         # run params
-        **{name: make_string() for name in RunParams.fields},
+        **{name: make_string(nullable=True) for name in RunParams.fields},
         # Additional params without forced schema
         "params": Column(JSON),
     },
