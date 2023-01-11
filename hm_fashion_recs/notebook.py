@@ -1,7 +1,6 @@
 """This script reproduces notebook from the original solution."""
 
 import gc
-from pathlib import Path
 
 import catboost
 import matplotlib.pyplot as plt
@@ -218,7 +217,9 @@ def prepare_submission(*, pred, working_dir, preprocessed_data_path):
     submission.to_csv(working_dir / "submission.csv", index=False)
 
 
-def train_eval(candidates, transactions, users, items, candidates_valid, age_shifts, user_features_path):
+def train_eval(
+    candidates, transactions, users, items, candidates_valid, age_shifts, user_features_path
+):
     train, valid = make_dataset(
         candidates=candidates,
         transactions=transactions,
@@ -227,7 +228,7 @@ def train_eval(candidates, transactions, users, items, candidates_valid, age_shi
         begin_shift=1,
         end_shift=1,
         age_shifts=age_shifts,
-        user_features_path=user_features_path
+        user_features_path=user_features_path,
     )
 
     model = train_model(train=train, valid=valid)
@@ -258,7 +259,7 @@ def make_submission(candidates, transactions, users, items, best_iteration, age_
         begin_shift=1,
         end_shift=0,
         age_shifts=age_shifts,
-        user_features_path=paths['user_features']
+        user_features_path=paths["user_features"],
     )
 
     model = train_model(train=train, best_iteration=best_iteration)
@@ -268,14 +269,21 @@ def make_submission(candidates, transactions, users, items, best_iteration, age_
     gc.collect()
 
     pred = predict_new_week(
-        model=model, transactions=transactions, users=users, items=items, age_shifts=age_shifts, user_features_path=paths['user_features']
-        )
-    prepare_submission(pred=pred, working_dir=paths['workdir'], preprocessed_data_path=paths['preprocessed_data'])
+        model=model,
+        transactions=transactions,
+        users=users,
+        items=items,
+        age_shifts=age_shifts,
+        user_features_path=paths["user_features"],
+    )
+    prepare_submission(
+        pred=pred, working_dir=paths["workdir"], preprocessed_data_path=paths["preprocessed_data"]
+    )
 
 
 def main():
     paths = get_workdir_paths()
-    transactions, users, items = load_data(preprocessed_data_path=paths['preprocessed_data'])
+    transactions, users, items = load_data(preprocessed_data_path=paths["preprocessed_data"])
 
     age_shifts = get_age_shifts(transactions=transactions, users=users)
     candidates, candidates_valid = make_weekly_candidates(
@@ -283,7 +291,7 @@ def main():
         users=users,
         items=items,
         train_weeks=CFG.train_weeks,
-        user_features_path=paths['user_features'],
+        user_features_path=paths["user_features"],
         age_shifts=age_shifts,
     )
     best_iteration = train_eval(
@@ -293,7 +301,7 @@ def main():
         users=users,
         items=items,
         age_shifts=age_shifts,
-        user_features_path=paths['user_features']
+        user_features_path=paths["user_features"],
     )
 
     del candidates_valid
