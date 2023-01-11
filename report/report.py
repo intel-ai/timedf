@@ -43,7 +43,7 @@ class DbReporter:
             Additional params to report, will be added to a schemaless `params` column in the DB, can be used for
             storing benchmark-specific infomation such as datset size.
         """
-        with Session(self.engine, autocommit=True) as session:
+        with Session(self.engine) as session:
             session.add(
                 make_iteration(
                     run_id=self.run_id,
@@ -54,3 +54,4 @@ class DbReporter:
                     params=params,
                 )
             )
+            session.commit()

@@ -1,10 +1,10 @@
-from collections import defaultdict
-
 import pytest
-
 from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session
+
 from report.schema import Iteration, Base
 from report.report import DbReporter
+from report.run_params import RunParams
 
 
 @pytest.fixture(scope="session")
@@ -12,26 +12,30 @@ def engine():
     return create_engine("sqlite://", future=True)
 
 
+def test_schema(engine):
+    Base.metadata.create_all(engine)
+
+
 def test_dbreport(engine):
     """Returns an sqlalchemy session, and after the test tears down everything properly."""
-    report = DbReporter(engine, benchmark="testbench", run_id=1, run_params={"setting1": "param1"})
+    report = DbReporter(
+        engine,
+        benchmark="testbench",
+        run_id=1,
+        run_params={k: "testval" for k in RunParams.fields},
+    )
+
+    # with Session(engine, autocommit=True) as session:
+    Base.metadata.create_all(engine)
 
     report.report(
         iteration_no=1,
         name2time={"q1": 1.5, "q2": 11.2},
-        params=defaultdict(lambda x: "defaultval"),
+        params={k: "testval" for k in RunParams.fields},
     )
 
-    stmt = select(Iteration)
-
-    with engine.begin() as session:
-        results = list(session.execute(stmt))
-        assert len(results)
-        assert results[0]["q1"] == 1.5
-
-
-def test_schema(engine):
-    with engine.begin() as session:
-        Base.metadata.create_all(engine)
-        first = session.execute(select(Iteration)).first()
-        print(first)
+    with Session(engine) as session:
+        stmt = select(Iteration)
+        results = list(session.execute(stmt).scalars().all())
+        assert len(results) == 1
+        assert len(results[0].measurements) == 2
