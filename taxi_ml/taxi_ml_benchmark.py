@@ -5,15 +5,9 @@ from pathlib import Path
 from typing import Any, Iterable, Tuple, Union, Dict
 from itertools import islice
 
-from utils import (
-    check_support,
-    print_results,
-    trigger_execution,
-    Config,
-    BenchmarkResults,
-    BaseBenchmark,
-)
-from utils.pandas_backend import pd
+
+from utils import check_support, print_results, BenchmarkResults, BaseBenchmark
+from utils.pandas_backend import pd, trigger_execution
 
 
 def measure_time(func):
@@ -287,13 +281,6 @@ def run_benchmark(parameters):
 
     # parameters["data_path"] = parameters["data_file"]
     parameters["no_ml"] = parameters["no_ml"] or False
-
-    # Update config in case some envs changed after the import
-    Config.init(
-        MODIN_IMPL="pandas" if parameters["pandas_mode"] == "Pandas" else "modin",
-        MODIN_STORAGE_FORMAT=os.getenv("MODIN_STORAGE_FORMAT"),
-        MODIN_ENGINE=os.getenv("MODIN_ENGINE"),
-    )
 
     debug = bool(os.getenv("DEBUG", False))
 
