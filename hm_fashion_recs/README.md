@@ -55,10 +55,9 @@ Steps of the solution:
 - `preprocess.py` - functions as well as script for data processing. You need to run it if you want to run `notebook.py`
 - `week_processing_benchmark.py` - main benchmark, contains dataset preparation starting from raw data. Intended benchmark, relatively easy to enterpret.
 - `notebook.py` - script, based on [local6.ipynb](https://github.com/ryowk/kaggle-h-and-m-personalized-fashion-recommendations/blob/main/local6.ipynb), reproducing it. You only need to work with it directly if you want to reporduce the whole benchmark, including model training, could take about 24hrs to complete in full.
-- `metric.py` - utility metrics
+- `hm_utils.py` - utility functions
 - `schema.py` - utility schema
 - `tm.py` - configured timer for benchmark measurements
-- `vars.py` - utility variables such as number of weeks used, data paths in the temporary directory.
 ### Links
 1. Competition: https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations
 2. Used solution post: https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations/discussion/324084
@@ -66,4 +65,4 @@ Steps of the solution:
 
 ### Additional dependencies
 - `lightfm` is turned off by default and is used for generating user embeddings for feature engineering
-- `faiss` is used for candidate generation to speed up search in mean OHE space
+- `faiss` is turned off by default (so no candidates from OHE space) and is used for candidate generation to speed up search in mean OHE space
