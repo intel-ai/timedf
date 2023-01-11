@@ -7,10 +7,12 @@ from tempfile import mkstemp
 
 import psutil
 
+from report import DbReporter
+from utils_base_env.benchmarks import benchmark_mapper
+from utils_base_env import DbConfig
+
 from .namespace_utils import import_pandas_into_module_namespace
 from .pandas_backend import set_backend
-from utils_base_env.benchmarks import benchmark_mapper
-from report import DbConfig, DbReporter
 from .benchmark import BaseBenchmark, BenchmarkResults
 
 
