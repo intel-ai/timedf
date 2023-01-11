@@ -81,7 +81,7 @@ def make_iteration(
         benchmark=benchmark,
         iteration_no=iteration_no,
         params=params,
-        **HostParams().report(),
-        **RunParams().report(run_params),
+        **HostParams().prepare_report_dict(),
+        **RunParams().prepare_report_dict(run_params),
         measurements=measurements_orm,
     )

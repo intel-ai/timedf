@@ -66,9 +66,7 @@ def _get_host_info() -> Dict[str, str]:
 class HostParams:
     fields = tuple(_get_host_info())
 
-    def report(
-        self,
-    ):
+    def prepare_report_dict(self):
         return _get_host_info()
 
 
@@ -96,6 +94,6 @@ class RunParams:
         if len(diff) > 0:
             raise ValueError(f"The following params are missing: {diff}")
 
-    def report(self, params):
+    def prepare_report_dict(self, params):
         self._validate_params(params)
         return {name: params[name] for name in self.fields}

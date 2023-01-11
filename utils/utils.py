@@ -523,7 +523,7 @@ def run_benchmarks(
         Specify the memory of your gpu(This controls the lines to be used. Also work for CPU version).
     extended_functionality : bool, default: False
         Extends functionality of H2O benchmark by adding 'chk' functions and verbose local reporting of results.
-    db_config: DbConfig
+    db_config: DbConfig, optional
         Configuration for the database
     commit_hdk : str, default: "1234567890123456789012345678901234567890"
         HDK commit hash used for benchmark.
