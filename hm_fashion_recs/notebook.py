@@ -11,17 +11,18 @@ from utils.pandas_backend import pd
 from hm_fashion_recs.hm_utils import mapk, load_data, get_workdir_paths
 from hm_fashion_recs.fe import get_age_shifts, attach_features
 from hm_fashion_recs.candidates import create_candidates, make_weekly_candidates
+from hm_fashion_recs.preprocess import run_complete_preprocessing
 
 
 class CFG:
-    n_weeks = 14
     train_weeks = 6
     n_iterations = 10_000
+
+    use_lfm = False
 
 
 DEBUG = True
 if DEBUG:
-    CFG.n_weeks = 2
     CFG.train_weeks = 1
     CFG.n_iterations = 50
 
@@ -136,7 +137,9 @@ def predict(dataset, model):
     )
 
 
-def validate_model(model, transactions, users, items, candidates_valid, age_shifts):
+def validate_model(
+    model, transactions, users, items, candidates_valid, age_shifts, user_features_path
+):
     dataset_valid_all = attach_features(
         transactions,
         users,
@@ -145,7 +148,7 @@ def validate_model(model, transactions, users, items, candidates_valid, age_shif
         1,
         CFG.train_weeks + 1,
         age_shifts=age_shifts,
-        user_features_path=CFG.user_features_path,
+        user_features_path=user_features_path,
     )
 
     pred = predict(dataset_valid_all, model)
@@ -244,6 +247,7 @@ def train_eval(
         items=items,
         candidates_valid=candidates_valid,
         age_shifts=age_shifts,
+        user_features_path=user_features_path,
     )
     print("mAP@12:", metric)
     return best_iteration
@@ -281,8 +285,12 @@ def make_submission(candidates, transactions, users, items, best_iteration, age_
     )
 
 
-def main():
+def main(raw_data_path):
     paths = get_workdir_paths()
+    run_complete_preprocessing(
+        raw_data_path=raw_data_path, paths=paths, n_weeks=CFG.train_weeks + 1, use_lfm=CFG.use_lfm
+    )
+
     transactions, users, items = load_data(preprocessed_data_path=paths["preprocessed_data"])
 
     age_shifts = get_age_shifts(transactions=transactions, users=users)
@@ -317,6 +325,3 @@ def main():
         paths=paths,
     )
 
-
-if __name__ == "__main__":
-    main()

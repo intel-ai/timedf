@@ -12,7 +12,7 @@ from utils import check_support
 
 def feature_engieering(week, paths, use_lfm):
     with tm.timeit("01-load_data"):
-        transactions, users, items = load_data()
+        transactions, users, items = load_data(paths["preprocessed_data"])
 
     with tm.timeit("02-age_shifts"):
         age_shifts = get_age_shifts(transactions=transactions, users=users)

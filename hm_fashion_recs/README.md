@@ -67,5 +67,5 @@ Utility files:
 3. Repository with original code: https://github.com/ryowk/kaggle-h-and-m-personalized-fashion-recommendations
 
 ### Additional dependencies
-- `lightfm` is turned off by default and is used for generating user embeddings for feature engineering
-- `faiss` is turned off by default (so no candidates from OHE space) and is used for candidate generation to speed up search in mean OHE space
+- `lightfm` is used for generating user embeddings for feature engineering. Turned off by default, so these features are ignored.
+- `faiss` is used for candidate generation to speed up search in mean OHE space. Turned off by default, so no candidates from OHE space. 
