@@ -1,4 +1,5 @@
 import argparse
+from dataclasses import dataclass
 import os
 import socket
 import subprocess
@@ -7,6 +8,25 @@ from typing import Union
 from utils_base_env.benchmarks import benchmark_mapper
 
 returned_port_numbers = []
+
+
+# This can be written as just a function, but we keep the dataclass to add validation and arg parsing in the future.
+@dataclass
+class DbConfig:
+    """Class encapsulates DB configuration and connection."""
+
+    driver: str
+    server: str
+    port: int
+    user: str
+    password: str
+    name: str
+
+    def create_engine(self):
+        from sqlalchemy import create_engine
+
+        url = f"{self.driver}://{self.user}:{self.password}@{self.server}:{self.port}/{self.name}"
+        return create_engine(url, future=True)
 
 
 def str_arg_to_bool(v: Union[bool, str]) -> bool:

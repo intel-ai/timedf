@@ -3,26 +3,7 @@ import os
 import sys
 from typing import Iterable
 
-from utils_base_env import execute_process, prepare_parser
-
-
-# This can be written as just a function, but we keep the dataclass to add validation and arg parsing in the future.
-@dataclass
-class DbConfig:
-    """Class encapsulates DB configuration and connection."""
-
-    driver: str
-    server: str
-    port: int
-    user: str
-    password: str
-    name: str
-
-    def create_engine(self):
-        from sqlalchemy import create_engine
-
-        url = f"{self.driver}://{self.user}:{self.password}@{self.server}:{self.port}/{self.name}"
-        return create_engine(url, future=True)
+from utils_base_env import execute_process, prepare_parser, DbConfig
 
 
 def parse_tasks(task_string: str, possible_tasks: Iterable[str]):
