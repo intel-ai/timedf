@@ -324,4 +324,3 @@ def main(raw_data_path):
         age_shifts=age_shifts,
         paths=paths,
     )
-
