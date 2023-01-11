@@ -1,43 +1,30 @@
 """This script reproduces notebook from the original solution."""
 
 import gc
+from pathlib import Path
 
 import catboost
 import matplotlib.pyplot as plt
 import numpy as np
 
-from hm_fashion_recs.metric import mapk
+from utils.pandas_backend import pd
+
+from hm_fashion_recs.hm_utils import mapk, load_data, get_workdir_paths
 from hm_fashion_recs.fe import get_age_shifts, attach_features
 from hm_fashion_recs.candidates import create_candidates, make_weekly_candidates
 
 
-from hm_fashion_recs.vars import (
-    preprocessed_data_path,
-    train_weeks,
-    lfm_features_path,
-    working_dir,
-    user_features_path,
-)
-from utils.pandas_backend import pd
-
-
 class CFG:
-    preprocessed_data_path = preprocessed_data_path
-    train_weeks = train_weeks
-    lfm_features_path = lfm_features_path
-    working_dir = working_dir
-    user_features_path = user_features_path
-
-    # originally n_iterations = 10_000
-    n_iterations = 50
+    n_weeks = 14
+    train_weeks = 6
+    n_iterations = 10_000
 
 
-def load_data():
-    transactions = pd.read_pickle(CFG.preprocessed_data_path / "transactions_train.pkl")
-    users = pd.read_pickle(CFG.preprocessed_data_path / "users.pkl")
-    items = pd.read_pickle(CFG.preprocessed_data_path / "items.pkl")
-
-    return transactions, users, items
+DEBUG = True
+if DEBUG:
+    CFG.n_weeks = 2
+    CFG.train_weeks = 1
+    CFG.n_iterations = 50
 
 
 def concat_train(datasets, begin, num):
@@ -46,7 +33,15 @@ def concat_train(datasets, begin, num):
 
 
 def make_dataset(
-    candidates, transactions, users, items, begin_shift=1, end_shift=1, *, age_shifts
+    candidates,
+    transactions,
+    users,
+    items,
+    begin_shift=1,
+    end_shift=1,
+    *,
+    age_shifts,
+    user_features_path,
 ):
     # Since the learning period of the pretrained model is different at the time of evaluation and at the time of submission, leave candidates
 
@@ -58,9 +53,9 @@ def make_dataset(
             items,
             candidates_subset,
             begin_shift + i,
-            train_weeks + end_shift,
+            CFG.train_weeks + end_shift,
             age_shifts=age_shifts,
-            user_features_path=CFG.user_features_path,
+            user_features_path=user_features_path,
         )
 
         dataset["query_group"] = dataset["week"].astype(str) + "_" + dataset["user"].astype(str)
@@ -68,19 +63,9 @@ def make_dataset(
         datasets.append(dataset)
 
     valid = datasets[0]
-    train = concat_train(datasets, end_shift, train_weeks)
+    train = concat_train(datasets, end_shift, CFG.train_weeks)
 
     return train, valid
-
-
-# def get_query_group(df):
-#     def run_length_encoding(sequence):
-#         comp_seq_index, = np.concatenate(([True], sequence[1:] != sequence[:-1], [True])).nonzero()
-#         return sequence[comp_seq_index[:-1]], np.ediff1d(comp_seq_index)
-
-#     users = df["user"].values
-#     _, group = run_length_encoding(users)
-#     return list(group)
 
 
 def get_feature_cols(dataset):
@@ -179,7 +164,7 @@ def validate_model(model, transactions, users, items, candidates_valid, age_shif
     return mapk(merged["gt"], merged["item"])
 
 
-def predict_new_week(*, model, transactions, users, items, age_shifts):
+def predict_new_week(*, model, transactions, users, items, age_shifts, user_features_path):
     """This function predicts in chunks to avid OOM problem"""
     all_users = users["user"].values
     preds = []
@@ -195,7 +180,7 @@ def predict_new_week(*, model, transactions, users, items, age_shifts):
             items=items,
             target_users=target_users,
             week=0,
-            user_features_path=CFG.user_features_path,
+            user_features_path=user_features_path,
             age_shifts=age_shifts,
         )
         candidates = attach_features(
@@ -204,9 +189,9 @@ def predict_new_week(*, model, transactions, users, items, age_shifts):
             items,
             candidates,
             0,
-            train_weeks,
+            CFG.train_weeks,
             age_shifts=age_shifts,
-            user_features_path=CFG.user_features_path,
+            user_features_path=user_features_path,
         )
 
         preds.append(predict(candidates, model))
@@ -217,9 +202,9 @@ def predict_new_week(*, model, transactions, users, items, age_shifts):
     return pred
 
 
-def prepare_submission(*, pred):
-    mp_user = pd.read_pickle(CFG.preprocessed_data_path / "mp_customer_id.pkl")
-    mp_item = pd.read_pickle(CFG.preprocessed_data_path / "mp_article_id.pkl")
+def prepare_submission(*, pred, working_dir, preprocessed_data_path):
+    mp_user = pd.read_pickle(preprocessed_data_path / "mp_customer_id.pkl")
+    mp_item = pd.read_pickle(preprocessed_data_path / "mp_article_id.pkl")
 
     a_user = mp_user["val"].values
     a_item = mp_item["val"].values
@@ -230,10 +215,10 @@ def prepare_submission(*, pred):
     pred["prediction"] = pred["prediction"].apply(lambda x: " ".join(map(str, x)))
 
     submission = pred[["customer_id", "prediction"]]
-    submission.to_csv(CFG.working_dir / "submission.csv", index=False)
+    submission.to_csv(working_dir / "submission.csv", index=False)
 
 
-def train_eval(candidates, transactions, users, items, candidates_valid, age_shifts):
+def train_eval(candidates, transactions, users, items, candidates_valid, age_shifts, user_features_path):
     train, valid = make_dataset(
         candidates=candidates,
         transactions=transactions,
@@ -242,6 +227,7 @@ def train_eval(candidates, transactions, users, items, candidates_valid, age_shi
         begin_shift=1,
         end_shift=1,
         age_shifts=age_shifts,
+        user_features_path=user_features_path
     )
 
     model = train_model(train=train, valid=valid)
@@ -262,7 +248,7 @@ def train_eval(candidates, transactions, users, items, candidates_valid, age_shi
     return best_iteration
 
 
-def make_submission(candidates, transactions, users, items, best_iteration, age_shifts):
+def make_submission(candidates, transactions, users, items, best_iteration, age_shifts, paths):
 
     train, valid = make_dataset(
         candidates=candidates,
@@ -272,6 +258,7 @@ def make_submission(candidates, transactions, users, items, best_iteration, age_
         begin_shift=1,
         end_shift=0,
         age_shifts=age_shifts,
+        user_features_path=paths['user_features']
     )
 
     model = train_model(train=train, best_iteration=best_iteration)
@@ -281,13 +268,14 @@ def make_submission(candidates, transactions, users, items, best_iteration, age_
     gc.collect()
 
     pred = predict_new_week(
-        model=model, transactions=transactions, users=users, items=items, age_shifts=age_shifts
-    )
-    prepare_submission(pred=pred)
+        model=model, transactions=transactions, users=users, items=items, age_shifts=age_shifts, user_features_path=paths['user_features']
+        )
+    prepare_submission(pred=pred, working_dir=paths['workdir'], preprocessed_data_path=paths['preprocessed_data'])
 
 
 def main():
-    transactions, users, items = load_data()
+    paths = get_workdir_paths()
+    transactions, users, items = load_data(preprocessed_data_path=paths['preprocessed_data'])
 
     age_shifts = get_age_shifts(transactions=transactions, users=users)
     candidates, candidates_valid = make_weekly_candidates(
@@ -295,7 +283,7 @@ def main():
         users=users,
         items=items,
         train_weeks=CFG.train_weeks,
-        user_features_path=CFG.user_features_path,
+        user_features_path=paths['user_features'],
         age_shifts=age_shifts,
     )
     best_iteration = train_eval(
@@ -305,6 +293,7 @@ def main():
         users=users,
         items=items,
         age_shifts=age_shifts,
+        user_features_path=paths['user_features']
     )
 
     del candidates_valid
@@ -317,6 +306,7 @@ def main():
         items=items,
         best_iteration=best_iteration,
         age_shifts=age_shifts,
+        paths=paths,
     )
 
 

@@ -1,7 +1,36 @@
-# https://github.com/benhamner/Metrics/blob/master/Python/ml_metrics/average_precision.py
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 
 
+def load_data(preprocessed_data_path):
+    transactions = pd.read_pickle(preprocessed_data_path / "transactions_train.pkl")
+    users = pd.read_pickle(preprocessed_data_path / "users.pkl")
+    items = pd.read_pickle(preprocessed_data_path / "items.pkl")
+
+    return transactions, users, items
+
+
+def get_workdir_paths(workdir="./hm_tmpdir"):
+    """Get paths in the workdir, which is shared across several scripts, and create necessary
+    folders."""
+    workdir = Path(workdir)
+
+    paths = dict(
+        workdir=workdir,
+        preprocessed_data=workdir / "preprocessed",
+        artifacts=workdir / "artifacts",
+        lfm_features=workdir / "lfm",
+        user_features=workdir / "user_features",
+    )
+    for p in paths.values():
+        p.mkdir(exist_ok=True, parents=True)
+
+    return paths
+
+
+# https://github.com/benhamner/Metrics/blob/master/Python/ml_metrics/average_precision.py
 def apk(actual, predicted, k=12):
     """
     Computes the average precision at k.

@@ -1,33 +1,16 @@
 from pathlib import Path
 
 from hm_fashion_recs.preprocess import transform_data, create_user_ohe_agg
-from hm_fashion_recs.notebook import get_age_shifts, load_data
+from hm_fashion_recs.hm_utils import load_data, get_workdir_paths
 from hm_fashion_recs.candidates import make_one_week_candidates, drop_trivial_users
-from hm_fashion_recs.fe import attach_features
-
-
-from hm_fashion_recs.vars import (
-    preprocessed_data_path,
-    user_features_path,
-    lfm_features_path,
-    working_dir,
-)
+from hm_fashion_recs.fe import attach_features, get_age_shifts
 from hm_fashion_recs.tm import tm
 
 
 from utils import check_support
 
 
-class CFG:
-    preprocessed_data_path = preprocessed_data_path
-    lfm_features_path = lfm_features_path
-    working_dir = working_dir
-    user_features_path = user_features_path
-
-    use_lfm = False
-
-
-def feature_engieering(week):
+def feature_engieering(week, paths, use_lfm):
     with tm.timeit("01-load_data"):
         transactions, users, items = load_data()
 
@@ -40,13 +23,13 @@ def feature_engieering(week):
             users=users,
             items=items,
             week=week,
-            user_features_path=CFG.user_features_path,
+            user_features_path=paths["user_features"],
             age_shifts=age_shifts,
         )
 
         candidates = drop_trivial_users(week_candidates)
 
-        candidates.to_pickle(CFG.working_dir / "candidates.pkl")
+        candidates.to_pickle(paths["workdir"] / "candidates.pkl")
 
     with tm.timeit("04-attach_features"):
         dataset = attach_features(
@@ -58,8 +41,8 @@ def feature_engieering(week):
             week=week + 1,
             pretrain_week=week + 2,
             age_shifts=age_shifts,
-            user_features_path=CFG.user_features_path,
-            lfm_features_path=CFG.lfm_features_path if CFG.use_lfm else None,
+            user_features_path=paths["user_features"],
+            lfm_features_path=paths["lfm_features"] if use_lfm else None,
         )
 
     dataset["query_group"] = dataset["week"].astype(str) + "_" + dataset["user"].astype(str)
@@ -67,21 +50,21 @@ def feature_engieering(week):
     return dataset
 
 
-def main(raw_data_path):
+def main(raw_data_path, paths):
     with tm.timeit("total"):
         with tm.timeit("01-initial_transform"):
-            transform_data(input_data_path=raw_data_path, result_path=CFG.preprocessed_data_path)
+            transform_data(input_data_path=raw_data_path, result_path=paths["preprocessed_data"])
 
         week = 0
         with tm.timeit("02-create_user_ohe_agg"):
             create_user_ohe_agg(
                 week + 1,
-                preprocessed_data_path=CFG.preprocessed_data_path,
-                result_path=CFG.user_features_path,
+                preprocessed_data_path=paths["preprocessed_data"],
+                result_path=paths["user_features"],
             )
 
         with tm.timeit("03-fe"):
-            feature_engieering(week=week)
+            feature_engieering(week=week, paths=paths, use_lfm=False)
 
     print(tm.get_results())
 
@@ -90,7 +73,8 @@ def run_benchmark(parameters):
     check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
 
     raw_data_path = Path(parameters["data_file"].strip("'"))
-    main(raw_data_path=raw_data_path)
+    paths = get_workdir_paths()
+    main(raw_data_path=raw_data_path, paths=paths)
 
     task2time = tm.get_results()
 

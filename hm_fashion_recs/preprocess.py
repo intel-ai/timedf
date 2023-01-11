@@ -15,15 +15,6 @@ import hm_fashion_recs.schema as schema
 from hm_fashion_recs.tm import tm
 from hm_fashion_recs.lfm import train_lfm
 
-from hm_fashion_recs.vars import (
-    n_weeks,
-    raw_data_path,
-    preprocessed_data_path,
-    user_features_path,
-    lfm_features_path,
-    dim,
-)
-
 
 logger = logging.getLogger(__name__)
 
@@ -161,21 +152,16 @@ def create_user_ohe_agg(week, preprocessed_data_path, result_path):
             print("saved", save_path)
 
 
-def main():
-    use_lfm = False
-
-    transform_data(input_data_path=raw_data_path, result_path=preprocessed_data_path)
+def run_complete_preprocessing(raw_data_path, paths, n_weeks, use_lfm=False):
+    transform_data(input_data_path=raw_data_path, result_path=paths["preprocessed_data"])
 
     for week in range(n_weeks + 1):
         create_user_ohe_agg(
-            week, preprocessed_data_path=preprocessed_data_path, result_path=user_features_path
+            week,
+            preprocessed_data_path=paths["preprocessed_data"],
+            result_path=paths["user_features"],
         )
 
     if use_lfm:
-
         for week in range(1, n_weeks + 1):
-            train_lfm(week=week, lfm_features_path=lfm_features_path, dim=dim)
-
-
-if __name__ == "__main__":
-    main()
+            train_lfm(week=week, lfm_features_path=paths["lfm_features"])

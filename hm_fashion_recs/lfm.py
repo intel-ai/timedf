@@ -19,7 +19,13 @@ LIGHTFM_PARAMS = {
 EPOCHS = 100
 
 
-def train_lfm(*, lfm_features_path: Path, week: int, dim: int = 16):
+class CFG:
+    """Configuration for preprocessing"""
+
+    dim = 16
+
+
+def train_lfm(*, lfm_features_path: Path, week: int, dim: int = CFG.dim):
     dataset = "100"
 
     path_prefix = lfm_features_path / f"lfm_i_i_dataset{dataset}_week{week}_dim{dim}"
@@ -43,7 +49,7 @@ def train_lfm(*, lfm_features_path: Path, week: int, dim: int = 16):
         pickle.dump(model, f)
 
 
-def _load_resources(lfm_features_path, week: int, dim: int):
+def _load_resources(lfm_features_path, week: int, dim: int = CFG.dim):
     path_prefix = lfm_features_path / f"lfm_i_i_week{week}_dim{dim}"
     model_path = f"{path_prefix}_model.pkl"
     with open(model_path, "rb") as f:
@@ -53,7 +59,9 @@ def _load_resources(lfm_features_path, week: int, dim: int):
     return model, user_features, item_features
 
 
-def calc_embeddings(lfm_features_path, week: int, dim: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+def calc_embeddings(
+    lfm_features_path, week: int, dim: int = CFG.dim
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     model, user_features, item_features = _load_resources(lfm_features_path, week, dim)
 
     biases, embeddings = model.get_user_representations(user_features)
