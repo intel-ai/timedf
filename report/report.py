@@ -3,7 +3,7 @@ from typing import Dict, Union
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from report.schema import make_iteration
+from report.schema import make_iteration, Base
 
 
 class DbReporter:
@@ -27,6 +27,8 @@ class DbReporter:
         self.benchmark = benchmark
         self.run_id = run_id
         self.run_params = run_params
+
+        Base.metadata.create_all(engine, checkfirst=True)
 
     def report(
         self, iteration_no: int, name2time: Dict[str, float], params: Union[None, Dict] = None

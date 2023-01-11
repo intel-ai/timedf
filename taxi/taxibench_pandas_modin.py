@@ -2,8 +2,6 @@
 from collections import OrderedDict
 from timeit import default_timer as timer
 
-import pandas as pd
-
 from utils import (
     files_names_from_pattern,
     load_data_pandas,
@@ -13,6 +11,7 @@ from utils import (
     BaseBenchmark,
     BenchmarkResults,
 )
+from utils.pandas_backend import pd
 
 accepted_data_files_for_pandas_import_mode = ["trips_xaa", "trips_xab", "trips_xac"]
 

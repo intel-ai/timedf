@@ -541,7 +541,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
         print(f"{pandas_mode} {query_name} results:")
         print_results(results=queries_results[query_name], unit="s")
 
-    return queries_results, {f"dataset_size_{name}": val for name, val in query_data_file_sizes}
+    return queries_results, {f"dataset_size_{k}": v for k, v in query_data_file_sizes.items()}
 
 
 def run_benchmark(parameters):
