@@ -21,14 +21,10 @@ class BenchmarkResults:
         self._validate_dict(params or {})
         self.params = self._convert_vals(params, str)
 
-
     @staticmethod
     def _validate_dict(res):
         if not isinstance(res, dict):
-            raise ValueError(
-                f"Measurements have to be of dict type, but they are {type(res)}"
-            )
-
+            raise ValueError(f"Measurements have to be of dict type, but they are {type(res)}")
 
     @staticmethod
     def _validate_vals(res, val_type):
@@ -42,6 +38,7 @@ class BenchmarkResults:
             return None
         else:
             return {k: val_type(v) for k, v in res.items()}
+
 
 class BaseBenchmark(abc.ABC):
     def run(self, params) -> BenchmarkResults:
