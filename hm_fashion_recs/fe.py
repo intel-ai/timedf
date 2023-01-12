@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Union
-import numpy as np
 
 from utils.pandas_backend import pd
 

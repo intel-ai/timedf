@@ -291,16 +291,16 @@ def create_candidates(
         )
     with tm.timeit("07-same_product_code"):
         candidates_same_product_code = create_candidates_same_product_code(candidates_item2item2)
-    with tm.timeit("08-ohe distance"):
-        if CFG.use_ohe_distance:
+    if CFG.use_ohe_distance:
+        with tm.timeit("08-ohe distance"):
             candidates_ohe_distance = create_candidates_ohe_distance(
                 target_users=target_users,
                 week_start=week,
                 num_weeks=CFG.ohe_distance_num_weeks,
                 num_items=CFG.ohe_distance_num_items,
             )
-        else:
-            candidates_ohe_distance = pd.DataFrame()
+    else:
+        candidates_ohe_distance = pd.DataFrame()
     with tm.timeit("09-category popular"):
         candidates_dept = create_candidates_category_popular(
             candidates_item2item2, week, 1, 6, "department_no_idx"
