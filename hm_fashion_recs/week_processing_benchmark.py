@@ -66,7 +66,6 @@ def main(raw_data_path, paths):
         with tm.timeit("03-fe"):
             feature_engieering(week=week, paths=paths, use_lfm=False)
 
-    print(tm.get_results())
 
 
 def run_benchmark(parameters):
@@ -77,6 +76,7 @@ def run_benchmark(parameters):
     main(raw_data_path=raw_data_path, paths=paths)
 
     task2time = tm.get_results()
+    print(task2time)
 
     results = [
         {"query_name": b, "result": t, "Backend": parameters["pandas_mode"]}

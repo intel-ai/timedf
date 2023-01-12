@@ -200,7 +200,7 @@ def attach_features(
             cols = [c for c in tmp.columns if c != "user"]
             # tmp = tmp[['user'] + cols]
             tmp[cols] = tmp[cols] / tmp[cols].mean()
-            tmp[f"{c}_most_freq_idx"] = np.argmax(tmp[cols].values, axis=1)
+            tmp[f"{c}_most_freq_idx"] = tmp[cols].idxmax(axis=1)
             df = df.merge(tmp[["user", f"{c}_most_freq_idx"]])
 
     with tm.timeit("14-ohe dot products"):
