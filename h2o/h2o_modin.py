@@ -558,7 +558,7 @@ def run_benchmark(parameters):
         extended_functionality=parameters["extended_functionality"],
     )
     # Flatten results into `query.subquery` form
-    results = {f"{q}.{sq}": t for sq, t in subq2time for q, subq2time in results.items()}
+    results = {f"{q}.{sq}": t for q, subq2time in results.items() for sq, t in subq2time.items()}
 
     return BenchmarkResults(results, params=run_params)
 
