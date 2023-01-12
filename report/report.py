@@ -12,8 +12,8 @@ class DbReporter:
 
         Parameters
         ----------
-        db_config
-            database configuration
+        engine
+            Db engine from sqlite
         benchmark
             Name of the current benchmark
         run_id
@@ -43,7 +43,7 @@ class DbReporter:
             Dict with measurements: (name, time in seconds)
         params
             Additional params to report, will be added to a schemaless `params` column in the DB, can be used for
-            storing benchmark-specific infomation such as datset size.
+            storing benchmark-specific information such as dataset size.
         """
         with Session(self.engine) as session:
             session.add(
