@@ -67,5 +67,11 @@ Utility files:
 3. Repository with original code: https://github.com/ryowk/kaggle-h-and-m-personalized-fashion-recommendations
 
 ### Additional dependencies
-- `lightfm` is used for generating user embeddings for feature engineering. Turned off by default, so these features are ignored.
-- `faiss` is used for candidate generation to speed up search in mean OHE space. Turned off by default, so no candidates from OHE space. 
+If you want to use user embeddings during feature engineering (turned off by default) you will need:
+- `lightfm`
+- `scipy`
+If you want to generate candidates using close OHE vectors (turned off by default) you will need:
+- `faiss` - used to speed up this search
+If you want to run `notebook.py`, which contains complete benchmark you will additionally need
+- `matplotlib` for plotting
+- `catboost` for model training
