@@ -14,11 +14,14 @@ This is a benchmark with a solution to H&M fashion recommendation competition. I
 In this solution data split (transactions split) is performed by weeks, so it's best to understand the logic and terms.
 Data contains past user transactions, and we are trying to predict transactions for one future week. Past transactions cover about 100 weeks. During the solution we encode week of a transaction as following: `week=0` means that transaction happened during a week that just ended, `1` means one week ago, `2` means two weeks ago, etc. So the goal of the competition is to predict transactions for `week=-1` and we have transactions for `weeks=[104, 103, ..., 1, 0]` (from past to today) to do so. So, filtering like `week >= 1` in the code means that we keep all the past weeks except the most recent one.
 
+#### User one-hot encoding (OHE)
+During data preprocessing for each user and a chosen week `W` we encode each category of each purchased items during `week >= W` with [one-hot encoding](https://en.wikipedia.org/wiki/One-hot) and calculate mean value this vector for all transactions of that user. Then these user features (dependent on user and time split) are saved on disk. They are used in multiple other places for candidate generation and feature engineering.
+
 #### Preprocessing
 Preprocessing is stored in `preprocess.py` file and in `lfm.py`.
 Steps of data preprocessing
 1. Transform data. We load raw data from `csv` files, perform basic preprocessing and store results into 3 `pickle` files with customer, item and transaction data.
-2. Create user OHEs for `week >= X` for `X=0,1,...TRAIN_WEEKS`. We load data from `pickle` files and generate one-hot encoding features for users based on transactions with `week >= X` (so we will use all past transaction until week `X+1`). We do that for `X=0,1,...TRAIN_WEEKS` to use that data for model training, using different points in time. These OHEs will be used for candidate generation.
+2. Create user OHEs for `week >= X` for `X=0,1,...TRAIN_WEEKS`. We load data from `pickle` files and generate one-hot encoding features for users based on transactions with `week >= X` (so we will use all past transaction until week `X+1`). We do that for `X=0,1,...TRAIN_WEEKS` to use that data for model training, using different points in time. These OHEs will be used for candidate generation and feature engineering.
 3. Generate LFM embeddings. We generate `LightFM` embeddings based on different point in time: `week >= X`. These embeddings will be used in the future for feature engineering. By default, `week_processing_benchmark.py` is not performing this step and not generating corresponding features to minimize external dependencies.
 
 To run preprocessing separately from everything else you need to run `preprocess.py` (for steps 1 and 2) and `lfm.py` for LFM embeddings.
