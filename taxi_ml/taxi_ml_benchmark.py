@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Any, Iterable, Tuple, Union, Dict
 from itertools import islice
 
-from utils import check_support, print_results
+
+from utils import check_support, print_results, BenchmarkResults, BaseBenchmark
 from utils.pandas_backend import pd, trigger_execution
 
 
@@ -319,8 +320,9 @@ def run_benchmark(parameters):
             + task2time["split_time"]
         )
 
-    results = [
-        {"query_name": b, "result": t, "Backend": backend_name} for b, t in task2time.items()
-    ]
+    return BenchmarkResults(task2time)
 
-    return {"ETL": results}
+
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, params) -> BenchmarkResults:
+        return run_benchmark(params)

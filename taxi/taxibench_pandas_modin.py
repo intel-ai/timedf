@@ -1,19 +1,49 @@
 # Original SQL queries can be found here https://tech.marksblogg.com/billion-nyc-taxi-rides-nvidia-pascal-titan-x-mapd.html
+from collections import OrderedDict
 from timeit import default_timer as timer
-
-import pandas as pd
 
 from utils import (
     files_names_from_pattern,
-    import_pandas_into_module_namespace,
     load_data_pandas,
     load_data_modin_on_hdk,
     print_results,
-    get_ny_taxi_dataset_size,
     check_support,
+    BaseBenchmark,
+    BenchmarkResults,
 )
+from utils.pandas_backend import pd
 
 accepted_data_files_for_pandas_import_mode = ["trips_xaa", "trips_xab", "trips_xac"]
+
+
+ny_taxi_data_files_sizes_MB = OrderedDict(
+    {
+        "trips_xaa.csv": 8000,
+        "trips_xab.csv": 8100,
+        "trips_xac.csv": 4200,
+        "trips_xad.csv": 7300,
+        "trips_xae.csv": 8600,
+        "trips_xaf.csv": 8600,
+        "trips_xag.csv": 8600,
+        "trips_xah.csv": 8600,
+        "trips_xai.csv": 8600,
+        "trips_xaj.csv": 8600,
+        "trips_xak.csv": 8700,
+        "trips_xal.csv": 8700,
+        "trips_xam.csv": 8600,
+        "trips_xan.csv": 8600,
+        "trips_xao.csv": 8600,
+        "trips_xap.csv": 8600,
+        "trips_xaq.csv": 8600,
+        "trips_xar.csv": 8600,
+        "trips_xas.csv": 8600,
+        "trips_xat.csv": 8600,
+    }
+)
+
+
+def get_ny_taxi_dataset_size(dfiles_num):
+    return sum(list(ny_taxi_data_files_sizes_MB.values())[:dfiles_num])
 
 
 def run_queries(queries, parameters, etl_results, output_for_validation=None):
@@ -163,7 +193,7 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
                 columns_names=columns_names,
                 columns_types=columns_types,
                 parse_dates=["timestamp"],
-                pd=run_benchmark.__globals__["pd"],
+                pd=pd,
             )
             for f in filename
         ]
@@ -176,7 +206,7 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
                 nrows=None,
                 use_gzip=f.endswith(".gz"),
                 parse_dates=["pickup_datetime", "dropoff_datetime"],
-                pd=run_benchmark.__globals__["pd"],
+                pd=pd,
                 pandas_mode=pandas_mode,
             )
             for f in filename
@@ -332,18 +362,11 @@ def run_benchmark(parameters):
     if parameters["dfiles_num"] <= 0:
         raise ValueError(f"Bad number of data files specified: {parameters['dfiles_num']}")
 
-    import_pandas_into_module_namespace(
-        namespace=run_benchmark.__globals__,
-        mode=parameters["pandas_mode"],
-        ray_tmpdir=parameters["ray_tmpdir"],
-        ray_memory=parameters["ray_memory"],
-    )
-
     pd_queries_outputs = {} if parameters["validation"] else None
 
     pandas_files_limit = parameters["dfiles_num"]
     filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
-    etl_results = etl(
+    results = etl(
         filename=filename,
         files_limit=pandas_files_limit,
         columns_names=columns_names,
@@ -352,9 +375,12 @@ def run_benchmark(parameters):
         pandas_mode=parameters["pandas_mode"],
     )
 
-    print_results(results=etl_results, backend=parameters["pandas_mode"], unit="s")
-    etl_results["Backend"] = parameters["pandas_mode"]
-    etl_results["dfiles_num"] = parameters["dfiles_num"]
-    etl_results["dataset_size"] = get_ny_taxi_dataset_size(parameters["dfiles_num"])
+    print_results(results=results, backend=parameters["pandas_mode"], unit="s")
+    return BenchmarkResults(
+        results, params={"dataset_size": get_ny_taxi_dataset_size(parameters["dfiles_num"])}
+    )
 
-    return {"ETL": [etl_results], "ML": []}
+
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, params) -> BenchmarkResults:
+        return run_benchmark(params)

@@ -7,14 +7,16 @@ from timeit import default_timer as timer
 from utils import (
     check_support,
     cod,
-    import_pandas_into_module_namespace,
     load_data_pandas,
     load_data_modin_on_hdk,
     mse,
     print_results,
     split,
     getsize,
+    BaseBenchmark,
+    BenchmarkResults,
 )
+from utils.pandas_backend import pd
 
 warnings.filterwarnings("ignore")
 
@@ -33,7 +35,7 @@ def etl(filename, columns_names, columns_types, etl_keys, pandas_mode):
             columns_names=columns_names,
             columns_types=columns_types,
             skiprows=1,
-            pd=run_benchmark.__globals__["pd"],
+            pd=pd,
         )
     else:
         df = load_data_pandas(
@@ -43,7 +45,7 @@ def etl(filename, columns_names, columns_types, etl_keys, pandas_mode):
             header=0,
             nrows=None,
             use_gzip=filename.endswith(".gz"),
-            pd=run_benchmark.__globals__["pd"],
+            pd=pd,
         )
     etl_times["t_readcsv"] = timer() - t0
 
@@ -272,13 +274,6 @@ def run_benchmark(parameters):
 
     ml_score_keys = ["mse_mean", "cod_mean", "mse_dev", "cod_dev"]
 
-    import_pandas_into_module_namespace(
-        namespace=run_benchmark.__globals__,
-        mode=parameters["pandas_mode"],
-        ray_tmpdir=parameters["ray_tmpdir"],
-        ray_memory=parameters["ray_memory"],
-    )
-
     if parameters["data_file"].endswith(".csv"):
         csv_size = getsize(parameters["data_file"])
     else:
@@ -288,7 +283,7 @@ def run_benchmark(parameters):
         # (default Census benchmark data file)
         csv_size = 2100.0
 
-    df, X, y, etl_times = etl(
+    df, X, y, results = etl(
         parameters["data_file"],
         columns_names=columns_names,
         columns_types=columns_types,
@@ -296,11 +291,8 @@ def run_benchmark(parameters):
         pandas_mode=parameters["pandas_mode"],
     )
 
-    print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
-    etl_times["Backend"] = parameters["pandas_mode"]
-    etl_times["dataset_size"] = csv_size
+    print_results(results=results, backend=parameters["pandas_mode"], unit="s")
 
-    results = {"ETL": [etl_times]}
     if not parameters["no_ml"]:
         ml_scores, ml_times = ml(
             X=X,
@@ -313,9 +305,12 @@ def run_benchmark(parameters):
             ml_score_keys=ml_score_keys,
         )
         print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
-        ml_times["Backend"] = parameters["pandas_mode"]
         print_results(results=ml_scores, backend=parameters["pandas_mode"])
-        ml_scores["Backend"] = parameters["pandas_mode"]
-        results["ML"] = [ml_times]
+        results.update(ml_times)
 
-    return results
+    return BenchmarkResults(results, params={"dataset_size": csv_size})
+
+
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, params) -> BenchmarkResults:
+        return run_benchmark(params)
