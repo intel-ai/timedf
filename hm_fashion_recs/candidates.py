@@ -9,7 +9,9 @@ from hm_fashion_recs.tm import tm
 class CFG:
     """Configuration for candidate generaton."""
 
-    use_ohe_distance = False
+    # These candidates are generated with faiss library, we turn them off by default
+    # to avoid this dependency
+    use_ohe_distance_candidates = False
 
     popular_num_items = 60
     popular_weeks = 1
@@ -291,7 +293,7 @@ def create_candidates(
         )
     with tm.timeit("07-same_product_code"):
         candidates_same_product_code = create_candidates_same_product_code(candidates_item2item2)
-    if CFG.use_ohe_distance:
+    if CFG.use_ohe_distance_candidates:
         with tm.timeit("08-ohe distance"):
             candidates_ohe_distance = create_candidates_ohe_distance(
                 target_users=target_users,
