@@ -4,11 +4,13 @@ import datetime
 import logging
 from contextlib import suppress
 
-import sqlalchemy as db
+import sqlalchemy as sql
+from sqlalchemy.orm import Session
 import pandas as pd
 import pandas.io.formats.excel
 
-from utils_base_env import add_mysql_arguments
+from report.schema import Iteration, Measurement
+from utils_base_env import add_sql_arguments, DbConfig
 
 # This is necessary to allow custom header formatting
 pandas.io.formats.excel.ExcelFormatter.header_style = None
@@ -69,18 +71,29 @@ possible_run_cols = [
 
 
 class DBLoader:
-    def __init__(self, driver, server, user, password, port, name):
-        self.engine = db.create_engine(f"{driver}://{user}:{password}@{server}:{port}/{name}")
+    def __init__(self, engine):
+        self.engine = engine
 
-    def load_latest_results(self, table_name, past_lookup_days=30):
-        metadata = db.MetaData()
-        table = db.Table(table_name, metadata, autoload=True, autoload_with=self.engine)
+    def load_latest_results(self, bench_name, past_lookup_days=30):
+        # metadata = db.MetaData()
+        # table = db.Table(table_name, metadata, autoload=True, autoload_with=self.engine)
 
         lookup_date = datetime.date.today() - datetime.timedelta(days=past_lookup_days)
-        latest = db.select(db.func.max(table.columns.run_id)).group_by(table.columns.BackEnd)
-        qry = db.select([table]).filter(
-            db.and_(table.columns.run_id.in_(latest), table.columns.date > lookup_date)
+        # latest = select(func.max(table.columns.run_id)).group_by(table.columns.BackEnd)
+        # qry = db.select([Iteration]).filter(
+        #     db.and_(table.columns.run_id.in_(latest), table.columns.date > lookup_date)
+        # )
+
+
+        # with Session(self.engine) as session:
+        latest = sql.select(sql.func.max(Iteration.run_id)).filter(Iteration.benchmark == bench_name).group_by(Iteration.pandas_mode)
+        # results = list(session.execute(stmt).scalars().all())
+        qry = sql.select([Iteration]).filter(
+            sql.and_(Iteration.run_id.in_(latest), Iteration.date > lookup_date, True)
         )
+            # assert len(results) == 1
+            # assert len(results[0].measurements) == 2
+
 
         return pd.read_sql(
             qry,
@@ -165,14 +178,8 @@ def write_hostinfo(df, writer):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate report with benchmark results")
-    db = parser.add_argument_group("db")
-    add_mysql_arguments(db, etl_ml_tables=False)
-    db.add_argument(
-        "-db_driver",
-        dest="db_driver",
-        help="DB driver",
-    )
-
+    sql = parser.add_argument_group("db")
+    add_sql_arguments(sql)
     parser.add_argument(
         "-report_path",
         dest="report_path",
@@ -193,19 +200,20 @@ def main():
 
     writer = pd.ExcelWriter(args.report_path, engine="xlsxwriter")
 
-    loader = DBLoader(
+    db_config = DbConfig(
         driver=args.db_driver,
         server=args.db_server,
+        port=args.db_port,
         user=args.db_user,
         password=args.db_pass,
-        port=args.db_port,
         name=args.db_name,
     )
+    loader = DBLoader(engine=db_config.create_engine())
 
     host_params = []
     for table_name in tables:
         logger.info("Processing %s", table_name)
-        df = loader.load_latest_results(table_name=table_name)
+        df = loader.load_latest_results(bench_name="taxi_ny")
         run_cols, host_cols, benchmark_cols = recognize_cols(df)
         df[benchmark_cols] = df[benchmark_cols] / 1000
         host_params.append(df[host_cols])
