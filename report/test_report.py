@@ -25,7 +25,6 @@ def test_dbreport(engine):
         run_params={k: "testval" for k in RunParams.fields},
     )
 
-    # with Session(engine, autocommit=True) as session:
     Base.metadata.create_all(engine)
 
     report.report(
