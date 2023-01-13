@@ -36,8 +36,7 @@ class BenchmarkResults:
     def _convert_vals(res, val_type):
         if res is None:
             return None
-        else:
-            return {k: val_type(v) for k, v in res.items()}
+        return {k: val_type(v) for k, v in res.items()}
 
 
 class BaseBenchmark(abc.ABC):
