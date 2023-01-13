@@ -1,47 +1,24 @@
 import glob
 import os
 import time
-from typing import Dict, Iterable
 import warnings
-from dataclasses import dataclass
 from timeit import default_timer as timer
-from collections import OrderedDict
 from tempfile import mkstemp
 
 import psutil
 
+from report import DbReporter
+from utils_base_env.benchmarks import benchmark_mapper
+from utils_base_env import DbConfig
+
 from .namespace_utils import import_pandas_into_module_namespace
 from .pandas_backend import set_backend
-from utils_base_env.benchmarks import benchmark_mapper
+from .benchmark import BaseBenchmark, BenchmarkResults
 
 
 conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 directories = {"repository_root": repository_root_directory}
-ny_taxi_data_files_sizes_MB = OrderedDict(
-    {
-        "trips_xaa.csv": 8000,
-        "trips_xab.csv": 8100,
-        "trips_xac.csv": 4200,
-        "trips_xad.csv": 7300,
-        "trips_xae.csv": 8600,
-        "trips_xaf.csv": 8600,
-        "trips_xag.csv": 8600,
-        "trips_xah.csv": 8600,
-        "trips_xai.csv": 8600,
-        "trips_xaj.csv": 8600,
-        "trips_xak.csv": 8700,
-        "trips_xal.csv": 8700,
-        "trips_xam.csv": 8600,
-        "trips_xan.csv": 8600,
-        "trips_xao.csv": 8600,
-        "trips_xap.csv": 8600,
-        "trips_xaq.csv": 8600,
-        "trips_xar.csv": 8600,
-        "trips_xas.csv": 8600,
-        "trips_xat.csv": 8600,
-    }
-)
 
 
 def get_percentage(error_message):
@@ -281,15 +258,6 @@ def split(X, y, test_size=0.1, stratify=None, random_state=None, optimizer="inte
     return (X_train, y_train, X_test, y_test), split_time
 
 
-def timer_ms():
-    return round(timer() * 1000)
-
-
-def remove_fields_from_dict(dictonary, fields_to_remove):
-    for key in fields_to_remove or ():
-        dictonary.pop(key, None)
-
-
 def convert_units(dict_to_convert, ignore_fields, unit="ms"):
     try:
         multiplier = conversions[unit]
@@ -361,10 +329,6 @@ def create_dir(dir_name):
         os.mkdir(directory)
 
     return directory
-
-
-def get_ny_taxi_dataset_size(dfiles_num):
-    return sum(list(ny_taxi_data_files_sizes_MB.values())[:dfiles_num])
 
 
 def make_chk(values):
@@ -480,62 +444,6 @@ class FilesCombiner:
                 pass
 
 
-def refactor_results_for_reporting(
-    benchmark_results: dict,
-    ignore_fields_for_results_unit_conversion: list = None,
-    additional_fields: dict = None,
-    reporting_unit: str = "ms",
-) -> dict:
-
-    """Refactore benchmarks results in the way they can be easily reported to MySQL database.
-
-    Parameters
-    ----------
-    benchmark_results: dict
-        Dictionary with results reported by benchmark.
-        Dictionary should follow the next pattern: {"ETL": [<dicts_with_etl_results>], "ML": [<dicts_with_ml_results>]}.
-    ignore_fields_for_results_unit_conversion: list
-        List of fields that should be ignored during results unit conversion.
-    additional_fields: dict
-        Dictionary with fields that should be additionally reported to MySQL database.
-        Dictionary should follow the next pattern: {"ETL": {<dicts_with_etl_fields>}, "ML": {<dicts_with_ml_fields>}}.
-    reporting_unit: str
-        Time unit name for results reporting to MySQL database. Accepted values are "ms", "s", "m".
-
-    Return
-    ------
-    etl_ml_results: dict
-        Refactored benchmark results for reporting to MySQL database.
-        Dictionary follows the next pattern: {"ETL": [<etl_results>], "ML": [<ml_results>]}
-
-    """
-
-    etl_ml_results = {"ETL": [], "ML": []}
-    for results_category, results in dict(benchmark_results).items():  # ETL or ML part
-        for backend_result in results:
-            if backend_result is not None and all(
-                isinstance(r, dict) for r in backend_result.values()
-            ):  # True if subqueries are used
-                backend_result_converted = []
-                for query_name, query_results in backend_result.items():
-                    query_results.update({"query_name": query_name})
-                    backend_result_converted.append(query_results)
-            else:
-                backend_result_converted = [backend_result]
-
-            for result in backend_result_converted:
-                if result:
-                    result = convert_units(
-                        result,
-                        ignore_fields=ignore_fields_for_results_unit_conversion,
-                        unit=reporting_unit,
-                    )
-                    result.update(additional_fields.get(results_category, {}))
-                    etl_ml_results[results_category].append(result)
-
-    return etl_ml_results
-
-
 def get_dir_size(start_path="."):
     """Get directory size including all subdirectories.
 
@@ -567,51 +475,6 @@ def get_dir_size(start_path="."):
     return total_size
 
 
-@dataclass
-class DBParams:
-    server: str
-    port: int
-    user: str
-    password: str
-    name: str
-
-
-class ResultReporter:
-    def __init__(self, db_params: DBParams, table_name, predefined_fields, ignore_fields) -> None:
-        self.db_params = db_params
-        self.table_name = table_name
-        self.predefined_fields = predefined_fields
-        self.ignore_fields = ignore_fields
-        self.reporter = None
-
-    def _initialize_report(self, results):
-        """This function exists because currently we need the first result to talk to the database"""
-        from report import DbReport
-        import mysql.connector
-
-        self.db = mysql.connector.connect(
-            host=self.db_params.server,
-            port=self.db_params.port,
-            user=self.db_params.user,
-            passwd=self.db_params.password,
-            db=self.db_params.name,
-        )
-
-        benchmark_fields = {x: "VARCHAR(500) NOT NULL" for x in sum(map(list, results), [])}
-
-        self.reporter = DbReport(
-            self.db, self.table_name, benchmark_fields, self.predefined_fields
-        )
-
-    def report(self, results: Iterable[Dict[str, float]]):
-        if self.reporter is None:
-            self._initialize_report(results)
-
-        for result in results:
-            remove_fields_from_dict(result, self.ignore_fields)
-            self.reporter.submit(result)
-
-
 def run_benchmarks(
     bench_name: str,
     data_file: str,
@@ -626,13 +489,7 @@ def run_benchmarks(
     use_modin_xgb: bool = False,
     gpu_memory: int = None,
     extended_functionality: bool = False,
-    db_server: str = "localhost",
-    db_port: int = 3306,
-    db_user: str = None,
-    db_pass: str = "omniscidb",
-    db_name: str = "omniscidb",
-    db_table_etl: str = None,
-    db_table_ml: str = None,
+    db_config: DbConfig = None,
     commit_hdk: str = "1234567890123456789012345678901234567890",
     commit_omniscripts: str = "1234567890123456789012345678901234567890",
     commit_modin: str = "1234567890123456789012345678901234567890",
@@ -668,21 +525,8 @@ def run_benchmarks(
         Specify the memory of your gpu(This controls the lines to be used. Also work for CPU version).
     extended_functionality : bool, default: False
         Extends functionality of H2O benchmark by adding 'chk' functions and verbose local reporting of results.
-    db_server : str, default: "localhost"
-        Host name of MySQL server.
-    db_port : int, default: 3306
-        Port number of MySQL server.
-    db_user : str, optional
-        Username to use to connect to MySQL database. If user name is specified, script attempts to store
-        results in MySQL database using other `db-*` parameters.
-    db_pass : str, default: "omniscidb"
-        Password to use to connect to MySQL database.
-    db_name : str, default: "omniscidb"
-        MySQL database to use to store benchmark results.
-    db_table_etl : str, optional
-        Table to store ETL results for this benchmark.
-    db_table_ml : str, optional
-        Table to store ML results for this benchmark.
+    db_config: DbConfig, optional
+        Configuration for the database
     commit_hdk : str, default: "1234567890123456789012345678901234567890"
         HDK commit hash used for benchmark.
     commit_omniscripts : str, default: "1234567890123456789012345678901234567890"
@@ -690,19 +534,13 @@ def run_benchmarks(
     commit_modin : str, default: "1234567890123456789012345678901234567890"
         Modin commit hash used for benchmark.
     """
-    ignore_fields_for_results_unit_conversion = [
-        "Backend",
-        "dfiles_num",
-        "dataset_size",
-        "query_name",
-    ]
 
     # Set current backend, !!!needs to be run before benchmark import!!!
     set_backend(pandas_mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
 
-    run_benchmark = __import__(benchmark_mapper[bench_name]).run_benchmark
+    benchmark: BaseBenchmark = __import__(benchmark_mapper[bench_name]).Benchmark()
 
-    parameters = {
+    run_parameters = {
         "data_file": data_file,
         "dfiles_num": dfiles_num,
         "no_ml": no_ml,
@@ -714,44 +552,23 @@ def run_benchmarks(
         "gpu_memory": gpu_memory,
         "validation": validation,
         "extended_functionality": extended_functionality,
+        "commit_hdk": commit_hdk,
+        "commit_omniscripts": commit_omniscripts,
+        "commit_modin": commit_modin,
     }
 
-    db_params = DBParams(
-        server=db_server, port=db_port, user=db_user, password=db_pass, name=db_name
-    )
-    predefined_fields = {
-        "OmnisciCommitHash": commit_hdk,
-        "OmniscriptsCommitHash": commit_omniscripts,
-        "ModinCommitHash": commit_modin,
-    }
-    etl_reporter = ResultReporter(db_params, db_table_etl, predefined_fields, ["t_connect"])
-    ml_reporter = ResultReporter(db_params, db_table_ml, predefined_fields, [])
-
-    print(parameters)
     run_id = int(round(time.time()))
+    print(run_parameters)
+
+    reporter = db_config and DbReporter(
+        db_config.create_engine(), benchmark=bench_name, run_id=run_id, run_params=run_parameters
+    )
 
     for iter_num in range(1, iterations + 1):
         print(f"Iteration #{iter_num}")
-        benchmark_results = run_benchmark(parameters)
+        results: BenchmarkResults = benchmark.run(run_parameters)
 
-        # This part is necessary because some benchmarks miss ML part. It's a temporary solution,
-        # in the long run it's better to implement https://github.com/intel-ai/omniscripts/issues/317
-        if "ML" not in benchmark_results:
-            benchmark_results["ML"] = []
-
-        additional_fields_for_reporting = {
-            "ETL": {"Iteration": iter_num, "run_id": run_id},
-            "ML": {"Iteration": iter_num, "run_id": run_id},
-        }
-        etl_ml_results = refactor_results_for_reporting(
-            benchmark_results=benchmark_results,
-            ignore_fields_for_results_unit_conversion=ignore_fields_for_results_unit_conversion,
-            additional_fields=additional_fields_for_reporting,
-            reporting_unit="ms",
-        )
-        etl_results = list(etl_ml_results["ETL"])
-        ml_results = list(etl_ml_results["ML"])
-
-        if db_user is not None:
-            etl_reporter.report(etl_results)
-            ml_reporter.report(ml_results)
+        if reporter is not None:
+            reporter.report(
+                iteration_no=iter_num, name2time=results.measurements, params=results.params
+            )

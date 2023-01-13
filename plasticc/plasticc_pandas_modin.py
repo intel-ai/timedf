@@ -6,7 +6,14 @@ import numpy as np
 import pandas
 from sklearn.preprocessing import LabelEncoder
 
-from utils import check_support, import_pandas_into_module_namespace, print_results, split
+from utils import (
+    check_support,
+    print_results,
+    split,
+    BaseBenchmark,
+    BenchmarkResults,
+)
+from utils.pandas_backend import pd
 
 
 def ravel_column_names(cols):
@@ -74,33 +81,27 @@ def etl_cpu(df, df_meta, etl_times):
 
 
 def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, pandas_mode):
-    # 'pd' module is defined implicitly in 'import_pandas_into_module_namespace'
-    # function so we should use 'noqa: F821' for flake8
-    train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)  # noqa: F821
+    train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)
     # Currently we need to avoid skip_rows in Mode_on_hdk mode since
     # pyarrow uses it in incompatible way
     if pandas_mode == "Modin_on_hdk":
-        test = pd.read_csv(  # noqa: F821
+        test = pd.read_csv(
             "%s/test_set_skiprows.csv" % dataset_path,
             names=list(dtypes.keys()),
             dtype=dtypes,
             header=0,
         )
     else:
-        test = pd.read_csv(  # noqa: F821
+        test = pd.read_csv(
             "%s/test_set.csv" % dataset_path,
             names=list(dtypes.keys()),
             dtype=dtypes,
             skiprows=skip_rows,
         )
 
-    train_meta = pd.read_csv(  # noqa: F821
-        "%s/training_set_metadata.csv" % dataset_path, dtype=meta_dtypes
-    )
+    train_meta = pd.read_csv("%s/training_set_metadata.csv" % dataset_path, dtype=meta_dtypes)
     target = meta_dtypes.pop("target")
-    test_meta = pd.read_csv(  # noqa: F821
-        "%s/test_set_metadata.csv" % dataset_path, dtype=meta_dtypes
-    )
+    test_meta = pd.read_csv("%s/test_set_metadata.csv" % dataset_path, dtype=meta_dtypes)
     meta_dtypes["target"] = target
 
     return train, train_meta, test, test_meta
@@ -313,14 +314,7 @@ def run_benchmark(parameters):
     etl_keys = ["t_readcsv", "t_etl", "t_connect"]
     ml_keys = ["t_train_test_split", "t_dmatrix", "t_training", "t_infer", "t_ml"]
 
-    import_pandas_into_module_namespace(
-        namespace=run_benchmark.__globals__,
-        mode=parameters["pandas_mode"],
-        ray_tmpdir=parameters["ray_tmpdir"],
-        ray_memory=parameters["ray_memory"],
-    )
-
-    train_final, test_final, etl_times = etl(
+    train_final, test_final, results = etl(
         dataset_path=parameters["data_file"],
         skip_rows=skip_rows,
         dtypes=dtypes,
@@ -329,20 +323,17 @@ def run_benchmark(parameters):
         pandas_mode=parameters["pandas_mode"],
     )
 
-    print_results(results=etl_times, backend=parameters["pandas_mode"], unit="s")
-    etl_times["Backend"] = parameters["pandas_mode"]
+    print_results(results=results, backend=parameters["pandas_mode"], unit="s")
 
-    results = {"ETL": [etl_times]}
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
         ml_times = ml(train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"])
         print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
-        ml_times["Backend"] = parameters["pandas_mode"]
-        ml_times["Backend"] = (
-            parameters["pandas_mode"]
-            if not parameters["use_modin_xgb"]
-            else parameters["pandas_mode"] + "_modin_xgb"
-        )
-        results["ML"] = [ml_times]
+        results.update(ml_times)
 
-    return results
+    return BenchmarkResults(results)
+
+
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, params) -> BenchmarkResults:
+        return run_benchmark(params)

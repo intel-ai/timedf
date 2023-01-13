@@ -7,6 +7,6 @@ python3 run_modin_tests.py -bench_name census -data_file "${DATASETS_PWD}/census
                               -task benchmark -pandas_mode Modin_on_hdk                                                            \
                               ${ADDITIONAL_OPTS}                                                                                   \
                               ${ADDITIONAL_OPTS_NIGHTLY}                                                                           \
-                              ${DB_COMMON_OPTS} ${DB_CENSUS_OPTS}
+                              ${DB_COMMON_OPTS}
 
 conda deactivate

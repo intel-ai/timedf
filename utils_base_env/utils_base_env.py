@@ -1,4 +1,5 @@
 import argparse
+from dataclasses import dataclass
 import os
 import socket
 import subprocess
@@ -7,6 +8,25 @@ from typing import Union
 from utils_base_env.benchmarks import benchmark_mapper
 
 returned_port_numbers = []
+
+
+# This can be written as just a function, but we keep the dataclass to add validation and arg parsing in the future.
+@dataclass
+class DbConfig:
+    """Class encapsulates DB configuration and connection."""
+
+    driver: str
+    server: str
+    port: int
+    user: str
+    password: str
+    name: str
+
+    def create_engine(self):
+        from sqlalchemy import create_engine
+
+        url = f"{self.driver}://{self.user}:{self.password}@{self.server}:{self.port}/{self.name}"
+        return create_engine(url, future=True)
 
 
 def str_arg_to_bool(v: Union[bool, str]) -> bool:
@@ -76,47 +96,38 @@ class KeyValueListParser(argparse.Action):
         setattr(namespace, self.dest, kwargs)
 
 
-def add_mysql_arguments(parser, etl_ml_tables=False):
+def add_sql_arguments(parser):
     parser.add_argument(
-        "-db_server", dest="db_server", default="localhost", help="Host name of MySQL server."
+        "-db_driver",
+        dest="db_driver",
+        default="mysql+mysqlconnector",
+        help="Driver for the sql table in sqlalchemy format.",
     )
     parser.add_argument(
-        "-db_port", dest="db_port", default=3306, type=int, help="Port number of MySQL server."
+        "-db_server", dest="db_server", default="localhost", help="Host name of SQL server."
+    )
+    parser.add_argument(
+        "-db_port", dest="db_port", default=3306, type=int, help="Port number of SQL server."
     )
     parser.add_argument(
         "-db_user",
         dest="db_user",
-        help="Username to use to connect to MySQL database. "
-        "If user name is specified, script attempts to store results in MySQL "
+        help="Username to use to connect to SQL database. "
+        "If user name is specified, script attempts to store results in SQL "
         "database using other -db-* parameters.",
     )
     parser.add_argument(
         "-db_pass",
         dest="db_pass",
         default="omniscidb",
-        help="Password to use to connect to MySQL database.",
+        help="Password to use to connect to SQL database.",
     )
     parser.add_argument(
         "-db_name",
         dest="db_name",
         default="omniscidb",
-        help="MySQL database to use to store benchmark results.",
+        help="SQL database to use to store benchmark results.",
     )
-    if etl_ml_tables:
-        parser.add_argument(
-            "-db_table_etl",
-            dest="db_table_etl",
-            help="Table to store ETL results for this benchmark.",
-        )
-        parser.add_argument(
-            "-db_table_ml",
-            dest="db_table_ml",
-            help="Table to store ML results for this benchmark.",
-        )
-    else:
-        parser.add_argument(
-            "-db-table", dest="db_table", help="Table to use to store results for this benchmark."
-        )
 
 
 def prepare_parser():
@@ -127,7 +138,7 @@ def prepare_parser():
     required = parser.add_argument_group("common")
     optional = parser.add_argument_group("optional arguments")
     benchmark = parser.add_argument_group("benchmark")
-    mysql = parser.add_argument_group("mysql")
+    sql = parser.add_argument_group("sql")
     commits = parser.add_argument_group("commits")
 
     possible_tasks = ["build", "benchmark"]
@@ -268,8 +279,8 @@ def prepare_parser():
         type=str_arg_to_bool,
         help="Extends functionality of H2O benchmark by adding 'chk' functions and verbose local reporting of results",
     )
-    # MySQL database parameters
-    add_mysql_arguments(mysql, etl_ml_tables=True)
+    # SQL database parameters
+    add_sql_arguments(sql)
     # Additional information
     commits.add_argument(
         "-commit_hdk",

@@ -5,17 +5,9 @@ from pathlib import Path
 from typing import Any, Iterable, Tuple, Union, Dict
 from itertools import islice
 
-from utils import (
-    check_support,
-    import_pandas_into_module_namespace,
-    print_results,
-    trigger_execution,
-    Config,
-)
 
-
-def get_pd():
-    return run_benchmark.__globals__["pd"]
+from utils import check_support, print_results, BenchmarkResults, BaseBenchmark
+from utils.pandas_backend import pd, trigger_execution
 
 
 def measure_time(func):
@@ -58,7 +50,6 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_hdk_m
             "Modin_on_hdk mode doesn't support import of compressed files yet"
         )
 
-    pd = get_pd()
     return pd.read_csv(
         filepath,
         dtype=col2dtype,
@@ -128,7 +119,6 @@ def load_data(dirpath: str, is_hdk_mode, debug=False):
         )
 
     # concatenate multiple DataFrames into one bigger one
-    pd = get_pd()
     df = pd.concat(dfs, ignore_index=True)
 
     # To trigger execution
@@ -292,19 +282,6 @@ def run_benchmark(parameters):
     # parameters["data_path"] = parameters["data_file"]
     parameters["no_ml"] = parameters["no_ml"] or False
 
-    import_pandas_into_module_namespace(
-        namespace=run_benchmark.__globals__,
-        mode=parameters["pandas_mode"],
-        ray_tmpdir=parameters["ray_tmpdir"],
-        ray_memory=parameters["ray_memory"],
-    )
-    # Update config in case some envs changed after the import
-    Config.init(
-        MODIN_IMPL="pandas" if parameters["pandas_mode"] == "Pandas" else "modin",
-        MODIN_STORAGE_FORMAT=os.getenv("MODIN_STORAGE_FORMAT"),
-        MODIN_ENGINE=os.getenv("MODIN_ENGINE"),
-    )
-
     debug = bool(os.getenv("DEBUG", False))
 
     task2time = {}
@@ -343,8 +320,9 @@ def run_benchmark(parameters):
             + task2time["split_time"]
         )
 
-    results = [
-        {"query_name": b, "result": t, "Backend": backend_name} for b, t in task2time.items()
-    ]
+    return BenchmarkResults(task2time)
 
-    return {"ETL": results}
+
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, params) -> BenchmarkResults:
+        return run_benchmark(params)

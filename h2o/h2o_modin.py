@@ -5,7 +5,6 @@ from timeit import default_timer as timer
 import gc
 
 from utils import (
-    import_pandas_into_module_namespace,
     print_results,
     make_chk,
     memory_usage,
@@ -13,7 +12,10 @@ from utils import (
     join_to_tbls,
     check_support,
     getsize,
+    BaseBenchmark,
+    BenchmarkResults,
 )
+from utils.pandas_backend import pd
 
 warnings.filterwarnings("ignore")
 
@@ -483,8 +485,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
             "queries_results": queries_results,
             "extended_functionality": extended_functionality,
         }
-
-    if join_queries_files_number:
+    elif join_queries_files_number:
         data_name = next(
             (f for f in data_for_join_queries if "NA" in f), None
         )  # gets the file name with "NA" component
@@ -531,16 +532,16 @@ def queries_modin(filename, pandas_mode, extended_functionality):
             "join_query4": data_files_import_times["x"] + data_files_import_times["medium"],
             "join_query5": data_files_import_times["x"] + data_files_import_times["big"],
         }
+    else:
+        raise ValueError("Unexpected branch, expected either join or groupby task")
 
     for query_name, query_func in queries.items():
         query_func(**queries_parameters)
+        queries_results[query_name]["t_readcsv"] = query_data_file_import_times[query_name]
         print(f"{pandas_mode} {query_name} results:")
         print_results(results=queries_results[query_name], unit="s")
-        queries_results[query_name]["Backend"] = pandas_mode
-        queries_results[query_name]["t_readcsv"] = query_data_file_import_times[query_name]
-        queries_results[query_name]["dataset_size"] = query_data_file_sizes[query_name]
 
-    return queries_results
+    return queries_results, {f"dataset_size_{k}": v for k, v in query_data_file_sizes.items()}
 
 
 def run_benchmark(parameters):
@@ -551,16 +552,17 @@ def run_benchmark(parameters):
 
     parameters["data_file"] = parameters["data_file"].replace("'", "")
 
-    import_pandas_into_module_namespace(
-        namespace=run_benchmark.__globals__,
-        mode=parameters["pandas_mode"],
-        ray_tmpdir=parameters["ray_tmpdir"],
-        ray_memory=parameters["ray_memory"],
-    )
-    queries_results = queries_modin(
+    results, run_params = queries_modin(
         filename=parameters["data_file"],
         pandas_mode=parameters["pandas_mode"],
         extended_functionality=parameters["extended_functionality"],
     )
+    # Flatten results into `query.subquery` form
+    results = {f"{q}.{sq}": t for q, subq2time in results.items() for sq, t in subq2time.items()}
 
-    return {"ETL": [queries_results], "ML": []}
+    return BenchmarkResults(results, params=run_params)
+
+
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, params) -> BenchmarkResults:
+        return run_benchmark(params)

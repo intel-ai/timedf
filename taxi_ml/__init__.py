@@ -1,1 +1,1 @@
-from .taxi_ml_benchmark import run_benchmark
+from .taxi_ml_benchmark import Benchmark

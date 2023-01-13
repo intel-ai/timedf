@@ -9,22 +9,18 @@ from .utils import (
     mse,
     print_times,
     split,
-    timer_ms,
     print_results,
-    remove_fields_from_dict,
     convert_units,
     write_to_csv_by_chunks,
     create_dir,
-    get_ny_taxi_dataset_size,
     make_chk,
     memory_usage,
     join_to_tbls,
     get_tmp_filepath,
     FilesCombiner,
-    refactor_results_for_reporting,
     get_dir_size,
     getsize,
     run_benchmarks,
 )
-from .trigger_execution import trigger_execution, Config
 from .timer import TimerManager
+from .benchmark import BaseBenchmark, BenchmarkResults

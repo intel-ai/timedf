@@ -8,6 +8,6 @@ python3 run_modin_tests.py -bench_name ny_taxi -task benchmark                  
                               -dfiles_num 1 -pandas_mode Modin_on_hdk                                                              \
                               ${ADDITIONAL_OPTS}                                                                                   \
                               ${ADDITIONAL_OPTS_NIGHTLY}                                                                           \
-                              ${DB_COMMON_OPTS} ${DB_TAXI_OPTS}
+                              ${DB_COMMON_OPTS}
 
 conda deactivate
