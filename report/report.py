@@ -13,7 +13,7 @@ class DbReporter:
         Parameters
         ----------
         engine
-            Db engine from sqlite
+            DB engine from sqlalchemy
         benchmark
             Name of the current benchmark
         run_id
