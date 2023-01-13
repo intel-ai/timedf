@@ -1,9 +1,13 @@
 from pathlib import Path
+import logging
+
 import numpy as np
 
 from utils.pandas_backend import pd
 
 from hm_fashion_recs.tm import tm
+
+logger = logging.getLogger(__name__)
 
 
 class CFG:
@@ -43,7 +47,7 @@ def create_candidates(
     week
         candidates are generated using only the information available until and including this week
     """
-    print(f"create candidates (week: {week})")
+    logger.info(f"create candidates (week: {week})")
     assert len(target_users) == len(set(target_users))
 
     def create_candidates_repurchase(
@@ -340,8 +344,10 @@ def create_candidates(
     ]
     candidates = pd.concat(candidates)
 
-    print(f"volume: {len(candidates)}")
-    print(f"duplicates: {len(candidates) / len(candidates[['user', 'item']].drop_duplicates())}")
+    logger.info("volume: %s", len(candidates))
+    logger.info(
+        "duplicates: %s", len(candidates) / len(candidates[["user", "item"]].drop_duplicates())
+    )
 
     volumes = (
         candidates.groupby("strategy")
@@ -351,7 +357,7 @@ def create_candidates(
         .reset_index(drop=True)
     )
     volumes["ratio"] = volumes["volume"] / volumes["volume"].sum()
-    print(volumes)
+    logger.info(volumes)
 
     meta_columns = [c for c in candidates.columns if c.endswith("_meta")]
     return candidates.drop(meta_columns, axis=1)
@@ -361,7 +367,7 @@ def merge_labels(candidates: pd.DataFrame, transactions, week: int) -> pd.DataFr
     """
     candidatesに対してweekで指定される週のトランザクションからラベルを付与する
     """
-    print(f"merge labels (week: {week})")
+    logger.info("merge labels (week: %s)", week)
     labels = transactions[transactions["week"] == week][["user", "item"]].drop_duplicates(
         ignore_index=True
     )
@@ -374,7 +380,7 @@ def merge_labels(candidates: pd.DataFrame, transactions, week: int) -> pd.DataFr
         labels[["user", "item", "y"]].drop_duplicates(ignore_index=True)["y"].sum()
     )
     recall = remaining_positives_total / original_positives
-    print(f"Recall: {recall}")
+    logger.info("Recall: %s", recall)
 
     volumes = candidates.groupby("strategy").size().reset_index(name="volume")
     remaining_positives = labels.groupby("strategy")["y"].sum().reset_index()
@@ -384,7 +390,7 @@ def merge_labels(candidates: pd.DataFrame, transactions, week: int) -> pd.DataFr
     remaining_positives = remaining_positives.sort_values(by="y", ascending=False).reset_index(
         drop=True
     )
-    print(remaining_positives)
+    logger.info(remaining_positives)
 
     return labels
 
@@ -406,7 +412,7 @@ def drop_trivial_users(labels):
         )
     ].reset_index(drop=True)
     aft = len(df)
-    print(f"drop trivial queries: {bef} -> {aft}")
+    logger.info("drop trivial queries: %s -> %s", bef, aft)
     return df
 
 

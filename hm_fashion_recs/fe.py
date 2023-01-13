@@ -1,10 +1,14 @@
 from pathlib import Path
 from typing import Union
+import logging
 
 from utils.pandas_backend import pd
 
 from hm_fashion_recs.lfm import calc_embeddings
 from hm_fashion_recs.tm import tm
+
+
+logger = logging.getLogger(__name__)
 
 
 class CFG:
@@ -39,7 +43,7 @@ def get_age_shifts(transactions, users):
             if age_volume >= age_volume_threshold:
                 age_shifts[age] = i
                 break
-    print(age_shifts)
+    logger.info(age_shifts)
     return age_shifts
 
 
@@ -58,7 +62,7 @@ def attach_features(
     user, itemに対して特徴を横付けする
     week: これを含めた以前の情報は使って良い
     """
-    print(f"attach features (week: {week})")
+    logger.info("attach features (week: %s)", week)
     n_original = len(candidates)
     df = candidates.copy()
     with tm.timeit("01-user static features"):
@@ -237,7 +241,7 @@ def attach_features(
             for item_col in item_target_cols:
                 i_cols = [c for c in items_with_ohe.columns if c.startswith(item_col)]
                 u_cols = [f"user_ohe_agg_{c}" for c in i_cols]
-                print(users_with_ohe.shape)
+                logger.info(users_with_ohe.shape)
 
                 users_items_small[f"{item_col}_ohe_score"] = (
                     items_with_ohe[i_cols].values[items_small]

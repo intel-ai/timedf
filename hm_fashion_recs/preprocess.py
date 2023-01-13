@@ -149,7 +149,6 @@ def create_user_ohe_agg(week, preprocessed_data_path, result_path):
 
             users = users.sort_values(by="user").reset_index(drop=True)
             users.to_pickle(save_path)
-            print("saved", save_path)
 
 
 def run_complete_preprocessing(raw_data_path, paths, n_weeks, use_lfm=False):

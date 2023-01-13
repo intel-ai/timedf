@@ -29,7 +29,6 @@ def train_lfm(*, lfm_features_path: Path, week: int, dim: int = CFG.dim):
     dataset = "100"
 
     path_prefix = lfm_features_path / f"lfm_i_i_dataset{dataset}_week{week}_dim{dim}"
-    print(path_prefix)
     transactions = pd.read_pickle(f"input/{dataset}/transactions_train.pkl")
     users = pd.read_pickle(f"input/{dataset}/users.pkl")
     items = pd.read_pickle(f"input/{dataset}/items.pkl")

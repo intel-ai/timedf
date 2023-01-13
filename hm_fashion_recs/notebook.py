@@ -1,6 +1,7 @@
 """This script reproduces notebook from the original solution."""
 
 import gc
+import logging
 
 import catboost
 import matplotlib.pyplot as plt
@@ -12,6 +13,9 @@ from hm_fashion_recs.hm_utils import mapk, load_data, get_workdir_paths
 from hm_fashion_recs.fe import get_age_shifts, attach_features
 from hm_fashion_recs.candidates import create_candidates, make_weekly_candidates
 from hm_fashion_recs.preprocess import run_complete_preprocessing
+
+
+logger = logging.getLogger(__name__)
 
 
 class CFG:
@@ -173,7 +177,7 @@ def predict_new_week(*, model, transactions, users, items, age_shifts, user_feat
     n_split_prediction = 10
     n_chunk = (len(all_users) + n_split_prediction - 1) // n_split_prediction
     for i in range(0, len(all_users), n_chunk):
-        print(f"chunk: {i}")
+        logger.info("chunk: %s", i)
         target_users = all_users[i : i + n_chunk]  # noqa: E203
 
         candidates = create_candidates(
@@ -249,7 +253,7 @@ def train_eval(
         age_shifts=age_shifts,
         user_features_path=user_features_path,
     )
-    print("mAP@12:", metric)
+    logger.info("mAP@12: %s", metric)
     return best_iteration
 
 
