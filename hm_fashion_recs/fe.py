@@ -59,9 +59,7 @@ def attach_features(
     lfm_features_path: Union[None, Path] = None,
 ) -> pd.DataFrame:
     """
-    user, itemに対して特徴を横付けする
-    week: これを含めた以前の情報は使って良い
-    """
+    Attach features to candidates. That is our feature generation."""
     logger.info("attach features (week: %s)", week)
     n_original = len(candidates)
     df = candidates.copy()

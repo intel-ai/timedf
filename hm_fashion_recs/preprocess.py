@@ -20,6 +20,12 @@ logger = logging.getLogger(__name__)
 
 
 def transform_data(input_data_path, result_path):
+    """
+    - Convert all categories including article_id and category_id to 0-indexed serial numbers (column with _idx is added)
+    - Convert categories with only None, 1 to 0, 1 (columns are overwritten)
+    - convert 1, 2 only categories to 0, 1 (columns are overwritten)
+    """
+
     def _count_encoding_dict(df: pd.DataFrame, col_name: str) -> dict[Any, int]:
         v = (
             df.groupby(col_name)
@@ -70,7 +76,7 @@ def transform_data(input_data_path, result_path):
     customers["FN"] = customers["FN"].fillna(0).astype("int64")
     customers["Active"] = customers["Active"].fillna(0).astype("int64")
 
-    # 頻度順に番号を振る(既にintなものも連番のほうが都合が良いので振り直す)
+    # Assign numbers in order of frequency
     customers["club_member_status"] = customers["club_member_status"].fillna("NULL")
     customers["fashion_news_frequency"] = customers["fashion_news_frequency"].fillna("NULL")
     count_encoding_columns = ["club_member_status", "fashion_news_frequency"]
@@ -110,7 +116,7 @@ def transform_data(input_data_path, result_path):
     _add_idx_column(transactions, "article_id", "item", mp_article_id)
     # (1, 2) -> (0, 1)
     transactions["sales_channel_id"] = transactions["sales_channel_id"] - 1
-    # transactions_trainに含まれる最後の1週間を0として、過去に行くに連れてインクリメント
+    # The last week included in transactions_train is set to 0, the week before is 1 etc.
     transactions["week"] = (transactions["t_dat"].max() - transactions["t_dat"]).dt.days // 7
     transactions["day"] = (transactions["t_dat"].max() - transactions["t_dat"]).dt.days
     transactions.to_pickle(result_path / "transactions_train.pkl")

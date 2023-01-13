@@ -16,6 +16,8 @@ class CFG:
     # These candidates are generated with faiss library, we turn them off by default
     # to avoid this dependency
     use_ohe_distance_candidates = False
+    # If we do use faiss, should we try to use gpu or just cpu?
+    use_faiss_gpu = False
 
     popular_num_items = 60
     popular_weeks = 1
@@ -232,8 +234,6 @@ def create_candidates(
         cols = [c for c in items.columns if c.endswith("_idx")]
         for c in cols:
             tmp = pd.read_pickle(user_features_path / f"user_ohe_agg_week{week_start}_{c}.pkl")
-            # cs = [c for c in tmp.columns if c.endswith('_mean')]
-            # tmp = tmp[['user'] + cs]
             users_with_ohe = users_with_ohe.merge(tmp, on="user")
 
         users_with_ohe = users_with_ohe.dropna().reset_index(drop=True)
@@ -256,7 +256,9 @@ def create_candidates(
         a_users = np.ascontiguousarray(a_users)
         a_items = np.ascontiguousarray(a_items)
         index = faiss.index_factory(a_items.shape[1], "Flat", faiss.METRIC_INNER_PRODUCT)
-        # index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), 0, nidex)
+        if CFG.use_faiss_gpu:
+            index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), 0, index)
+
         index.add(a_items)
         distances, idxs = index.search(a_users, num_items)
         return pd.DataFrame(
@@ -315,9 +317,7 @@ def create_candidates(
     def drop_common_user_item(
         candidates_target: pd.DataFrame, candidates_reference: pd.DataFrame
     ) -> pd.DataFrame:
-        """
-        candidates_targetのうちuser, itemの組がcandidates_referenceにあるものを落とす
-        """
+        """Drop candidates_target whose (user, item) pair is in candidates_reference"""
         tmp = candidates_reference[["user", "item"]].reset_index(drop=True)
         tmp["flag"] = 1
         candidates = candidates_target.merge(tmp, on=["user", "item"], how="left")
@@ -364,9 +364,7 @@ def create_candidates(
 
 
 def merge_labels(candidates: pd.DataFrame, transactions, week: int) -> pd.DataFrame:
-    """
-    candidatesに対してweekで指定される週のトランザクションからラベルを付与する
-    """
+    """Returns labels for candidates for the week specified by week"""
     logger.info("merge labels (week: %s)", week)
     labels = transactions[transactions["week"] == week][["user", "item"]].drop_duplicates(
         ignore_index=True
@@ -397,7 +395,8 @@ def merge_labels(candidates: pd.DataFrame, transactions, week: int) -> pd.DataFr
 
 def drop_trivial_users(labels):
     """
-    In LightGBM's xendgc and lambdarank, users with only positive or negative examples are meaningless for learning, and the calculation of metrics is strange, so they are omitted.
+    In LightGBM's xendgc and lambdarank, users with only positive or negative examples are
+    meaningless for learning, and the calculation of metrics is strange, so they are omitted.
     """
     bef = len(labels)
     df = labels[
