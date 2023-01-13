@@ -1,4 +1,4 @@
-### Into
+### Intro
 [Kaggle H&M fashion competition](https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations) represents typical recommendation task for e-commerce. We need to predict what users are likely to buy in the next week based on past activity. We are provided with customer features, item features and transaction history.
 
 This is a benchmark with a solution to H&M fashion recommendation competition. It is based on the following [solution](https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations/discussion/324084) and it's [source code](https://github.com/ryowk/kaggle-h-and-m-personalized-fashion-recommendations). Authors of the original solution were 11th in that competition and provided source code to their solution under Apache license 2.0. Original solution requires combination of 4 ipython notebooks, but we only use one of them for simplicity (`local6.ipynb`). Authors claim that such solution achieves the score of `0.03391`, which is enough to score in top 15 in the competition. Authors of the original code didn't know about modin and hence, didn't try to optimize source code for modin use.
