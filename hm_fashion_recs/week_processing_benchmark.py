@@ -8,6 +8,7 @@ from hm_fashion_recs.tm import tm
 
 
 from utils import check_support
+from utils.benchmark import BenchmarkResults, BaseBenchmark
 
 
 def feature_engieering(week, paths, use_lfm):
@@ -66,20 +67,15 @@ def main(raw_data_path, paths):
         with tm.timeit("03-fe"):
             feature_engieering(week=week, paths=paths, use_lfm=False)
 
+class Benchmark(BaseBenchmark):
+    def run_benchmark(self, parameters):
+        check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
 
-def run_benchmark(parameters):
-    check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
+        raw_data_path = Path(parameters["data_file"].strip("'"))
+        paths = get_workdir_paths()
+        main(raw_data_path=raw_data_path, paths=paths)
 
-    raw_data_path = Path(parameters["data_file"].strip("'"))
-    paths = get_workdir_paths()
-    main(raw_data_path=raw_data_path, paths=paths)
+        task2time = tm.get_results()
+        print(task2time)
 
-    task2time = tm.get_results()
-    print(task2time)
-
-    results = [
-        {"query_name": b, "result": t, "Backend": parameters["pandas_mode"]}
-        for b, t in task2time.items()
-    ]
-
-    return {"ETL": results}
+        return BenchmarkResults(task2time)
