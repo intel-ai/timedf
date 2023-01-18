@@ -41,7 +41,8 @@ def recorgnize_cols(df):
     1. `shared_params` - host-specific columns, that are identical across all benchmark runs.
     2. `bench_specific_params` - columns, that vary across runs, they will be reported along with benchmark results.
     """
-    mask = df.fillna("None").nunique() == 1
+    df = df.fillna("None").nunique()
+    mask = df == 1
     shared_params = list(df[mask].index)
     bench_specific_params = list(df[~mask].index)
     return shared_params, bench_specific_params
@@ -143,6 +144,12 @@ def parse_args():
         default="report.xlsx",
         help="Path to the resulting file",
     )
+    parser.add_argument(
+        "-node",
+        dest="node",
+        default=None,
+        help="Filter benchmark results by node",
+    )
     return parser.parse_args()
 
 
@@ -167,7 +174,7 @@ def main():
     )
     loader = DBLoader(engine=db_config.create_engine(future=False))
 
-    df = loader.load_latest_iterations(node="c5n5")
+    df = loader.load_latest_iterations(node=args.node)
 
     benchmark_col = "benchmark"
     backend_cols = ["pandas_mode"]
