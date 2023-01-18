@@ -22,11 +22,11 @@ class DbConfig:
     password: str
     name: str
 
-    def create_engine(self):
+    def create_engine(self, future=True):
         from sqlalchemy import create_engine
 
         url = f"{self.driver}://{self.user}:{self.password}@{self.server}:{self.port}/{self.name}"
-        return create_engine(url, future=True)
+        return create_engine(url, future=future)
 
 
 def str_arg_to_bool(v: Union[bool, str]) -> bool:

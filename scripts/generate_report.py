@@ -5,11 +5,11 @@ import logging
 from contextlib import suppress
 
 import sqlalchemy as sql
-from sqlalchemy.orm import Session
 import pandas as pd
 import pandas.io.formats.excel
 
-from report.schema import Iteration, Measurement
+from report.schema import Iteration as Iter, Measurement as M
+import report.schema as schema
 from utils_base_env import add_sql_arguments, DbConfig
 
 # This is necessary to allow custom header formatting
@@ -17,110 +17,63 @@ pandas.io.formats.excel.ExcelFormatter.header_style = None
 
 logger = logging.getLogger(__name__)
 
-# Table names with benchmark results to be processed
-tables = [
-    "census_etl_jit",
-    "census_ml_jit",
-    "plasticc_ml_jit",
-    "plasticc_etl_jit",
-    "taxibench_etl_jit",
-]
-
-# Columns in SQL table that contain host-specific information that is expected to be the same for every run, this info will be placed in a separate sheet.
-host_cols = [
-    "ServerName",
-    "Architecture",
-    "Machine",
-    "Node",
-    "OS",
-    "CPUCount",
-    "CPUModel",
-    "CPUMaxMHz",
-    "L1dCache",
-    "L1iCache",
-    "L2Cache",
-    "L3Cache",
-    "MemTotal",
-    "SwapTotal",
-    "SwapFree",
-    "HugePages_Total",
-    "HugePages_Free",
-    "Hugepagesize",
-    "OmnisciCommitHash",
-    "OmniscriptsCommitHash",
-    "ModinCommitHash",
-    "IbisCommitHash",
-]
-
-# Columns in SQL tables that are run-specific, part of them will be compressed (`iteration`) and some need to be presented along benchmark results (`MemFree`)
-possible_run_cols = [
-    # will be removed
-    "id",
-    "run_id",
-    "date",
-    "Iteration",
-    # will become a header
-    "BackEnd",
-    # will be presended along with benchmark results in a hidden form
-    "CPUMHz",
-    "MemFree",
-    "MemAvailable",
-    "dataset_size",
-    "dfiles_num",
-]
-
 
 class DBLoader:
     def __init__(self, engine):
         self.engine = engine
 
-    def load_latest_results(self, bench_name, past_lookup_days=30):
-        # metadata = db.MetaData()
-        # table = db.Table(table_name, metadata, autoload=True, autoload_with=self.engine)
-
+    def load_latest_iterations(self, past_lookup_days=30, node=None):
         lookup_date = datetime.date.today() - datetime.timedelta(days=past_lookup_days)
-        # latest = select(func.max(table.columns.run_id)).group_by(table.columns.BackEnd)
-        # qry = db.select([Iteration]).filter(
-        #     db.and_(table.columns.run_id.in_(latest), table.columns.date > lookup_date)
-        # )
 
-
-        # with Session(self.engine) as session:
-        latest = sql.select(sql.func.max(Iteration.run_id)).filter(Iteration.benchmark == bench_name).group_by(Iteration.pandas_mode)
-        # results = list(session.execute(stmt).scalars().all())
-        qry = sql.select([Iteration]).filter(
-            sql.and_(Iteration.run_id.in_(latest), Iteration.date > lookup_date, True)
-        )
-            # assert len(results) == 1
-            # assert len(results[0].measurements) == 2
-
-
-        return pd.read_sql(
-            qry,
-            con=self.engine,
-            parse_dates=[
-                "date",
-            ],
+        latest = sql.select(sql.func.max(Iter.run_id)).group_by(Iter.pandas_mode, Iter.benchmark)
+        node_qry = True if node is None else Iter.node == node
+        qry = (
+            sql.select(Iter, M.name.label("query_name"), M.duration_s)
+            .filter(sql.and_(Iter.run_id.in_(latest), Iter.date > lookup_date, node_qry))
+            .join(M)
         )
 
-
-def recognize_cols(df):
-    """We parse and recognize 3 types of columns:
-    1. `run_cols` - columns, specific for each run, part of them will be compressed (`iteration`) and some need to be presented along benchmark results (`MemFree`)
-    2. `host_cols` - host-specific columns, that are supposedly identical across all benchmark runs.
-    3. `benchmark_cols` - columns with benchmark time in seconds."""
-    columns = list(df.columns)
-    run_cols = [c for c in possible_run_cols if c in columns]
-    benchmark_cols = [c for c in columns if c not in host_cols and c not in run_cols]
-    return run_cols, host_cols, benchmark_cols
+        return pd.read_sql(qry, con=self.engine, parse_dates=["date"])
 
 
-def prepare_benchmark_results(df, benchmark_cols, run_cols):
+def recorgnize_cols(df):
+    """We parse and recognize 2 types of columns:
+    1. `shared_params` - host-specific columns, that are identical across all benchmark runs.
+    2. `bench_specific_params` - columns, that vary across runs, they will be reported along with benchmark results.
+    """
+    mask = df.fillna("None").nunique() == 1
+    shared_params = list(df[mask].index)
+    bench_specific_params = list(df[~mask].index)
+    return shared_params, bench_specific_params
+
+
+def add_params(df):
+    params_df = pd.DataFrame(df.params.to_list())
+    param_cols = list(params_df.columns)
+    return pd.concat([df.reset_index(), params_df], axis=1), param_cols
+
+
+def prepare_benchmark_results(bench_df, iteration_cols, backend_cols, bench_specific_params):
+    measurements = list(bench_df.query_name.unique())
+
+    # add benchmark_specific params, submited in schemaless column
+    bench_df, param_cols = add_params(bench_df)
+    df_flat = bench_df.pivot(
+        values="duration_s",
+        columns="query_name",
+        index=iteration_cols + backend_cols + bench_specific_params + param_cols,
+    ).reset_index()
+
     return (
-        df.groupby("BackEnd", as_index=False)
-        .agg({**{c: "first" for c in run_cols}, **{c: "min" for c in benchmark_cols}})
-        .drop(["Iteration", "run_id", "id", "date"], axis=1)
-    )
+        df_flat.groupby(backend_cols, as_index=False)
+        .agg(
+            {
+                **{c: "first" for c in iteration_cols + param_cols + bench_specific_params},
+                **{c: "min" for c in measurements},
+            }
+        )
+        .drop(iteration_cols, axis=1)
+    ), measurements
 
 
 def write_benchmark(df, writer, table_name, benchmark_cols):
@@ -165,7 +118,11 @@ def write_benchmark(df, writer, table_name, benchmark_cols):
         worksheet.set_row(i + 1, None, None, {"hidden": True})
 
     for i, name in enumerate(benchmark_cols):
-        add_chart(i + n_rows_run_props + 1, title=name, loc=(i * 20, len(df.columns) + 1))
+        add_chart(
+            i + n_rows_run_props + 1,
+            title=name,
+            loc=(i * 20 + n_rows_run_props, len(df.columns) + 1),
+        )
 
 
 def write_hostinfo(df, writer):
@@ -208,24 +165,28 @@ def main():
         password=args.db_pass,
         name=args.db_name,
     )
-    loader = DBLoader(engine=db_config.create_engine())
+    loader = DBLoader(engine=db_config.create_engine(future=False))
 
-    host_params = []
-    for table_name in tables:
-        logger.info("Processing %s", table_name)
-        df = loader.load_latest_results(bench_name="taxi_ny")
-        run_cols, host_cols, benchmark_cols = recognize_cols(df)
-        df[benchmark_cols] = df[benchmark_cols] / 1000
-        host_params.append(df[host_cols])
+    df = loader.load_latest_iterations(node="c5n5")
 
-        benchmark_results = prepare_benchmark_results(
-            df[run_cols + benchmark_cols], benchmark_cols, run_cols
+    benchmark_col = "benchmark"
+    backend_cols = ["pandas_mode"]
+
+    iteration_cols = ["id", "iteration_no", "run_id", "date"] + [benchmark_col]
+    host_cols = list(schema.HostParams.fields)
+    run_cols = [f for f in schema.RunParams.fields if f not in backend_cols]
+
+    shared_params, bench_specific_params = recorgnize_cols(df[host_cols + run_cols])
+
+    for benchmark in df.benchmark.unique():
+        benchmark_results, measurements = prepare_benchmark_results(
+            df[df[benchmark_col] == benchmark], iteration_cols, backend_cols, bench_specific_params
         )
         write_benchmark(
-            benchmark_results, writer=writer, table_name=table_name, benchmark_cols=benchmark_cols
+            benchmark_results, writer=writer, table_name=benchmark, benchmark_cols=measurements
         )
 
-    host_info = pd.concat(host_params).fillna("None").drop_duplicates()
+    host_info = df[shared_params].fillna("None").drop_duplicates()
     if len(host_info) != 1:
         raise ValueError(
             "Unexpected variability in host info, expected to be the same across all runs, but discovered different results: "
