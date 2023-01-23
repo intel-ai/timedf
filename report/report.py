@@ -106,18 +106,17 @@ class Db:
     def add_params(df):
         """Add `parms` column content as new columns. So it's better to call it with only type of benchmark."""
         params_df = pd.DataFrame(list(df.params), index=df.index)
-        return df.drop(['params'], axis=1).join(params_df)
-
+        return df.drop(["params"], axis=1).join(params_df)
 
     def load_benchmark_results(self, benchmark, node=None) -> Tuple[pd.DataFrame, List]:
         """Load benchmark results for selected `benchmark` in a wide form
-        
+
         Returns
         -------
         df:
             DataFrame in a wide form with results
         measurements:
-            List with all the measurements, contained in the returned df, so 
+            List with all the measurements, contained in the returned df, so
             `df[measurements]` is a wide table with all measurements.
         """
         df_runs = self.add_params(self.load_iterations(benchmark=benchmark, node=node))
@@ -125,21 +124,20 @@ class Db:
         df = df_runs.join(df_measurements)
         return df, list(df_measurements.columns)
 
-
     def load_benchmark_results_agg(self, benchmark, node=None) -> Tuple[pd.DataFrame, List]:
-        """Load benchmark results for selected `benchmark` in a wide form after aggregating 
+        """Load benchmark results for selected `benchmark` in a wide form after aggregating
         by run_id by taking minimum value
-        
+
         Returns
         -------
         df:
             DataFrame in a wide form with results
         measurements:
-            List with all the measurements, contained in the returned df, so 
+            List with all the measurements, contained in the returned df, so
             `df[measurements]` is a wide table with all measurements.
         """
         df, measurements = self.load_benchmark_results(benchmark=benchmark, node=node)
         res = df.groupby("run_id").agg(
-            {c: "min" if c in measurements else 'first' for c in df.columns}
+            {c: "min" if c in measurements else "first" for c in df.columns}
         )
         return res, measurements

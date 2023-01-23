@@ -1,15 +1,14 @@
 import argparse
 import os
-import datetime
 import logging
 from contextlib import suppress
 
-import sqlalchemy as sql
 import pandas as pd
 import pandas.io.formats.excel
 
 # from report.schema import Iteration as Iter, Measurement as M
 from report import Db
+
 # import report.schema as schema
 from utils_base_env import add_sql_arguments, DbConfig
 
@@ -19,14 +18,11 @@ pandas.io.formats.excel.ExcelFormatter.header_style = None
 logger = logging.getLogger(__name__)
 
 
-def recorgnize_cols(df):
-    """We parse and recognize 2 types of columns:
-    1. `shared_params` - host-specific columns, that are identical across all benchmark runs.
-    2. `bench_specific_params` - columns, that vary across runs, they will be reported along with benchmark results.
-    """
-    df = df.drop(['params'], axis=1).fillna("None").nunique()
+def recorgnize_host_cols(df):
+    """We parse and recognize columns that are the same across runs."""
+    df = df.drop(["params"], axis=1).fillna("None").nunique()
     return list(df[df == 1].index)
-    
+
 
 def write_benchmark(df, writer, table_name, benchmark_cols):
     df = df.T
@@ -123,28 +119,26 @@ def main():
         password=args.db_pass,
         name=args.db_name,
     )
-    db = Db(engine=db_config.create_engine(future=False))
+    db = Db(engine=db_config.create_engine())
 
     iterations = db.load_iterations(node=args.node)
-    iterations = iterations.groupby(['benchmark', 'pandas_mode'], as_index=False).last()
+    iterations = iterations.groupby(["benchmark", "pandas_mode"], as_index=False).last()
 
     benchmark_col = "benchmark"
-    backend_cols = ["pandas_mode"]
+    backend_col = "pandas_mode"
 
     iteration_cols = ["id", "iteration_no", "run_id", "date"] + [benchmark_col]
     run_cols = [c for c in iterations.columns if c not in iteration_cols]
 
-    shared_params = recorgnize_cols(iterations[run_cols])
+    host_params = recorgnize_host_cols(iterations[run_cols])
 
     for benchmark in iterations[benchmark_col].unique():
         df, measurements = db.load_benchmark_results_agg(benchmark=benchmark, node=args.node)
-        df = df.groupby('pandas_mode', as_index=False).last()
-        write_benchmark(
-            df[backend_cols + [c for c in df.columns if c not in [*shared_params, *iteration_cols]]],
-            writer=writer, table_name=benchmark, benchmark_cols=measurements
-        )
+        df = df.groupby("pandas_mode", as_index=False).last()
+        df = df[[backend_col, *(c for c in df.columns if c not in host_params + iteration_cols)]]
+        write_benchmark(df, writer=writer, table_name=benchmark, benchmark_cols=measurements)
 
-    host_info = iterations[shared_params].fillna("None").drop_duplicates()
+    host_info = iterations[host_params].fillna("None").drop_duplicates()
     if len(host_info) != 1:
         raise ValueError(
             "Unexpected variability in host info, expected to be the same across all runs, but discovered different results: "
