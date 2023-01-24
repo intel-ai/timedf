@@ -13,19 +13,31 @@ returned_port_numbers = []
 # This can be written as just a function, but we keep the dataclass to add validation and arg parsing in the future.
 @dataclass
 class DbConfig:
-    """Class encapsulates DB configuration and connection."""
+    """Class encapsulates DB configuration and connection.
+
+    For sqlite you need to pass path to file as `name` argument, like
+    `name='database.db', driver='sqlite+pysqlite'`.
+    """
 
     driver: str
-    server: str
-    port: int
-    user: str
-    password: str
-    name: str
+    server: str = None
+    port: int = None
+    user: str = None
+    password: str = None
+    name: str = None
 
     def create_engine(self):
         from sqlalchemy import create_engine
+        from sqlalchemy.engine.url import URL
 
-        url = f"{self.driver}://{self.user}:{self.password}@{self.server}:{self.port}/{self.name}"
+        url = URL.create(
+            host=self.server,
+            drivername=self.driver,
+            username=self.user,
+            password=self.password,
+            port=self.port,
+            database=self.name,
+        )
         return create_engine(url)
 
 
@@ -100,15 +112,11 @@ def add_sql_arguments(parser):
     parser.add_argument(
         "-db_driver",
         dest="db_driver",
-        default="mysql+mysqlconnector",
+        default="sqlite+pysqlite",
         help="Driver for the sql table in sqlalchemy format.",
     )
-    parser.add_argument(
-        "-db_server", dest="db_server", default="localhost", help="Host name of SQL server."
-    )
-    parser.add_argument(
-        "-db_port", dest="db_port", default=3306, type=int, help="Port number of SQL server."
-    )
+    parser.add_argument("-db_server", dest="db_server", help="Host name of SQL server.")
+    parser.add_argument("-db_port", dest="db_port", type=int, help="Port number of SQL server.")
     parser.add_argument(
         "-db_user",
         dest="db_user",
@@ -119,13 +127,11 @@ def add_sql_arguments(parser):
     parser.add_argument(
         "-db_pass",
         dest="db_pass",
-        default="omniscidb",
         help="Password to use to connect to SQL database.",
     )
     parser.add_argument(
         "-db_name",
         dest="db_name",
-        default="omniscidb",
         help="SQL database to use to store benchmark results.",
     )
 
