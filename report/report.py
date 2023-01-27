@@ -1,13 +1,13 @@
 from typing import Dict, List, Tuple, Union
+import time
+import datetime as dt
 
 import pandas as pd
 from sqlalchemy import sql
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-import datetime as dt
-
-from report.schema import make_iteration, Base, Iteration as Iter, Measurement as M
+from report.schema import make_iteration, Base, Iteration as Iter, Measurement as M, RunParams
 
 
 class Db:
@@ -31,7 +31,7 @@ class Db:
         name2time: Dict[str, float],
         params: Union[None, Dict] = None,
     ):
-        """Report results of current iteration.
+        """Report results of current for one of omniscripts benchmarks.
 
         Parameters
         ----------
@@ -64,7 +64,39 @@ class Db:
             )
             session.commit()
 
-    def load_benchmarks(self, node):
+    def report_arbitrary(
+        self,
+        benchmark: str,
+        backend: str,
+        name2time: Dict[str, float],
+        params: Union[Dict[str, str], None] = None,
+    ):
+        """Report results of arbitrary workload.
+
+        Parameters
+        ----------
+        benchmark
+            Name of the current workload
+        name2time
+            Dict with measurements: (name, time in seconds)
+        backend
+            Backend to record
+        params
+            Additional params to report, will be added to a schemaless `params` column in the DB, can be used for
+            storing benchmark-specific information such as dataset size.
+        """
+        run_params = {k: "null" for k in RunParams.fields}
+        run_params["pandas_backend"] = backend
+        self.report(
+            benchmark=benchmark,
+            run_id=int(round(time.time())),
+            run_params=run_params,
+            iteration_no=1,
+            name2time=name2time,
+            params=params,
+        )
+
+    def load_benchmarks(self, node=None):
         """Load a list of all benchmarks that are contained in the DB."""
         qry = sql.select(sql.func.distinct(Iter.benchmark).label("benchmark")).where(
             self._get_filter_qry(node=node)
