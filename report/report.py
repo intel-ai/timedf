@@ -25,6 +25,7 @@ class Db:
 
     def report(
         self,
+        *,
         benchmark: str,
         run_id: int,
         run_params: Dict[str, str],
@@ -67,11 +68,12 @@ class Db:
 
     def report_arbitrary(
         self,
+        *,
         benchmark: str,
-        backend: str,
-        name2time: Dict[str, float],
         run_id: int | None = None,
+        backend: str,
         iteration_no: int = 1,
+        name2time: Dict[str, float],
         params: Dict[str, str] | None = None,
     ):
         """Report results of arbitrary workload.
@@ -80,15 +82,15 @@ class Db:
         ----------
         benchmark
             Name of the current workload
-        backend
-            Backend to record
-        name2time
-            Dict with measurements: (name, time in seconds)
         run_id:
             Run id for result aggregation, each run_id can contain several iterations with different
             `iteration_no`. By default creates unique run_id for you.
+        backend
+            Backend to record
         iteration_no:
             Counter of iteration
+        name2time
+            Dict with measurements: (name, time in seconds)
         params
             Additional params to report, will be added to a schemaless `params` column in the DB, can be used for
             storing benchmark-specific information such as dataset size.
@@ -109,7 +111,7 @@ class Db:
         )
 
     def load_benchmarks(self, node=None):
-        """Load a list of all benchmarks that are contained in the DB."""
+        """Load a list of all benchmarks that are contained in the DB on a selected `node`."""
         qry = sql.select(sql.func.distinct(Iter.benchmark).label("benchmark")).where(
             self._get_filter_qry(node=node)
         )
@@ -119,6 +121,8 @@ class Db:
 
     @staticmethod
     def _get_filter_qry(benchmark=None, node=None, lookup_days=None):
+        """Get where query for selected `benchmark=benchmark`, `node=node` and
+        `(today() - date) > lookup_days`."""
         lookup_cnd = (
             True
             if lookup_days is None
@@ -130,18 +134,29 @@ class Db:
 
         return sql.and_(lookup_cnd, node_cnd, benchmark_cnd)
 
-    def _load_qry(self, qry):
-        return pd.read_sql(qry, con=self.engine, parse_dates=["date"])
+    def load_iterations(
+        self, benchmark: str | None = None, node: str | None = None, lookup_days: int | None = None
+    ):
+        """Load all iterations, which satify requirements from input params.
 
-    def load_iterations(self, benchmark=None, node=None, lookup_days=None):
-        """Load all iterations, which satify requirements from input params."""
+        Parameters
+        ----------
+        benchmark
+            If provided, return only iterations with `benchmark=benchmark`, otherwise no filtering
+            by benchmark.
+        node
+            If provided, return only iterations with `node=node`, otherwise no filtering by node.
+        node
+            If provided, return only recent iterations with `date > (today() - lookup_days)`
+            otherwise no filtering by date.
+        """
         qry = sql.select(Iter).filter(
             self._get_filter_qry(benchmark=benchmark, node=node, lookup_days=lookup_days)
         )
-        return self._load_qry(qry).set_index("id", drop=True)
+        return pd.read_sql(qry, con=self.engine, parse_dates=["date"]).set_index("id", drop=True)
 
-    def load_measurements(self, iteration_ids):
-        """Load all measurements for selected iteration ids in wide form."""
+    def load_measurements(self, iteration_ids: List[int]):
+        """Load all measurements for selected `iteration_ids` in wide form."""
         qry = sql.select(M).filter(M.iteration_id.in_(iteration_ids))
         df = pd.read_sql(qry, con=self.engine)
         return df.pivot(columns="name", values="duration_s", index="iteration_id")
@@ -154,6 +169,13 @@ class Db:
 
     def load_benchmark_results(self, benchmark, node=None) -> Tuple[pd.DataFrame, List]:
         """Load benchmark results for selected `benchmark` in a wide form
+
+        Parameters
+        ----------
+        benchmark: str
+            Return only iterations with `benchmark=benchmark`.
+        node: str
+            If provided, return only iterations with `node=node`, otherwise no filtering by node.
 
         Returns
         -------
@@ -171,6 +193,13 @@ class Db:
     def load_benchmark_results_agg(self, benchmark, node=None) -> Tuple[pd.DataFrame, List]:
         """Load benchmark results for selected `benchmark` in a wide form after aggregating
         by run_id by taking minimum value
+
+        Parameters
+        ----------
+        benchmark: str
+            Return only iterations with `benchmark=benchmark`.
+        node: str
+            If provided, return only iterations with `node=node`, otherwise no filtering by node.
 
         Returns
         -------
