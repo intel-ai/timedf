@@ -1,13 +1,14 @@
-from typing import Dict, List, Tuple, Union
+from __future__ import annotations
+from typing import Dict, List, Tuple
+import time
+import datetime as dt
 
 import pandas as pd
 from sqlalchemy import sql
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-import datetime as dt
-
-from report.schema import make_iteration, Base, Iteration as Iter, Measurement as M
+from report.schema import make_iteration, Base, Iteration as Iter, Measurement as M, RunParams
 
 
 class Db:
@@ -29,9 +30,9 @@ class Db:
         run_params: Dict[str, str],
         iteration_no: int,
         name2time: Dict[str, float],
-        params: Union[None, Dict] = None,
+        params: Dict[str, str] | None = None,
     ):
-        """Report results of current iteration.
+        """Report results of current for one of omniscripts benchmarks.
 
         Parameters
         ----------
@@ -64,7 +65,50 @@ class Db:
             )
             session.commit()
 
-    def load_benchmarks(self, node):
+    def report_arbitrary(
+        self,
+        benchmark: str,
+        backend: str,
+        name2time: Dict[str, float],
+        run_id: int | None = None,
+        iteration_no: int = 1,
+        params: Dict[str, str] | None = None,
+    ):
+        """Report results of arbitrary workload.
+
+        Parameters
+        ----------
+        benchmark
+            Name of the current workload
+        backend
+            Backend to record
+        name2time
+            Dict with measurements: (name, time in seconds)
+        run_id:
+            Run id for result aggregation, each run_id can contain several iterations with different
+            `iteration_no`. By default creates unique run_id for you.
+        iteration_no:
+            Counter of iteration
+        params
+            Additional params to report, will be added to a schemaless `params` column in the DB, can be used for
+            storing benchmark-specific information such as dataset size.
+        """
+        run_id = run_id or int(round(time.time()))
+        # This is not the best solution, we don't have this data, yet we have to submit placeholders
+        # because schema requires this data. It might be best to relax this requirement in the
+        # future or move run_params into schemaless part
+        run_params = {k: "null" for k in RunParams.fields}
+        run_params["pandas_backend"] = backend
+        self.report(
+            benchmark=benchmark,
+            run_id=run_id,
+            run_params=run_params,
+            iteration_no=iteration_no,
+            name2time=name2time,
+            params=params,
+        )
+
+    def load_benchmarks(self, node=None):
         """Load a list of all benchmarks that are contained in the DB."""
         qry = sql.select(sql.func.distinct(Iter.benchmark).label("benchmark")).where(
             self._get_filter_qry(node=node)
