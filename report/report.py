@@ -98,7 +98,7 @@ class Db:
         # because schema requires this data. It might be best to relax this requirement in the
         # future or move run_params into schemaless part
         run_params = {k: "null" for k in RunParams.fields}
-        run_params["pandas_backend"] = backend
+        run_params["pandas_mode"] = backend
         self.report(
             benchmark=benchmark,
             run_id=run_id,
