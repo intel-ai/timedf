@@ -6,10 +6,7 @@ from contextlib import suppress
 import pandas as pd
 import pandas.io.formats.excel
 
-# from report.schema import Iteration as Iter, Measurement as M
-from report import Db
-
-# import report.schema as schema
+from report import BenchmarkDb
 from utils_base_env import add_sql_arguments, DbConfig
 
 # This is necessary to allow custom header formatting
@@ -25,10 +22,25 @@ def recorgnize_host_cols(df):
 
 
 def write_benchmark(df, writer, table_name, benchmark_cols):
+    """Writes benchmark results to a new sheet `table_name` for a xlsx writer `writer`.
+    
+    Rough structure of the sheet
+    -------------------------------------------------------------------------
+    | pandas_mode                                    | Pandas | Ray  | HDK  |
+    -------------------------------------------------------------------------
+    | cpu_mghz                                       | ...... | .... | .... | <- Hidden benchmark- specific run params
+    | `other run params specific for this benchmark` | ...... | .... | .... | <- Hidden benchmark- specific run params
+    | .............................................. | ...... | .... | .... | <- Hidden benchmark- specific run params
+    -------------------------------------------------------------------------
+    | query1                                         | 120.12 | 12.1 | 10.1 | **Chart1**
+    | query2                                         | 150.12 | 13.1 | 11.1 | **Chart2**
+    -------------------------------------------------------------------------
+    """
     df = df.T
 
     def add_chart(i, title, loc):
-        # Performance chart
+        """Add performance bar chart with title=`title`, for results from 
+        column `i` and locate the chart with coordinates `loc`"""
         chart1 = workbook.add_chart({"type": "bar"})
         chart1.add_series(
             {
@@ -51,20 +63,24 @@ def write_benchmark(df, writer, table_name, benchmark_cols):
     sheet_name = f"{table_name}"
 
     workbook = writer.book
+    # Write benchmark results to a new sheet
     df.to_excel(writer, sheet_name=sheet_name, header=False)
     worksheet = writer.sheets[sheet_name]
 
+    # Format header for 0-row and 0-column
     header_format = writer.book.add_format({"bold": True, "align": "left"})
     worksheet.set_column(0, 0, 20, header_format)
     worksheet.set_row(0, None, header_format)
 
+    # Set column width for columns with benchmark results (1 to N)
     worksheet.set_column(1, len(df.columns), 20)
 
+    # Hide rows with benchmark run configuration
     n_rows_run_props = len(df) - len(benchmark_cols) - 1
-    # Hide benchmark configuration
     for i in range(n_rows_run_props):
         worksheet.set_row(i + 1, None, None, {"hidden": True})
 
+    # Add bar charts with each query results
     for i, name in enumerate(benchmark_cols):
         add_chart(
             i + n_rows_run_props + 1,
@@ -74,9 +90,10 @@ def write_benchmark(df, writer, table_name, benchmark_cols):
 
 
 def write_hostinfo(df, writer):
+    # Write hostinfo to a new sheet
     df.T.to_excel(writer, sheet_name="HostInfo", header=False)
     sheet = writer.sheets["HostInfo"]
-
+    # add formatting
     cell_format = writer.book.add_format({"bold": True, "align": "left"})
     sheet.set_column(0, 0, 20, cell_format)
 
@@ -105,9 +122,9 @@ def main():
     logger.setLevel(logging.DEBUG)
 
     args = parse_args()
-    # xlsxwriter will corrupt file if it already exists, so remove it manually
+    # xlsxwriter will corrupt file if it already exists, so need to remove it manually
     with suppress(FileNotFoundError):
-        os.unlink(args.report_path)
+        os.remove(args.report_path)
 
     writer = pd.ExcelWriter(args.report_path, engine="xlsxwriter")
 
@@ -119,7 +136,7 @@ def main():
         password=args.db_pass,
         name=args.db_name,
     )
-    db = Db(engine=db_config.create_engine())
+    db = BenchmarkDb(engine=db_config.create_engine())
 
     iterations = db.load_iterations(node=args.node)
     iterations = iterations.groupby(["benchmark", "pandas_mode"], as_index=False).last()
