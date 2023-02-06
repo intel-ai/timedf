@@ -15,7 +15,7 @@ returned_port_numbers = []
 class DbConfig:
     """Class encapsulates DB configuration and connection.
 
-    For sqlite you need to pass path to file as `name` argument, like
+    For the sqlite you need to pass the path to the file as `name` argument, like
     `name='database.db', driver='sqlite+pysqlite'`.
     """
 
