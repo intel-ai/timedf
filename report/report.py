@@ -8,7 +8,7 @@ from sqlalchemy import sql
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from report.schema import make_iteration, Base, Iteration as Iter, Measurement as M, RunParams
+from report.schema import make_iteration, Base, Iteration, Measurement, RunParams
 
 
 class Db:
@@ -112,7 +112,7 @@ class Db:
 
     def load_benchmarks(self, node=None):
         """Load a list of all benchmarks that are contained in the DB on a selected `node`."""
-        qry = sql.select(sql.func.distinct(Iter.benchmark).label("benchmark")).where(
+        qry = sql.select(sql.func.distinct(Iteration.benchmark).label("benchmark")).where(
             self._get_filter_qry(node=node)
         )
 
@@ -126,11 +126,11 @@ class Db:
         lookup_cnd = (
             True
             if lookup_days is None
-            else Iter.date > (dt.date.today() - dt.timedelta(days=lookup_days))
+            else Iteration.date > (dt.date.today() - dt.timedelta(days=lookup_days))
         )
 
-        node_cnd = True if node is None else Iter.node == node
-        benchmark_cnd = True if benchmark is None else Iter.benchmark == benchmark
+        node_cnd = True if node is None else Iteration.node == node
+        benchmark_cnd = True if benchmark is None else Iteration.benchmark == benchmark
 
         return sql.and_(lookup_cnd, node_cnd, benchmark_cnd)
 
@@ -150,14 +150,14 @@ class Db:
             If provided, return only recent iterations with `date > (today() - lookup_days)`
             otherwise no filtering by date.
         """
-        qry = sql.select(Iter).filter(
+        qry = sql.select(Iteration).filter(
             self._get_filter_qry(benchmark=benchmark, node=node, lookup_days=lookup_days)
         )
         return pd.read_sql(qry, con=self.engine, parse_dates=["date"]).set_index("id", drop=True)
 
     def load_measurements(self, iteration_ids: List[int]):
         """Load all measurements for selected `iteration_ids` in wide form."""
-        qry = sql.select(M).filter(M.iteration_id.in_(iteration_ids))
+        qry = sql.select(Measurement).filter(Measurement.iteration_id.in_(iteration_ids))
         df = pd.read_sql(qry, con=self.engine)
         return df.pivot(columns="name", values="duration_s", index="iteration_id")
 
