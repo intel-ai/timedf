@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from report.schema import Iteration, Base
-from report.report import Db
+from report.benchmark_db import BenchmarkDb
 from report.run_params import RunParams
 
 
@@ -18,7 +18,7 @@ def test_schema(engine):
 
 def test_dbreport(engine):
     """Returns an sqlalchemy session, and after the test tears down everything properly."""
-    report = Db(engine)
+    report = BenchmarkDb(engine)
 
     Base.metadata.create_all(engine)
 

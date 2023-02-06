@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from report.schema import make_iteration, Base, Iteration, Measurement, RunParams
 
 
-class Db:
+class BenchmarkDb:
     def __init__(self, engine: Engine):
         """Database with benchmark results
 
