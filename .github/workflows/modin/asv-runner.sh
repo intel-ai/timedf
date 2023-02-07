@@ -14,8 +14,8 @@ unset http_proxy
 unset https_proxy
 
 # setup git client
-git config --global user.name teamcity
-git config --global user.email teamcity@teamcity.com
+git config --global user.name leshikus
+git config --global user.email alexei.fedotov@gmail.com
 
 # describe machine for asv - this is needed due to an issue in current asv version
 MACHINE_INFO_PATH=$HOME/.asv-machine.json
