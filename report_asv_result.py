@@ -2,7 +2,7 @@ import json
 import itertools as it
 import math
 import argparse
-from utils_base_env import add_mysql_arguments
+from utils_base_env import add_sql_arguments
 
 
 class DbReport:
@@ -64,7 +64,7 @@ def get_cmd_args():
         default=None,
         help="File path of ASV result to report.",
     )
-    add_mysql_arguments(parser)
+    add_sql_arguments(parser)
     parsed_args = parser.parse_args()
     db_ops = {
         name: getattr(parsed_args, param)
