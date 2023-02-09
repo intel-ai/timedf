@@ -23,3 +23,5 @@ source ${CONDA_PREFIX}/bin/activate
 ./teamcity_build_scripts/42-ny_taxi_pandas_20M_records.sh |& tee /results/taxi_pandas.res
 ./teamcity_build_scripts/41-census_pandas.sh |& tee /results/census_pandas.res
 ./teamcity_build_scripts/43-plasticc_pandas.sh |& tee /results/plasticc_pandas.res
+
+python3 ./scripts/generate_report.py -report_path /results/report.xlsx -db_name /results/result_database.sqlite

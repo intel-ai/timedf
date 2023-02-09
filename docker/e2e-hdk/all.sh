@@ -9,10 +9,11 @@ export RESULTS_DIR=$(readlink -m results)
 tar -cf omniscripts.tar  --exclude=e2e-hdk ../../.
 
 # Build the image, use optional `--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}` to configure proxy.
+echo "Building docker image"
 docker build -t modin-project/benchmarks-reproduce:latest -f ./Dockerfile .
 
 # Download data
 ./load_data.sh
 
-# Run experiments
+# Run experiments & generate xlsx
 ./run_docker.sh

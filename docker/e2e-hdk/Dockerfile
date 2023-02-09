@@ -39,11 +39,12 @@ RUN wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.
 RUN conda update -n base -c defaults conda -y && \
     conda create --name modin_hdk && \
     conda activate modin_hdk && \
-    conda install -y python=3.9 mamba psutil braceexpand scikit-learn==1.0.2 xgboost scikit-learn-intelex -c conda-forge && \
+    conda install -y python=3.9 mamba sqlalchemy psutil braceexpand scikit-learn==1.0.2 xgboost scikit-learn-intelex -c conda-forge && \
     conda activate modin_hdk && mamba install -y modin-hdk -c conda-forge && \
     conda clean --all --yes
 
 ENV DATASETS_PWD /datasets
+ENV DB_COMMON_OPTS="-db_name /results/database_test.sqlite"
 ENV TBB_MALLOC_USE_HUGE_PAGES 1
 
 COPY run_benchmarks.sh ${HOME}
