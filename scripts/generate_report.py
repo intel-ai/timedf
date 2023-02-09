@@ -109,6 +109,12 @@ def parse_args():
         help="Path to the resulting file",
     )
     parser.add_argument(
+        "-agg",
+        dest="report_path",
+        default="median",
+        help="Path to the resulting file",
+    )
+    parser.add_argument(
         "-node",
         dest="node",
         default=None,
@@ -150,7 +156,10 @@ def main():
     host_params = recorgnize_host_cols(iterations[run_cols])
 
     for benchmark in iterations[benchmark_col].unique():
-        df, measurements = db.load_benchmark_results_agg(benchmark=benchmark, node=args.node)
+        df, measurements = db.load_benchmark_results_agg(benchmark=benchmark,
+                         node=args.node,
+                         agg_policy=args.agg
+                         )
         df = df.groupby("pandas_mode", as_index=False).last()
         df = df[[backend_col, *(c for c in df.columns if c not in host_params + iteration_cols)]]
         write_benchmark(df, writer=writer, table_name=benchmark, benchmark_cols=measurements)
