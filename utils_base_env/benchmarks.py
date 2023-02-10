@@ -7,4 +7,5 @@ benchmark_mapper = {
     "h2o": "h2o",
     "taxi_ml": "taxi_ml",
     "hm_fashion_recs": "hm_fashion_recs",
+    "optiver_vol": "optiver_vol",
 }
