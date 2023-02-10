@@ -41,7 +41,8 @@ RUN conda update -n base -c defaults conda -y && \
     conda activate modin_hdk && \
     conda install -y python=3.9 mamba sqlalchemy psutil braceexpand scikit-learn==1.0.2 xgboost scikit-learn-intelex -c conda-forge && \
     conda activate modin_hdk && mamba install -y modin-hdk -c conda-forge && \
-    conda clean --all --yes
+    conda clean --all --yes && \
+    pip install --no-cache-dir XlsxWriter
 
 ENV DATASETS_PWD /datasets
 ENV DB_COMMON_OPTS="-db_name /results/result_database.sqlite"
