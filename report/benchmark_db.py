@@ -190,7 +190,7 @@ class BenchmarkDb:
         df = df_runs.join(df_measurements)
         return df, list(df_measurements.columns)
 
-    def load_benchmark_results_agg(self, benchmark, node=None) -> Tuple[pd.DataFrame, List]:
+    def load_benchmark_results_agg(self, benchmark, node=None, agg='min') -> Tuple[pd.DataFrame, List]:
         """Load benchmark results for selected `benchmark` in a wide form after aggregating
         by run_id by taking minimum value
 
@@ -200,6 +200,8 @@ class BenchmarkDb:
             Return only iterations with `benchmark=benchmark`.
         node: str
             If provided, return only iterations with `node=node`, otherwise no filtering by node.
+        agg: str
+            Aggregation policy like in `pd.DataFrame.agg`. Possible values: 'min', 'mean', 'median'.
 
         Returns
         -------
@@ -211,6 +213,6 @@ class BenchmarkDb:
         """
         df, measurements = self.load_benchmark_results(benchmark=benchmark, node=node)
         res = df.groupby("run_id").agg(
-            {c: "min" if c in measurements else "first" for c in df.columns}
+            {c: agg if c in measurements else "first" for c in df.columns}
         )
         return res, measurements

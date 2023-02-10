@@ -1,11 +1,10 @@
 #!/bin/bash -eu
 cd omniscripts
 
-export ADDITIONAL_OPTS="-iterations 1"
-
-# source ${CONDA_PREFIX}/bin/activate  ${ENV_NAME}
+export ADDITIONAL_OPTS="-iterations 3"
 
 # Modin_on_hdk
+# !!!This optimization is currently broken!!!
 # export LD_PRELOAD_OLD=${LD_PRELOAD}
 # export LD_LIBRARY_PATH_OLD=${LD_LIBRARY_PATH}
 
@@ -19,7 +18,7 @@ export ADDITIONAL_OPTS="-iterations 1"
 # export LD_PRELOAD=${LD_PRELOAD_OLD}
 # export LD_LIBRARY_PATH=${LD_LIBRARY_PATH_OLD}
 
-#Stock pandas
+# Stock pandas
 # HDK scripts deactivate conda, so we need to reactivate it again
 source ${CONDA_PREFIX}/bin/activate
 ./teamcity_build_scripts/42-ny_taxi_pandas_20M_records.sh |& tee /results/taxi_pandas.res
@@ -28,5 +27,6 @@ source ${CONDA_PREFIX}/bin/activate
 
 # HDK scripts deactivate conda, so we need to reactivate it again
 
+# We need to activate env to have all the libraries for report generation
 source ${CONDA_PREFIX}/bin/activate ${ENV_NAME}
-python3 ./scripts/generate_report.py -report_path /results/report.xlsx -db_name /results/result_database.sqlite -agg median
+PYTHONPATH=./ python3 ./scripts/generate_report.py -report_path /results/report.xlsx -db_name /results/result_database.sqlite -agg median
