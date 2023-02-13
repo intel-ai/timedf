@@ -190,7 +190,9 @@ class BenchmarkDb:
         df = df_runs.join(df_measurements)
         return df, list(df_measurements.columns)
 
-    def load_benchmark_results_agg(self, benchmark, node=None, agg='min') -> Tuple[pd.DataFrame, List]:
+    def load_benchmark_results_agg(
+        self, benchmark, node=None, agg="min"
+    ) -> Tuple[pd.DataFrame, List]:
         """Load benchmark results for selected `benchmark` in a wide form after aggregating
         by run_id by taking minimum value
 
