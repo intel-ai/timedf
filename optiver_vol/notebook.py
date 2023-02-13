@@ -6,15 +6,14 @@ import glob
 import os
 import time
 import traceback
-from contextlib import contextmanager
-from enum import Enum
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-
 
 import pandas as pd
 import numpy as np
 
 # fe deps
+import scipy.linalg as lin # needed for matrix inversion
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.manifold import TSNE
 from sklearn.model_selection import GroupKFold
@@ -26,18 +25,22 @@ from joblib import delayed, Parallel
 import lightgbm as lgb
 
 # Visualization deps
-from tqdm import tqdm_notebook as tqdm
-from IPython.display import display
+# from tqdm import tqdm_notebook as tqdm
+# from IPython.display import display
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from optiver_utils import print_traceback
 
+from optiver_vol.optiver_utils import print_trace, tm, get_workdir_paths, timer
 
-DATA_DIR = '../input'
+paths = get_workdir_paths()
+
+DATA_DIR = Path('/localdisk/benchmark_datasets/optiver_realized_volatility')
+WORKDIR = paths['workdir']
+MEMORY_TEST_MODE = True
 
 # data configurations
-USE_PRECOMPUTE_FEATURES = True  # Load precomputed features for train.csv from private dataset (just for speed up)
+USE_PRECOMPUTE_FEATURES = False  # Load precomputed features for train.csv from private dataset (just for speed up)
 
 # model & ensemble configurations
 PREDICT_CNN = True
@@ -56,7 +59,7 @@ NN_NUM_MODELS = 10
 TABNET_NUM_MODELS = 5
 
 # for saving quota
-IS_1ST_STAGE = False
+IS_1ST_STAGE = True
 SHORTCUT_NN_IN_1ST_STAGE = False  # early-stop training to save GPU quota
 SHORTCUT_GBDT_IN_1ST_STAGE = False
 MEMORY_TEST_MODE = False
@@ -73,19 +76,10 @@ USE_STOCK_ID_NN = True  # Use stock-id based neighbors
 
 ENABLE_RANK_NORMALIZATION = True  # Enable rank-normalization
 
-
-
-
-# ## Feature Engineering
-# 
-# ### Base Features
-
-
+df = pd.read_feather(paths['preprocessed'])
 # ### Nearest-Neighbor Features
 
-# %%
 N_NEIGHBORS_MAX = 80
-
 class Neighbors:
     def __init__(self, 
                  name: str, 
@@ -172,177 +166,104 @@ class StockIdNeighbors(Neighbors):
     def __repr__(self) -> str:
         return f"stock-id NN (name={self.name}, metric={self.metric}, p={self.p})"
 
-
-# %%
 # the tau itself is meaningless for GBDT, but useful as input to aggregate in Nearest Neighbor features
 df['trade.tau'] = np.sqrt(1 / df['trade.seconds_in_bucket.count'])
 df['trade_150.tau'] = np.sqrt(1 / df['trade_150.seconds_in_bucket.count'])
 df['book.tau'] = np.sqrt(1 / df['book.seconds_in_bucket.count'])
 df['real_price'] = 0.01 / df['tick_size']
 
-# %% [markdown]
 # #### Build Nearest Neighbors
+def train_nearest_neighbors(df):
+    time_id_neighbors: List[Neighbors] = []
+    stock_id_neighbors: List[Neighbors] = []
 
-# %%
-time_id_neighbors: List[Neighbors] = []
-stock_id_neighbors: List[Neighbors] = []
-
-with timer('knn fit'):
     df_pv = df[['stock_id', 'time_id']].copy()
     df_pv['price'] = 0.01 / df['tick_size']
     df_pv['vol'] = df['book.log_return1.realized_volatility']
     df_pv['trade.tau'] = df['trade.tau']
     df_pv['trade.size.sum'] = df['book.total_volume.sum']
 
-    if USE_PRICE_NN_FEATURES:
-        pivot = df_pv.pivot('time_id', 'stock_id', 'price')
-        pivot = pivot.fillna(pivot.mean())
-        pivot = pd.DataFrame(minmax_scale(pivot))
+    # Price features
+    pivot = df_pv.pivot('time_id', 'stock_id', 'price')
+    pivot = pivot.fillna(pivot.mean())
+    # pivot = pd.DataFrame(minmax_scale(pivot))
 
-        time_id_neighbors.append(
-            TimeIdNeighbors(
-                'time_price_c', 
-                pivot, 
-                p=2, 
-                metric='canberra', 
-                exclude_self=True
-            )
+    time_id_neighbors.append(
+        TimeIdNeighbors(
+            'time_price_c', 
+            pivot, 
+            p=2, 
+            metric='canberra', 
+            exclude_self=True
         )
-        time_id_neighbors.append(
-            TimeIdNeighbors(
-                'time_price_m', 
-                pivot, 
-                p=2, 
-                metric='mahalanobis',
-                metric_params={'V':np.cov(pivot.values.T)}
-            )
+    )
+    time_id_neighbors.append(
+        TimeIdNeighbors(
+            'time_price_m', 
+            pivot, 
+            p=2, 
+            metric='mahalanobis',
+            # metric_params={'V':np.cov(pivot.values.T)}
+            metric_params={'VI': lin.inv(np.cov(pivot.values))}
         )
-        stock_id_neighbors.append(
-            StockIdNeighbors(
-                'stock_price_l1', 
-                minmax_scale(pivot.transpose()), 
-                p=1, 
-                exclude_self=True)
-        )
-
-    if USE_VOL_NN_FEATURES:
-        pivot = df_pv.pivot('time_id', 'stock_id', 'vol')
-        pivot = pivot.fillna(pivot.mean())
-        pivot = pd.DataFrame(minmax_scale(pivot))
-
-        time_id_neighbors.append(
-            TimeIdNeighbors('time_vol_l1', pivot, p=1)
-        )
-        stock_id_neighbors.append(
-            StockIdNeighbors(
-                'stock_vol_l1', 
-                minmax_scale(pivot.transpose()), 
-                p=1, 
-                exclude_self=True
-            )
-        )
-
-    if USE_SIZE_NN_FEATURES:
-        pivot = df_pv.pivot('time_id', 'stock_id', 'trade.size.sum')
-        pivot = pivot.fillna(pivot.mean())
-        pivot = pd.DataFrame(minmax_scale(pivot))
-
-        time_id_neighbors.append(
-            TimeIdNeighbors(
-                'time_size_m', 
-                pivot, 
-                p=2, 
-                metric='mahalanobis', 
-                metric_params={'V':np.cov(pivot.values.T)}
-            )
-        )
-        time_id_neighbors.append(
-            TimeIdNeighbors(
-                'time_size_c', 
-                pivot, 
-                p=2, 
-                metric='canberra'
-            )
-        )
-        
-    if USE_RANDOM_NN_FEATURES:
-        pivot = df_pv.pivot('time_id', 'stock_id', 'vol')
-        pivot = pivot.fillna(pivot.mean())
-        pivot = pd.DataFrame(minmax_scale(pivot))
-
-        time_id_neighbors.append(
-            TimeIdNeighbors(
-                'time_random', 
-                pivot, 
-                p=2, 
-                metric='random'
-            )
-        )
-        stock_id_neighbors.append(
-            StockIdNeighbors(
-                'stock_random', 
-                pivot.transpose(), 
-                p=2,
-                metric='random')
-        )
-
-
-if not USE_TIME_ID_NN:
-    time_id_neighbors = []
-    
-if not USE_STOCK_ID_NN:
-    stock_id_neighbors = []
-
-# %% [markdown]
-# #### Check Neighbor Indices
-
-# %%
-def calculate_rank_correraltion(neighbors, top_n=5):
-    if not neighbors:
-        return
-    neighbor_indices = pd.DataFrame()
-    for n in neighbors:
-        neighbor_indices[n.name] = n.neighbors[:,:top_n].flatten()
-
-    sns.heatmap(neighbor_indices.corr('kendall'), annot=True)
-
-# %%
-time_ids = np.array(sorted(df['time_id'].unique()))
-for neighbor in time_id_neighbors:
-    print(neighbor)
-    display(
-        pd.DataFrame(
-            time_ids[neighbor.neighbors[:,:10]], 
-            index=pd.Index(time_ids, name='time_id'), 
-            columns=[f'top_{i+1}' for i in range(10)]
-        ).iloc[1:6]
+    )
+    stock_id_neighbors.append(
+        StockIdNeighbors(
+            'stock_price_l1', 
+            minmax_scale(pivot.transpose()), 
+            p=1, 
+            exclude_self=True)
     )
 
-# %%
-stock_ids = np.array(sorted(df['stock_id'].unique()))
-for neighbor in stock_id_neighbors:
-    print(neighbor)
-    display(
-        pd.DataFrame(
-            stock_ids[neighbor.neighbors[:,:10]], 
-            index=pd.Index(stock_ids, name='stock_id'), 
-            columns=[f'top_{i+1}' for i in range(10)]
-        ).loc[64]
-    )
+    # vol-nn features
     
+    pivot = df_pv.pivot('time_id', 'stock_id', 'vol')
+    pivot = pivot.fillna(pivot.mean())
+    # pivot = pd.DataFrame(minmax_scale(pivot))
 
-# %%
-calculate_rank_correraltion(time_id_neighbors)
+    time_id_neighbors.append(
+        TimeIdNeighbors('time_vol_l1', pivot, p=1)
+    )
+    stock_id_neighbors.append(
+        StockIdNeighbors(
+            'stock_vol_l1', 
+            minmax_scale(pivot.transpose()), 
+            p=1, 
+            exclude_self=True
+        )
+    )
 
-# %%
-calculate_rank_correraltion(stock_id_neighbors)
+    # size nn features
+    pivot = df_pv.pivot('time_id', 'stock_id', 'trade.size.sum')
+    pivot = pivot.fillna(pivot.mean())
+    # pivot = pd.DataFrame(minmax_scale(pivot))
 
-# %% [markdown]
-# #### Aggregate Features With Neighbors
+    time_id_neighbors.append(
+        TimeIdNeighbors(
+            'time_size_m', 
+            pivot, 
+            p=2, 
+            metric='mahalanobis', 
+            metric_params={'VI':lin.inv(np.cov(pivot.values.T))}
+        )
+    )
+    time_id_neighbors.append(
+        TimeIdNeighbors(
+            'time_size_c', 
+            pivot, 
+            p=2, 
+            metric='canberra'
+        )
+    )
+    return df_pv, pivot, time_id_neighbors, stock_id_neighbors
 
-# %%
-# features with large changes over time are converted to relative ranks within time-id
-if ENABLE_RANK_NORMALIZATION:
+
+with tm.timeit('knn fit'):
+    df_pv, pivot, time_id_neighbors, stock_id_neighbors = train_nearest_neighbors(df)
+
+
+def normalize_rank(df):
+    # features with large changes over time are converted to relative ranks within time-id
     df['trade.order_count.mean'] = df.groupby('time_id')['trade.order_count.mean'].rank()
     df['book.total_volume.sum']  = df.groupby('time_id')['book.total_volume.sum'].rank()
     df['book.total_volume.mean'] = df.groupby('time_id')['book.total_volume.mean'].rank()
@@ -356,7 +277,10 @@ if ENABLE_RANK_NORMALIZATION:
         df[f'book_{dt}.total_volume.std']  = df.groupby('time_id')[f'book_{dt}.total_volume.std'].rank()
         df[f'trade_{dt}.order_count.mean'] = df.groupby('time_id')[f'trade_{dt}.order_count.mean'].rank()
 
-# %%
+
+normalize_rank(df)
+
+
 def make_nearest_neighbor_feature(df: pd.DataFrame) -> pd.DataFrame:
     df2 = df.copy()
     print(df2.shape)
@@ -461,39 +385,36 @@ def make_nearest_neighbor_feature(df: pd.DataFrame) -> pd.DataFrame:
 
     # features further derived from nearest neighbor features
     try:
-        if USE_PRICE_NN_FEATURES:
-            for sz in time_id_neigbor_sizes:
-                denominator = f"real_price_nn{sz}_time_price_c"
+        for sz in time_id_neigbor_sizes:
+            denominator = f"real_price_nn{sz}_time_price_c"
 
-                df2[f'real_price_rankmin_{sz}']  = df2['real_price'] / df2[f"{denominator}_amin"]
-                df2[f'real_price_rankmax_{sz}']  = df2['real_price'] / df2[f"{denominator}_amax"]
-                df2[f'real_price_rankmean_{sz}'] = df2['real_price'] / df2[f"{denominator}_mean"]
+            df2[f'real_price_rankmin_{sz}']  = df2['real_price'] / df2[f"{denominator}_amin"]
+            df2[f'real_price_rankmax_{sz}']  = df2['real_price'] / df2[f"{denominator}_amax"]
+            df2[f'real_price_rankmean_{sz}'] = df2['real_price'] / df2[f"{denominator}_mean"]
 
-            for sz in time_id_neigbor_sizes_vol:
-                denominator = f"book.log_return1.realized_volatility_nn{sz}_time_price_c"
+        for sz in time_id_neigbor_sizes_vol:
+            denominator = f"book.log_return1.realized_volatility_nn{sz}_time_price_c"
 
-                df2[f'vol_rankmin_{sz}'] = \
-                    df2['book.log_return1.realized_volatility'] / df2[f"{denominator}_amin"]
-                df2[f'vol_rankmax_{sz}'] = \
-                    df2['book.log_return1.realized_volatility'] / df2[f"{denominator}_amax"]
+            df2[f'vol_rankmin_{sz}'] = \
+                df2['book.log_return1.realized_volatility'] / df2[f"{denominator}_amin"]
+            df2[f'vol_rankmax_{sz}'] = \
+                df2['book.log_return1.realized_volatility'] / df2[f"{denominator}_amax"]
 
         price_cols = [c for c in df2.columns if 'real_price' in c and 'rank' not in c]
         for c in price_cols:
             del df2[c]
-
-        if USE_PRICE_NN_FEATURES:
-            for sz in time_id_neigbor_sizes_vol:
-                tgt = f'book.log_return1.realized_volatility_nn{sz}_time_price_m_mean'
-                df2[f'{tgt}_rank'] = df2.groupby('time_id')[tgt].rank()
+        
+        for sz in time_id_neigbor_sizes_vol:
+            tgt = f'book.log_return1.realized_volatility_nn{sz}_time_price_m_mean'
+            df2[f'{tgt}_rank'] = df2.groupby('time_id')[tgt].rank()
     except Exception:
         print_trace('nn features')
 
     return df2
 
-# %%
 gc.collect()
 
-with timer('make nearest neighbor feature'):
+with tm.timeit('make nearest neighbor feature'):
     df2 = make_nearest_neighbor_feature(df)
 
 print(df2.shape)
@@ -501,10 +422,7 @@ df2.reset_index(drop=True).to_feather('optiver_df2.f')
 
 gc.collect()
 
-# %% [markdown]
 # ### Misc Features
-
-# %%
 # skew correction for NN
 cols_to_log = [
     'trade.size.sum',
@@ -522,7 +440,6 @@ for c in df2.columns:
         except Exception:
             print_trace('log1p')
 
-# %%
 # Rolling average of RV for similar trading volume
 try:
     df2.sort_values(by=['stock_id', 'book.total_volume.sum'], inplace=True)
@@ -539,7 +456,6 @@ try:
 except Exception:
     print_trace('mean RV')
 
-# %%
 # stock-id embedding (helps little)
 try:
     lda_n = 3
@@ -555,20 +471,16 @@ try:
 except Exception:
     print_trace('LDA')
 
-# %%
+
 df_train = df2[~df2.target.isnull()].copy()
 df_test = df2[df2.target.isnull()].copy()
 del df2, df_pv
 gc.collect()
 
-# %% [markdown]
 # ## Reverse Engineering time-id Order & Make CV Split
 
-# %%
-%matplotlib inline
-
 @contextmanager
-def timer(name):
+def tm.timeit(name):
     s = time.time()
     yield
     e = time.time() - s
@@ -599,18 +511,18 @@ def sort_manifold(df, clf):
 
 
 def reconstruct_time_id_order():
-    with timer('load files'):
+    with tm.timeit('load files'):
         df_files = pd.DataFrame(
-            {'book_path': glob.glob('/kaggle/input/optiver-realized-volatility-prediction/book_train.parquet/**/*.parquet')}) \
+            {'book_path': glob.glob(os.path.join(DATA_DIR, 'book_train.parquet/**/*.parquet'))}) \
             .eval('stock_id = book_path.str.extract("stock_id=(\d+)").astype("int")', engine='python')
 
-    with timer('calc prices'):
+    with tm.timeit('calc prices'):
         df_prices = pd.concat(Parallel(n_jobs=4, verbose=51)(delayed(calc_prices)(r) for _, r in df_files.iterrows()))
         df_prices = df_prices.pivot('time_id', 'stock_id', 'price')
         df_prices.columns = [f'stock_id={i}' for i in df_prices.columns]
         df_prices = df_prices.reset_index(drop=False)
 
-    with timer('t-SNE(400) -> 50'):
+    with tm.timeit('t-SNE(400) -> 50'):
         clf = TSNE(n_components=1, perplexity=400, random_state=0, n_iter=2000)
         order, X_compoents = sort_manifold(df_prices, clf)
 
@@ -626,15 +538,15 @@ def reconstruct_time_id_order():
     
     return df_ordered[['time_id']]
 
-# %%
-if CV_SPLIT == 'time':
-    with timer('calculate order of time-id'):
+
+def perform_split(df_train):
+    with tm.timeit('calculate order of time-id'):
         if USE_PRECOMPUTE_FEATURES:
             timeid_order = pd.read_csv(os.path.join(DATA_DIR, 'optiver-time-id-ordered', 'time_id_order.csv'))
         else:
             timeid_order = reconstruct_time_id_order()
 
-    with timer('make folds'):
+    with tm.timeit('make folds'):
         timeid_order['time_id_order'] = np.arange(len(timeid_order))
         df_train['time_id_order'] = df_train['time_id'].map(timeid_order.set_index('time_id')['time_id_order'])
         df_train = df_train.sort_values(['time_id_order', 'stock_id']).reset_index(drop=True)
@@ -651,22 +563,16 @@ if CV_SPLIT == 'time':
             print(f"folds{i}: train={len(idx_train)}, valid={len(idx_valid)}")
 
     del df_train['time_id_order']
-elif CV_SPLIT == 'group':
-    gkf = GroupKFold(n_splits=4)
-    folds = []
+    return folds
 
-    for i, (idx_train, idx_valid) in enumerate(gkf.split(df_train, None, groups=df_train['time_id'])):
-        folds.append((idx_train, idx_valid))
-else:
-    raise ValueError()
+
+folds = perform_split(df_train)
+
 
 df_train.reset_index(drop=True, inplace=True)
 df_test.reset_index(drop=True, inplace=True)
 
-# %% [markdown]
 # ## LightGBM Training
-
-# %%
 def rmspe(y_true, y_pred):
     return  (np.sqrt(np.mean(np.square((y_true - y_pred) / y_true))))
 
@@ -758,7 +664,7 @@ print(X.shape)
 if PREDICT_GBDT:
     ds = lgb.Dataset(X, y, weight=1/np.power(y, 2))
 
-    with timer('lgb.cv'):
+    with tm.timeit('lgb.cv'):
         ret = lgb.cv(params, ds, num_boost_round=8000, folds=folds, #cv,
                      feval=feval_RMSPE, stratified=False, 
                      return_cvbooster=True, verbose_eval=20,
@@ -778,7 +684,7 @@ if PREDICT_GBDT:
     plot_importance(ret['cvbooster'], figsize=(10, 20))
 
     boosters = []
-    with timer('retraining'):
+    with tm.timeit('retraining'):
         for i in range(GBDT_NUM_MODELS):
             params['seed'] = i
             boosters.append(lgb.train(params, ds, num_boost_round=int(1.1*best_iteration)))
@@ -792,7 +698,6 @@ gc.collect()
 # %% [markdown]
 # ## NN Training
 
-# %%
 import gc
 import os
 import random
@@ -1447,8 +1352,6 @@ def train_nn(X: pd.DataFrame,
 
     return best_losses, best_predictions, scaler
 
-
-# %%
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
@@ -1584,76 +1487,75 @@ if PREDICT_TABNET:
 del X, y
 gc.collect()
 
-# %% [markdown]
-# ## Inference
+# # ## Inference
 
-# %%
-X_test = get_X(df_test)
-print(X_test.shape)
+# # %%
+# X_test = get_X(df_test)
+# print(X_test.shape)
 
-# %%
-df_pred = pd.DataFrame()
-df_pred['row_id'] = df_test['stock_id'].astype(str) + '-' + df_test['time_id'].astype(str)
+# # %%
+# df_pred = pd.DataFrame()
+# df_pred['row_id'] = df_test['stock_id'].astype(str) + '-' + df_test['time_id'].astype(str)
 
-predictions = {}
+# predictions = {}
 
-prediction_weights = {}
+# prediction_weights = {}
 
-if PREDICT_GBDT:
-    gbdt_preds = booster.predict(X_test)
-    predictions['gbdt'] = gbdt_preds
-    prediction_weights['gbdt'] = 4
-
-
-if PREDICT_MLP and mlp_model:
-    try:
-        mlp_preds = predict_nn(X_test, mlp_model, scaler, device, ensemble_method=ENSEMBLE_METHOD)
-        print(f'mlp: {mlp_preds.shape}')
-        predictions['mlp'] = mlp_preds
-        prediction_weights['mlp'] = 1
-    except:
-        print(f'failed to predict mlp: {traceback.format_exc()}')
+# if PREDICT_GBDT:
+#     gbdt_preds = booster.predict(X_test)
+#     predictions['gbdt'] = gbdt_preds
+#     prediction_weights['gbdt'] = 4
 
 
-if PREDICT_CNN and cnn_model:
-    try:
-        cnn_preds = predict_nn(X_test, cnn_model, scaler, device, ensemble_method=ENSEMBLE_METHOD)
-        print(f'cnn: {cnn_preds.shape}')
-        predictions['cnn'] = cnn_preds
-        prediction_weights['cnn'] = 4
-    except:
-        print(f'failed to predict cnn: {traceback.format_exc()}')
+# if PREDICT_MLP and mlp_model:
+#     try:
+#         mlp_preds = predict_nn(X_test, mlp_model, scaler, device, ensemble_method=ENSEMBLE_METHOD)
+#         print(f'mlp: {mlp_preds.shape}')
+#         predictions['mlp'] = mlp_preds
+#         prediction_weights['mlp'] = 1
+#     except:
+#         print(f'failed to predict mlp: {traceback.format_exc()}')
 
 
-if PREDICT_TABNET and tab_model:
-    try:
-        tab_preds = predict_tabnet(X_test, tab_model, scaler, ensemble_method=ENSEMBLE_METHOD).flatten()
-        print(f'tab: {tab_preds.shape}')
-        predictions['tab'] = tab_preds
-        prediction_weights['tab'] = 1
-    except:
-        print(f'failed to predict tab: {traceback.format_exc()}')
+# if PREDICT_CNN and cnn_model:
+#     try:
+#         cnn_preds = predict_nn(X_test, cnn_model, scaler, device, ensemble_method=ENSEMBLE_METHOD)
+#         print(f'cnn: {cnn_preds.shape}')
+#         predictions['cnn'] = cnn_preds
+#         prediction_weights['cnn'] = 4
+#     except:
+#         print(f'failed to predict cnn: {traceback.format_exc()}')
+
+
+# if PREDICT_TABNET and tab_model:
+#     try:
+#         tab_preds = predict_tabnet(X_test, tab_model, scaler, ensemble_method=ENSEMBLE_METHOD).flatten()
+#         print(f'tab: {tab_preds.shape}')
+#         predictions['tab'] = tab_preds
+#         prediction_weights['tab'] = 1
+#     except:
+#         print(f'failed to predict tab: {traceback.format_exc()}')
 
         
-overall_preds = None
-overall_weight = np.sum(list(prediction_weights.values()))
+# overall_preds = None
+# overall_weight = np.sum(list(prediction_weights.values()))
 
-print(f'prediction will be made by: {list(prediction_weights.keys())}')
+# print(f'prediction will be made by: {list(prediction_weights.keys())}')
 
-for name, preds in predictions.items():
-    w = prediction_weights[name] / overall_weight
-    if overall_preds is None:
-        overall_preds = preds * w
-    else:
-        overall_preds += preds * w
+# for name, preds in predictions.items():
+#     w = prediction_weights[name] / overall_weight
+#     if overall_preds is None:
+#         overall_preds = preds * w
+#     else:
+#         overall_preds += preds * w
         
-df_pred['target'] = np.clip(overall_preds, 0, None)
+# df_pred['target'] = np.clip(overall_preds, 0, None)
 
 
-# %%
-sub = pd.read_csv(os.path.join(DATA_DIR, 'optiver-realized-volatility-prediction', 'sample_submission.csv'))
-submission = pd.merge(sub[['row_id']], df_pred[['row_id', 'target']], how='left')
-submission['target'] = submission['target'].fillna(0)
-submission.to_csv('submission.csv', index=False)
+# # %%
+# sub = pd.read_csv(os.path.join(DATA_DIR, 'optiver-realized-volatility-prediction', 'sample_submission.csv'))
+# submission = pd.merge(sub[['row_id']], df_pred[['row_id', 'target']], how='left')
+# submission['target'] = submission['target'].fillna(0)
+# submission.to_csv('submission.csv', index=False)
 
 

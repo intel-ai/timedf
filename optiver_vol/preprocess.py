@@ -1,9 +1,7 @@
 from pathlib import Path
 
-from joblib import delayed, Parallel
 import pandas as pd
 import numpy as np
-
 from tqdm import tqdm
 
 from utils.pandas_backend import pd
@@ -154,31 +152,18 @@ def make_book_feature_v2(stock_ids):
             """This looks like we want to find the smallest difference between prices at a given
              time. So it's like the smallest spread."""
             try:
-                price_list = df.values.flatten()
-                return min(np.diff(sorted(set(price_list))))
+                price_list = np.unique(df.values.flatten())
+                price_list.sort()
+                return np.diff(price_list).min()
             except Exception:
                 print_trace(str(df[gb_cols].iloc[0]))
                 return np.nan
 
         ticks = prices.groupby(gb_cols).apply(find_smallest_spread)
-        import pdb
-        pdb.set_trace()
         ticks.name = 'tick_size'
-        ticks.to_dataframe()
+        ticks = ticks.reset_index()
         
     return ticks
-
-
-def make_features(base):
-
-
-    return df
-
-
-def make_features_v2(base):
-    stock_ids = set(base['stock_id'])
-    book_v2 = make_book_feature_v2(stock_ids)
-    return pd.merge(base, book_v2, on=['stock_id', 'time_id'], how='left')
 
 
 def preprocess(raw_data_path: Path, preprocessed_path: Path):
@@ -187,7 +172,8 @@ def preprocess(raw_data_path: Path, preprocessed_path: Path):
             train = pd.read_csv(raw_data_path / 'train.csv')
 
         with tm.timeit('02-stock_ids'):
-            stock_ids = set(train['stock_id'])
+            stock_ids = train['stock_id'].unique()
+            # stock_ids = stock_ids[:len(stock_ids)//30]
         
         with tm.timeit('03-books'):
             book = make_book_feature(stock_ids)
