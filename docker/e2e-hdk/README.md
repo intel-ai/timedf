@@ -15,3 +15,4 @@ This is a folder with everything necessary to reproduce key benchmarks.
 - `load_data.sh` - script that loads datasets
 - `run_docker.sh` - script that starts docker container and automatically start running benchmarks
 - `run_benchmarks.sh` - scripts that is copied to the container to run benchmarks.
+
