@@ -4,6 +4,8 @@ from joblib import delayed, Parallel
 import pandas as pd
 import numpy as np
 
+from tqdm import tqdm
+
 from utils.pandas_backend import pd
 
 from optiver_vol.optiver_utils import print_trace, tm, get_workdir_paths, DATA_DIR
@@ -13,12 +15,13 @@ def load_data(stock_id: int, stem: str) -> pd.DataFrame:
     return pd.read_parquet(DATA_DIR / f'{stem}_train.parquet' / f'stock_id={stock_id}')
 
 
-def load_book(stock_id: int) -> pd.DataFrame:
-    return load_data(stock_id, 'book')
-
-
-def load_trade(stock_id: int) -> pd.DataFrame:
-    return load_data(stock_id, 'trade')
+def load_all_stocks(stock_ids, stem):
+    dfs = []
+    for stock_id in tqdm(stock_ids):
+        df = load_data(stock_id, stem)
+        df['stock_id'] = stock_id
+        dfs.append(df)
+    return pd.concat(dfs, axis=0)
 
 
 def calc_wap1(df: pd.DataFrame) -> pd.Series:
@@ -53,24 +56,31 @@ def flatten_name(prefix, src_names):
     return ret
 
 
-def make_book_feature(stock_id):
-    book = load_book(stock_id)
+def make_book_feature(stock_ids):
+    gb_cols = ['stock_id', 'time_id']
 
-    book['wap1'] = calc_wap1(book)
-    book['wap2'] = calc_wap2(book)
-    book['log_return1'] = book.groupby(['time_id'], group_keys=False)['wap1'].apply(log_return)
-    book['log_return2'] = book.groupby(['time_id'], group_keys=False)['wap2'].apply(log_return)
-    book['log_return_ask1'] = book.groupby(['time_id'], group_keys=False)['ask_price1'].apply(log_return)
-    book['log_return_ask2'] = book.groupby(['time_id'], group_keys=False)['ask_price2'].apply(log_return)
-    book['log_return_bid1'] = book.groupby(['time_id'], group_keys=False)['bid_price1'].apply(log_return)
-    book['log_return_bid2'] = book.groupby(['time_id'], group_keys=False)['bid_price2'].apply(log_return)
+    with tm.timeit('01-load_books'):
+        book = load_all_stocks(stock_ids, 'book')
+    
+    with tm.timeit('02-wap'):
+        book['wap1'] = calc_wap1(book)
+        book['wap2'] = calc_wap2(book)
 
-    book['wap_balance'] = abs(book['wap1'] - book['wap2'])
-    book['price_spread'] = (book['ask_price1'] - book['bid_price1']) / ((book['ask_price1'] + book['bid_price1']) / 2)
-    book['bid_spread'] = book['bid_price1'] - book['bid_price2']
-    book['ask_spread'] = book['ask_price1'] - book['ask_price2']
-    book['total_volume'] = (book['ask_size1'] + book['ask_size2']) + (book['bid_size1'] + book['bid_size2'])
-    book['volume_imbalance'] = abs((book['ask_size1'] + book['ask_size2']) - (book['bid_size1'] + book['bid_size2']))
+    with tm.timeit('03-groupby_return'):
+        book['log_return1'] = book.groupby(gb_cols, group_keys=False)['wap1'].apply(log_return)
+        book['log_return2'] = book.groupby(gb_cols, group_keys=False)['wap2'].apply(log_return)
+        book['log_return_ask1'] = book.groupby(gb_cols, group_keys=False)['ask_price1'].apply(log_return)
+        book['log_return_ask2'] = book.groupby(gb_cols, group_keys=False)['ask_price2'].apply(log_return)
+        book['log_return_bid1'] = book.groupby(gb_cols, group_keys=False)['bid_price1'].apply(log_return)
+        book['log_return_bid2'] = book.groupby(gb_cols, group_keys=False)['bid_price2'].apply(log_return)
+
+    with tm.timeit('04-features'):
+        book['wap_balance'] = abs(book['wap1'] - book['wap2'])
+        book['price_spread'] = (book['ask_price1'] - book['bid_price1']) / ((book['ask_price1'] + book['bid_price1']) / 2)
+        book['bid_spread'] = book['bid_price1'] - book['bid_price2']
+        book['ask_spread'] = book['ask_price1'] - book['ask_price2']
+        book['total_volume'] = (book['ask_size1'] + book['ask_size2']) + (book['bid_size1'] + book['bid_size2'])
+        book['volume_imbalance'] = abs((book['ask_size1'] + book['ask_size2']) - (book['bid_size1'] + book['bid_size2']))
     
     features = {
         'seconds_in_bucket': ['count'],
@@ -90,20 +100,26 @@ def make_book_feature(stock_id):
         'volume_imbalance':[np.sum, np.mean, np.std]
     }
     
-    agg = book.groupby('time_id').agg(features).reset_index(drop=False)
-    agg.columns = flatten_name('book', agg.columns)
-    agg['stock_id'] = stock_id
+    with tm.timeit('05-groupby_features'):
+        agg = book.groupby(gb_cols).agg(features).reset_index(drop=False)
+        agg.columns = flatten_name('book', agg.columns)
     
-    for time in [450, 300, 150]:
-        d = book[book['seconds_in_bucket'] >= time].groupby('time_id').agg(features).reset_index(drop=False)
-        d.columns = flatten_name(f'book_{time}', d.columns)
-        agg = pd.merge(agg, d, on='time_id', how='left')
+    with tm.timeit('06-groupby_time_buckets'):
+        for time in [450, 300, 150]:
+            d = book[book['seconds_in_bucket'] >= time].groupby(gb_cols).agg(features).reset_index(drop=False)
+            d.columns = flatten_name(f'book_{time}', d.columns)
+            agg = pd.merge(agg, d, on=gb_cols, how='left')
     return agg
 
 
-def make_trade_feature(stock_id):
-    trade = load_trade(stock_id)
-    trade['log_return'] = trade.groupby('time_id', group_keys=False)['price'].apply(log_return)
+def make_trade_feature(stock_ids):
+    gb_cols = ['stock_id', 'time_id']
+
+    with tm.timeit('01-load_trade'):
+        trade = load_all_stocks(stock_ids, 'trade')
+
+    with tm.timeit('02-groupby_return'):
+        trade['log_return'] = trade.groupby(gb_cols, group_keys=False)['price'].apply(log_return)
 
     features = {
         'log_return':[realized_volatility],
@@ -112,73 +128,80 @@ def make_trade_feature(stock_id):
         'order_count':[np.mean],
     }
 
-    agg = trade.groupby('time_id').agg(features).reset_index()
-    agg.columns = flatten_name('trade', agg.columns)
-    agg['stock_id'] = stock_id
-        
-    for time in [450, 300, 150]:
-        d = trade[trade['seconds_in_bucket'] >= time].groupby('time_id').agg(features).reset_index(drop=False)
-        d.columns = flatten_name(f'trade_{time}', d.columns)
-        agg = pd.merge(agg, d, on='time_id', how='left')
+    with tm.timeit('03-groupby_features'):
+        agg = trade.groupby(gb_cols).agg(features).reset_index()
+        agg.columns = flatten_name('trade', agg.columns)
+    
+    with tm.timeit('04-groupby_time_buckets'):
+        for time in [450, 300, 150]:
+            d = trade[trade['seconds_in_bucket'] >= time].groupby(gb_cols).agg(features).reset_index(drop=False)
+            d.columns = flatten_name(f'trade_{time}', d.columns)
+            agg = pd.merge(agg, d, on=gb_cols, how='left')
     return agg
 
 
-def make_book_feature_v2(stock_id):
-    book = load_book(stock_id)
+def make_book_feature_v2(stock_ids):
+    gb_cols = ['stock_id', 'time_id']
 
-    prices = book.set_index('time_id')[['bid_price1', 'ask_price1', 'bid_price2', 'ask_price2']]
-    time_ids = list(set(prices.index))
+    with tm.timeit('01-load_book'):
+        book = load_all_stocks(stock_ids, 'book')
 
-    ticks = {}
-    for tid in time_ids:
-        try:
-            price_list = prices.loc[tid].values.flatten()
-            price_diff = sorted(np.diff(sorted(set(price_list))))
-            ticks[tid] = price_diff[0]
-        except Exception:
-            print_trace(f'tid={tid}')
-            ticks[tid] = np.nan
+    with tm.timeit('02-prices'):
+        prices = book[['stock_id', 'time_id', *['bid_price1', 'ask_price1', 'bid_price2', 'ask_price2']]]
+    
+    with tm.timeit('03-tick_size'):
+        def find_smallest_spread(df: pd.DataFrame):
+            """This looks like we want to find the smallest difference between prices at a given
+             time. So it's like the smallest spread."""
+            try:
+                price_list = df.values.flatten()
+                return min(np.diff(sorted(set(price_list))))
+            except Exception:
+                print_trace(str(df[gb_cols].iloc[0]))
+                return np.nan
+
+        ticks = prices.groupby(gb_cols).apply(find_smallest_spread)
+        import pdb
+        pdb.set_trace()
+        ticks.name = 'tick_size'
+        ticks.to_dataframe()
         
-    dst = pd.DataFrame()
-    dst['time_id'] = np.unique(book['time_id'])
-    dst['stock_id'] = stock_id
-    dst['tick_size'] = dst['time_id'].map(ticks)
-
-    return dst
+    return ticks
 
 
 def make_features(base):
-    stock_ids = set(base['stock_id'])
-    with tm.timeit('01-books'):
-        books = Parallel(n_jobs=-1)(delayed(make_book_feature)(i,) for i in stock_ids)
-        book = pd.concat(books)
 
-    with tm.timeit('02-trades'):
-        trades = Parallel(n_jobs=-1)(delayed(make_trade_feature)(i,) for i in stock_ids)
-        trade = pd.concat(trades)
-
-    with tm.timeit('03-extra features'):
-        df = pd.merge(base, book, on=['stock_id', 'time_id'], how='left')
-        df = pd.merge(df, trade, on=['stock_id', 'time_id'], how='left')
-        #df = make_extra_features(df)
 
     return df
 
 
 def make_features_v2(base):
-    with tm.timeit('books-v2'):
-        stock_ids = set(base['stock_id'])
-        books = Parallel(n_jobs=-1)(delayed(make_book_feature_v2)(i,) for i in stock_ids)
-        book_v2 = pd.concat(books)
-        return pd.merge(base, book_v2, on=['stock_id', 'time_id'], how='left')
+    stock_ids = set(base['stock_id'])
+    book_v2 = make_book_feature_v2(stock_ids)
+    return pd.merge(base, book_v2, on=['stock_id', 'time_id'], how='left')
 
 
 def preprocess(raw_data_path: Path, preprocessed_path: Path):
     with tm.timeit('01-train'):
-        train = pd.read_csv(raw_data_path / 'train.csv')
+        with tm.timeit('01-load_train'):
+            train = pd.read_csv(raw_data_path / 'train.csv')
 
-        df = make_features(train)
-        df = make_features_v2(df)
+        with tm.timeit('02-stock_ids'):
+            stock_ids = set(train['stock_id'])
+        
+        with tm.timeit('03-books'):
+            book = make_book_feature(stock_ids)
+
+        with tm.timeit('04-trades'):
+            trade = make_trade_feature(stock_ids)
+
+        with tm.timeit('05-books_v2'):
+            book_v2 = make_book_feature_v2(stock_ids)
+            
+        with tm.timeit('06-merge features'):
+            df = pd.merge(train, book, on=['stock_id', 'time_id'], how='left')
+            df = pd.merge(df, trade, on=['stock_id', 'time_id'], how='left')
+            df = pd.merge(df, book_v2, on=['stock_id', 'time_id'], how='left')
     
     # Use copy of training data as test data to imitate 2nd stage RAM usage.
     MEMORY_TEST_MODE = True
