@@ -15,18 +15,16 @@ source ${CONDA_PREFIX}/bin/activate
 ./teamcity_build_scripts/41-census_pandas.sh |& tee /results/census_pandas.res
 ./teamcity_build_scripts/43-plasticc_pandas.sh |& tee /results/plasticc_pandas.res
 
-# HDK scripts deactivate conda, so we need to reactivate it again
-
 case $REPORT in
 
   xlsx)
-    echo -n "Generating xlsx report"
+    echo "Generating xlsx report..."
     # We need to activate env to have all the libraries for report generation
     source ${CONDA_PREFIX}/bin/activate ${ENV_NAME}
     PYTHONPATH=./ python3 ./scripts/generate_report.py -report_path /results/report.xlsx -db_name /results/result_database.sqlite -agg median
     ;;
 
   *)
-    echo -n "No report generation"
+    echo "No report generation"
     ;;
 esac
