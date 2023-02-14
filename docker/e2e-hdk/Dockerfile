@@ -16,10 +16,6 @@ RUN adduser --disabled-password \
 
 WORKDIR ${HOME}
 
-ADD omniscripts.tar omniscripts
-RUN chown -R ${USER}:${USER} omniscripts
-RUN chmod -R 0777 omniscripts
-
 # Done with actions that require root, switching to user mode
 
 USER ${USER}
@@ -47,6 +43,10 @@ RUN conda update -n base -c defaults conda -y && \
 ENV DATASETS_PWD /datasets
 ENV DB_COMMON_OPTS="-db_name /results/result_database.sqlite"
 ENV TBB_MALLOC_USE_HUGE_PAGES 1
+
+ADD omniscripts.tar omniscripts
+# RUN chown -R ${USER}:${USER} omniscripts
+# RUN chmod -R 0777 omniscripts
 
 COPY run_benchmarks.sh ${HOME}
 

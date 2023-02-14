@@ -1,4 +1,11 @@
 #!/bin/bash -eu
+if [ -z ${DATASETS_ROOT+x} ]; then
+    echo "Please, set the env variable \"DATASETS_ROOT\"!";
+    exit 1
+else
+    echo "DATSETS_ROOT=$DATASETS_ROOT"
+fi
+
 mkdir -p ${DATASETS_ROOT}
 chmod 0777 ${DATASETS_ROOT}
 
