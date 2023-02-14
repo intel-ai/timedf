@@ -1,9 +1,9 @@
 #!/bin/bash -eu
-if [ -z ${DATASETS_ROOT+x} ]; then
-    echo "Please, set the env variable \"DATASETS_ROOT\"!";
+if [ -z ${DATASETS_PATH+x} ]; then
+    echo "Please, set the env variable \"DATASETS_PATH\"!";
     exit 1
 else
-    echo "DATSETS_ROOT=$DATASETS_ROOT"
+    echo "DATSETS_ROOT=$DATASETS_PATH"
 fi
 
 mkdir -p ${RESULTS_DIR}
@@ -13,7 +13,7 @@ USER_ID="$(id -u):$(id -g)"
 
 docker run \
   -it \
-  -v ${DATASETS_ROOT}:/datasets:ro  \
+  -v ${DATASETS_PATH}:/datasets:ro  \
   -v ${RESULTS_DIR}:/results \
   --user ${USER_ID} \
   modin-project/benchmarks-reproduce:latest 

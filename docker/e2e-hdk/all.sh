@@ -1,9 +1,40 @@
-#!/bin/bash -eu
+#!/bin/bash -e
+
+####################
+# Argument parsing #
+
+usage() { echo "Usage: $0 -d DATASETS_PATH [-r xlsx]" 1>&2; exit 1; }
+
+REPORT=""
+while getopts ":d:r:" o; do
+    case "${o}" in
+        d)
+            DATASETS_PATH=${OPTARG}
+            ;;
+        r)
+            REPORT=${OPTARG}
+            [[ "$REPORT" == "xlsx" ]] || ( echo "Unrecognized report type, only xlsx is supported" && usage )
+            ;;
+        *)
+            echo "Unrecognized argument ${OPTARG}"
+            usage
+            ;;
+    esac
+done
+
+[ -z "$DATASETS_PATH" ] && echo "Please, provide DATASETS_PATH" && usage
+
+#
+####################
+
 # Set location to store datasets, 
 # WARNING: paths need to be absolute, otherwise docker will not mount. The `($readlink -m ...)` part will make provided path absolute, so use it if necessary
 # WARNING: don't store datasets in the same folder as dockerfile, to avoid long context loading during docker build
-export DATASETS_ROOT=$(readlink -m $DATASETS_ROOT)
+export DATASETS_PATH=$(readlink -m $DATASETS_PATH)
 export RESULTS_DIR=$(readlink -m results)
+export REPORT
+
+echo "Configured parameters: DATSETS_ROOT=$DATASETS_PATH, RESULTS_DIR=$RESULTS_DIR, REPORT=$REPORT"
 
 # Archive omniscripts for the upload 
 tar -cf omniscripts.tar  --exclude=e2e-hdk ../../.
