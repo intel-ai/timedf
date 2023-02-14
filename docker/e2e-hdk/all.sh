@@ -37,7 +37,7 @@ export REPORT
 echo "Configured parameters: DATSETS_ROOT=$DATASETS_PATH, RESULTS_DIR=$RESULTS_DIR, REPORT=$REPORT"
 
 # Archive omniscripts for the upload 
-tar -cf omniscripts.tar  --exclude=e2e-hdk ../../.
+tar --owner 1000 --group 1000 -cf omniscripts.tar  --exclude=e2e-hdk ../../.
 
 # Build the image, use optional `--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}` to configure proxy.
 echo "Building docker image"
