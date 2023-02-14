@@ -7,7 +7,7 @@ from tempfile import mkstemp
 
 import psutil
 
-from report import Db
+from report import BenchmarkDb
 from utils_base_env.benchmarks import benchmark_mapper
 from utils_base_env import DbConfig
 
@@ -560,7 +560,9 @@ def run_benchmarks(
     run_id = int(round(time.time()))
     print(run_parameters)
 
-    reporter = db_config and Db(db_config.create_engine())
+    reporter = db_config and DbReporter(
+        db_config.create_engine(), benchmark=bench_name, run_id=run_id, run_params=run_parameters
+    )
 
     for iter_num in range(1, iterations + 1):
         print(f"Iteration #{iter_num}")

@@ -1,1 +1,1 @@
-from .report import Db
+from .benchmark_db import BenchmarkDb
