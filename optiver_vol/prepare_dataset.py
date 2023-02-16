@@ -15,15 +15,12 @@ import numpy as np
 import scipy.linalg as lin  # needed for matrix inversion
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.manifold import TSNE
-from sklearn.model_selection import GroupKFold
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import minmax_scale
 
-from optiver_vol.optiver_utils import print_trace, tm, get_workdir_paths, timer, DATA_DIR
-from optiver_vol.preprocess import load_data
+from optiver_vol.optiver_utils import print_trace, tm
 from utils.pandas_backend import pd
 
-paths = get_workdir_paths()
 
 # ### Nearest-Neighbor Features
 N_NEIGHBORS_MAX = 80
@@ -129,7 +126,7 @@ def train_nearest_neighbors(df):
     df_pv["trade.size.sum"] = df["book.total_volume.sum"]
 
     # Price features
-    pivot = df_pv.pivot("time_id", "stock_id", "price")
+    pivot = df_pv.pivot(index="time_id", columns="stock_id", values="price")
     pivot = pivot.fillna(pivot.mean())
     # pivot = pd.DataFrame(minmax_scale(pivot))
 
@@ -429,20 +426,14 @@ def calc_price2(df):
     return 0.01 / tick
 
 
-def calc_prices(r):
+def calc_prices(raw_data_path):
     df = pd.read_parquet(
-        r.book_path,
+        raw_data_path / 'book_train.parquet',
         columns=["stock_id", "time_id", "ask_price1", "ask_price2", "bid_price1", "bid_price2"],
     )
-    # df = df.set_index('time_id')
-    df = df.groupby(["stock_id", "time_id"]).apply(calc_price2).to_frame("price").reset_index()
-    df["stock_id"] = r.stock_id
-
-    df_prices = pd.concat(
-        Parallel(n_jobs=4, verbose=51)(delayed(calc_prices)(r) for _, r in df_files.iterrows())
-    )
-    return df
-
+    return df.groupby(["stock_id", "time_id"]).apply(calc_price2).to_frame("price").reset_index()
+    
+    
 
 def sort_manifold(df, clf):
     df_ = df.set_index("time_id")
@@ -454,14 +445,9 @@ def sort_manifold(df, clf):
     return np.argsort(X_compoents[:, 0]), X_compoents
 
 
-def reconstruct_time_id_order():
-    with tm.timeit("load files"):
-        df_files = pd.DataFrame(
-            {"book_path": glob.glob(os.path.join(DATA_DIR, "book_train.parquet/**/*.parquet"))}
-        ).eval('stock_id = book_path.str.extract("stock_id=(\d+)").astype("int")', engine="python")
-
+def reconstruct_time_id_order(raw_data_path):
     with tm.timeit("calc prices"):
-        df_prices = calc_prices()
+        df_prices = calc_prices(raw_data_path)
         df_prices = df_prices.pivot("time_id", "stock_id", "price")
         df_prices.columns = [f"stock_id={i}" for i in df_prices.columns]
         df_prices = df_prices.reset_index(drop=False)
@@ -487,9 +473,9 @@ def reconstruct_time_id_order():
     return df_ordered[["time_id"]]
 
 
-def perform_split(df_train):
+def perform_split(df_train, raw_data_path):
     with tm.timeit("calculate order of time-id"):
-        timeid_order = reconstruct_time_id_order()
+        timeid_order = reconstruct_time_id_order(raw_data_path)
 
     with tm.timeit("make folds"):
         timeid_order["time_id_order"] = np.arange(len(timeid_order))
@@ -523,7 +509,7 @@ def prepare_dataset(paths):
         del df2
 
         # final result
-        folds = perform_split(df_train)
+        folds = perform_split(df_train, raw_data_path=paths['raw_data'])
 
         df_train.reset_index(drop=True, inplace=True)
         df_test.reset_index(drop=True, inplace=True)
