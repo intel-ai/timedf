@@ -21,7 +21,7 @@ case $REPORT in
     echo "Generating xlsx report..."
     # We need to activate env to have all the libraries for report generation
     source ${CONDA_PREFIX}/bin/activate ${ENV_NAME}
-    PYTHONPATH=./ python3 ./scripts/generate_report.py -report_path /results/report.xlsx -db_name /results/result_database.sqlite -agg median
+    PYTHONPATH=./ python3 ./scripts/generate_report.py -report_path /results/report.xlsx $DB_COMMON_OPTS -agg median
     ;;
 
   *)

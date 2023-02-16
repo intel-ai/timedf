@@ -16,7 +16,7 @@ RUN adduser --disabled-password \
 
 WORKDIR ${HOME}
 
-# Done with actions that require root, switching to user mode
+# Switching to user mode for conda installation
 USER ${USER}
 SHELL ["/bin/bash", "--login", "-c"]
 
@@ -40,11 +40,17 @@ RUN conda update -n base -c defaults conda -y && \
     pip install --no-cache-dir XlsxWriter
 
 ENV DATASETS_PWD /datasets
-ENV DB_COMMON_OPTS="-db_name /results/result_database.sqlite"
 ENV TBB_MALLOC_USE_HUGE_PAGES 1
 
+# change omniscripts owner
+USER root
 ADD omniscripts.tar omniscripts
-
 COPY run_benchmarks.sh ${HOME}
+RUN chown -R ${USER}:${USER} omniscripts && chown -R ${USER}:${USER} run_benchmarks.sh
+
+# Return to user
+USER ${USER}
+SHELL ["/bin/bash", "--login", "-c"]
+
 
 CMD ["bash", "run_benchmarks.sh"]

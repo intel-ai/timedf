@@ -6,6 +6,7 @@
 usage() { echo "Usage: $0 -d DATASETS_PATH [-r xlsx]" 1>&2; exit 1; }
 
 REPORT=""
+DB_COMMON_OPTS=""
 while getopts ":d:r:" o; do
     case "${o}" in
         d)
@@ -14,6 +15,7 @@ while getopts ":d:r:" o; do
         r)
             REPORT=${OPTARG}
             [[ "$REPORT" == "xlsx" ]] || ( echo "Unrecognized report type, only xlsx is supported" && usage )
+            DB_COMMON_OPTS="-db_name /results/result_database.sqlite"
             ;;
         *)
             echo "Unrecognized argument ${OPTARG}"
@@ -33,11 +35,12 @@ done
 export DATASETS_PATH=$(readlink -m $DATASETS_PATH)
 export RESULTS_DIR=$(readlink -m results)
 export REPORT
+export DB_COMMON_OPTS
 
 echo "Configured parameters: DATSETS_ROOT=$DATASETS_PATH, RESULTS_DIR=$RESULTS_DIR, REPORT=$REPORT"
 
 # Archive omniscripts for the upload 
-tar --owner 1000 --group 1000 -cf omniscripts.tar  --exclude=e2e-hdk ../../.
+tar -cf omniscripts.tar  --exclude=e2e-hdk ../../.
 
 # Build the image, use optional `--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}` to configure proxy.
 echo "Building docker image"
@@ -46,5 +49,5 @@ docker build -t modin-project/benchmarks-reproduce:latest -f ./Dockerfile .
 # Download data
 ./load_data.sh
 
-# Run experiments & generate xlsx
+# Run experiments & generate xlsx if -r xlsx was used
 ./run_docker.sh

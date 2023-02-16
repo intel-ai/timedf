@@ -16,5 +16,6 @@ docker run \
   -v ${DATASETS_PATH}:/datasets:ro  \
   -v ${RESULTS_DIR}:/results \
   --user ${USER_ID} \
-  --env REPORT=$REPORT \
+  --env REPORT="${REPORT}" \
+  --env DB_COMMON_OPTS="${DB_COMMON_OPTS}" \
   modin-project/benchmarks-reproduce:latest 
