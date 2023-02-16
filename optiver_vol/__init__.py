@@ -1,1 +1,1 @@
-from .preprocess_benchmark import Benchmark
+from .benchmark import Benchmark
