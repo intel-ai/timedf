@@ -1,9 +1,7 @@
 # GPu reqs
 # !pip -q install ../input/pytorchtabnet/pytorch_tabnet-2.0.1-py3-none-any.whl
-import time
 from pathlib import Path
 import traceback
-from contextlib import contextmanager
 
 from utils import TimerManager
 

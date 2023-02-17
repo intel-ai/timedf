@@ -463,8 +463,6 @@ def sort_manifold(df, clf):
     df_ = pd.DataFrame(minmax_scale(df_.fillna(df_.mean())))
 
     X_compoents = clf.fit_transform(df_)
-
-    dft = df.reindex(np.argsort(X_compoents[:, 0])).reset_index(drop=True)
     return np.argsort(X_compoents[:, 0]), X_compoents
 
 

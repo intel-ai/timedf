@@ -3,30 +3,33 @@
 
 import gc
 import os
-from typing import Dict, List, Optional, Tuple
+import random
+from typing import List, Optional, Tuple, Union
+import pickle
 
-import pandas as pd
 import numpy as np
-
-# fe deps
-import scipy.linalg as lin  # needed for matrix inversion
-from sklearn.decomposition import LatentDirichletAllocation
-from sklearn.manifold import TSNE
-from sklearn.neighbors import NearestNeighbors
-
-# Training deps
-import lightgbm as lgb
 
 # Visualization deps
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from optiver_vol.optiver_utils import print_trace, tm, get_workdir_paths, timer, DATA_DIR
-from optiver_vol.preprocess import load_data
+# Training deps
+import lightgbm as lgb
+
+import torch
+import torch.nn as nn
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import Dataset, DataLoader
+from tqdm import tqdm
+from sklearn.decomposition import PCA
+from pytorch_tabnet.metrics import Metric
+from pytorch_tabnet.tab_model import TabNetRegressor
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+
+from optiver_vol.optiver_utils import tm, get_workdir_paths
 from utils.pandas_backend import pd
 
 paths = get_workdir_paths()
-
 
 df_train = pd.read_feather(paths["df_train"])
 df_test = pd.read_feather(paths["df_test"])
@@ -212,26 +215,6 @@ gc.collect()
 
 # %% [markdown]
 # ## NN Training
-
-import gc
-import os
-import random
-from typing import List, Tuple, Optional, Union
-
-import numpy as np
-import pandas as pd
-import torch
-import torch.nn as nn
-from sklearn.preprocessing import StandardScaler
-from torch.utils.data import Dataset, DataLoader
-from tqdm import tqdm
-
-from joblib import Parallel, delayed
-from sklearn.decomposition import PCA
-from pytorch_tabnet.metrics import Metric
-from pytorch_tabnet.tab_model import TabNetRegressor
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
-
 
 null_check_cols = [
     "book.log_return1.realized_volatility",
@@ -590,7 +573,7 @@ def evaluate(data_loader: DataLoader, model, device):
 
     try:
         metric = rmspe_metric(final_targets, final_outputs)
-    except:
+    except BaseException:
         metric = None
 
     return final_outputs, final_targets, losses.avg, metric
@@ -944,7 +927,7 @@ def train_nn(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
-del df, df_train
+del df_train
 gc.collect()
 
 
