@@ -28,9 +28,9 @@ from utils.pandas_backend import pd
 paths = get_workdir_paths()
 
 
-df_train = pd.read_feather(paths['df_train'])
-df_test = pd.read_feather(paths['df_test'])
-with open(paths['folds'], 'rb') as f:
+df_train = pd.read_feather(paths["df_train"])
+df_test = pd.read_feather(paths["df_test"])
+with open(paths["folds"], "rb") as f:
     folds = pickle.load(f)
 
 

@@ -20,7 +20,7 @@ def get_workdir_paths(raw_data_path, workdir="./optiver_workdir"):
 
     paths = dict(
         workdir=workdir,
-        raw_data = raw_data_path,
+        raw_data=raw_data_path,
         preprocessed=workdir / "features_v2.f",
         train=workdir / "train.f",
         test=workdir / "test.f",
