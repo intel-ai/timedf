@@ -14,8 +14,8 @@ Dataset contains normalized prices and shuffled `time_ids`, winning solutions re
 and order of `time_id` to improve quality of solution.
 
 ### Files
-1. `preprocess.py` - initial preprocessing of raw data
-2. `prepare_dataset.py` - preparation of dataset for training
+1. `preprocess.py` - initial preprocessing of raw data. This part is data-processing heavy
+2. `prepare_dataset.py` - preparation of dataset for training. This part have a combination of data processing and intermediate model training (KNN and TSNE).
 3. `benchmark.py` - file with benchmark, uses 2 files above
 4. `train.py` - training part, currently not part of the benchmark. Trains LGB and DL models.
 5. `optiver_utils.py` - utility functions

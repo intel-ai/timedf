@@ -2,16 +2,10 @@
 # !pip -q install ../input/pytorchtabnet/pytorch_tabnet-2.0.1-py3-none-any.whl
 
 import gc
-import glob
-import os
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 import pickle
 
-import pandas as pd
 import numpy as np
-
-# fe deps
 import scipy.linalg as lin  # needed for matrix inversion
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.manifold import TSNE
@@ -48,8 +42,11 @@ class Neighbors:
             nn = NearestNeighbors(
                 n_neighbors=N_NEIGHBORS_MAX, p=p, metric=metric, metric_params=metric_params
             )
-            nn.fit(pivot)
-            _, self.neighbors = nn.kneighbors(pivot, return_distance=True)
+            with tm.timeit('knn_train'):
+                nn.fit(pivot)
+
+            with tm.timeit('knn_query'):
+                _, self.neighbors = nn.kneighbors(pivot, return_distance=True)
 
         self.columns = self.index = self.feature_values = self.feature_col = None
 
@@ -76,10 +73,11 @@ class Neighbors:
 
 class TimeIdNeighbors(Neighbors):
     def rearrange_feature_values(self, df: pd.DataFrame, feature_col: str) -> None:
+        # with tm.timeit('01-feature pivot'):
         feature_pivot = df.pivot(index="time_id", columns="stock_id", values=feature_col)
         feature_pivot = feature_pivot.fillna(feature_pivot.mean())
-        feature_pivot.head()
-
+        
+        # with tm.timeit('02-feature values'):
         feature_values = np.zeros((N_NEIGHBORS_MAX, *feature_pivot.shape))
 
         for i in range(N_NEIGHBORS_MAX):
@@ -97,10 +95,12 @@ class TimeIdNeighbors(Neighbors):
 class StockIdNeighbors(Neighbors):
     def rearrange_feature_values(self, df: pd.DataFrame, feature_col: str) -> None:
         """stock-id based nearest neighbor features"""
-        feature_pivot = df.pivot(index="time_id", columns="stock_id", values=feature_col)
-        feature_pivot = feature_pivot.fillna(feature_pivot.mean())
+        with tm.timeit('01-feature_pivot'):
+            feature_pivot = df.pivot(index="time_id", columns="stock_id", values=feature_col)
+            feature_pivot = feature_pivot.fillna(feature_pivot.mean())
 
-        feature_values = np.zeros((N_NEIGHBORS_MAX, *feature_pivot.shape))
+        with tm.timeit('02-feature_values'):
+            feature_values = np.zeros((N_NEIGHBORS_MAX, *feature_pivot.shape))
 
         for i in range(N_NEIGHBORS_MAX):
             feature_values[i, :, :] += feature_pivot.values[:, self.neighbors[:, i]]
@@ -119,60 +119,78 @@ def train_nearest_neighbors(df):
     time_id_neighbors: List[Neighbors] = []
     stock_id_neighbors: List[Neighbors] = []
 
-    df_pv = df[["stock_id", "time_id"]].copy()
-    df_pv["price"] = 0.01 / df["tick_size"]
-    df_pv["vol"] = df["book.log_return1.realized_volatility"]
-    df_pv["trade.tau"] = df["trade.tau"]
-    df_pv["trade.size.sum"] = df["book.total_volume.sum"]
+    with tm.timeit('01-df_pv'):
+        df_pv = df[["stock_id", "time_id"]].copy()
+        df_pv["price"] = 0.01 / df["tick_size"]
+        df_pv["vol"] = df["book.log_return1.realized_volatility"]
+        df_pv["trade.tau"] = df["trade.tau"]
+        df_pv["trade.size.sum"] = df["book.total_volume.sum"]
 
-    # Price features
-    pivot = df_pv.pivot(index="time_id", columns="stock_id", values="price")
-    pivot = pivot.fillna(pivot.mean())
-    # pivot = pd.DataFrame(minmax_scale(pivot))
+    with tm.timeit('02-price_features'):
+        with tm.timeit('01-df_pv'):
+            # Price features
+            pivot = df_pv.pivot(index="time_id", columns="stock_id", values="price")
+            pivot = pivot.fillna(pivot.mean())
+            # pivot = pd.DataFrame(minmax_scale(pivot))
 
-    time_id_neighbors.append(
-        TimeIdNeighbors("time_price_c", pivot, p=2, metric="canberra", exclude_self=True)
-    )
-    time_id_neighbors.append(
-        TimeIdNeighbors(
-            "time_price_m",
-            pivot,
-            p=2,
-            metric="mahalanobis",
-            # metric_params={'V':np.cov(pivot.values.T)}
-            metric_params={"VI": lin.inv(np.cov(pivot.values))},
-        )
-    )
-    stock_id_neighbors.append(
-        StockIdNeighbors("stock_price_l1", minmax_scale(pivot.transpose()), p=1, exclude_self=True)
-    )
+        with tm.timeit('02-time_id_neighbors_time_price_c'):
+            time_id_neighbors.append(
+                TimeIdNeighbors("time_price_c", pivot, p=2, metric="canberra", exclude_self=True)
+            )
+        with tm.timeit('03-time_id_neighbors_time_price_m'):
+            with tm.timeit('matrix_inversion_problem'):
+                vi = lin.inv(np.cov(pivot.values))
 
-    # vol-nn features
+            time_id_neighbors.append(
+                TimeIdNeighbors(
+                    "time_price_m",
+                    pivot,
+                    p=2,
+                    metric="mahalanobis",
+                    # metric_params={'V':np.cov(pivot.values.T)}
+                    metric_params={"VI": vi},
+                )
+            )
+        with tm.timeit('04-stock_id_neighbors'):
+            stock_id_neighbors.append(
+                StockIdNeighbors("stock_price_l1", minmax_scale(pivot.transpose()), p=1, exclude_self=True)
+            )
 
-    pivot = df_pv.pivot("time_id", "stock_id", "vol")
-    pivot = pivot.fillna(pivot.mean())
-    # pivot = pd.DataFrame(minmax_scale(pivot))
+    with tm.timeit('03-volume_features'):
+        with tm.timeit('01-pivot'):
+            pivot = df_pv.pivot(index="time_id", columns="stock_id", values="vol")
+            pivot = pivot.fillna(pivot.mean())
+            # pivot = pd.DataFrame(minmax_scale(pivot))
 
-    time_id_neighbors.append(TimeIdNeighbors("time_vol_l1", pivot, p=1))
-    stock_id_neighbors.append(
-        StockIdNeighbors("stock_vol_l1", minmax_scale(pivot.transpose()), p=1, exclude_self=True)
-    )
+        with tm.timeit('02-time_id_neighbors'):
+            time_id_neighbors.append(TimeIdNeighbors("time_vol_l1", pivot, p=1))
+        
+        with tm.timeit('03-stock_id_neighbors'):
+            stock_id_neighbors.append(
+                StockIdNeighbors("stock_vol_l1", minmax_scale(pivot.transpose()), p=1, exclude_self=True)
+            )
 
-    # size nn features
-    pivot = df_pv.pivot("time_id", "stock_id", "trade.size.sum")
-    pivot = pivot.fillna(pivot.mean())
-    # pivot = pd.DataFrame(minmax_scale(pivot))
+    with tm.timeit('04-size_features'):
+        with tm.timeit('01-pivot'):
+            # size nn features
+            pivot = df_pv.pivot(index="time_id", columns="stock_id", values="trade.size.sum")
+            pivot = pivot.fillna(pivot.mean())
+            # pivot = pd.DataFrame(minmax_scale(pivot))
 
-    time_id_neighbors.append(
-        TimeIdNeighbors(
-            "time_size_m",
-            pivot,
-            p=2,
-            metric="mahalanobis",
-            metric_params={"VI": lin.inv(np.cov(pivot.values.T))},
-        )
-    )
-    time_id_neighbors.append(TimeIdNeighbors("time_size_c", pivot, p=2, metric="canberra"))
+        with tm.timeit('02-time_id_neighbors_time_size_m'):
+            with tm.timeit('matrix_inversion_problem'):
+                vi = lin.inv(np.cov(pivot.values))
+            time_id_neighbors.append(
+                TimeIdNeighbors(
+                    "time_size_m",
+                    pivot,
+                    p=2,
+                    metric="mahalanobis",
+                    metric_params={"VI": vi},
+                )
+            )
+        with tm.timeit('03-time_id_neighbors_time_size_c'):
+            time_id_neighbors.append(TimeIdNeighbors("time_size_c", pivot, p=2, metric="canberra"))
     return df_pv, pivot, time_id_neighbors, stock_id_neighbors
 
 
@@ -200,7 +218,7 @@ def normalize_rank(df):
         ].rank()
 
 
-def make_nearest_neighbor_feature(df: pd.DataFrame) -> pd.DataFrame:
+def make_nearest_neighbor_feature(df: pd.DataFrame, stock_id_neighbors, time_id_neighbors) -> pd.DataFrame:
     df2 = df.copy()
 
     feature_cols_stock = {
@@ -371,16 +389,17 @@ def rolling_average(df2):
         print_trace("mean RV")
 
 
-def stock_id_embeddings(df2):
+def stock_id_embeddings(df2, pivot, df_pv):
     """stock-id embedding (helps little)"""
     try:
         lda_n = 3
         lda = LatentDirichletAllocation(n_components=lda_n, random_state=0)
 
-        stock_id_emb = pd.DataFrame(
-            lda.fit_transform(pivot.transpose()),
-            index=df_pv.pivot("time_id", "stock_id", "vol").columns,
-        )
+        with tm.timeit('LDA train'):
+            stock_id_emb = pd.DataFrame(
+                lda.fit_transform(pivot.transpose()),
+                index=df_pv.pivot("time_id", "stock_id", "vol").columns,
+            )
 
         for i in range(lda_n):
             df2[f"stock_id_emb{i}"] = df2["stock_id"].map(stock_id_emb[i])
@@ -389,34 +408,33 @@ def stock_id_embeddings(df2):
 
 
 def fe(preprocessed_path):
-    with tm.timeit("load_preprocessed"):
+    with tm.timeit("01-load_preprocessed"):
         df = pd.read_feather(preprocessed_path)
 
-    with tm.timeit("tau_fe"):
+    with tm.timeit("02-tau_fe"):
         # the tau itself is meaningless for GBDT, but useful as input to aggregate in Nearest Neighbor features
         df["trade.tau"] = np.sqrt(1 / df["trade.seconds_in_bucket.count"])
         df["trade_150.tau"] = np.sqrt(1 / df["trade_150.seconds_in_bucket.count"])
         df["book.tau"] = np.sqrt(1 / df["book.seconds_in_bucket.count"])
         df["real_price"] = 0.01 / df["tick_size"]
 
-    with tm.timeit("knn fit"):
+    with tm.timeit("03-knn_fit"):
         df_pv, pivot, time_id_neighbors, stock_id_neighbors = train_nearest_neighbors(df)
 
-    with tm.timeit("normalize rank"):
+    with tm.timeit("04-normalize rank"):
         normalize_rank(df)
 
     gc.collect()
 
-    with tm.timeit("make nearest neighbor feature"):
-        df2 = make_nearest_neighbor_feature(df)
+    with tm.timeit("05-make_nearest_neighbor_feature"):
+        df2 = make_nearest_neighbor_feature(df, stock_id_neighbors, time_id_neighbors)
 
     gc.collect()
-    with tm.timeit("extra features for df2"):
+    with tm.timeit("06-extra features for df2"):
         skew_correction(df2)
         rolling_average(df2)
-        stock_id_embeddings(df2)
+        stock_id_embeddings(df2, pivot, df_pv)
 
-    gc.collect()
     return df2
 
 
@@ -448,7 +466,7 @@ def sort_manifold(df, clf):
 def reconstruct_time_id_order(raw_data_path):
     with tm.timeit("calc prices"):
         df_prices = calc_prices(raw_data_path)
-        df_prices = df_prices.pivot("time_id", "stock_id", "price")
+        df_prices = df_prices.pivot(index="time_id", columns="stock_id", values="price")
         df_prices.columns = [f"stock_id={i}" for i in df_prices.columns]
         df_prices = df_prices.reset_index(drop=False)
 
@@ -500,21 +518,24 @@ def perform_split(df_train, raw_data_path):
 
 
 def prepare_dataset(paths):
-    with tm.timeit("prepare_train_test"):
+    with tm.timeit("01-fe"):
         df2 = fe(paths["preprocessed"])
+    
+    gc.collect()
 
-    with tm.timeit("split"):
+
+    with tm.timeit("02-train_test_split"):
         df_train = df2[~df2.target.isnull()].copy()
         df_test = df2[df2.target.isnull()].copy()
         del df2
 
-        # final result
         folds = perform_split(df_train, raw_data_path=paths['raw_data'])
 
         df_train.reset_index(drop=True, inplace=True)
         df_test.reset_index(drop=True, inplace=True)
 
-    with tm.timeit("save results"):
+    with tm.timeit("03-save results"):
         df_train.to_feather(paths["train"])
         df_test.to_feather(paths["test"])
-        pickle.dump(folds, paths["folds"])
+        with open(paths['folds'], 'wb') as f:
+            pickle.dump(folds, f)

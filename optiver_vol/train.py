@@ -27,7 +27,13 @@ from utils.pandas_backend import pd
 
 paths = get_workdir_paths()
 
-WORKDIR = paths["workdir"]
+
+df_train = pd.read_feather(paths['df_train'])
+df_test = pd.read_feather(paths['df_test'])
+with open(paths['folds'], 'rb') as f:
+    folds = pickle.load(f)
+
+
 MEMORY_TEST_MODE = True
 
 # data configurations
