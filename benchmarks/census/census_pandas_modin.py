@@ -19,7 +19,6 @@ from utils.pandas_backend import pd
 warnings.filterwarnings("ignore")
 
 
-
 def mse(y_test, y_pred):
     return ((y_test - y_pred) ** 2).mean()
 
@@ -29,7 +28,6 @@ def cod(y_test, y_pred):
     total = ((y_test - y_bar) ** 2).sum()
     residuals = ((y_test - y_pred) ** 2).sum()
     return 1 - (residuals / total)
-
 
 
 # Dataset link

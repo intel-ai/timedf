@@ -117,7 +117,6 @@ def make_chk(values):
     return s.replace(",", "_")  # comma is reserved for csv separator
 
 
-
 queries_funcs = {
     "groupby_query1": execute_groupby_query_expr_v1,
     "groupby_query2": execute_groupby_query_expr_v1,
@@ -424,7 +423,6 @@ def join_query5_modin(x, ys, queries_results, extended_functionality):
     )
 
 
-
 def join_to_tbls(data_name):
     """Prepare H2O join queries data files (for merge right parts) names basing on the merge left data file name.
 
@@ -452,7 +450,6 @@ def join_to_tbls(data_name):
         data_id: getsize(data_file) for data_id, data_file in data_files_paths.items()
     }
     return data_files_paths, data_files_sizes
-
 
 
 def queries_modin(filename, pandas_mode, extended_functionality):

@@ -141,7 +141,7 @@ def print_results(results, backend=None, ignore_fields=[]):
         print(f"{backend} results:")
     for result_name, result in results.items():
         if result_name not in ignore_fields:
-            print("    {} = {:.3f} {}".format(result_name, result, 's'))
+            print("    {} = {:.3f} {}".format(result_name, result, "s"))
 
 
 # SklearnImport imports sklearn (intel or stock version) only if it is not done previously
