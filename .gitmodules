@@ -1,3 +1,0 @@
-[submodule "bearysta-scripts/tpch/bearysta-scripts/tpch/tpch-dbgen"]
-	path = bearysta-scripts/tpch/tpch-dbgen
-	url = https://github.com/electrum/tpch-dbgen.git
