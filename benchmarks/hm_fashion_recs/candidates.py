@@ -5,7 +5,7 @@ import numpy as np
 
 from utils.pandas_backend import pd
 
-from hm_fashion_recs.tm import tm
+from .tm import tm
 
 logger = logging.getLogger(__name__)
 

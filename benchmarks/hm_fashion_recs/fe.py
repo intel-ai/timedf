@@ -4,8 +4,8 @@ import logging
 
 from utils.pandas_backend import pd
 
-from hm_fashion_recs.lfm import calc_embeddings
-from hm_fashion_recs.tm import tm
+from .lfm import calc_embeddings
+from .tm import tm
 
 
 logger = logging.getLogger(__name__)

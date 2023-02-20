@@ -11,9 +11,9 @@ import logging
 
 from utils.pandas_backend import pd
 
-import hm_fashion_recs.schema as schema
-from hm_fashion_recs.tm import tm
-from hm_fashion_recs.lfm import train_lfm
+from . import schema
+from .tm import tm
+from .lfm import train_lfm
 
 
 logger = logging.getLogger(__name__)

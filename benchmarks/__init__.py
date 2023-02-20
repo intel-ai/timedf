@@ -2,13 +2,10 @@ import importlib
 
 from pathlib import Path
 
-# Test the result
-# Create PR
-
 
 def create_benchmark(bench_name):
     try:
-        return importlib.import_module(bench_name, ".").Benchmark()
+        return importlib.import_module(f'.{bench_name}', __name__).Benchmark()
     except ModuleNotFoundError as e:
         available_benchmarks = [p.name for p in Path(__name__).iterdir() if p.is_dir()]
         raise ValueError(

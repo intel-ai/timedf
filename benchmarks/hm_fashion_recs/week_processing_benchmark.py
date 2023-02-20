@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from hm_fashion_recs.preprocess import transform_data, create_user_ohe_agg
-from hm_fashion_recs.hm_utils import load_data, get_workdir_paths
-from hm_fashion_recs.candidates import make_one_week_candidates, drop_trivial_users
-from hm_fashion_recs.fe import attach_features, get_age_shifts
-from hm_fashion_recs.tm import tm
+from .preprocess import transform_data, create_user_ohe_agg
+from .hm_utils import load_data, get_workdir_paths
+from .candidates import make_one_week_candidates, drop_trivial_users
+from .fe import attach_features, get_age_shifts
+from .tm import tm
 
 
 from utils import check_support

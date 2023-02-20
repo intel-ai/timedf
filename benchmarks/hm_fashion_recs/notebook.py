@@ -9,10 +9,10 @@ import numpy as np
 
 from utils.pandas_backend import pd
 
-from hm_fashion_recs.hm_utils import mapk, load_data, get_workdir_paths
-from hm_fashion_recs.fe import get_age_shifts, attach_features
-from hm_fashion_recs.candidates import create_candidates, make_weekly_candidates
-from hm_fashion_recs.preprocess import run_complete_preprocessing
+from .hm_utils import mapk, load_data, get_workdir_paths
+from .fe import get_age_shifts, attach_features
+from .candidates import create_candidates, make_weekly_candidates
+from .preprocess import run_complete_preprocessing
 
 
 logger = logging.getLogger(__name__)
