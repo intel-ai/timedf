@@ -237,7 +237,6 @@ def split(df):
 
 @measure_time
 def train(data: dict, use_modin_xgb: bool, debug=False):
-
     if use_modin_xgb:
         import modin.experimental.xgboost as xgb
 

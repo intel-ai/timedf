@@ -108,7 +108,6 @@ def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, pandas_mode):
 
 
 def split_step(train_final, test_final):
-
     X = train_final.drop(["object_id", "target"], axis=1).values
     Xt = test_final.drop(["object_id"], axis=1).values
 

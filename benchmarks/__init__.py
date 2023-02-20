@@ -8,7 +8,7 @@ from pathlib import Path
 
 def create_benchmark(bench_name):
     try:
-        benchmark = importlib.import_module(bench_name, ".").Benchmark()
+        return importlib.import_module(bench_name, ".").Benchmark()
     except ModuleNotFoundError as e:
         available_benchmarks = [p.name for p in Path(__name__).iterdir() if p.is_dir()]
         raise ValueError(
