@@ -3,7 +3,6 @@ import os
 import time
 import warnings
 from timeit import default_timer as timer
-from tempfile import mkstemp
 
 import psutil
 

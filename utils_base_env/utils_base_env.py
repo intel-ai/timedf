@@ -1,7 +1,6 @@
 import argparse
 from dataclasses import dataclass
 import os
-import socket
 import subprocess
 from typing import Union
 
