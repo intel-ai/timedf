@@ -135,7 +135,6 @@ def q3(df, pandas_mode):
 # ORDER BY pickup_year,
 #         the_count desc;
 
-
 # SQL query with sorting for results validation
 # SELECT passenger_count,
 #       extract(year from pickup_datetime) as pickup_year,
@@ -179,6 +178,7 @@ def q4(df, pandas_mode):
 
 
 def etl(filename, files_limit, columns_names, columns_types, output_for_validation, pandas_mode):
+
     if pandas_mode == "Modin_on_hdk" and any(f.endswith(".gz") for f in filename):
         raise NotImplementedError(
             "Modin_on_hdk mode doesn't support import of compressed files yet"
