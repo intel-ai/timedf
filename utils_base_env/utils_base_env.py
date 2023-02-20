@@ -5,8 +5,6 @@ import socket
 import subprocess
 from typing import Union
 
-from utils_base_env.benchmarks import benchmark_mapper
-
 returned_port_numbers = []
 
 
@@ -148,7 +146,6 @@ def prepare_parser():
     commits = parser.add_argument_group("commits")
 
     possible_tasks = ["build", "benchmark"]
-    benchmarks = list(benchmark_mapper)
 
     # Task
     required.add_argument(
@@ -205,9 +202,7 @@ def prepare_parser():
     )
 
     # Benchmark parameters
-    benchmark.add_argument(
-        "-bench_name", dest="bench_name", choices=benchmarks, help="Benchmark name."
-    )
+    benchmark.add_argument("-bench_name", dest="bench_name", help="Benchmark name.")
     benchmark.add_argument(
         "-data_file", dest="data_file", help="A datafile that should be loaded."
     )

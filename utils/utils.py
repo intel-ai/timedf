@@ -8,7 +8,7 @@ from tempfile import mkstemp
 import psutil
 
 from report import BenchmarkDb
-from utils_base_env.benchmarks import benchmark_mapper
+from benchmarks import create_benchmark
 from utils_base_env import DbConfig
 
 from .namespace_utils import import_pandas_into_module_namespace
@@ -538,7 +538,7 @@ def run_benchmarks(
     # Set current backend, !!!needs to be run before benchmark import!!!
     set_backend(pandas_mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
 
-    benchmark: BaseBenchmark = __import__(benchmark_mapper[bench_name]).Benchmark()
+    benchmark: BaseBenchmark = create_benchmark(bench_name)
 
     run_parameters = {
         "data_file": data_file,
