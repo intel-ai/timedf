@@ -1,0 +1,23 @@
+FROM ubuntu:20.04
+
+RUN apt-get update && \
+    apt-get install -y curl
+
+WORKDIR /_work
+
+RUN useradd -m --uid 1001 ghrunner && \
+    chown ghrunner:ghrunner /_work
+
+RUN curl -o Miniconda3-latest-Linux-x86_64.sh -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    sh Miniconda3-latest-Linux-x86_64.sh -b -p /usr/share/miniconda
+
+USER ghrunner
+
+ENV PATH /usr/share/miniconda/bin:$PATH
+
+RUN conda create -n modin-test mysql mysql-connector-python sqlalchemy git gcc_linux-64 gxx_linux-64 conda -c conda-forge && \
+    conda init bash
+
+COPY --chown=ghrunner:ghrunner release.tgz /_work/
+ADD --chown=ghrunner:ghrunner omniscripts.tar /_work/omniscripts/
+

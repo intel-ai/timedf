@@ -1,0 +1,17 @@
+diff --git a/asv_bench/benchmarks/hdk/benchmarks.py b/asv_bench/benchmarks/hdk/benchmarks.py
+index 690a70c3..2aef1658 100644
+--- a/asv_bench/benchmarks/hdk/benchmarks.py
++++ b/asv_bench/benchmarks/hdk/benchmarks.py
+@@ -492,5 +492,12 @@ class TimeGroupByMultiColumn(BaseTimeGroupBy):
+             )
+         )
+ 
++    def time_groupby_agg_nunique_dict(self, *args, **kwargs):
++        execute(
++            self.df.groupby(by=self.groupby_columns).agg(
++                {col: "nunique" for col in self.non_groupby_columns}
++            )
++        )
++
+ 
+ from ..utils import setup  # noqa: E402, F401

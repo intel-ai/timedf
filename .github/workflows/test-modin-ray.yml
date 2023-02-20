@@ -1,0 +1,60 @@
+name: Reusable test action
+on:
+  workflow_call: 
+    inputs:
+      name:
+        type: string
+        required: true
+      build:
+        type: string
+        default: cpu
+      reset-cache:
+        type: boolean
+        default: false        
+
+jobs:
+  test:
+    runs-on: [self-hosted, linux, intel-ai.omniscripts.modin-ray]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set env context
+        run: |
+          echo CONDA_PATH=$CONDA >>$GITHUB_ENV
+          echo RUN_STAMP=${{ runner.os }}-${{ inputs.name }} >>$GITHUB_ENV
+          echo CONDA_ENV_PATH=$CONDA/envs/${{ env.CONDA_ENV }} >>$GITHUB_ENV
+
+      - name: Create omniscripts.tar
+        run: |
+          tar -zcf /tmp/omniscripts.tar .
+          mv /tmp/omniscripts.tar .github/workflows/modin
+
+      - name: Download HDK build
+        # there is no way to access other workflow artifacts without dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          repo: intel-ai/hdk
+          workflow: main.yml
+          branch: lesh/add-release
+          workflow_conclusion: success
+          name: ${{ runner.os }}-${{ inputs.build }}-release
+          search_artifacts: true
+          path: .github/workflows/modin
+        continue-on-error: true
+
+      - name: Build docker image for modin tests
+        run: |
+          docker rm -f ci.${{ inputs.name }} || true
+          docker build -t ci/${{ inputs.name }} -f .github/workflows/modin/Dockerfile.${{ inputs.name }} ${{ inputs.reset-cache && '--no-cache' || '' }} .github/workflows/modin
+
+      - name: Run modin microbenchmarks and upload results
+        run:  |
+          docker run -u ghrunner --name ci.${{ inputs.name }} ci/${{ inputs.name }} conda run --no-capture-output -n modin-test sh /_work/omniscripts/.github/workflows/modin/asv-ray-runner.sh
+
+      - name: Stop the container
+        if: always()
+        run: |
+          docker stop ci.${{ inputs.name }} || true
+
+
