@@ -322,12 +322,12 @@ def run_benchmark(parameters):
         pandas_mode=parameters["pandas_mode"],
     )
 
-    print_results(results=results, backend=parameters["pandas_mode"], unit="s")
+    print_results(results=results, backend=parameters["pandas_mode"])
 
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
         ml_times = ml(train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"])
-        print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
+        print_results(results=ml_times, backend=parameters["pandas_mode"])
         results.update(ml_times)
 
     return BenchmarkResults(results)

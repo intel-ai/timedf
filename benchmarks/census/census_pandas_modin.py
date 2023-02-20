@@ -6,10 +6,8 @@ from timeit import default_timer as timer
 
 from utils import (
     check_support,
-    cod,
     load_data_pandas,
     load_data_modin_on_hdk,
-    mse,
     print_results,
     split,
     getsize,
@@ -19,6 +17,19 @@ from utils import (
 from utils.pandas_backend import pd
 
 warnings.filterwarnings("ignore")
+
+
+
+def mse(y_test, y_pred):
+    return ((y_test - y_pred) ** 2).mean()
+
+
+def cod(y_test, y_pred):
+    y_bar = y_test.mean()
+    total = ((y_test - y_bar) ** 2).sum()
+    residuals = ((y_test - y_pred) ** 2).sum()
+    return 1 - (residuals / total)
+
 
 
 # Dataset link
@@ -291,7 +302,7 @@ def run_benchmark(parameters):
         pandas_mode=parameters["pandas_mode"],
     )
 
-    print_results(results=results, backend=parameters["pandas_mode"], unit="s")
+    print_results(results=results, backend=parameters["pandas_mode"])
 
     if not parameters["no_ml"]:
         ml_scores, ml_times = ml(
@@ -304,7 +315,7 @@ def run_benchmark(parameters):
             ml_keys=ml_keys,
             ml_score_keys=ml_score_keys,
         )
-        print_results(results=ml_times, backend=parameters["pandas_mode"], unit="s")
+        print_results(results=ml_times, backend=parameters["pandas_mode"])
         print_results(results=ml_scores, backend=parameters["pandas_mode"])
         results.update(ml_times)
 

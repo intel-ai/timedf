@@ -6,10 +6,8 @@ import gc
 
 from utils import (
     print_results,
-    make_chk,
     memory_usage,
     files_names_from_pattern,
-    join_to_tbls,
     check_support,
     getsize,
     BaseBenchmark,
@@ -106,6 +104,18 @@ def execute_groupby_query_expr_v4(x, select_cols, groupby_cols, apply_cols):  # 
 
 def execute_join_query_expr(x, y, on, how="inner"):  # q1, q2, q3, q4, q5
     return x.merge(y, how=how, on=on)
+
+
+def str_round(x):
+    if type(x).__name__ in ["float", "float64"]:
+        x = round(x, 3)
+    return str(x)
+
+
+def make_chk(values):
+    s = ";".join(str_round(x) for x in values)
+    return s.replace(",", "_")  # comma is reserved for csv separator
+
 
 
 queries_funcs = {
@@ -414,6 +424,37 @@ def join_query5_modin(x, ys, queries_results, extended_functionality):
     )
 
 
+
+def join_to_tbls(data_name):
+    """Prepare H2O join queries data files (for merge right parts) names basing on the merge left data file name.
+
+    Parameters
+    ----------
+    data_name: str
+        Merge left data file name, should contain "NA" component.
+
+    Returns
+    -------
+    data_files_paths: dict
+        Dictionary with data files paths, dictionary keys: "x", "small", "medium", "big".
+    data_files_sizes: dict
+        Dictionary with data files sizes, dictionary keys: "x", "small", "medium", "big".
+
+    """
+    data_dir = os.path.dirname(os.path.abspath(data_name))
+    data_file = data_name.replace(data_dir, "")
+    x_n = int(float(data_file.split("_")[1]))
+    y_n = ["{:.0e}".format(x_n / 1e6), "{:.0e}".format(x_n / 1e3), "{:.0e}".format(x_n)]
+    y_n = [y.replace("+0", "") for y in y_n]
+    y_n = [data_name.replace("NA", y) for y in y_n]
+    data_files_paths = {"x": data_name, "small": y_n[0], "medium": y_n[1], "big": y_n[2]}
+    data_files_sizes = {
+        data_id: getsize(data_file) for data_id, data_file in data_files_paths.items()
+    }
+    return data_files_paths, data_files_sizes
+
+
+
 def queries_modin(filename, pandas_mode, extended_functionality):
     data_files_names = files_names_from_pattern(filename)
     if not data_files_names:
@@ -539,7 +580,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
         query_func(**queries_parameters)
         queries_results[query_name]["t_readcsv"] = query_data_file_import_times[query_name]
         print(f"{pandas_mode} {query_name} results:")
-        print_results(results=queries_results[query_name], unit="s")
+        print_results(results=queries_results[query_name])
 
     return queries_results, {f"dataset_size_{k}": v for k, v in query_data_file_sizes.items()}
 

@@ -16,60 +16,8 @@ from .pandas_backend import set_backend
 from .benchmark import BaseBenchmark, BenchmarkResults
 
 
-conversions = {"ms": 1000, "s": 1, "m": 1 / 60, "": 1}
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 directories = {"repository_root": repository_root_directory}
-
-
-def get_percentage(error_message):
-    # parsing message like: lalalalal values are different (xxxxx%) lalalalal
-    return float(error_message.split("values are different ")[1].split("%)")[0][1:])
-
-
-def compare_columns(columns):
-    if len(columns) != 2:
-        raise AttributeError(f"Columns number should be 2, actual number is {len(columns)}")
-
-    import pandas as pd
-
-    # in percentage - 0.05 %
-    max_error = 0.05
-
-    try:
-        pd.testing.assert_series_equal(
-            columns[0],
-            columns[1],
-            check_less_precise=2,
-            check_dtype=False,
-            check_categorical=False,
-        )
-        if str(columns[0].dtype) == "category":
-            left = columns[0]
-            right = columns[1]
-            assert left.cat.ordered == right.cat.ordered
-            # assert_frame_equal cannot turn off comparison of
-            # order of categories, so compare categories manually
-            pd.testing.assert_series_equal(
-                left,
-                right,
-                check_dtype=False,
-                check_less_precise=2,
-                check_category_order=left.cat.ordered,
-            )
-    except AssertionError as assert_err:
-        if str(columns[0].dtype).startswith("float"):
-            try:
-                current_error = get_percentage(str(assert_err))
-                if current_error > max_error:
-                    print(
-                        f"Max acceptable difference: {max_error}%; current difference: {current_error}%"
-                    )
-                    raise assert_err
-            # for catch exceptions from `get_percentage`
-            except Exception:
-                raise assert_err
-        else:
-            raise
 
 
 def load_data_pandas(
@@ -188,31 +136,12 @@ def files_names_from_pattern(files_pattern):
     return sorted([x for f in data_files_names for x in path_expander(f)])
 
 
-def print_times(times, backend=None):
-    if backend:
-        print(f"{backend} times:")
-    for time_name, _time in times.items():
-        print("{} = {:.5f} s".format(time_name, _time))
-
-
-def print_results(results, backend=None, unit="", ignore_fields=[]):
-    results_converted = convert_units(results, ignore_fields=[], unit=unit)
+def print_results(results, backend=None, ignore_fields=[]):
     if backend:
         print(f"{backend} results:")
-    for result_name, result in results_converted.items():
+    for result_name, result in results.items():
         if result_name not in ignore_fields:
-            print("    {} = {:.3f} {}".format(result_name, result, unit))
-
-
-def mse(y_test, y_pred):
-    return ((y_test - y_pred) ** 2).mean()
-
-
-def cod(y_test, y_pred):
-    y_bar = y_test.mean()
-    total = ((y_test - y_bar) ** 2).sum()
-    residuals = ((y_test - y_pred) ** 2).sum()
-    return 1 - (residuals / total)
+            print("    {} = {:.3f} {}".format(result_name, result, 's'))
 
 
 # SklearnImport imports sklearn (intel or stock version) only if it is not done previously
@@ -258,61 +187,6 @@ def split(X, y, test_size=0.1, stratify=None, random_state=None, optimizer="inte
     return (X_train, y_train, X_test, y_test), split_time
 
 
-def convert_units(dict_to_convert, ignore_fields, unit="ms"):
-    try:
-        multiplier = conversions[unit]
-    except KeyError:
-        raise ValueError(f"Conversion to {unit} is not implemented")
-
-    return {
-        key: (value * multiplier if key not in ignore_fields else value)
-        for key, value in dict_to_convert.items()
-    }
-
-
-def check_fragments_size(fragments_size, count_table, default_fragments_size=None):
-    result_fragments_size = []
-
-    if fragments_size:
-        result_fragments_size = fragments_size
-    elif default_fragments_size:
-        result_fragments_size = default_fragments_size
-    else:
-        result_fragments_size = [None] * count_table
-
-    return result_fragments_size
-
-
-def write_to_csv_by_chunks(file_to_write, output_file, write_mode="wb", chunksize=1024):
-    import zlib
-
-    wbits_gzip = 16 + zlib.MAX_WBITS
-
-    with open(file_to_write, "rb") as f:
-        buffer = f.read(chunksize)
-
-        if file_to_write.endswith(".gz"):
-            d = zlib.decompressobj(wbits=wbits_gzip)
-            while buffer:
-                # Some of the input data may be preserved in internal buffers for later processing
-                # so we should use `flush` at the end of processing
-                chunk = d.decompress(buffer)
-                with open(output_file, write_mode) as output:
-                    output.write(chunk)
-                buffer = f.read(chunksize)
-
-            chunk = d.flush()
-            with open(output_file, write_mode) as output:
-                output.write(chunk)
-        elif file_to_write.endswith(".csv"):
-            while buffer:
-                with open(output_file, write_mode) as output:
-                    output.write(buffer)
-                buffer = f.read(chunksize)
-        else:
-            raise NotImplementedError(f"file' extension: [{file_to_write}] is not supported yet")
-
-
 def check_support(current_params, unsupported_params):
     ignored_params = {}
     for param in unsupported_params:
@@ -321,25 +195,6 @@ def check_support(current_params, unsupported_params):
 
     if ignored_params:
         warnings.warn(f"Parameters {ignored_params} are ignored", RuntimeWarning)
-
-
-def create_dir(dir_name):
-    directory = os.path.abspath(os.path.join(directories["repository_root"], dir_name))
-    if not os.path.exists(directory):
-        os.mkdir(directory)
-
-    return directory
-
-
-def make_chk(values):
-    s = ";".join(str_round(x) for x in values)
-    return s.replace(",", "_")  # comma is reserved for csv separator
-
-
-def str_round(x):
-    if type(x).__name__ in ["float", "float64"]:
-        x = round(x, 3)
-    return str(x)
 
 
 def memory_usage():
@@ -357,122 +212,6 @@ def getsize(filename: str):
         raise ValueError(f"bad s3like link: {filename}")
     else:
         return os.path.getsize(filename) / 1024 / 1024
-
-
-def join_to_tbls(data_name):
-    """Prepare H2O join queries data files (for merge right parts) names basing on the merge left data file name.
-
-    Parameters
-    ----------
-    data_name: str
-        Merge left data file name, should contain "NA" component.
-
-    Returns
-    -------
-    data_files_paths: dict
-        Dictionary with data files paths, dictionary keys: "x", "small", "medium", "big".
-    data_files_sizes: dict
-        Dictionary with data files sizes, dictionary keys: "x", "small", "medium", "big".
-
-    """
-    data_dir = os.path.dirname(os.path.abspath(data_name))
-    data_file = data_name.replace(data_dir, "")
-    x_n = int(float(data_file.split("_")[1]))
-    y_n = ["{:.0e}".format(x_n / 1e6), "{:.0e}".format(x_n / 1e3), "{:.0e}".format(x_n)]
-    y_n = [y.replace("+0", "") for y in y_n]
-    y_n = [data_name.replace("NA", y) for y in y_n]
-    data_files_paths = {"x": data_name, "small": y_n[0], "medium": y_n[1], "big": y_n[2]}
-    data_files_sizes = {
-        data_id: getsize(data_file) for data_id, data_file in data_files_paths.items()
-    }
-    return data_files_paths, data_files_sizes
-
-
-def get_tmp_filepath(filename, tmp_dir=None):
-    if tmp_dir is None:
-        tmp_dir = create_dir("tmp")
-
-    filename, extension = os.path.splitext(filename)
-
-    # filename would be transormed like "census-fsi.csv" -> "ROOT_RESOPOSITORY_DIR/tmp/census-fsi-f15cxc9y.csv"
-    file_descriptor, file_path = mkstemp(suffix=extension, prefix=filename + "-", dir=tmp_dir)
-    os.close(file_descriptor)
-
-    return file_path
-
-
-class FilesCombiner:
-    """
-    If data files are compressed or number of csv files is more than one,
-    data files (or single compressed file) should be transformed to single csv file.
-    Before files transformation, script checks existance of already transformed file
-    in the directory passed with -data_file flag.
-    """
-
-    def __init__(self, data_files_names, combined_filename, files_limit):
-        self._data_files_names = data_files_names
-        self._files_limit = files_limit
-
-        data_file_path = self._data_files_names[0]
-
-        _, data_files_extension = os.path.splitext(data_file_path)
-        if data_files_extension == ".gz" or len(data_files_names) > 1:
-            data_file_path = os.path.abspath(
-                os.path.join(os.path.dirname(data_files_names[0]), combined_filename)
-            )
-
-        self._should_combine = not os.path.exists(data_file_path)
-        if self._should_combine:
-            data_file_path = get_tmp_filepath(combined_filename)
-
-        self._data_file_path = data_file_path
-
-    def __enter__(self):
-        if self._should_combine:
-            for file_name in self._data_files_names[: self._files_limit]:
-                write_to_csv_by_chunks(
-                    file_to_write=file_name, output_file=self._data_file_path, write_mode="ab"
-                )
-
-        return self._data_file_path
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._should_combine:
-            try:
-                os.remove(self._data_file_path)
-            except FileNotFoundError:
-                pass
-
-
-def get_dir_size(start_path="."):
-    """Get directory size including all subdirectories.
-
-    Parameters
-    ----------
-    start_path:
-        Path to begin calculation of directory size.
-
-    Return
-    ------
-    total_size:
-        Total size of directory in MB.
-
-    """
-    total_size = 0
-    if "://" in start_path:
-        from .s3_client import s3_client
-
-        if s3_client.s3like(start_path):
-            total_size = s3_client.du(start_path)
-        else:
-            raise ValueError(f"bad s3like link: {start_path}")
-    else:
-        for dirpath, dirnames, filenames in os.walk(start_path):
-            for f in filenames:
-                fp = os.path.join(dirpath, f)
-                total_size += getsize(fp)
-
-    return total_size
 
 
 def run_benchmarks(

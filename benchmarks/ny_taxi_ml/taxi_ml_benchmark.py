@@ -290,7 +290,7 @@ def run_benchmark(parameters):
     )
     df, task2time["filter_df"] = filter_df(df, is_hdk_mode=is_hdk_mode)
     df, task2time["feature_engineering"] = feature_engineering(df)
-    print_results(results=task2time, backend=parameters["pandas_mode"], unit="s")
+    print_results(results=task2time, backend=parameters["pandas_mode"])
 
     task2time["total_data_processing_with_load"] = sum(task2time.values())
     task2time["total_data_processing_no_load"] = (
@@ -308,7 +308,7 @@ def run_benchmark(parameters):
             data, use_modin_xgb=parameters["use_modin_xgb"], debug=debug
         )
 
-        print_results(results=task2time, backend=parameters["pandas_mode"], unit="s")
+        print_results(results=task2time, backend=parameters["pandas_mode"])
 
         if parameters["use_modin_xgb"]:
             backend_name = backend_name + "_modin_xgb"

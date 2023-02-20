@@ -375,7 +375,7 @@ def run_benchmark(parameters):
         pandas_mode=parameters["pandas_mode"],
     )
 
-    print_results(results=results, backend=parameters["pandas_mode"], unit="s")
+    print_results(results=results, backend=parameters["pandas_mode"])
     return BenchmarkResults(
         results, params={"dataset_size": get_ny_taxi_dataset_size(parameters["dfiles_num"])}
     )

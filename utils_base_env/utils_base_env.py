@@ -71,41 +71,6 @@ def execute_process(cmdline, cwd=None, shell=False, daemon=False, print_output=T
         print("Failed to start", cmdline, err)
 
 
-def check_port_availability(port_num):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        sock.bind(("127.0.0.1", port_num))
-    except Exception:
-        return False
-    finally:
-        sock.close()
-    return True
-
-
-def find_free_port():
-    min_port_num = 49152
-    max_port_num = 65535
-    if len(returned_port_numbers) == 0:
-        port_num = min_port_num
-    else:
-        port_num = returned_port_numbers[-1] + 1
-    while port_num < max_port_num:
-        if check_port_availability(port_num) and port_num not in returned_port_numbers:
-            returned_port_numbers.append(port_num)
-            return port_num
-        port_num += 1
-    raise Exception("Can't find available ports")
-
-
-class KeyValueListParser(argparse.Action):
-    def __call__(self, parser, namespace, values: str, option_string=None):
-        kwargs = {}
-        for kv in values.split(","):
-            k, v = kv.split("=")
-            kwargs[k] = v
-        setattr(namespace, self.dest, kwargs)
-
-
 def add_sql_arguments(parser):
     parser.add_argument(
         "-db_driver",
