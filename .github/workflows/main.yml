@@ -18,3 +18,14 @@ jobs:
     secrets:
       token: ${{ secrets.AMYACHEV_GITHUB_TOKEN }}
 
+  build:
+    uses: ./.github/workflows/build.yml
+
+  modin-ray:
+    needs: build
+    uses: ./.github/workflows/test-conda-docker.yml
+    with:
+      test: modin-ray
+      cache-suffix: ${{ needs.build.outputs.cache-suffix }}
+      reset-cache: ${{ !!inputs.reset-cache }}
+
