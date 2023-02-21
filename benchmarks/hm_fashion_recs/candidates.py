@@ -3,7 +3,7 @@ import logging
 
 import numpy as np
 
-from utils.pandas_backend import pd
+from omniscripts.pandas_backend import pd
 
 from .tm import tm
 

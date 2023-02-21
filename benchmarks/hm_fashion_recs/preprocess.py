@@ -9,7 +9,7 @@ from typing import Any
 
 import logging
 
-from utils.pandas_backend import pd
+from omniscripts.pandas_backend import pd
 
 from . import schema
 from .tm import tm

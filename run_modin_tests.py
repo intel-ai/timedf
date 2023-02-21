@@ -2,7 +2,7 @@ import os
 import sys
 from typing import Iterable
 
-from utils_base_env import execute_process, prepare_parser, DbConfig
+from env_manager import execute_process, prepare_parser, DbConfig
 
 
 def parse_tasks(task_string: str, possible_tasks: Iterable[str]):
@@ -26,7 +26,7 @@ def parse_tasks(task_string: str, possible_tasks: Iterable[str]):
 
 def rerun_with_env(args):
     """Activate the environment from the parameters and run the same script again without `--env_name -en` parameter"""
-    from environment import CondaEnvironment
+    from env_manager.environment import CondaEnvironment
 
     print("PREPARING ENVIRONMENT")
     conda_env = CondaEnvironment(args.env_name)
@@ -78,7 +78,7 @@ def run_build_task(args):
 
 
 def run_benchmark_task(args):
-    from utils import run_benchmarks
+    from omniscripts import run_benchmarks
 
     if not args.data_file:
         raise ValueError(

@@ -6,8 +6,8 @@ from contextlib import suppress
 import pandas as pd
 import pandas.io.formats.excel
 
-from report import BenchmarkDb
-from utils_base_env import add_sql_arguments, DbConfig
+from omniscripts.report import BenchmarkDb
+from env_manager import add_sql_arguments, DbConfig
 
 # This is necessary to allow custom header formatting
 pandas.io.formats.excel.ExcelFormatter.header_style = None

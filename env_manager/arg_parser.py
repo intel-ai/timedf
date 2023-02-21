@@ -1,10 +1,17 @@
+"""Argument parsing"""
+# This module could be part of omniscripts module, but some of arguments are 
+# shared between env_manager and omniscripts so it is stored here, because 
+# env_manager have weaker requirements.
 import argparse
 from dataclasses import dataclass
 import os
-import subprocess
 from typing import Union
 
-returned_port_numbers = []
+
+__all__ = ['add_sql_arguments', 'prepare_parser', 'DbConfig']
+
+# be careful with this line when moving `prepare_parser` function
+omniscript_path = os.path.dirname(os.path.dirname(__file__))
 
 
 # This can be written as just a function, but we keep the dataclass to add validation and arg parsing in the future.
@@ -49,27 +56,6 @@ def str_arg_to_bool(v: Union[bool, str]) -> bool:
         raise argparse.ArgumentTypeError("Cannot recognize boolean value.")
 
 
-def execute_process(cmdline, cwd=None, shell=False, daemon=False, print_output=True):
-    "Execute cmdline in user-defined directory by creating separated process"
-    try:
-        print("CMD: ", " ".join(cmdline))
-        output = ""
-        process = subprocess.Popen(
-            cmdline, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=shell
-        )
-        if not daemon:
-            output = process.communicate()[0].strip().decode()
-        # No `None` value indicates that the process has terminated
-        if process.returncode is not None:
-            if process.returncode != 0:
-                raise Exception(f"{output}\n\nCommand returned {process.returncode}.")
-            if print_output:
-                print(output)
-        return process, output
-    except OSError as err:
-        print("Failed to start", cmdline, err)
-
-
 def add_sql_arguments(parser):
     parser.add_argument(
         "-db_driver",
@@ -99,9 +85,6 @@ def add_sql_arguments(parser):
 
 
 def prepare_parser():
-    # be careful with this line when moving `prepare_parser` function
-    omniscript_path = os.path.dirname(os.path.dirname(__file__))
-
     parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
     required = parser.add_argument_group("common")
     optional = parser.add_argument_group("optional arguments")
@@ -153,6 +136,7 @@ def prepare_parser():
         default="3.8",
         help="Python version that should be installed in conda env.",
     )
+    
     # Modin
     optional.add_argument(
         "-m", "--modin_path", dest="modin_path", default=None, help="Path to modin directory."

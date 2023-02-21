@@ -7,8 +7,7 @@ from .fe import attach_features, get_age_shifts
 from .tm import tm
 
 
-from utils import check_support
-from utils.benchmark import BenchmarkResults, BaseBenchmark
+from omniscripts import BenchmarkResults, BaseBenchmark
 
 
 def feature_engieering(week, paths, use_lfm):
@@ -69,12 +68,11 @@ def main(raw_data_path, paths):
 
 
 class Benchmark(BaseBenchmark):
-    def run_benchmark(self, parameters):
-        check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
+    __unsupported_params__ = ("optimizer", "dfiles_num")
 
-        raw_data_path = Path(parameters["data_file"].strip("'"))
+    def run_benchmark(self, parameters):
         paths = get_workdir_paths()
-        main(raw_data_path=raw_data_path, paths=paths)
+        main(raw_data_path=parameters["data_file"], paths=paths)
 
         task2time = tm.get_results()
         print(task2time)

@@ -5,7 +5,7 @@
 """
 import pandas as pd  # noqa: F401 this import exists to provide vscode support for backend users
 
-from .namespace_utils import (
+from .modin_utils import (
     import_pandas_into_module_namespace,
     trigger_execution_base as _trigger_execution,
 )

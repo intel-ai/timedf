@@ -4,16 +4,11 @@ import warnings
 from timeit import default_timer as timer
 import gc
 
-from utils import (
-    print_results,
-    memory_usage,
-    files_names_from_pattern,
-    check_support,
-    getsize,
-    BaseBenchmark,
-    BenchmarkResults,
-)
-from utils.pandas_backend import pd
+from omniscripts import BenchmarkResults, BaseBenchmark
+from omniscripts.pandas_backend import pd
+from omniscripts.benchmark_utils import print_results, memory_usage, files_names_from_pattern, \
+    getsize
+
 
 warnings.filterwarnings("ignore")
 
@@ -583,13 +578,6 @@ def queries_modin(filename, pandas_mode, extended_functionality):
 
 
 def run_benchmark(parameters):
-    check_support(
-        parameters,
-        unsupported_params=["dfiles_num", "gpu_memory", "no_ml", "optimizer", "validation"],
-    )
-
-    parameters["data_file"] = parameters["data_file"].replace("'", "")
-
     results, run_params = queries_modin(
         filename=parameters["data_file"],
         pandas_mode=parameters["pandas_mode"],
@@ -602,5 +590,7 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
+    __unsupported_params__ = ("dfiles_num", "gpu_memory", "no_ml", "optimizer", "validation")
+
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)

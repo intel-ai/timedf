@@ -6,14 +6,9 @@ import numpy as np
 import pandas
 from sklearn.preprocessing import LabelEncoder
 
-from utils import (
-    check_support,
-    print_results,
-    split,
-    BaseBenchmark,
-    BenchmarkResults,
-)
-from utils.pandas_backend import pd
+from omniscripts import BaseBenchmark, BenchmarkResults
+from omniscripts.pandas_backend import pd
+from omniscripts.benchmark_utils import print_results, split
 
 
 def ravel_column_names(cols):
@@ -271,9 +266,6 @@ def compute_skip_rows(gpu_memory):
 
 
 def run_benchmark(parameters):
-    check_support(parameters, unsupported_params=["dfiles_num"])
-
-    parameters["data_file"] = parameters["data_file"].replace("'", "")
     parameters["gpu_memory"] = parameters["gpu_memory"] or 16
     parameters["no_ml"] = parameters["no_ml"] or False
 
@@ -334,5 +326,7 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
+    __unsupported_params__ = ("dfiles_num",)
+
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)

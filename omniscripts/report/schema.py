@@ -1,4 +1,5 @@
 from typing import Dict
+
 from sqlalchemy import (
     Column,
     DateTime,
@@ -11,7 +12,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, relationship
 
-from report.run_params import RunParams, HostParams
+from .run_params import RunParams, HostParams
 
 Base = declarative_base()
 

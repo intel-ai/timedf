@@ -1,10 +1,13 @@
 import re
-from utils_base_env import execute_process
+from .execute_process import execute_process
 
 try:
     from conda.cli.python_api import Commands, run_command
 except ImportError:
     raise ImportError("Please run the script from (base) conda environment")
+
+
+__all__ = ['CondaEnvironment']
 
 
 class CondaEnvironment:

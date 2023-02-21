@@ -8,7 +8,7 @@ from sqlalchemy import sql
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-from report.schema import make_iteration, Base, Iteration, Measurement, RunParams
+from .schema import make_iteration, Base, Iteration, Measurement, RunParams
 
 
 class BenchmarkDb:

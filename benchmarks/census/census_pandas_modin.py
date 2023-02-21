@@ -4,17 +4,16 @@ from sklearn import config_context
 import warnings
 from timeit import default_timer as timer
 
-from utils import (
-    check_support,
+from omniscripts import BaseBenchmark, BenchmarkResults
+from omniscripts.pandas_backend import pd
+from omniscripts.benchmark_utils import (
     load_data_pandas,
     load_data_modin_on_hdk,
     print_results,
     split,
     getsize,
-    BaseBenchmark,
-    BenchmarkResults,
 )
-from utils.pandas_backend import pd
+
 
 warnings.filterwarnings("ignore")
 
@@ -173,9 +172,6 @@ def ml(X, y, random_state, n_runs, test_size, optimizer, ml_keys, ml_score_keys)
 
 
 def run_benchmark(parameters):
-    check_support(parameters, unsupported_params=["dfiles_num", "gpu_memory"])
-
-    parameters["data_file"] = parameters["data_file"].replace("'", "")
     parameters["optimizer"] = parameters["optimizer"] or "intel"
     parameters["no_ml"] = parameters["no_ml"] or False
 
@@ -321,5 +317,7 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
+    __unsupported_params__ = ("dfiles_num", "gpu_memory")
+
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)

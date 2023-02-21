@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Union
 import logging
 
-from utils.pandas_backend import pd
+from omniscripts.pandas_backend import pd
 
 from .lfm import calc_embeddings
 from .tm import tm

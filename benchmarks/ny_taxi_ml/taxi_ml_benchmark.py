@@ -6,8 +6,9 @@ from typing import Any, Iterable, Tuple, Union, Dict
 from itertools import islice
 
 
-from utils import check_support, print_results, BenchmarkResults, BaseBenchmark
-from utils.pandas_backend import pd, trigger_execution
+from omniscripts import BaseBenchmark, BenchmarkResults
+from omniscripts.pandas_backend import pd, trigger_execution
+from omniscripts.benchmark_utils import print_results
 
 
 def measure_time(func):
@@ -276,9 +277,6 @@ def train(data: dict, use_modin_xgb: bool, debug=False):
 
 
 def run_benchmark(parameters):
-    check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
-
-    # parameters["data_path"] = parameters["data_file"]
     parameters["no_ml"] = parameters["no_ml"] or False
 
     debug = bool(os.getenv("DEBUG", False))
@@ -323,5 +321,7 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
+    __unsupported_params__ = ("optimizer", "dfiles_num")
+
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)

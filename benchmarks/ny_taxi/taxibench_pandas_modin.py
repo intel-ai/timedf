@@ -2,16 +2,15 @@
 from collections import OrderedDict
 from timeit import default_timer as timer
 
-from utils import (
+from omniscripts import BenchmarkResults, BaseBenchmark
+from omniscripts.pandas_backend import pd
+from omniscripts.benchmark_utils import (
     files_names_from_pattern,
     load_data_pandas,
     load_data_modin_on_hdk,
-    print_results,
-    check_support,
-    BaseBenchmark,
-    BenchmarkResults,
+    print_results
 )
-from utils.pandas_backend import pd
+
 
 accepted_data_files_for_pandas_import_mode = ["trips_xaa", "trips_xab", "trips_xac"]
 
@@ -247,10 +246,6 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
 
 
 def run_benchmark(parameters):
-    check_support(parameters, unsupported_params=["optimizer", "no_ml", "gpu_memory"])
-
-    parameters["data_file"] = parameters["data_file"].replace("'", "")
-
     columns_names = [
         "trip_id",
         "vendor_id",
@@ -382,5 +377,7 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
+    __unsupported_params__ = ("optimizer", "no_ml", "gpu_memory")
+
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)

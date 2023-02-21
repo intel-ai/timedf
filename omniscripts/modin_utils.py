@@ -7,6 +7,13 @@ import pandas as pd
 
 
 def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_memory=None):
+    def init_modin_on_hdk(pd):
+        # Calcite initialization
+        data = {"a": [1, 2, 3]}
+        df = pd.DataFrame(data)
+        df = df + 1
+        _ = df.index
+
     if mode == "Pandas":
         print("Pandas backend: pure Pandas")
         import pandas as pd
@@ -53,14 +60,6 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
         namespace = [namespace]
     for space in namespace:
         space["pd"] = pd
-
-
-def init_modin_on_hdk(pd):
-    # Calcite initialization
-    data = {"a": [1, 2, 3]}
-    df = pd.DataFrame(data)
-    df = df + 1
-    _ = df.index
 
 
 def trigger_import(*dfs):

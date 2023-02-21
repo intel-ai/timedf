@@ -2,7 +2,8 @@ import json
 import itertools as it
 import math
 import argparse
-from utils_base_env import add_sql_arguments
+
+from env_manager.arg_parser import add_sql_arguments
 
 
 class DbReport:
