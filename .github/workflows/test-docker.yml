@@ -32,22 +32,18 @@ jobs:
           tar cf .github/workflows/modin/modin.tar -C modin .
           docker rm -f ci.${{ inputs.name }} || true
           docker build -t ci/${{ inputs.name }} -f .github/workflows/modin/Dockerfile.ci ${{ inputs.reset-cache && '--no-cache' || '' }} .github/workflows/modin
+
       - name: Run modin microbenchmarks and upload results
         run:  |
-          set -vx
           export MODIN_TEST_DATASET_SIZE=Big
           export MODIN_CPUS=44
           export MODIN_ENGINE=ray
-          docker run -d --name ci.${{ inputs.name }} \
-            -e MODIN_ENGINE=${MODIN_ENGINE} \
-            -e MODIN_CPUS=${MODIN_CPUS} \
-            --shm-size=128gb \
-            ci/${{ inputs.name }} tail -f /dev/null
-          docker exec -e MODIN_ENGINE=$MODIN_ENGINE \
+          docker run -u ghrunner -e MODIN_ENGINE=$MODIN_ENGINE \
             -e MODIN_TEST_DATASET_SIZE=$MODIN_TEST_DATASET_SIZE \
             -e MODIN_CPUS=$MODIN_CPUS \
             -e AMYACHEV_GITHUB_TOKEN=${{ secrets.token }} \
             ci.${{ inputs.name }} conda run -n modin bash /modin/asv-runner.sh
+
       - name: Stop the container
         if: always()
         run: |
