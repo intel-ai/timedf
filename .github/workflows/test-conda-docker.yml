@@ -11,6 +11,9 @@ on:
       cache-suffix:
         type: string
         required: true
+      reset-cache:
+        type: boolean
+        default: false        
 
 jobs:
   test:
@@ -25,7 +28,7 @@ jobs:
 
       - uses: actions/download-artifact@v3
         with:
-          name: ${{ runner.os }}-${{ inputs.name }}-cpu-build
+          name: ${{ runner.os }}-${{ inputs.name }}-build
 
       - name: Unpack build files
         run: |
