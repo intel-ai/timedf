@@ -72,7 +72,7 @@ jobs:
           cd hdk
           conda info
           conda list -n omnisci-dev
-          conda run -n omnisci-dev sh omniscidb/scripts/conda/build.sh ${{ inputs.options }}
+          conda run -n omnisci-dev bash omniscidb/scripts/conda/build.sh ${{ inputs.options }}
           tar -zcf /tmp/build.tgz .
 
       - name: Upload build and src files
