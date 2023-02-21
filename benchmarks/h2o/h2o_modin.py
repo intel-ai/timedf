@@ -6,8 +6,12 @@ import gc
 
 from omniscripts import BenchmarkResults, BaseBenchmark
 from omniscripts.pandas_backend import pd
-from omniscripts.benchmark_utils import print_results, memory_usage, files_names_from_pattern, \
-    getsize
+from omniscripts.benchmark_utils import (
+    print_results,
+    memory_usage,
+    files_names_from_pattern,
+    getsize,
+)
 
 
 warnings.filterwarnings("ignore")

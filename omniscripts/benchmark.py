@@ -10,7 +10,6 @@ from benchmarks import create_benchmark
 from env_manager import DbConfig
 
 
-
 class BenchmarkResults:
     def __init__(self, measurements: Dict[str, float], params=None) -> None:
         """Structure with benchmark results that is enforcing benchmark output format.
@@ -64,7 +63,7 @@ class BaseBenchmark(abc.ABC):
             )
 
         return results
-    
+
     def check_support(self, params):
         ignored_params = {}
         for param in self.__unsupported_params__:

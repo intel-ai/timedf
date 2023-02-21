@@ -8,7 +8,7 @@ from omniscripts.benchmark_utils import (
     files_names_from_pattern,
     load_data_pandas,
     load_data_modin_on_hdk,
-    print_results
+    print_results,
 )
 
 

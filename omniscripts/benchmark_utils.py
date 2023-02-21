@@ -11,12 +11,16 @@ from .modin_utils import import_pandas_into_module_namespace
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 directories = {"repository_root": repository_root_directory}
 
-__all__ = ['files_names_from_pattern', 'load_data_pandas', 'load_data_modin_on_hdk',
-    'split',
-    'print_results',
-    'memory_usage',
-    'getsize'
-    ]
+__all__ = [
+    "files_names_from_pattern",
+    "load_data_pandas",
+    "load_data_modin_on_hdk",
+    "split",
+    "print_results",
+    "memory_usage",
+    "getsize",
+]
+
 
 def load_data_pandas(
     filename,

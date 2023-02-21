@@ -1,6 +1,6 @@
 """Argument parsing"""
-# This module could be part of omniscripts module, but some of arguments are 
-# shared between env_manager and omniscripts so it is stored here, because 
+# This module could be part of omniscripts module, but some of arguments are
+# shared between env_manager and omniscripts so it is stored here, because
 # env_manager have weaker requirements.
 import argparse
 from dataclasses import dataclass
@@ -8,7 +8,7 @@ import os
 from typing import Union
 
 
-__all__ = ['add_sql_arguments', 'prepare_parser', 'DbConfig']
+__all__ = ["add_sql_arguments", "prepare_parser", "DbConfig"]
 
 # be careful with this line when moving `prepare_parser` function
 omniscript_path = os.path.dirname(os.path.dirname(__file__))
@@ -136,7 +136,7 @@ def prepare_parser():
         default="3.8",
         help="Python version that should be installed in conda env.",
     )
-    
+
     # Modin
     optional.add_argument(
         "-m", "--modin_path", dest="modin_path", default=None, help="Path to modin directory."

@@ -7,7 +7,7 @@ except ImportError:
     raise ImportError("Please run the script from (base) conda environment")
 
 
-__all__ = ['CondaEnvironment']
+__all__ = ["CondaEnvironment"]
 
 
 class CondaEnvironment:
