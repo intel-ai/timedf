@@ -22,6 +22,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          path: hdk
+          repository: intel-ai/hdk
+          ref: main
 
       - name: Free space
         run: |
@@ -48,7 +52,7 @@ jobs:
         if: steps.conda-cache.cache-hit != 'true'
         run: |
           conda update conda
-          conda env update -f omniscidb/scripts/mapd-deps-conda-dev-env.yml
+          conda env update -f hdk/omniscidb/scripts/mapd-deps-conda-dev-env.yml
 
       - name: Install cudatoolkit-dev
         if: inputs.name == 'cuda'
@@ -67,8 +71,7 @@ jobs:
         run: |
           conda info
           conda list -n omnisci-dev
-          conda run -n omnisci-dev cmake -B build -S . ${{ inputs.options }}
-          conda run -n omnisci-dev cmake --build build --parallel 2
+          conda run -n omnisci-dev sh omniscidb/scripts/conda/build.sh ${{ inputs.options }}
           tar -zcf /tmp/build.tgz .
 
       - name: Upload build and src files
