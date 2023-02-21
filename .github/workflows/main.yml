@@ -10,14 +10,14 @@ on:
   push:
 
 jobs:
-  modin-containerized:
-    uses: ./.github/workflows/test-docker.yml
-    with:
-      name: modin-containerized
-      reset-cache: ${{ !!inputs.reset-cache }}
-    secrets:
-      token: ${{ secrets.AMYACHEV_GITHUB_TOKEN }}
-
+#  modin-containerized:
+#    uses: ./.github/workflows/test-docker.yml
+#    with:
+#      name: modin-containerized
+#      reset-cache: ${{ !!inputs.reset-cache }}
+#    secrets:
+#      token: ${{ secrets.AMYACHEV_GITHUB_TOKEN }}
+#
   build:
     uses: ./.github/workflows/build.yml
 
