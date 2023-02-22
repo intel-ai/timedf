@@ -1,5 +1,6 @@
 # coding: utf-8
 # This script is ported to omniscripts repository from https://github.com/h2oai/db-benchmark
+import os
 import warnings
 from timeit import default_timer as timer
 import gc
