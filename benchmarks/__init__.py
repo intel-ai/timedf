@@ -1,15 +1,18 @@
 import importlib
-
 from pathlib import Path
 
 
 def create_benchmark(bench_name):
+    # We are trying to dynamically import provided benchmark and want to catch
+    # probelms with this import to report to user
     try:
         return importlib.import_module(f".{bench_name}", __name__).Benchmark()
     except ModuleNotFoundError as f:
-        # Check if missing module was not our current module, then it's a problem of another module
-        if f != f"No module named '{bench_name}'":
-            # Passthrough this error
+        # The problem might be with some module that benchmark is using, like
+        # missing `import os` inside of the benchmark, so check that before
+        # creating error message
+        if str(f) != f"No module named '{bench_name}'":
+            # Passthrough errors not directly related to benchmark module
             raise
         available_benchmarks = [p.name for p in Path(__name__).iterdir() if p.is_dir()]
         raise ValueError(
