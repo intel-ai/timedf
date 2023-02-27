@@ -12,13 +12,11 @@ else
 fi
 
 # Run benchmark
-conda run -n $ENV_NAME python3 run_modin_tests.py -task benchmark                      \
-                           -use_modin_xgb ${USE_MODIN_XGB}      \
-                           -bench_name $BENCH_NAME              \
-                           -data_file "${DATA_FILE}"            \
-                           -pandas_mode ${PANDAS_MODE}          \
-                           -ray_tmpdir ${PWD}/tmp               \
-                           ${ADDITIONAL_OPTS}                   \
-                           ${ADDITIONAL_OPTS_NIGHTLY}           \
-                           ${DB_COMMON_OPTS}                    \
+conda run -n $ENV_NAME python3 run_modin_tests.py -task benchmark \
+                           -bench_name $BENCH_NAME                \
+                           -data_file "${DATA_FILE}"              \
+                           -pandas_mode ${PANDAS_MODE}            \
+                           -ray_tmpdir ${PWD}/tmp                 \
+                           ${ADDITIONAL_OPTS}                     \
+                           ${DB_COMMON_OPTS}                      \
                            "$@"
