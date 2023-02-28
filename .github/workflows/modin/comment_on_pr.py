@@ -34,10 +34,10 @@ else:
 
 full_comment = ""
 # Do not include coverage info in PR comment
-split_by_first = (
-    "----------- coverage: platform linux, python 3.7.5-final-0 -----------"
+split_by_first = "----------- coverage: platform linux, python 3.7.5-final-0 -----------"
+split_by_second = (
+    "--------------------------------------------------------------------------------------"
 )
-split_by_second = "--------------------------------------------------------------------------------------"
 
 tests_failed = False
 for out in pytest_outputs:
@@ -53,9 +53,7 @@ for out in pytest_outputs:
     )
     tests_failed = tests_failed or ("FAILURES" in full_comment)
     if len(full_comment) > 65_000:
-        full_comment = (
-            full_comment[-65_000:] + "\n\n<b>Remaining output truncated<b>\n\n"
-        )
+        full_comment = full_comment[-65_000:] + "\n\n<b>Remaining output truncated<b>\n\n"
     full_comment = "<details><summary>Tests Logs</summary>\n\n\n```\n" + full_comment
     full_comment += "\n```\n\n</details>\n"
 
