@@ -1,0 +1,16 @@
+[flake8]
+max-line-length = 99
+# W503: line break before binary operator is actually considered best-practice
+# E203: spaces around complex variables in slices are pep-right
+# default ignore list + E501(line length checker, we already do it with black)
+ignore = E121, E123, E126, E226, E24, E704, W503, W504, E501, E203
+per-file-ignores =
+    # F401: unused imports in __init__.py-s
+    # E203 whitespace before ':', black and flake8 incompatibility
+    *__init__.py: F401
+    # F821 - undefined name (pandas imports through 'import_pandas_into_module_namespace' function
+    # so flake8 detects 'pd' as undefined variable)
+    # mortgage_pandas.py: F821
+    # h2o_modin.py: F821
+    # I251: allow absolute imports in upper files    
+    test_*:I251

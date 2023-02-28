@@ -1,0 +1,6 @@
+# tests
+pytest 
+psutil
+numpy
+pandas
+sqlalchemy

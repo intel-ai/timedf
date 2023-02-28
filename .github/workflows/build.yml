@@ -1,0 +1,19 @@
+name: Build
+on:
+  push:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check code style
+        run: |
+          pip install -r requirements/linters.txt
+          black . --check --diff
+          flake8
+          
+      - name: Test with pytest
+        run: |
+          pip install -r requirements/tests.txt
+          pytest
