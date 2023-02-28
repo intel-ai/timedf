@@ -26,6 +26,5 @@ jobs:
     uses: ./.github/workflows/test-conda-docker.yml
     with:
       test: modin-ray
-      cache-suffix: ${{ needs.build.outputs.cache-suffix }}
       reset-cache: ${{ !!inputs.reset-cache }}
 
