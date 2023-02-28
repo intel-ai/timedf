@@ -11,7 +11,7 @@ from omniscripts import BaseBenchmark, BenchmarkResults
 from omniscripts import TimerManager
 
 
-# This is an optional tool to simplity time tracking, without it you need to gather timing results 
+# This is an optional tool to simplity time tracking, without it you need to gather timing results
 # manually into a simple dict (measurement: time_s) like {'load_data': 11.1, 'fe': 1.122}
 tm = TimerManager()
 
@@ -39,8 +39,8 @@ class Benchmark(BaseBenchmark):
         # This will be a dict with timing results that look like:
         # {'load_data': 1.1, 'fe': 11.1, 'evaluation': 1.12}
         measurement2time = tm.get_results()
-        
+
         # This is optional, you can pass arbitrary json data to save along with benchmark results
-        benchmark_specific_record = {'dataset_size': N}
+        benchmark_specific_record = {"dataset_size": N}
         # This is required result format
         return BenchmarkResults(measurement2time, benchmark_specific_record)
