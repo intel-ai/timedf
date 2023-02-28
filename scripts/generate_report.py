@@ -112,7 +112,8 @@ def parse_args():
         "-agg",
         dest="agg",
         default="median",
-        help="Path to the resulting file",
+        help="Result aggregation type for runs with several iterations. Median by default",
+        choices=["mean", "min", "max", "median"],
     )
     parser.add_argument(
         "-node",
