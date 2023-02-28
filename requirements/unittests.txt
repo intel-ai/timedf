@@ -3,4 +3,4 @@ pytest
 psutil
 numpy
 pandas
-sqlalchemy
+sqlalchemy==1.4
