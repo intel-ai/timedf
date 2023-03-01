@@ -1,6 +1,5 @@
-from pathlib import Path
+from omniscripts import BenchmarkResults, BaseBenchmark
 
-from utils import BenchmarkResults, BaseBenchmark, check_support
 from .preprocess import preprocess
 from .prepare_dataset import prepare_dataset
 from .optiver_utils import get_workdir_paths, tm
@@ -16,11 +15,10 @@ def benchmark(paths):
 
 
 class Benchmark(BaseBenchmark):
-    def run_benchmark(self, parameters) -> BenchmarkResults:
-        check_support(parameters, unsupported_params=["optimizer", "dfiles_num"])
+    __unsupported_params__ = ("optimizer", "dfiles_num")
 
-        raw_data_path = Path(parameters["data_file"].strip("'"))
-        paths = get_workdir_paths(raw_data_path)
+    def run_benchmark(self, params) -> BenchmarkResults:
+        paths = get_workdir_paths(params['data_file'])
         benchmark(paths=paths)
 
         task2time = tm.get_results()

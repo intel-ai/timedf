@@ -1,9 +1,7 @@
-# GPu reqs
-# !pip -q install ../input/pytorchtabnet/pytorch_tabnet-2.0.1-py3-none-any.whl
 from pathlib import Path
 import traceback
 
-from utils import TimerManager
+from omniscripts import TimerManager
 
 
 def print_trace(name: str = ""):
@@ -18,7 +16,7 @@ def get_workdir_paths(raw_data_path, workdir="./optiver_workdir"):
 
     paths = dict(
         workdir=workdir,
-        raw_data=raw_data_path,
+        raw_data=Path(raw_data_path),
         preprocessed=workdir / "features_v2.f",
         train=workdir / "train.f",
         test=workdir / "test.f",
@@ -29,5 +27,5 @@ def get_workdir_paths(raw_data_path, workdir="./optiver_workdir"):
     return paths
 
 
-tm = TimerManager(verbose=True)
+tm = TimerManager()
 timer = tm.timeit

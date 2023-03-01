@@ -12,8 +12,9 @@ from sklearn.manifold import TSNE
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import minmax_scale
 
-from optiver_vol.optiver_utils import print_trace, tm
-from utils.pandas_backend import pd
+from omniscripts.pandas_backend import pd
+
+from .optiver_utils import print_trace, tm
 
 
 # ### Nearest-Neighbor Features

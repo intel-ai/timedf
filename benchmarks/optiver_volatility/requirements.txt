@@ -7,3 +7,5 @@ lightgbm==3.3.5
 matplotlib
 pytorch
 pytorch_tabnet
+# GPu reqs
+# !pip -q install ../input/pytorchtabnet/pytorch_tabnet-2.0.1-py3-none-any.whl

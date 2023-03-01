@@ -2,9 +2,9 @@ from pathlib import Path
 
 import numpy as np
 
-from utils.pandas_backend import pd
+from omniscripts.pandas_backend import pd
 
-from optiver_vol.optiver_utils import print_trace, tm
+from .optiver_utils import print_trace, tm
 
 
 def load_data(data_dir, stem: str) -> pd.DataFrame:
