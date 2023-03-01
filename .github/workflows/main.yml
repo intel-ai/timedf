@@ -17,4 +17,8 @@ jobs:
       reset-cache: ${{ !!inputs.reset-cache }}
     secrets:
       token: ${{ secrets.AMYACHEV_GITHUB_TOKEN }}
-
+  modin-taxi:
+    uses: ./.github/workflows/test-taxi-docker.yml
+    with:
+      name: modin-taxi
+      reset-cache: ${{ !!inputs.reset-cache }}

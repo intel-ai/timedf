@@ -1,0 +1,34 @@
+name: Docker taxi test
+on:
+  workflow_call:
+    inputs:
+      name:
+        type: string
+        required: true
+      reset-cache:
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux, intel-ai.omniscripts.modin-taxi]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build docker image for modin tests
+        run: |
+          docker rm -f ci.${{ inputs.name }} || true
+          docker build -t ci/${{ inputs.name }} -f .github/workflows/modin/Dockerfile.ci ${{ inputs.reset-cache && '--no-cache' || '' }} .github/workflows/modin
+
+      - name: Run modin microbenchmarks and upload results
+        run:  |
+          set -vx
+
+          docker run -d --name ci.${{ inputs.name }} \
+            ci/${{ inputs.name }} conda run -n modin bash /modin/taxi-runner.sh
+
+      - name: Stop the container
+        if: always()
+        run: |
+          docker stop ci.${{ inputs.name }} || true
+
