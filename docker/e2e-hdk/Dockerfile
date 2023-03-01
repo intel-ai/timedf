@@ -16,12 +16,7 @@ RUN adduser --disabled-password \
 
 WORKDIR ${HOME}
 
-ADD omniscripts.tar omniscripts
-RUN chown -R ${USER}:${USER} omniscripts
-RUN chmod -R 0777 omniscripts
-
-# Done with actions that require root, switching to user mode
-
+# Switching to user mode for conda installation
 USER ${USER}
 SHELL ["/bin/bash", "--login", "-c"]
 
@@ -39,13 +34,23 @@ RUN wget -nv https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.
 RUN conda update -n base -c defaults conda -y && \
     conda create --name modin_hdk && \
     conda activate modin_hdk && \
-    conda install -y python=3.9 mamba psutil braceexpand scikit-learn==1.0.2 xgboost scikit-learn-intelex -c conda-forge && \
+    conda install -y python=3.9 mamba sqlalchemy==1.4 psutil braceexpand scikit-learn==1.0.2 xgboost scikit-learn-intelex -c conda-forge && \
     conda activate modin_hdk && mamba install -y modin-hdk -c conda-forge && \
-    conda clean --all --yes
+    conda clean --all --yes && \
+    pip install --no-cache-dir XlsxWriter
 
 ENV DATASETS_PWD /datasets
 ENV TBB_MALLOC_USE_HUGE_PAGES 1
 
+# change omniscripts owner
+USER root
+ADD omniscripts.tar omniscripts
 COPY run_benchmarks.sh ${HOME}
+RUN chown -R ${USER}:${USER} omniscripts && chown -R ${USER}:${USER} run_benchmarks.sh
+
+# Return to user
+USER ${USER}
+SHELL ["/bin/bash", "--login", "-c"]
+
 
 CMD ["bash", "run_benchmarks.sh"]

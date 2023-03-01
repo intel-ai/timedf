@@ -1,16 +1,4 @@
 report.csv
 __pycache__
 dask-worker-space
-bearysta-scripts/data
-bearysta-scripts/e0*
-bearysta-scripts/r0*
-bearysta-scripts/*/e0*
-bearysta-scripts/*/r0*
-bearysta-scripts/runs*
-bearysta-scripts/data
-bearysta-scripts/*/runs*
-bearysta-scripts/*/data
-bearysta-scripts/tpch/gen_*
-bearysta-scripts/tpch/runs*
-bearysta-scripts/tpch/tpc-h-dbgen
 *.tbl
