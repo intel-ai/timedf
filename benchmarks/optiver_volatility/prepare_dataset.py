@@ -36,18 +36,14 @@ class Neighbors:
         self.p = p
         self.metric = metric
 
-        if metric == "random":
-            n_queries = len(pivot)
-            self.neighbors = np.random.randint(n_queries, size=(n_queries, N_NEIGHBORS_MAX))
-        else:
-            nn = NearestNeighbors(
-                n_neighbors=N_NEIGHBORS_MAX, p=p, metric=metric, metric_params=metric_params
-            )
-            with tm.timeit("knn_train"):
-                nn.fit(pivot)
+        nn = NearestNeighbors(
+            n_neighbors=N_NEIGHBORS_MAX, p=p, metric=metric, metric_params=metric_params
+        )
+        with tm.timeit("knn_train"):
+            nn.fit(pivot)
 
-            with tm.timeit("knn_query"):
-                _, self.neighbors = nn.kneighbors(pivot, return_distance=True)
+        with tm.timeit("knn_query"):
+            _, self.neighbors = nn.kneighbors(pivot, return_distance=True)
 
         self.columns = self.index = self.feature_values = self.feature_col = None
 
@@ -74,15 +70,15 @@ class Neighbors:
 
 class TimeIdNeighbors(Neighbors):
     def rearrange_feature_values(self, df: pd.DataFrame, feature_col: str) -> None:
-        # with tm.timeit('01-feature pivot'):
-        feature_pivot = df.pivot(index="time_id", columns="stock_id", values=feature_col)
-        feature_pivot = feature_pivot.fillna(feature_pivot.mean())
+        with tm.timeit('01-feature pivot'):
+            feature_pivot = df.pivot(index="time_id", columns="stock_id", values=feature_col)
+            feature_pivot = feature_pivot.fillna(feature_pivot.mean())
 
-        # with tm.timeit('02-feature values'):
-        feature_values = np.zeros((N_NEIGHBORS_MAX, *feature_pivot.shape))
+        with tm.timeit("02-feature values"):
+            feature_values = np.zeros((N_NEIGHBORS_MAX, *feature_pivot.shape))
 
-        for i in range(N_NEIGHBORS_MAX):
-            feature_values[i, :, :] += feature_pivot.values[self.neighbors[:, i], :]
+            for i in range(N_NEIGHBORS_MAX):
+                feature_values[i, :, :] += feature_pivot.values[self.neighbors[:, i], :]
 
         self.columns = list(feature_pivot.columns)
         self.index = list(feature_pivot.index)
@@ -103,8 +99,8 @@ class StockIdNeighbors(Neighbors):
         with tm.timeit("02-feature_values"):
             feature_values = np.zeros((N_NEIGHBORS_MAX, *feature_pivot.shape))
 
-        for i in range(N_NEIGHBORS_MAX):
-            feature_values[i, :, :] += feature_pivot.values[:, self.neighbors[:, i]]
+            for i in range(N_NEIGHBORS_MAX):
+                feature_values[i, :, :] += feature_pivot.values[:, self.neighbors[:, i]]
 
         self.columns = list(feature_pivot.columns)
         self.index = list(feature_pivot.index)
@@ -291,8 +287,6 @@ def make_nearest_neighbor_feature(
     if ndf is not None:
         df2 = pd.merge(df2, ndf, on=["time_id", "stock_id"], how="left")
     ndf = None
-
-    print(df2.shape)
 
     # neighbor time_id
     for feature_col in feature_cols.keys():
@@ -524,8 +518,6 @@ def perform_split(df_train, raw_data_path):
 def prepare_dataset(paths):
     with tm.timeit("01-fe"):
         df2 = fe(paths["preprocessed"])
-
-    gc.collect()
 
     with tm.timeit("02-train_test_split"):
         df_train = df2[~df2.target.isnull()].copy()
