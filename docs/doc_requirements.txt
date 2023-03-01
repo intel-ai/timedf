@@ -1,20 +1,3 @@
 # new reqs
 sphinx
-
-# install current modin checkout to bring all required dependencies
-.[all]
-# now install some more optional dependencies
-colorama
-click
-flatbuffers
-funcsigs
-mock
-opencv-python
-pydata_sphinx_theme
-pyyaml
-recommonmark
-sphinx<6.0.0
-sphinx-click
-sphinxcontrib_plantuml
-sphinx-issues
-xgboost>=1.7.1,<2.0.0
+sphinx_rtd_theme

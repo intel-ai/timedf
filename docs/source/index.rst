@@ -1,17 +1,22 @@
-.. omniscripts documentation master file, created by
-   sphinx-quickstart on Tue Feb 28 09:51:06 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Omniscripts
+===========
 
-Welcome to omniscripts's documentation!
-=======================================
+The goal of this repository is to simplify dataframe 
+benchmarking and provide a set of pre-defined representative 
+benchmarks with Pandas API.
+
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   :numbered:
 
    install
-   support
+   adding_new_benchmark
+   library_tools
+   existing_benchmarks
+   arbitrary_workload
+   future
 
 
 
