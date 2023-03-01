@@ -70,7 +70,7 @@ class Neighbors:
 
 class TimeIdNeighbors(Neighbors):
     def rearrange_feature_values(self, df: pd.DataFrame, feature_col: str) -> None:
-        with tm.timeit('01-feature pivot'):
+        with tm.timeit("01-feature pivot"):
             feature_pivot = df.pivot(index="time_id", columns="stock_id", values=feature_col)
             feature_pivot = feature_pivot.fillna(feature_pivot.mean())
 
