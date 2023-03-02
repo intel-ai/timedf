@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+set -eu
+
 export CONDA_PREFIX=~/miniconda3
 export ENV_NAME=hdk_test
 
@@ -17,13 +19,6 @@ echo Miniconda activation ...
 eval source ${CONDA_PREFIX}/bin/activate
 conda update -n base -c defaults conda -y
 
-
-exit 0
-============
-
-
-#!/bin/bash -e
-
 eval source ${CONDA_PREFIX}/bin/activate
 
 #export OMNISCIDB_BUILD_ENV=omnisci-build
@@ -31,10 +26,7 @@ eval source ${CONDA_PREFIX}/bin/activate
 conda env remove --name ${ENV_NAME}  -y
 conda create --name ${ENV_NAME}  python=3.8 -y
 conda env update --name ${ENV_NAME} -f omniscidb/scripts/mapd-deps-conda-dev-env.yml
-# We don't need CUDA in this CI
-#conda uninstall --name $OMNISCIDB_BUILD_ENV nvcc_linux-64 -c conda-forge
 
-#conda activate $OMNISCIDB_BUILD_ENV
 conda activate ${ENV_NAME}
 
 conda install -c conda-forge cmake==3.23.1
@@ -43,7 +35,6 @@ echo ==== conda list of ${ENV_NAME} start
 conda list
 echo ==== conda list of ${ENV_NAME} end
 
-#bash scripts/conda/build-install-all.sh
 if [ -d "build" ]; then
 	rm -Rf "build"
 fi
@@ -52,9 +43,6 @@ cmake  .. -DENABLE_CUDA=off -DCMAKE_BUILD_TYPE=release
 make -j`nproc`
 make install
 
-=================
-
-#!/bin/bash -e
 
 #eval source ${CONDA_PREFIX}/bin/activate
 
@@ -89,9 +77,6 @@ python -c "import pyhdk"
 #cd modin_master && pip install -e . && pip install .[ray]
 
 
-=================
-
-
 #!/bin/bash -e
 
 #eval source ${CONDA_PREFIX}/bin/activate
@@ -125,11 +110,6 @@ python -c "import pyhdk"
 #conda install psutil braceexpand scikit-learn==1.0.2 xgboost scikit-learn-intelex mysql mysql-connector-python -c conda-forge
 
 #cd modin_master && pip install -e . && pip install .[ray]
-
-=================
-
-
-#!/bin/bash -e
 
 # The `LD_PRELOAD` variable can be viewed in the next build step via `export` command.
 # expand '~'
@@ -139,32 +119,15 @@ eval LD_LIBRARY_PATH=${CONDA_PREFIX}/envs/${ENV_NAME}/lib/
 echo "##teamcity[setParameter name='env.LD_PRELOAD' value='${LD_PRELOAD}']"
 echo "##teamcity[setParameter name='env.LD_LIBRARY_PATH' value='${LD_LIBRARY_PATH}']"
 
-
-=================
-
-
-#!/bin/bash
-
 eval source ${CONDA_PREFIX}/bin/activate
 
 PANDAS_MODE="Modin_on_hdk" ./build_scripts/ny_taxi_ml.sh
-
-=================
-
-#!/bin/bash
 
 eval source ${CONDA_PREFIX}/bin/activate
 
 PANDAS_MODE="Modin_on_ray" ./build_scripts/ny_taxi_ml.sh
 
-=================
-
-
-#!/bin/bash
 
 eval source ${CONDA_PREFIX}/bin/activate
 
 PANDAS_MODE="Pandas" ./build_scripts/ny_taxi_ml.sh
-
-=================
-
