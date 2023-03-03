@@ -1,7 +1,3 @@
-# GPu reqs
-# !pip -q install ../input/pytorchtabnet/pytorch_tabnet-2.0.1-py3-none-any.whl
-
-import gc
 from typing import Dict, List, Optional
 import pickle
 
@@ -19,6 +15,7 @@ from .optiver_utils import print_trace, tm
 
 # ### Nearest-Neighbor Features
 N_NEIGHBORS_MAX = 80
+
 
 class Neighbors:
     def __init__(
@@ -258,9 +255,9 @@ def make_nearest_neighbor_feature(
             return ndf
 
     # neighbor stock_id
-    with tm.timeit('01-stock_id_nn'):
+    with tm.timeit("01-stock_id_nn"):
         for feature_col in feature_cols_stock.keys():
-            with tm.timeit(f'feature={feature_col}'):
+            with tm.timeit(f"feature={feature_col}"):
                 if feature_col not in df2.columns:
                     print(f"column {feature_col} is skipped")
                     continue
@@ -269,31 +266,31 @@ def make_nearest_neighbor_feature(
                     continue
 
                 for nn in stock_id_neighbors:
-                    with tm.timeit(f'rearrange_feature_values {nn}'):
+                    with tm.timeit(f"rearrange_feature_values {nn}"):
                         nn.rearrange_feature_values(df2, feature_col)
 
                 for agg in feature_cols_stock[feature_col]:
                     for n in stock_id_neighbor_sizes:
-                        with tm.timeit(f'make_nn_feature agg={agg} nn={nn}'):
+                        with tm.timeit(f"make_nn_feature agg={agg} nn={nn}"):
                             for nn in stock_id_neighbors:
                                 dst = nn.make_nn_feature(n, agg)
                                 ndf = _add_ndf(ndf, dst)
-                    
+
     if ndf is not None:
         df2 = pd.merge(df2, ndf, on=["time_id", "stock_id"], how="left")
     ndf = None
 
     # neighbor time_id
-    
-    with tm.timeit('02-time_id_nn'):
+
+    with tm.timeit("02-time_id_nn"):
         for feature_col in feature_cols.keys():
-            with tm.timeit('nn_time_id_feature'):
+            with tm.timeit("nn_time_id_feature"):
                 if feature_col not in df2.columns:
                     print(f"column {feature_col} is skipped")
                     continue
 
                 for nn in time_id_neighbors:
-                    with tm.timeit(f'rearrange_feature_values {nn}'):
+                    with tm.timeit(f"rearrange_feature_values {nn}"):
                         nn.rearrange_feature_values(df2, feature_col)
 
                 if "volatility" in feature_col:
@@ -303,17 +300,17 @@ def make_nearest_neighbor_feature(
 
                 for agg in feature_cols[feature_col]:
                     for n in time_id_ns:
-                        with tm.timeit(f'make_nn_feature agg={agg} nn={nn}'):
+                        with tm.timeit(f"make_nn_feature agg={agg} nn={nn}"):
                             for nn in time_id_neighbors:
                                 dst = nn.make_nn_feature(n, agg)
                                 ndf = _add_ndf(ndf, dst)
 
-    with tm.timeit('03-merge'):
+    with tm.timeit("03-merge"):
         if ndf is not None:
             df2 = pd.merge(df2, ndf, on=["time_id", "stock_id"], how="left")
 
     # features further derived from nearest neighbor features
-    with tm.timeit('04-nn_extra_features'):
+    with tm.timeit("04-nn_extra_features"):
         for sz in time_id_neigbor_sizes:
             denominator = f"real_price_nn{sz}_time_price_c"
 
