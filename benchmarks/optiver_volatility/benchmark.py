@@ -10,7 +10,7 @@ def benchmark(paths):
         with tm.timeit("01-preprocess"):
             preprocess(raw_data_path=paths["raw_data"], preprocessed_path=paths["preprocessed"])
 
-        with tm.timeit("02-prepare dataset"):
+        with tm.timeit("02-prepare dataset (mix of ML and DP)"):
             prepare_dataset(paths=paths)
 
 

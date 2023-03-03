@@ -206,13 +206,11 @@ def preprocess(raw_data_path: Path, preprocessed_path: Path):
             df = pd.merge(df, book_v2, on=["stock_id", "time_id"], how="left")
 
     # Use copy of training data as test data to imitate 2nd stage RAM usage.
-    MEMORY_TEST_MODE = True
-    if MEMORY_TEST_MODE:
-        with tm.timeit("02-test generation"):
-            test_df = df.iloc[:170000].copy()
-            test_df["time_id"] += 32767
-            test_df["row_id"] = ""
+    with tm.timeit("02-test generation"):
+        test_df = df.iloc[:170000].copy()
+        test_df["time_id"] += 32767
+        test_df["row_id"] = ""
 
-            df = pd.concat([df, test_df.drop("row_id", axis=1)]).reset_index(drop=True)
+        df = pd.concat([df, test_df.drop("row_id", axis=1)]).reset_index(drop=True)
 
     df.to_feather(preprocessed_path)  # save cache

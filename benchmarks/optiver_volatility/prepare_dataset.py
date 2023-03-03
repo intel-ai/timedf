@@ -20,7 +20,6 @@ from .optiver_utils import print_trace, tm
 # ### Nearest-Neighbor Features
 N_NEIGHBORS_MAX = 80
 
-
 class Neighbors:
     def __init__(
         self,
@@ -128,7 +127,7 @@ def train_nearest_neighbors(df):
             # Price features
             pivot = df_pv.pivot(index="time_id", columns="stock_id", values="price")
             pivot = pivot.fillna(pivot.mean())
-            # pivot = pd.DataFrame(minmax_scale(pivot))
+            pivot = pd.DataFrame(minmax_scale(pivot))
 
         with tm.timeit("02-time_id_neighbors_time_price_c"):
             time_id_neighbors.append(
@@ -159,7 +158,7 @@ def train_nearest_neighbors(df):
         with tm.timeit("01-pivot"):
             pivot = df_pv.pivot(index="time_id", columns="stock_id", values="vol")
             pivot = pivot.fillna(pivot.mean())
-            # pivot = pd.DataFrame(minmax_scale(pivot))
+            pivot = pd.DataFrame(minmax_scale(pivot))
 
         with tm.timeit("02-time_id_neighbors"):
             time_id_neighbors.append(TimeIdNeighbors("time_vol_l1", pivot, p=1))
@@ -176,7 +175,7 @@ def train_nearest_neighbors(df):
             # size nn features
             pivot = df_pv.pivot(index="time_id", columns="stock_id", values="trade.size.sum")
             pivot = pivot.fillna(pivot.mean())
-            # pivot = pd.DataFrame(minmax_scale(pivot))
+            pivot = pd.DataFrame(minmax_scale(pivot))
 
         with tm.timeit("02-time_id_neighbors_time_size_m"):
             with tm.timeit("matrix_inversion_problem"):
@@ -259,67 +258,62 @@ def make_nearest_neighbor_feature(
             return ndf
 
     # neighbor stock_id
-    for feature_col in feature_cols_stock.keys():
-        try:
-            if feature_col not in df2.columns:
-                print(f"column {feature_col} is skipped")
-                continue
+    with tm.timeit('01-stock_id_nn'):
+        for feature_col in feature_cols_stock.keys():
+            with tm.timeit(f'feature={feature_col}'):
+                if feature_col not in df2.columns:
+                    print(f"column {feature_col} is skipped")
+                    continue
 
-            if not stock_id_neighbors:
-                continue
+                if not stock_id_neighbors:
+                    continue
 
-            for nn in stock_id_neighbors:
-                nn.rearrange_feature_values(df2, feature_col)
+                for nn in stock_id_neighbors:
+                    with tm.timeit(f'rearrange_feature_values {nn}'):
+                        nn.rearrange_feature_values(df2, feature_col)
 
-            for agg in feature_cols_stock[feature_col]:
-                for n in stock_id_neighbor_sizes:
-                    try:
-                        for nn in stock_id_neighbors:
-                            dst = nn.make_nn_feature(n, agg)
-                            ndf = _add_ndf(ndf, dst)
-                    except Exception:
-                        print_trace("stock-id nn")
-                        pass
-        except Exception:
-            print_trace("stock-id nn")
-            pass
-
+                for agg in feature_cols_stock[feature_col]:
+                    for n in stock_id_neighbor_sizes:
+                        with tm.timeit(f'make_nn_feature agg={agg} nn={nn}'):
+                            for nn in stock_id_neighbors:
+                                dst = nn.make_nn_feature(n, agg)
+                                ndf = _add_ndf(ndf, dst)
+                    
     if ndf is not None:
         df2 = pd.merge(df2, ndf, on=["time_id", "stock_id"], how="left")
     ndf = None
 
     # neighbor time_id
-    for feature_col in feature_cols.keys():
-        try:
-            if feature_col not in df2.columns:
-                print(f"column {feature_col} is skipped")
-                continue
+    
+    with tm.timeit('02-time_id_nn'):
+        for feature_col in feature_cols.keys():
+            with tm.timeit('nn_time_id_feature'):
+                if feature_col not in df2.columns:
+                    print(f"column {feature_col} is skipped")
+                    continue
 
-            for nn in time_id_neighbors:
-                nn.rearrange_feature_values(df2, feature_col)
+                for nn in time_id_neighbors:
+                    with tm.timeit(f'rearrange_feature_values {nn}'):
+                        nn.rearrange_feature_values(df2, feature_col)
 
-            if "volatility" in feature_col:
-                time_id_ns = time_id_neigbor_sizes_vol
-            else:
-                time_id_ns = time_id_neigbor_sizes
+                if "volatility" in feature_col:
+                    time_id_ns = time_id_neigbor_sizes_vol
+                else:
+                    time_id_ns = time_id_neigbor_sizes
 
-            for agg in feature_cols[feature_col]:
-                for n in time_id_ns:
-                    try:
-                        for nn in time_id_neighbors:
-                            dst = nn.make_nn_feature(n, agg)
-                            ndf = _add_ndf(ndf, dst)
-                    except Exception:
-                        print_trace("time-id nn")
-                        pass
-        except Exception:
-            print_trace("time-id nn")
+                for agg in feature_cols[feature_col]:
+                    for n in time_id_ns:
+                        with tm.timeit(f'make_nn_feature agg={agg} nn={nn}'):
+                            for nn in time_id_neighbors:
+                                dst = nn.make_nn_feature(n, agg)
+                                ndf = _add_ndf(ndf, dst)
 
-    if ndf is not None:
-        df2 = pd.merge(df2, ndf, on=["time_id", "stock_id"], how="left")
+    with tm.timeit('03-merge'):
+        if ndf is not None:
+            df2 = pd.merge(df2, ndf, on=["time_id", "stock_id"], how="left")
 
     # features further derived from nearest neighbor features
-    try:
+    with tm.timeit('04-nn_extra_features'):
         for sz in time_id_neigbor_sizes:
             denominator = f"real_price_nn{sz}_time_price_c"
 
@@ -344,9 +338,6 @@ def make_nearest_neighbor_feature(
         for sz in time_id_neigbor_sizes_vol:
             tgt = f"book.log_return1.realized_volatility_nn{sz}_time_price_m_mean"
             df2[f"{tgt}_rank"] = df2.groupby("time_id")[tgt].rank()
-    except Exception:
-        print_trace("nn features")
-
     return df2
 
 
@@ -425,12 +416,9 @@ def fe(preprocessed_path):
     with tm.timeit("04-normalize rank"):
         normalize_rank(df)
 
-    gc.collect()
-
     with tm.timeit("05-make_nearest_neighbor_feature"):
         df2 = make_nearest_neighbor_feature(df, stock_id_neighbors, time_id_neighbors)
 
-    gc.collect()
     with tm.timeit("06-extra features for df2"):
         skew_correction(df2)
         rolling_average(df2)
@@ -468,7 +456,7 @@ def reconstruct_time_id_order(raw_data_path):
         df_prices.columns = [f"stock_id={i}" for i in df_prices.columns]
         df_prices = df_prices.reset_index(drop=False)
 
-    with tm.timeit("t-SNE(400) -> 50"):
+    with tm.timeit("t-SNE(400) -> 50 (ML-heavy)"):
         clf = TSNE(n_components=1, perplexity=400, random_state=0, n_iter=2000)
         order, X_compoents = sort_manifold(df_prices, clf)
 
@@ -509,9 +497,8 @@ def perform_split(df_train, raw_data_path):
             idx_valid = np.where((border <= time_id_orders) & (time_id_orders < border + 383))[0]
             folds.append((idx_train, idx_valid))
 
-            print(f"folds{i}: train={len(idx_train)}, valid={len(idx_valid)}")
+        del df_train["time_id_order"]
 
-    del df_train["time_id_order"]
     return folds
 
 
@@ -522,7 +509,6 @@ def prepare_dataset(paths):
     with tm.timeit("02-train_test_split"):
         df_train = df2[~df2.target.isnull()].copy()
         df_test = df2[df2.target.isnull()].copy()
-        del df2
 
         folds = perform_split(df_train, raw_data_path=paths["raw_data"])
 
