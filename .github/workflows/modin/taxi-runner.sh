@@ -5,6 +5,10 @@ set -e
 export CONDA_PREFIX=~/miniconda3
 export ENV_NAME=hdk_test
 
+ORIGPWD=${PWD}
+
+cd /hdk
+
 eval echo Removing ${CONDA_PREFIX} ...
 eval rm -rf ${CONDA_PREFIX} 
 
@@ -43,14 +47,13 @@ cmake  .. -DENABLE_CUDA=off -DCMAKE_BUILD_TYPE=release
 make -j`nproc`
 make install
 
-cd -
-
 #eval source ${CONDA_PREFIX}/bin/activate
 
 # remove previously installed packages
 # conda clean -f
 #./teamcity_build_scripts/19-build_modin_dbe.sh
 
+cd "$ORIGPWD"
 
 eval source ${CONDA_PREFIX}/bin/activate ${ENV_NAME}
 
