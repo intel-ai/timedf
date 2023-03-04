@@ -103,11 +103,6 @@ eval source ${CONDA_PREFIX}/bin/activate
 
 PANDAS_MODE="Modin_on_hdk" ./build_scripts/ny_taxi_ml.sh
 
-eval source ${CONDA_PREFIX}/bin/activate
-
 PANDAS_MODE="Modin_on_ray" ./build_scripts/ny_taxi_ml.sh
-
-
-eval source ${CONDA_PREFIX}/bin/activate
 
 PANDAS_MODE="Pandas" ./build_scripts/ny_taxi_ml.sh
