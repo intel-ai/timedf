@@ -42,7 +42,7 @@ echo ==== conda list of ${ENV_NAME} end
 if [ -d "build" ]; then
 	rm -Rf "build"
 fi
-mkdir /hdk/build; cd /hdk/build
+mkdir build; cd build
 cmake  .. -DENABLE_CUDA=off -DCMAKE_BUILD_TYPE=release
 make -j`nproc`
 make install
@@ -63,7 +63,7 @@ eval source ${CONDA_PREFIX}/bin/activate ${ENV_NAME}
 conda install psutil braceexpand scikit-learn==1.0.2 xgboost scikit-learn-intelex mysql mysql-connector-python sqlalchemy>=1.4 -c conda-forge
 
 # Modin installation
-cd modin && pip install -e . && pip install .[ray] ray==2.0.1 && cd ..
+pip install -e . && pip install .[ray] ray==2.0.1
 
 echo ==== conda list of ${ENV_NAME} start
 conda list
@@ -88,32 +88,6 @@ python -c "import pyhdk"
 # remove previously installed packages
 # conda clean -f
 #./teamcity_build_scripts/19-build_modin_dbe.sh
-
-
-eval source ${CONDA_PREFIX}/bin/activate ${ENV_NAME}
-
-# we have already installed omniscidb; just comment the line
-# sed -i '/- pyomniscidbe/s/^/#/' modin/requirements/env_omnisci.yml
-# conda env update --name ${ENV_NAME} --file modin/requirements/env_omnisci.yml
-conda install psutil braceexpand scikit-learn==1.0.2 xgboost scikit-learn-intelex mysql mysql-connector-python sqlalchemy>=1.4 -c conda-forge
-
-# Modin installation
-cd modin && pip install -e . && pip install .[ray] ray==2.0.1 && cd ..
-
-echo ==== conda list of ${ENV_NAME} start
-conda list
-echo ==== conda list of ${ENV_NAME} end
-
-python -c "import pyhdk"
-
-# TEMP step while we have hdk support in separate modin branch not in master! 
-#conda env remove --name ${ENV_NAME}_tmp  -y
-#conda create --name ${ENV_NAME}_tmp  python=3.8 -y
-#conda activate ${ENV_NAME}_tmp
-#git clone https://github.com/modin-project/modin modin_master
-#conda install psutil braceexpand scikit-learn==1.0.2 xgboost scikit-learn-intelex mysql mysql-connector-python -c conda-forge
-
-#cd modin_master && pip install -e . && pip install .[ray]
 
 # The `LD_PRELOAD` variable can be viewed in the next build step via `export` command.
 # expand '~'
