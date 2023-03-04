@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-set -eux
+set -ex
 
 export CONDA_PREFIX=~/miniconda3
 export ENV_NAME=hdk_test
