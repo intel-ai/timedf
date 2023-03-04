@@ -4,6 +4,7 @@ set -e
 
 export CONDA_PREFIX=~/miniconda3
 export ENV_NAME=hdk_test
+export MODIN_USE_CALCITE=True
 
 
 cd /hdk
