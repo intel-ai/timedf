@@ -25,8 +25,7 @@ eval source ${CONDA_PREFIX}/bin/activate
 
 conda env remove --name ${ENV_NAME}  -y
 conda create --name ${ENV_NAME}  python=3.8 -y
-ls
-conda env update --name ${ENV_NAME} -f omniscidb/scripts/mapd-deps-conda-dev-env.yml
+conda env update --name ${ENV_NAME} -f /hdk/omniscidb/scripts/mapd-deps-conda-dev-env.yml
 
 conda activate ${ENV_NAME}
 
