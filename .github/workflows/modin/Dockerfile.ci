@@ -12,6 +12,8 @@ ARG ENVIRONMENT=environment-dev.yml
 
 ADD modin.tar /modin
 ADD hdk.tar /hdk
+ADD omniscripts.tar /omniscripts
+
 ADD git-rev asv-env.yml taxi-runner.sh asv-runner.sh /modin/
 
 WORKDIR /modin

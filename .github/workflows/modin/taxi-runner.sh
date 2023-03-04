@@ -5,7 +5,6 @@ set -e
 export CONDA_PREFIX=~/miniconda3
 export ENV_NAME=hdk_test
 
-ORIGPWD=${PWD}
 
 cd /hdk
 
@@ -53,7 +52,7 @@ make install
 # conda clean -f
 #./teamcity_build_scripts/19-build_modin_dbe.sh
 
-cd "$ORIGPWD"
+cd "/modin"
 
 eval source ${CONDA_PREFIX}/bin/activate ${ENV_NAME}
 
@@ -120,8 +119,10 @@ python -c "import pyhdk"
 eval LD_PRELOAD=${CONDA_PREFIX}/envs/${ENV_NAME}/lib/libtbbmalloc_proxy.so.2
 eval LD_LIBRARY_PATH=${CONDA_PREFIX}/envs/${ENV_NAME}/lib/
 
-echo "##teamcity[setParameter name='env.LD_PRELOAD' value='${LD_PRELOAD}']"
-echo "##teamcity[setParameter name='env.LD_LIBRARY_PATH' value='${LD_LIBRARY_PATH}']"
+#echo "##teamcity[setParameter name='env.LD_PRELOAD' value='${LD_PRELOAD}']"
+#echo "##teamcity[setParameter name='env.LD_LIBRARY_PATH' value='${LD_LIBRARY_PATH}']"
+
+cd /omniscripts
 
 eval source ${CONDA_PREFIX}/bin/activate
 
