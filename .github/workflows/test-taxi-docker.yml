@@ -7,7 +7,7 @@ on:
         required: true
       reset-cache:
         type: boolean
-        default: false
+        default: true
 
 jobs:
   build:
