@@ -2,8 +2,6 @@
 
 set -e
 
-cd /hdk
-
 export CONDA_PREFIX=~/miniconda3
 export ENV_NAME=hdk_test
 
@@ -40,11 +38,12 @@ echo ==== conda list of ${ENV_NAME} end
 if [ -d "build" ]; then
 	rm -Rf "build"
 fi
-mkdir build; cd build
+mkdir /hdk/build; cd /hdk/build
 cmake  .. -DENABLE_CUDA=off -DCMAKE_BUILD_TYPE=release
 make -j`nproc`
 make install
 
+cd -
 
 #eval source ${CONDA_PREFIX}/bin/activate
 
