@@ -11,12 +11,17 @@ FROM rayproject/ray:1.0.1
 ARG ENVIRONMENT=environment-dev.yml
 
 ADD modin.tar /modin
-ADD git-rev asv-env.yml asv-runner.sh /modin/
+ADD git-rev asv-env.yml asv-runner.sh asv-ray-runner.sh install-hdk.sh /modin/
 
 WORKDIR /modin
 
 # Make RUN commands use `bash --login`:
 SHELL ["/bin/bash", "--login", "-c"]
+
+RUN useradd -m --uid 1001 ghrunner
+RUN chown ghrunner:ghrunner /modin
+
+USER ghrunner
 
 # Initialize conda in bash config files:
 RUN conda init bash
@@ -26,12 +31,5 @@ RUN conda update python -y
 RUN conda env create -f asv-env.yml
 RUN conda install curl PyGithub
 
-# Activate the environment, and make sure it's activated:
-# The following line also removed conda initialization from
-# ~/.bashrc so conda starts complaining that it should be
-# initialized for bash. But it is necessary to do it because
-# activation is not always executed when "docker exec" is used
-# and then conda initialization overwrites PATH with its base
-# environment where python doesn't have any packages installed.
 RUN conda list -n modin
 
