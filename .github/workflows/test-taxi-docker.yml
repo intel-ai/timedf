@@ -34,8 +34,14 @@ jobs:
           cd ..
           tar cf .github/workflows/modin/modin.tar -C modin .
 
+          cd hdk
+          git rev-parse HEAD >../.github/workflows/modin/hdk-git-rev
+          cd ..
           tar cf .github/workflows/modin/hdk.tar -C hdk .
 
+          cd omniscripts
+          git rev-parse HEAD >../.github/workflows/modin/omniscripts-git-rev
+          cd ..
           tar cf .github/workflows/modin/omniscripts.tar -C omniscripts .
 
           docker rm -f ci.${{ inputs.name }} || true
