@@ -44,7 +44,7 @@ if [ -d "build" ]; then
 fi
 mkdir build; cd build
 cmake  .. -DENABLE_CUDA=off -DCMAKE_BUILD_TYPE=release
-make -j`nproc`
+make VERBOSE=1 -j`nproc`
 make install
 
 #eval source ${CONDA_PREFIX}/bin/activate
