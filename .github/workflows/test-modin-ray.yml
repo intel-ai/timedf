@@ -54,7 +54,7 @@ jobs:
       - name: Run modin microbenchmarks and upload results
         run:  |
           docker run -u ghrunner --name ci.${{ inputs.name }} ci/${{ inputs.name }} \
-            -e DB_COMMON_OPTIONS=${{ secrets.DB_COMMON_OPTIONS }} \
+            -e DB_COMMON_OPTS=${{ secrets.DB_COMMON_OPTS }} \
             conda run --no-capture-output -n modin-test sh /_work/omniscripts/.github/workflows/modin/asv-ray-runner.sh
 
       - name: Stop the container
