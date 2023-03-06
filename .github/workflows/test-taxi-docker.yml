@@ -41,7 +41,7 @@ jobs:
           tar --exclude=modin --exclude=build.tgz -cf .github/workflows/modin/omniscripts.tar .
 
           cd modin
-          git rev-parse HEAD > ../.github/workflows/modin/omniscripts-git-rev
+          git rev-parse HEAD > ../.github/workflows/modin/git-rev
           tar -cf ../.github/workflows/modin/modin.tar modin/
           cd ..
 
