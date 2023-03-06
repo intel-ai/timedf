@@ -38,11 +38,11 @@ jobs:
       - name: Build docker image for modin tests
         run: |
           git rev-parse HEAD > .github/workflows/modin/omniscripts-git-rev
-          tar --exclude=build.tgz -cf .github/workflows/modin/omniscripts.tar .
+          tar --exclude=modin --exclude=build.tgz -cf .github/workflows/modin/omniscripts.tar .
 
           cd modin
           git rev-parse HEAD > ../.github/workflows/modin/omniscripts-git-rev
-          tar -cf .github/workflows/modin/modin.tar modin/
+          tar -cf ../.github/workflows/modin/modin.tar modin/
           cd ..
 
           docker rm -f ci.${{ inputs.name }} || true
