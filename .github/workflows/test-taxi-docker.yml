@@ -40,6 +40,11 @@ jobs:
           git rev-parse HEAD > .github/workflows/modin/omniscripts-git-rev
           tar --exclude=build.tgz -cf .github/workflows/modin/omniscripts.tar .
 
+          cd modin
+          git rev-parse HEAD > ../.github/workflows/modin/omniscripts-git-rev
+          tar -cf .github/workflows/modin/modin.tar modin/
+          cd ..
+
           docker rm -f ci.${{ inputs.name }} || true
           docker build -t ci/${{ inputs.name }} -f .github/workflows/modin/Dockerfile.ci ${{ inputs.reset-cache && '--no-cache' || '' }} .github/workflows/modin
 
