@@ -10,7 +10,10 @@ on:
         default: cpu
       reset-cache:
         type: boolean
-        default: false        
+        default: false
+    secrets:
+      DB_COMMON_OPTS:
+        required: true
 
 jobs:
   test:
@@ -36,7 +39,7 @@ jobs:
         with:
           repo: intel-ai/hdk
           workflow: main.yml
-          branch: lesh/add-release
+          branch: main
           workflow_conclusion: success
           name: ${{ runner.os }}-${{ inputs.build }}-release
           search_artifacts: true
@@ -50,7 +53,9 @@ jobs:
 
       - name: Run modin microbenchmarks and upload results
         run:  |
-          docker run -u ghrunner --name ci.${{ inputs.name }} ci/${{ inputs.name }} conda run --no-capture-output -n modin-test sh /_work/omniscripts/.github/workflows/modin/asv-ray-runner.sh
+          docker run -u ghrunner --name ci.${{ inputs.name }} ci/${{ inputs.name }} \
+            -e DB_COMMON_OPTIONS=${{ secrets.DB_COMMON_OPTIONS }} \
+            conda run --no-capture-output -n modin-test sh /_work/omniscripts/.github/workflows/modin/asv-ray-runner.sh
 
       - name: Stop the container
         if: always()

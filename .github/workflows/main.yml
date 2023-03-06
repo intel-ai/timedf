@@ -23,4 +23,6 @@ jobs:
     with:
       name: modin-ray
       reset-cache: ${{ !!inputs.reset-cache }}
+    secrets:
+      token: ${{ secrets.DB_COMMON_OPTS }}
 
