@@ -257,7 +257,7 @@ def make_nearest_neighbor_feature(
     # neighbor stock_id
     with tm.timeit("01-stock_id_nn"):
         for feature_col in feature_cols_stock.keys():
-            with tm.timeit(f"feature={feature_col}"):
+            with tm.timeit(f"feature={feature_col.replace('.', '-')}"):
                 if feature_col not in df2.columns:
                     print(f"column {feature_col} is skipped")
                     continue
@@ -284,7 +284,7 @@ def make_nearest_neighbor_feature(
 
     with tm.timeit("02-time_id_nn"):
         for feature_col in feature_cols.keys():
-            with tm.timeit("nn_time_id_feature"):
+            with tm.timeit(f"nn_time_id_feature={feature_col.replace('.', '-')}"):
                 if feature_col not in df2.columns:
                     print(f"column {feature_col} is skipped")
                     continue
