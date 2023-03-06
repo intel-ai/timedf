@@ -22,12 +22,12 @@ PANDAS_MACHINE_NAME=$HOST_NAME-pandas
 # Ray config ##
 ###############
 
-export MODIN_ENGINE=ray
+# export MODIN_ENGINE=ray
 
-asv run --launch-method=spawn --config asv.conf.hdk.json \
-    -b ^hdk --machine $RAY_MACHINE_NAME -a repeat=3 -a number=1 \
-    --show-stderr --python=same --set-commit-hash HEAD
-RAY_RESULT_NAME=`ls .asv/results/$RAY_MACHINE_NAME/ | grep existing`
+# asv run --launch-method=spawn --config asv.conf.hdk.json \
+#    -b ^hdk --machine $RAY_MACHINE_NAME -a repeat=3 -a number=1 \
+#    --show-stderr --python=same --set-commit-hash HEAD
+#RAY_RESULT_NAME=`ls .asv/results/$RAY_MACHINE_NAME/ | grep existing`
 
 
 ##############
@@ -75,3 +75,4 @@ python report_asv_result.py \
 python report_asv_result.py \
     --result-path ../modin/asv_bench/.asv/results/$PANDAS_MACHINE_NAME/$PANDAS_RESULT_NAME \
     $DB_COMMON_OPTS
+
