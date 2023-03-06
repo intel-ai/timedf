@@ -8,6 +8,9 @@ on:
       reset-cache:
         type: boolean
         default: true
+      build:
+        type: string
+        default: cpu
 
 jobs:
   build:
