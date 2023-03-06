@@ -8,20 +8,18 @@
 
 FROM rayproject/ray:1.0.1
 
-ARG ENVIRONMENT=environment-dev.yml
-
-ADD modin.tar /modin
-ADD git-rev asv-env.yml asv-runner.sh asv-ray-runner.sh install-hdk.sh /modin/
-
 WORKDIR /modin
-
-# Make RUN commands use `bash --login`:
-SHELL ["/bin/bash", "--login", "-c"]
 
 RUN useradd -m --uid 1001 ghrunner
 RUN chown ghrunner:ghrunner /modin
 
 USER ghrunner
+
+# Make RUN commands use `bash --login`:
+SHELL ["/bin/bash", "--login", "-c"]
+
+ADD --chown ghrunner:ghrunner modin.tar /modin
+ADD --chown ghrunner:ghrunner git-rev asv-env.yml asv-runner.sh install-hdk.sh /modin/
 
 # Initialize conda in bash config files:
 RUN conda init bash
