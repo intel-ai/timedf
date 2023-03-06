@@ -11,8 +11,8 @@ FROM rayproject/ray:1.0.1
 ARG ENVIRONMENT=environment-dev.yml
 
 ADD modin.tar /modin
-COPY --chown=ghrunner:ghrunner build.tgz /hdk
-COPY --chown=ghrunner:ghrunner  omniscripts.tar /omniscripts
+COPY  build.tgz /hdk
+COPY  omniscripts.tar /omniscripts
 
 ADD git-rev asv-env.yml taxi-runner.sh asv-runner.sh /modin/
 
