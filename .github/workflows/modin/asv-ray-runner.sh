@@ -8,6 +8,8 @@ cd /_work
     mkdir hdk
     cd hdk
     tar --strip-components=1 -zxf /_work/release.tgz -C $CONDA_PREFIX install-prefix
+    find $CONDA_PREFIX
+    exit 1
 )
 
 # Modin installation
