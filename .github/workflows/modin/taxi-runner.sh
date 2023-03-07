@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-set -e
+set -ex
 
 export CONDA_PREFIX=~/miniconda3
 export ENV_NAME=hdk_test
@@ -21,6 +21,7 @@ rm -f /tmp/miniconda3.sh
 eval ${CONDA_PREFIX}/bin/conda init bash
 
 echo Miniconda activation ...
+
 eval source ${CONDA_PREFIX}/bin/activate
 conda update -n base -c defaults conda -y
 
@@ -29,7 +30,7 @@ eval source ${CONDA_PREFIX}/bin/activate
 #export OMNISCIDB_BUILD_ENV=omnisci-build
 
 conda env remove --name ${ENV_NAME}  -y
-conda create --name ${ENV_NAME}  python=3.8 -y
+conda env create --name ${ENV_NAME}  python=3.8 -y
 conda env update --name ${ENV_NAME} -f omniscidb/scripts/mapd-deps-conda-dev-env.yml
 
 conda activate ${ENV_NAME}
