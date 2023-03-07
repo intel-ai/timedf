@@ -11,16 +11,16 @@ FROM rayproject/ray:1.0.1
 ARG ENVIRONMENT=environment-dev.yml
 
 ADD modin.tar /modin
-COPY  build.tgz /hdk.tgz
+#COPY  build.tgz /hdk.tgz
 ADD  omniscripts.tar /omniscripts
 
 ADD git-rev asv-env.yml taxi-runner.sh asv-runner.sh /modin/
 
-RUN mkdir /hdk
+#RUN mkdir /hdk
 
-RUN tar zxf /hdk.tgz -C /hdk
+#RUN tar zxf /hdk.tgz -C /hdk
 
-RUN rm /hdk.tgz
+#RUN rm /hdk.tgz
 
 WORKDIR /modin
 

@@ -36,6 +36,7 @@ conda env update --name ${ENV_NAME} -f omniscidb/scripts/mapd-deps-conda-dev-env
 
 conda activate ${ENV_NAME}
 
+conda install pyhdk
 conda install -c conda-forge cmake==3.23.1
 
 echo ==== conda list of ${ENV_NAME} start
