@@ -66,11 +66,11 @@ class Neighbors:
 
 class TimeIdNeighbors(Neighbors):
     def rearrange_feature_values(self, df: pd.DataFrame, feature_col: str) -> None:
-        with tm.timeit("01-feature pivot"):
+        with tm.timeit("01-fp"):
             feature_pivot = df.pivot(index="time_id", columns="stock_id", values=feature_col)
             feature_pivot = feature_pivot.fillna(feature_pivot.mean())
 
-        with tm.timeit("02-feature values"):
+        with tm.timeit("02-fv"):
             feature_values = np.zeros((N_NEIGHBORS_MAX, *feature_pivot.shape))
 
             for i in range(N_NEIGHBORS_MAX):
@@ -82,17 +82,17 @@ class TimeIdNeighbors(Neighbors):
         self.feature_col = feature_col
 
     def __repr__(self) -> str:
-        return f"time-id NN (name={self.name}, metric={self.metric}, p={self.p})"
+        return f"time-id_nn_(name={self.name}, metric={self.metric}, p={self.p})"
 
 
 class StockIdNeighbors(Neighbors):
     def rearrange_feature_values(self, df: pd.DataFrame, feature_col: str) -> None:
         """stock-id based nearest neighbor features"""
-        with tm.timeit("01-feature_pivot"):
+        with tm.timeit("01-fp"):
             feature_pivot = df.pivot(index="time_id", columns="stock_id", values=feature_col)
             feature_pivot = feature_pivot.fillna(feature_pivot.mean())
 
-        with tm.timeit("02-feature_values"):
+        with tm.timeit("02-fv"):
             feature_values = np.zeros((N_NEIGHBORS_MAX, *feature_pivot.shape))
 
             for i in range(N_NEIGHBORS_MAX):
@@ -266,13 +266,13 @@ def make_nearest_neighbor_feature(
                     continue
 
                 for nn in stock_id_neighbors:
-                    with tm.timeit(f"rearrange_feature_values {nn}"):
+                    with tm.timeit(f"rearrange_fv {nn}"):
                         nn.rearrange_feature_values(df2, feature_col)
 
                 for agg in feature_cols_stock[feature_col]:
                     for n in stock_id_neighbor_sizes:
-                        with tm.timeit(f"make_nn_feature agg={agg} nn={nn}"):
-                            for nn in stock_id_neighbors:
+                        for nn in stock_id_neighbors:
+                            with tm.timeit(f"make_nn_feature_agg={agg}_n={n}_nn={nn}"):
                                 dst = nn.make_nn_feature(n, agg)
                                 ndf = _add_ndf(ndf, dst)
 
@@ -290,7 +290,7 @@ def make_nearest_neighbor_feature(
                     continue
 
                 for nn in time_id_neighbors:
-                    with tm.timeit(f"rearrange_feature_values {nn}"):
+                    with tm.timeit(f"rearrange_fv {nn}"):
                         nn.rearrange_feature_values(df2, feature_col)
 
                 if "volatility" in feature_col:
@@ -300,8 +300,8 @@ def make_nearest_neighbor_feature(
 
                 for agg in feature_cols[feature_col]:
                     for n in time_id_ns:
-                        with tm.timeit(f"make_nn_feature agg={agg} nn={nn}"):
-                            for nn in time_id_neighbors:
+                        for nn in time_id_neighbors:
+                            with tm.timeit(f"make_nn_feature_agg={agg}_n={n}_nn={nn}"):
                                 dst = nn.make_nn_feature(n, agg)
                                 ndf = _add_ndf(ndf, dst)
 
@@ -413,7 +413,7 @@ def fe(preprocessed_path):
     with tm.timeit("04-normalize rank"):
         normalize_rank(df)
 
-    with tm.timeit("05-make_nearest_neighbor_feature"):
+    with tm.timeit("05-make_nn_fs"):
         df2 = make_nearest_neighbor_feature(df, stock_id_neighbors, time_id_neighbors)
 
     with tm.timeit("06-extra features for df2"):

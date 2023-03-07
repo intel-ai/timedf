@@ -24,8 +24,10 @@ def get_workdir_paths(raw_data_path, workdir="./optiver_workdir"):
     )
     workdir.mkdir(exist_ok=True, parents=True)
 
-    return paths
+    # Hotfix for modin, because it fails with Path object for some reason
+    hotfix_paths = {name: str(path) for name, path in paths.items()}
+
+    return hotfix_paths
 
 
 tm = TimerManager()
-timer = tm.timeit
