@@ -30,8 +30,8 @@ eval source ${CONDA_PREFIX}/bin/activate
 #export OMNISCIDB_BUILD_ENV=omnisci-build
 
 conda env remove --name ${ENV_NAME}  -y
-conda env create --name ${ENV_NAME}  python=3.8 -y
-conda env update --name ${ENV_NAME} -f omniscidb/scripts/mapd-deps-conda-dev-env.yml
+conda create --name ${ENV_NAME}  python=3.8 -y
+conda env update --name ${ENV_NAME} -f /omniscripts/hdk/omniscidb/scripts/mapd-deps-conda-dev-env.yml
 
 conda activate ${ENV_NAME}
 

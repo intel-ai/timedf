@@ -23,6 +23,11 @@ jobs:
           path: modin
           repository: modin-project/modin
 
+      - uses: actions/checkout@v3
+        with:
+          path: hdk
+          repository: intel-ai/hdk
+
       - name: Build docker image for modin tests
         run: |
           git rev-parse HEAD > .github/workflows/modin/omniscripts-git-rev
