@@ -50,7 +50,7 @@ echo ==== conda list of ${ENV_NAME} end
 
 cd "/modin"
 
-eval source ${CONDA_PREFIX}/bin/activate ${ENV_NAME}
+#eval source ${CONDA_PREFIX}//bin/activate ${ENV_NAME}
 
 # we have already installed omniscidb; just comment the line
 # sed -i '/- pyomniscidbe/s/^/#/' modin/requirements/env_omnisci.yml
@@ -94,7 +94,7 @@ eval LD_LIBRARY_PATH=${CONDA_PREFIX}/envs/${ENV_NAME}/lib/
 
 cd /omniscripts
 
-eval source ${CONDA_PREFIX}/bin/activate
+#eval source ${CONDA_PREFIX}/bin/activate
 
 PANDAS_MODE="Modin_on_hdk" ./build_scripts/ny_taxi_ml.sh
 
