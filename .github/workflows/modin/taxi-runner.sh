@@ -2,7 +2,7 @@
 
 set -ex
 
-export CONDA_PREFIX=~/miniconda3
+export CONDA_PREFIX=~/anaconda3
 export ENV_NAME=hdk_test
 export MODIN_USE_CALCITE=True
 export BUILD_MODIN_REVISION=${BUILD_MODIN_REVISION:-0000}
@@ -10,15 +10,14 @@ export BUILD_OMNISCRIPTS_REVISION=${BUILD_OMNISCRIPTS_REVISION:-0000}
 export BUILD_REVISION=${BUILD_REVISION:-0000}
 export TBB_MALLOC_USE_HUGE_PAGES=${TBB_MALLOC_USE_HUGE_PAGES:-1}
 
-ln -s ${CONDA_PREFIX} ~/anaconda3
 
-eval echo Removing ${CONDA_PREFIX} ...
-eval rm -rf ${CONDA_PREFIX} 
+#eval echo Removing ${CONDA_PREFIX} ...
+#eval rm -rf ${CONDA_PREFIX} 
 
-echo Miniconda installation ...
-curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda3.sh
-eval bash /tmp/miniconda3.sh -b -p ${CONDA_PREFIX} -f -u
-rm -f /tmp/miniconda3.sh
+#echo Miniconda installation ...
+#curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda3.sh
+#eval bash /tmp/miniconda3.sh -b -p ${CONDA_PREFIX} -f -u
+#rm -f /tmp/miniconda3.sh
 # The following expands tilde in ${CONDA_PREFIX} and runs command
 eval ${CONDA_PREFIX}/bin/conda init bash
 
