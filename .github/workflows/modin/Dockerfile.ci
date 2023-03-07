@@ -29,7 +29,7 @@ SHELL ["/bin/bash", "--login", "-c"]
 
 # Initialize conda in bash config files:
 RUN conda init bash
-ENV PATH /root/anaconda3/envs/modin/bin:$PATH
+ENV PATH /root/miniconda3/envs/modin/bin:$PATH
 
 RUN conda update python -y
 RUN conda env create -f asv-env.yml
