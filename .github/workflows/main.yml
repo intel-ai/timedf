@@ -18,10 +18,10 @@ jobs:
 #    secrets:
 #      token: ${{ secrets.AMYACHEV_GITHUB_TOKEN }}
 #
-  modin-ray:
-    uses: ./.github/workflows/test-modin-ray.yml
+  modin-operations:
+    uses: ./.github/workflows/test-modin-operations.yml
     with:
-      name: modin-ray
+      name: modin-operations
       reset-cache: ${{ !!inputs.reset-cache }}
     secrets:
       DB_COMMON_OPTS: ${{ secrets.DB_COMMON_OPTS }}

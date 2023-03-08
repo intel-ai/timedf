@@ -39,7 +39,7 @@ jobs:
         with:
           repo: intel-ai/hdk
           workflow: main.yml
-          branch: main
+          branch: lesh/fix-python-install
           workflow_conclusion: success
           name: ${{ runner.os }}-${{ inputs.build }}-release
           search_artifacts: true
@@ -54,9 +54,9 @@ jobs:
       - name: Run modin microbenchmarks and upload results
         run:  |
           docker run -u ghrunner --name ci.${{ inputs.name }} \
-            -e DB_COMMON_OPTS="${{ secrets.DB_COMMON_OPTS }}" \
+          -e DB_COMMON_OPTS="${{ secrets.DB_COMMON_OPTS }}" \
             ci/${{ inputs.name }} \
-            conda run --no-capture-output -n modin-test sh /_work/omniscripts/.github/workflows/modin/asv-ray-runner.sh
+            conda run --no-capture-output -n modin-test sh /_work/omniscripts/.github/workflows/modin/test-modin-operations.sh
 
       - name: Stop the container
         if: always()
