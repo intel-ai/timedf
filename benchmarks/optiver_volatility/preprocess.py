@@ -178,6 +178,7 @@ def make_book_feature_v2(book_path):
 
         ticks = prices.groupby(gb_cols).apply(find_smallest_spread)
         import pdb
+
         pdb.set_trace()
         ticks.name = "tick_size"
         ticks = ticks.reset_index()
@@ -188,21 +189,22 @@ def make_book_feature_v2(book_path):
 def preprocess(paths: dict[str, Path]):
     with tm.timeit("01-train"):
         with tm.timeit("01-load_train"):
-            train = pd.read_csv(paths['train'])
+            train = pd.read_csv(paths["train"])
 
         with tm.timeit("02-books"):
-            book = make_book_feature(paths['book'])
+            book = make_book_feature(paths["book"])
 
         with tm.timeit("03-trades"):
-            trade = make_trade_feature(paths['trade'])
+            trade = make_trade_feature(paths["trade"])
 
         with tm.timeit("04-books_v2"):
-            book_v2 = make_book_feature_v2(paths['book'])
+            book_v2 = make_book_feature_v2(paths["book"])
 
         with tm.timeit("05-merge features"):
             df = pd.merge(train, book, on=["stock_id", "time_id"], how="left")
             df = pd.merge(df, trade, on=["stock_id", "time_id"], how="left")
             import pdb
+
             pdb.set_trace()
             df = pd.merge(df, book_v2, on=["stock_id", "time_id"], how="left")
 
@@ -214,4 +216,4 @@ def preprocess(paths: dict[str, Path]):
 
         df = pd.concat([df, test_df.drop("row_id", axis=1)]).reset_index(drop=True)
 
-    df.to_feather(paths['preprocessed'])  # save cache
+    df.to_feather(paths["preprocessed"])  # save cache

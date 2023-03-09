@@ -179,11 +179,7 @@ def train_nearest_neighbors(df):
                 vi = lin.inv(np.cov(pivot.values))
             time_id_neighbors.append(
                 TimeIdNeighbors(
-                    "time_size_m",
-                    pivot,
-                    p=2,
-                    metric="mahalanobis",
-                    metric_params={"VI": vi},
+                    "time_size_m", pivot, p=2, metric="mahalanobis", metric_params={"VI": vi}
                 )
             )
         with tm.timeit("03-time_id_neighbors_time_size_c"):
