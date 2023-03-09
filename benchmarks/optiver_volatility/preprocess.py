@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
@@ -5,10 +6,6 @@ import numpy as np
 from omniscripts.pandas_backend import pd
 
 from .optiver_utils import print_trace, tm
-
-
-def load_data(data_dir, stem: str) -> pd.DataFrame:
-    return pd.read_parquet(data_dir / f"{stem}_train.parquet")
 
 
 def calc_wap1(df: pd.DataFrame) -> pd.Series:
@@ -47,11 +44,11 @@ def flatten_name(prefix, src_names):
     return ret
 
 
-def make_book_feature(data_dir):
+def make_book_feature(book_path):
     gb_cols = ["stock_id", "time_id"]
 
     with tm.timeit("01-load_books"):
-        book = load_data(data_dir=data_dir, stem="book")
+        book = pd.read_parquet(book_path)
 
     with tm.timeit("02-wap"):
         book["wap1"] = calc_wap1(book)
@@ -122,11 +119,11 @@ def make_book_feature(data_dir):
     return agg
 
 
-def make_trade_feature(data_dir):
+def make_trade_feature(trade_path):
     gb_cols = ["stock_id", "time_id"]
 
     with tm.timeit("01-load_trade"):
-        trade = load_data(data_dir=data_dir, stem="trade")
+        trade = pd.read_parquet(trade_path)
 
     with tm.timeit("02-groupby_return"):
         trade["log_return"] = trade.groupby(gb_cols, group_keys=False)["price"].apply(log_return)
@@ -155,11 +152,11 @@ def make_trade_feature(data_dir):
     return agg
 
 
-def make_book_feature_v2(data_dir):
+def make_book_feature_v2(book_path):
     gb_cols = ["stock_id", "time_id"]
 
     with tm.timeit("01-load_book"):
-        book = load_data(data_dir=data_dir, stem="book")
+        book = pd.read_parquet(book_path)
 
     with tm.timeit("02-prices"):
         prices = book[
@@ -180,29 +177,33 @@ def make_book_feature_v2(data_dir):
                 return np.nan
 
         ticks = prices.groupby(gb_cols).apply(find_smallest_spread)
+        import pdb
+        pdb.set_trace()
         ticks.name = "tick_size"
         ticks = ticks.reset_index()
 
     return ticks
 
 
-def preprocess(raw_data_path: Path, preprocessed_path: Path):
+def preprocess(paths: dict[str, Path]):
     with tm.timeit("01-train"):
         with tm.timeit("01-load_train"):
-            train = pd.read_csv(raw_data_path / "train.csv")
+            train = pd.read_csv(paths['train'])
 
         with tm.timeit("02-books"):
-            book = make_book_feature(raw_data_path)
+            book = make_book_feature(paths['book'])
 
         with tm.timeit("03-trades"):
-            trade = make_trade_feature(raw_data_path)
+            trade = make_trade_feature(paths['trade'])
 
         with tm.timeit("04-books_v2"):
-            book_v2 = make_book_feature_v2(raw_data_path)
+            book_v2 = make_book_feature_v2(paths['book'])
 
         with tm.timeit("05-merge features"):
             df = pd.merge(train, book, on=["stock_id", "time_id"], how="left")
             df = pd.merge(df, trade, on=["stock_id", "time_id"], how="left")
+            import pdb
+            pdb.set_trace()
             df = pd.merge(df, book_v2, on=["stock_id", "time_id"], how="left")
 
     # Use copy of training data as test data to imitate 2nd stage RAM usage.
@@ -213,4 +214,4 @@ def preprocess(raw_data_path: Path, preprocessed_path: Path):
 
         df = pd.concat([df, test_df.drop("row_id", axis=1)]).reset_index(drop=True)
 
-    df.to_feather(preprocessed_path)  # save cache
+    df.to_feather(paths['preprocessed'])  # save cache

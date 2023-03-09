@@ -3,5 +3,5 @@ channels:
   - conda-forge
 dependencies:
   - pip
-  - sklearn
+  - scikit-learn
   - scipy

@@ -259,7 +259,6 @@ def make_nearest_neighbor_feature(
         for feature_col in feature_cols_stock.keys():
             with tm.timeit(f"feature={feature_col.replace('.', '-')}"):
                 if feature_col not in df2.columns:
-                    print(f"column {feature_col} is skipped")
                     continue
 
                 if not stock_id_neighbors:
@@ -286,7 +285,6 @@ def make_nearest_neighbor_feature(
         for feature_col in feature_cols.keys():
             with tm.timeit(f"nn_time_id_feature={feature_col.replace('.', '-')}"):
                 if feature_col not in df2.columns:
-                    print(f"column {feature_col} is skipped")
                     continue
 
                 for nn in time_id_neighbors:
@@ -430,9 +428,9 @@ def calc_price2(df):
     return 0.01 / tick
 
 
-def calc_prices(raw_data_path):
+def calc_prices(book_path):
     df = pd.read_parquet(
-        raw_data_path / "book_train.parquet",
+        book_path,
         columns=["stock_id", "time_id", "ask_price1", "ask_price2", "bid_price1", "bid_price2"],
     )
     return df.groupby(["stock_id", "time_id"]).apply(calc_price2).to_frame("price").reset_index()
@@ -446,9 +444,9 @@ def sort_manifold(df, clf):
     return np.argsort(X_compoents[:, 0]), X_compoents
 
 
-def reconstruct_time_id_order(raw_data_path):
+def reconstruct_time_id_order(book_path):
     with tm.timeit("calc prices"):
-        df_prices = calc_prices(raw_data_path)
+        df_prices = calc_prices(book_path)
         df_prices = df_prices.pivot(index="time_id", columns="stock_id", values="price")
         df_prices.columns = [f"stock_id={i}" for i in df_prices.columns]
         df_prices = df_prices.reset_index(drop=False)
@@ -474,9 +472,9 @@ def reconstruct_time_id_order(raw_data_path):
     return df_ordered[["time_id"]]
 
 
-def perform_split(df_train, raw_data_path):
+def perform_split(df_train, book_path):
     with tm.timeit("calculate order of time-id"):
-        timeid_order = reconstruct_time_id_order(raw_data_path)
+        timeid_order = reconstruct_time_id_order(book_path)
 
     with tm.timeit("make folds"):
         timeid_order["time_id_order"] = np.arange(len(timeid_order))
@@ -507,13 +505,13 @@ def prepare_dataset(paths):
         df_train = df2[~df2.target.isnull()].copy()
         df_test = df2[df2.target.isnull()].copy()
 
-        folds = perform_split(df_train, raw_data_path=paths["raw_data"])
+        folds = perform_split(df_train, book_path=paths["book"])
 
         df_train.reset_index(drop=True, inplace=True)
         df_test.reset_index(drop=True, inplace=True)
 
     with tm.timeit("03-save results"):
-        df_train.to_feather(paths["train"])
-        df_test.to_feather(paths["test"])
+        df_train.to_feather(paths["train_dataset"])
+        df_test.to_feather(paths["test_dataset"])
         with open(paths["folds"], "wb") as f:
             pickle.dump(folds, f)

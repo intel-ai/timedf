@@ -8,7 +8,7 @@ from .optiver_utils import get_workdir_paths, tm
 def benchmark(paths):
     with tm.timeit("total"):
         with tm.timeit("01-preprocess"):
-            preprocess(raw_data_path=paths["raw_data"], preprocessed_path=paths["preprocessed"])
+            preprocess(paths=paths)
 
         with tm.timeit("02-prepare_dataset_[ML&DP]"):
             prepare_dataset(paths=paths)

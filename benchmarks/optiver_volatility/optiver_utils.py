@@ -13,13 +13,17 @@ def get_workdir_paths(raw_data_path, workdir="./optiver_workdir"):
     """Get paths in the workdir, which is shared across several scripts, and create necessary
     folders."""
     workdir = Path(workdir)
+    raw_data = Path(raw_data_path)
 
     paths = dict(
         workdir=workdir,
-        raw_data=Path(raw_data_path),
+        raw_data=raw_data,
+        train=raw_data / "train.csv",
+        book=raw_data / "book_train.parquet",
+        trade=raw_data / "trade_train.parquet",
         preprocessed=workdir / "features_v2.f",
-        train=workdir / "train.f",
-        test=workdir / "test.f",
+        train_dataset=workdir / "train_dataset.f",
+        test_dataset=workdir / "test_dataset.f",
         folds=workdir / "folds.pkl",
     )
     workdir.mkdir(exist_ok=True, parents=True)

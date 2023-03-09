@@ -30,11 +30,12 @@ from omniscripts.pandas_backend import pd
 
 from .optiver_utils import tm, get_workdir_paths
 
+# You need to provide this path
+raw_data_path = None
+paths = get_workdir_paths(raw_data_path)
 
-paths = get_workdir_paths()
-
-df_train = pd.read_feather(paths["df_train"])
-df_test = pd.read_feather(paths["df_test"])
+df_train = pd.read_feather(paths["train_dataset"])
+df_test = pd.read_feather(paths["test_dataset"])
 with open(paths["folds"], "rb") as f:
     folds = pickle.load(f)
 
