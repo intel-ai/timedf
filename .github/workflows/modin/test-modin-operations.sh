@@ -7,6 +7,7 @@ cd /_work
 (
     mkdir hdk
     cd hdk
+    tar -ztf /_work/release.tgz
     tar -zxf /_work/release.tgz -C $CONDA_PREFIX
     python3 -c "import pyhdk"
 )
