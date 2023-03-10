@@ -177,13 +177,16 @@ def make_book_feature_v2(book_path):
                 return np.nan
 
         ticks = prices.groupby(gb_cols).apply(find_smallest_spread)
-        import pdb
 
-        pdb.set_trace()
+        # This part is a modin bug, so we have a workaround
+        # https://github.com/modin-project/modin/issues/5763
+        if type(ticks) == pd.DataFrame:
+            ticks: pd.Series = ticks.squeeze(axis=1)
+
         ticks.name = "tick_size"
-        ticks = ticks.reset_index()
+        ticks_df = ticks.reset_index()
 
-    return ticks
+    return ticks_df
 
 
 def preprocess(paths: dict[str, Path]):
@@ -203,9 +206,6 @@ def preprocess(paths: dict[str, Path]):
         with tm.timeit("05-merge features"):
             df = pd.merge(train, book, on=["stock_id", "time_id"], how="left")
             df = pd.merge(df, trade, on=["stock_id", "time_id"], how="left")
-            import pdb
-
-            pdb.set_trace()
             df = pd.merge(df, book_v2, on=["stock_id", "time_id"], how="left")
 
     # Use copy of training data as test data to imitate 2nd stage RAM usage.

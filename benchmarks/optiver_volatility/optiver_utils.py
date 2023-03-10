@@ -28,7 +28,8 @@ def get_workdir_paths(raw_data_path, workdir="./optiver_workdir"):
     )
     workdir.mkdir(exist_ok=True, parents=True)
 
-    # Hotfix for modin, because it fails with Path object for some reason
+    # Hotfix for modin, because it fails with Path object for some reason while reading parquet
+    # https://github.com/modin-project/modin/issues/5767
     hotfix_paths = {name: str(path) for name, path in paths.items()}
 
     return hotfix_paths
