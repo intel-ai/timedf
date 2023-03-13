@@ -31,7 +31,7 @@ class CFG:
 DEBUG = True
 if DEBUG:
     CFG.train_weeks = 1
-    CFG.n_iterations = 50
+    # CFG.n_iterations = 50
 
 
 def concat_train(datasets, begin, num):
