@@ -2,3 +2,5 @@ report.csv
 __pycache__
 dask-worker-space
 *.tbl
+docs/build/*
+docker/e2e-hdk/results

@@ -1,0 +1,10 @@
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - pip
+  - lightgbm==3.3.5
+  - matplotlib
+  - pytorch
+  - pip:
+    - pytorch-tabnet==2.0.1
