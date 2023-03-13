@@ -13,6 +13,7 @@ from .modin_utils import (
 # Modin config, none if pandas is used
 # Variable will hold the state, used for `trigger_execution`
 modin_cfg = None
+backend_cfg = {}
 
 
 def _get_modin_config(pandas_mode):
@@ -25,6 +26,12 @@ def _get_modin_config(pandas_mode):
 
 
 def set_backend(pandas_mode, ray_tmpdir, ray_memory):
+    global backend_cfg
+    backend_cfg["backend"] = pandas_mode
+
+    if pandas_mode == "polars":
+        return
+
     global modin_cfg
     modin_cfg = _get_modin_config(pandas_mode)
     import_pandas_into_module_namespace(
