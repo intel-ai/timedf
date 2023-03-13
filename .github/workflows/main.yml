@@ -7,7 +7,7 @@ on:
       reset-cache:
         type: boolean
         default: true
-  push:
+#  push:
 
 jobs:
   modin-containerized:
