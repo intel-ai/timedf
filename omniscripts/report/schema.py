@@ -18,6 +18,7 @@ Base = declarative_base()
 
 
 STRING_LENGTH = 200
+LARGE_STRING_LENGTH = 500
 
 
 def make_string(nullable=False):
@@ -55,7 +56,7 @@ class Measurement(Base):
     __tablename__ = "measurement"
     id = Column(Integer, primary_key=True)
     # Name of the measurement
-    name = Column(String(STRING_LENGTH), nullable=False)
+    name = Column(String(LARGE_STRING_LENGTH), nullable=False)
     # Duration in seconds
     duration_s = Column(Float, nullable=False)
 
