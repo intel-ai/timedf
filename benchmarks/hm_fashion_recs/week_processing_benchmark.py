@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from .preprocess import transform_data, create_user_ohe_agg
 from .hm_utils import load_data, get_workdir_paths
 from .candidates import make_one_week_candidates, drop_trivial_users
@@ -70,7 +72,7 @@ class Benchmark(BaseBenchmark):
 
     def run_benchmark(self, parameters):
         paths = get_workdir_paths()
-        main(raw_data_path=parameters["data_file"], paths=paths)
+        main(raw_data_path=Path(parameters["data_file"]), paths=paths)
 
         task2time = tm.get_results()
         print(task2time)

@@ -2,10 +2,12 @@
 
 import gc
 import logging
+from pathlib import Path
 
 import catboost
 import matplotlib.pyplot as plt
 import numpy as np
+from omniscripts.benchmark import BaseBenchmark, BenchmarkResults
 
 from omniscripts.pandas_backend import pd
 
@@ -13,6 +15,7 @@ from .hm_utils import mapk, load_data, get_workdir_paths
 from .fe import get_age_shifts, attach_features
 from .candidates import create_candidates, make_weekly_candidates
 from .preprocess import run_complete_preprocessing
+from .tm import tm
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +25,7 @@ class CFG:
     train_weeks = 6
     n_iterations = 10_000
 
-    use_lfm = False
+    use_lfm = True
 
 
 DEBUG = True
@@ -51,23 +54,25 @@ def make_dataset(
 
     datasets = []
     for i, candidates_subset in enumerate(candidates):
-        dataset = attach_features(
-            transactions,
-            users,
-            items,
-            candidates_subset,
-            begin_shift + i,
-            CFG.train_weeks + end_shift,
-            age_shifts=age_shifts,
-            user_features_path=user_features_path,
-        )
+        with tm.timeit(f'attach_features_week={i}'):
+            dataset = attach_features(
+                transactions,
+                users,
+                items,
+                candidates_subset,
+                begin_shift + i,
+                CFG.train_weeks + end_shift,
+                age_shifts=age_shifts,
+                user_features_path=user_features_path,
+            )
 
-        dataset["query_group"] = dataset["week"].astype(str) + "_" + dataset["user"].astype(str)
-        dataset = dataset.sort_values(by="query_group").reset_index(drop=True)
-        datasets.append(dataset)
+            dataset["query_group"] = dataset["week"].astype(str) + "_" + dataset["user"].astype(str)
+            dataset = dataset.sort_values(by="query_group").reset_index(drop=True)
+            datasets.append(dataset)
 
     valid = datasets[0]
-    train = concat_train(datasets, end_shift, CFG.train_weeks)
+    with tm.timeit('concat'):
+        train = concat_train(datasets, end_shift, CFG.train_weeks)
 
     return train, valid
 
@@ -225,105 +230,140 @@ def prepare_submission(*, pred, working_dir, preprocessed_data_path):
 
 
 def train_eval(
-    candidates, transactions, users, items, candidates_valid, age_shifts, user_features_path
+    train, valid, transactions, users, items, candidates_valid, age_shifts, user_features_path
 ):
-    train, valid = make_dataset(
-        candidates=candidates,
-        transactions=transactions,
-        users=users,
-        items=items,
-        begin_shift=1,
-        end_shift=1,
-        age_shifts=age_shifts,
-        user_features_path=user_features_path,
-    )
-
-    model = train_model(train=train, valid=valid)
-    best_iteration = model.get_best_iteration()
+    
+    with tm.timeit('02-train'):
+        model = train_model(train=train, valid=valid)
+        best_iteration = model.get_best_iteration()
 
     del train, valid
     gc.collect()
 
-    metric = validate_model(
-        model=model,
-        transactions=transactions,
-        users=users,
-        items=items,
-        candidates_valid=candidates_valid,
-        age_shifts=age_shifts,
-        user_features_path=user_features_path,
-    )
+    with tm.timeit('03-eval'):
+        metric = validate_model(
+            model=model,
+            transactions=transactions,
+            users=users,
+            items=items,
+            candidates_valid=candidates_valid,
+            age_shifts=age_shifts,
+            user_features_path=user_features_path,
+        )
     logger.info("mAP@12: %s", metric)
     return best_iteration
 
 
 def make_submission(candidates, transactions, users, items, best_iteration, age_shifts, paths):
-    train, valid = make_dataset(
-        candidates=candidates,
-        transactions=transactions,
-        users=users,
-        items=items,
-        begin_shift=1,
-        end_shift=0,
-        age_shifts=age_shifts,
-        user_features_path=paths["user_features"],
-    )
+    with tm.timeit('01-make_dataset'):
+        train, valid = make_dataset(
+            candidates=candidates,
+            transactions=transactions,
+            users=users,
+            items=items,
+            begin_shift=1,
+            end_shift=0,
+            age_shifts=age_shifts,
+            user_features_path=paths["user_features"],
+        )   
 
-    model = train_model(train=train, best_iteration=best_iteration)
+    with tm.timeit('02-train'):
+        model = train_model(train=train, best_iteration=best_iteration)
 
     del train, valid
     del candidates
     gc.collect()
 
-    pred = predict_new_week(
-        model=model,
-        transactions=transactions,
-        users=users,
-        items=items,
-        age_shifts=age_shifts,
-        user_features_path=paths["user_features"],
-    )
-    prepare_submission(
-        pred=pred, working_dir=paths["workdir"], preprocessed_data_path=paths["preprocessed_data"]
-    )
+    with tm.timeit('03-predict'):
+        pred = predict_new_week(
+            model=model,
+            transactions=transactions,
+            users=users,
+            items=items,
+            age_shifts=age_shifts,
+            user_features_path=paths["user_features"],
+        )
+    with tm.timeit('04-prepare_sub'):
+        prepare_submission(
+            pred=pred, working_dir=paths["workdir"], preprocessed_data_path=paths["preprocessed_data"]
+        )
 
 
-def main(raw_data_path):
-    paths = get_workdir_paths()
-    run_complete_preprocessing(
-        raw_data_path=raw_data_path, paths=paths, n_weeks=CFG.train_weeks + 1, use_lfm=CFG.use_lfm
-    )
+def main(raw_data_path, paths):
+    with tm.timeit('total'):
+        with tm.timeit('01-processing'):
+            run_complete_preprocessing(
+                raw_data_path=raw_data_path,
+                preprocessed_path=paths['preprocessed_data'],
+                paths=paths, n_weeks=CFG.train_weeks + 1, use_lfm=CFG.use_lfm
+            )
+            # pass
+        
+        with tm.timeit('02-load_processed'):
+            transactions, users, items = load_data(
+                preprocessed_data_path=paths["preprocessed_data"]
+            )
 
-    transactions, users, items = load_data(preprocessed_data_path=paths["preprocessed_data"])
+        with tm.timeit('03-age_shifts'):
+            age_shifts = get_age_shifts(transactions=transactions, users=users)
 
-    age_shifts = get_age_shifts(transactions=transactions, users=users)
-    candidates, candidates_valid = make_weekly_candidates(
-        transactions=transactions,
-        users=users,
-        items=items,
-        train_weeks=CFG.train_weeks,
-        user_features_path=paths["user_features"],
-        age_shifts=age_shifts,
-    )
-    best_iteration = train_eval(
-        candidates=candidates,
-        candidates_valid=candidates_valid,
-        transactions=transactions,
-        users=users,
-        items=items,
-        age_shifts=age_shifts,
-        user_features_path=paths["user_features"],
-    )
+        with tm.timeit('04-weekly_candidates'):
+            candidates, candidates_valid = make_weekly_candidates(
+                transactions=transactions,
+                users=users,
+                items=items,
+                train_weeks=CFG.train_weeks,
+                user_features_path=paths["user_features"],
+                age_shifts=age_shifts,
+            )
 
-    del candidates_valid
-    gc.collect()
+        with tm.timeit('05-make_dataset'):
+            train, valid = make_dataset(
+                candidates=candidates,
+                transactions=transactions,
+                users=users,
+                items=items,
+                begin_shift=1,
+                end_shift=1,
+                age_shifts=age_shifts,
+                user_features_path=paths["user_features"],
+            )
 
-    make_submission(
-        candidates=candidates,
-        transactions=transactions,
-        users=users,
-        items=items,
-        best_iteration=best_iteration,
-        age_shifts=age_shifts,
-        paths=paths,
-    )
+        with tm.timeit('06-train_eval'):
+            best_iteration = train_eval(
+                train=train,
+                valid=valid,
+                candidates_valid=candidates_valid,
+                transactions=transactions,
+                users=users,
+                items=items,
+                age_shifts=age_shifts,
+                user_features_path=paths["user_features"],
+        )   
+
+        del candidates_valid
+        gc.collect()
+
+        # with tm.timeit('06-retrain_whole_dataset'):
+        #     make_submission(
+        #         candidates=candidates,
+        #         transactions=transactions,
+        #         users=users,
+        #         items=items,
+        #         best_iteration=best_iteration,
+        #         age_shifts=age_shifts,
+        #         paths=paths,
+        #     )
+
+
+class Benchmark(BaseBenchmark):
+    __unsupported_params__ = ("optimizer", "dfiles_num")
+
+    def run_benchmark(self, parameters):
+        paths = get_workdir_paths()
+        main(raw_data_path=Path(parameters["data_file"]), paths=paths)
+
+        task2time = tm.get_results()
+        print(task2time)
+
+        return BenchmarkResults(task2time)
