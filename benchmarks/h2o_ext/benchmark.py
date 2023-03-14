@@ -15,7 +15,8 @@ def main_groupby(paths, backend):
         for name, q in backend.name2groupby_query.items():
             gc.collect()
             with tm.timeit(name):
-                res = collect(q(df))
+                # Force action
+                collect(q(df))
 
 
 def main_join(paths, backend):
@@ -27,7 +28,7 @@ def main_join(paths, backend):
             gc.collect()
             with tm.timeit(name):
                 # Force action
-                res = collect(q(data))
+                collect(q(data))
 
 
 def main(data_path, backend):
