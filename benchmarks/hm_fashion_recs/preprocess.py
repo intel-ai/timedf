@@ -19,7 +19,7 @@ from .lfm import train_lfm
 logger = logging.getLogger(__name__)
 
 
-DEBUG = True
+DEBUG = False
 N = 50
 
 

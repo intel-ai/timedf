@@ -28,8 +28,8 @@ class CFG:
     use_lfm = True
 
 
-DEBUG = True
-if DEBUG:
+LIMITED_DATA = True
+if LIMITED_DATA:
     CFG.train_weeks = 1
     # CFG.n_iterations = 50
 
