@@ -414,6 +414,7 @@ def drop_trivial_users(labels):
         labels["user"].isin(
             labels[["user", "y"]]
             .drop_duplicates()
+            .iloc[:LARGE_NUMBER]
             .groupby("user")
             .size()
             .reset_index(name="sz")
