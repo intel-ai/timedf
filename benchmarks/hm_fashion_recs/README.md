@@ -69,6 +69,9 @@ Utility files:
 2. Used solution post: https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations/discussion/324084
 3. Repository with original code: https://github.com/ryowk/kaggle-h-and-m-personalized-fashion-recommendations
 
+### Known problems
+1. Modin have a problem with empty partitions, that's why in code we use instructions like `.loc[:LARGE_NUMBER]`. Issue: https://github.com/modin-project/modin/issues/5461
+
 ### Additional dependencies
 If you want to use user embeddings during feature engineering (turned off by default) you will need:
 - `lightfm`
