@@ -292,12 +292,11 @@ def make_submission(candidates, transactions, users, items, best_iteration, age_
 def main(raw_data_path, paths):
     with tm.timeit('total'):
         with tm.timeit('01-processing'):
-            # run_complete_preprocessing(
-            #     raw_data_path=raw_data_path,
-            #     preprocessed_path=paths['preprocessed_data'],
-            #     paths=paths, n_weeks=CFG.train_weeks + 1, use_lfm=CFG.use_lfm
-            # )
-            pass
+            run_complete_preprocessing(
+                raw_data_path=raw_data_path,
+                preprocessed_path=paths['preprocessed_data'],
+                paths=paths, n_weeks=CFG.train_weeks + 1, use_lfm=CFG.use_lfm
+            )
         
         with tm.timeit('02-load_processed'):
             transactions, users, items = load_data(
@@ -339,7 +338,7 @@ def main(raw_data_path, paths):
                 items=items,
                 age_shifts=age_shifts,
                 user_features_path=paths["user_features"],
-        )   
+        )
 
         del candidates_valid
         gc.collect()

@@ -19,6 +19,10 @@ from .lfm import train_lfm
 logger = logging.getLogger(__name__)
 
 
+DEBUG = True
+N = 50
+
+
 def transform_data(input_data_path, result_path):
     """
     - Convert all categories including article_id and category_id to 0-indexed serial numbers (column with _idx is added)
@@ -52,6 +56,9 @@ def transform_data(input_data_path, result_path):
         dtype=schema.TRANSACTIONS_ORIGINAL,
         parse_dates=["t_dat"],
     )
+
+    if DEBUG:
+        transactions = transactions.iloc[::N, :]
 
     (result_path / "images").mkdir(exist_ok=True, parents=True)
 
