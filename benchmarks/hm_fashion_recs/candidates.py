@@ -9,6 +9,8 @@ from .tm import tm
 
 logger = logging.getLogger(__name__)
 
+# TODO: modin bug, that's why we use iloc[]
+LARGE_NUMBER = 1_000_000_000
 
 class CFG:
     """Configuration for candidate generaton."""
@@ -62,6 +64,8 @@ def create_candidates(
             ["user", "item", "week", "day"]
         ].drop_duplicates(ignore_index=True)
 
+        tr = tr.iloc[:LARGE_NUMBER]
+
         gr_day = tr.groupby(["user", "item"])["day"].min().reset_index(name="day")
         gr_week = tr.groupby(["user", "item"])["week"].min().reset_index(name="week")
         gr_volume = tr.groupby(["user", "item"]).size().reset_index(name="volume")
@@ -96,6 +100,9 @@ def create_candidates(
         tr = transactions.query("@week_start <= week < @week_start + @num_weeks")[
             ["user", "item"]
         ].drop_duplicates(ignore_index=True)
+
+        tr = tr.iloc[:LARGE_NUMBER]
+
         popular_items = tr["item"].value_counts().index.values[:num_items]
         popular_items = pd.DataFrame(
             {"item": popular_items, "rank": range(num_items), "crossjoinkey": 1}
@@ -117,6 +124,9 @@ def create_candidates(
         tr = transactions.query("@week_start <= week < @week_start + @num_weeks")[
             ["user", "item"]
         ].drop_duplicates(ignore_index=True)
+
+        tr = tr.iloc[:LARGE_NUMBER]
+
         tr = tr.merge(users[["user", "age"]])
 
         pops = []
@@ -149,8 +159,6 @@ def create_candidates(
             ["user", "item"]
         ].drop_duplicates()
 
-        # TODO: modin bug, that's why we use iloc[]
-        LARGE_NUMBER = 1_000_000_000
         tr = tr.iloc[:LARGE_NUMBER].groupby("item").size().reset_index(name="volume")
         tr = tr.merge(items[["item", category]], on="item")
         tr["cat_volume_rank"] = tr.groupby(category)["volume"].rank(ascending=False, method="min")
@@ -170,6 +178,9 @@ def create_candidates(
         tr = transactions.query("@week_start <= week < @week_end")[
             ["user", "item", "week"]
         ].drop_duplicates(ignore_index=True)
+
+        tr = tr.iloc[:LARGE_NUMBER]
+        
         tr = (
             tr.merge(tr.rename(columns={"item": "item_with", "week": "week_with"}), on="user")
             .query("item != item_with and week <= week_with")[["item", "item_with"]]
