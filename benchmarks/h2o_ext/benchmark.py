@@ -2,7 +2,7 @@ import gc
 import importlib
 
 from omniscripts import BaseBenchmark, BenchmarkResults
-from omniscripts.pandas_backend import set_backend
+from omniscripts.pandas_backend import set_backend, collect
 
 from .h2o_utils import tm, get_load_info, H2OBackend
 
@@ -15,8 +15,7 @@ def main_groupby(paths, backend):
         for name, q in backend.name2groupby_query.items():
             gc.collect()
             with tm.timeit(name):
-                res = q(df)
-                print(res)
+                res = collect(q(df))
 
 
 def main_join(paths, backend):
@@ -27,8 +26,8 @@ def main_join(paths, backend):
         for name, q in backend.name2join_query.items():
             gc.collect()
             with tm.timeit(name):
-                res = q(data)
-                print(res)
+                # Force action
+                res = collect(q(data))
 
 
 def main(data_path, backend):

@@ -5,68 +5,53 @@ from .h2o_utils import H2OBackend
 
 
 def q1(x):
-    ans = x.groupby("id1").agg(pl.sum("v1")).collect()
-    # return [ans["v1"].cast(pl.Int64).sum()]
+    return x.groupby("id1").agg(pl.sum("v1"))
 
 
 def q2(x):
-    ans = x.groupby(["id1", "id2"]).agg(pl.sum("v1")).collect()
-    # return [ans["v1"].cast(pl.Int64).sum()]
+    return x.groupby(["id1", "id2"]).agg(pl.sum("v1"))
 
 
 def q3(x):
-    ans = x.groupby("id3").agg([pl.sum("v1"), pl.mean("v3").alias("v3_mean")]).collect()
-    # return ans.lazy().select([pl.col("v1").cast(pl.Int64).sum(), pl.col("v3_mean").sum()]).collect().to_numpy()[0]
+    return x.groupby("id3").agg([pl.sum("v1"), pl.mean("v3").alias("v3_mean")])
 
 
 def q4(x):
-    ans = x.groupby("id4").agg([pl.mean("v1"), pl.mean("v2"), pl.mean("v3")]).collect()
-    # return ans.lazy().select([pl.col("v1").sum(), pl.col("v2").sum(), pl.col("v3").sum()]).collect().to_numpy()[0]
+    return x.groupby("id4").agg([pl.mean("v1"), pl.mean("v2"), pl.mean("v3")])
 
 
 def q5(x):
-    ans = x.groupby("id6").agg([pl.sum("v1"), pl.sum("v2"), pl.sum("v3")]).collect()
-    # return ans.lazy().select([pl.col("v1").cast(pl.Int64).sum(), pl.col("v2").cast(pl.Int64).sum(), pl.col("v3").sum()]).collect().to_numpy()[0]
+    return x.groupby("id6").agg([pl.sum("v1"), pl.sum("v2"), pl.sum("v3")])
 
 
 def q6(x):
-    ans = (
-        x.groupby(["id4", "id5"])
-        .agg([pl.median("v3").alias("v3_median"), pl.std("v3").alias("v3_std")])
-        .collect()
+    return x.groupby(["id4", "id5"]).agg(
+        [pl.median("v3").alias("v3_median"), pl.std("v3").alias("v3_std")]
     )
-    # return ans.lazy().select([pl.col("v3_median").sum(), pl.col("v3_std").sum()]).collect().to_numpy()[0]
 
 
 def q7(x):
-    ans = x.groupby("id3").agg([(pl.max("v1") - pl.min("v2")).alias("range_v1_v2")]).collect()
-    # return [ans["range_v1_v2"].cast(pl.Int64).sum()]
+    return x.groupby("id3").agg([(pl.max("v1") - pl.min("v2")).alias("range_v1_v2")])
 
 
 def q8(x):
-    ans = (
+    return (
         x.drop_nulls("v3")
         .sort("v3", reverse=True)
         .groupby("id6")
         .agg(col("v3").head(2).alias("largest2_v3"))
         .explode("largest2_v3")
-        .collect()
     )
-    # return [ans["largest2_v3"].sum()]
 
 
 def q9(x):
-    ans = x.groupby(["id2", "id4"]).agg((pl.pearson_corr("v1", "v2") ** 2).alias("r2")).collect()
-    # return [ans["r2"].sum()]
+    return x.groupby(["id2", "id4"]).agg((pl.pearson_corr("v1", "v2") ** 2).alias("r2"))
 
 
 def q10(x):
-    ans = (
-        x.groupby(["id1", "id2", "id3", "id4", "id5", "id6"])
-        .agg([pl.sum("v3").alias("v3"), pl.count("v1").alias("count")])
-        .collect()
+    return x.groupby(["id1", "id2", "id3", "id4", "id5", "id6"]).agg(
+        [pl.sum("v3").alias("v3"), pl.count("v1").alias("count")]
     )
-    # return ans.lazy().select([pl.col("v3").sum(), pl.col("count").cast(pl.Int64).sum()]).collect().to_numpy()[0]
 
 
 name2groupby_query = {
@@ -84,28 +69,23 @@ name2groupby_query = {
 
 
 def q1(data):
-    ans = data["df"].join(data["small"], on="id1")
-    # return [ans["v1"].sum(), ans["v2"].sum()]
+    return data["df"].join(data["small"], on="id1")
 
 
 def q2(data):
-    ans = data["df"].join(data["medium"], on="id2")
-    # return [ans["v1"].sum(), ans["v2"].sum()]
+    return data["df"].join(data["medium"], on="id2")
 
 
 def q3(data):
-    ans = data["df"].join(data["medium"], how="left", on="id2")
-    # return [ans["v1"].sum(), ans["v2"].sum()]
+    return data["df"].join(data["medium"], how="left", on="id2")
 
 
 def q4(data):
-    ans = data["df"].join(data["medium"], on="id5")
-    # return [ans["v1"].sum(), ans["v2"].sum()]
+    return data["df"].join(data["medium"], on="id5")
 
 
 def q5(data):
-    ans = data["df"].join(data["big"], on="id3")
-    # return [ans["v1"].sum(), ans["v2"].sum()]
+    return data["df"].join(data["big"], on="id3")
 
 
 class H2OBackendImpl(H2OBackend):
