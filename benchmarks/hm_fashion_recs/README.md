@@ -71,6 +71,7 @@ Utility files:
 
 ### Known problems
 1. Modin have a problem with empty partitions, that's why in code we use instructions like `.loc[:LARGE_NUMBER]`. Issue: https://github.com/modin-project/modin/issues/5461
+2. Catboost checks type of input dataframe and gives error on getting modin dataframe, so we convert it manually.
 
 ### Additional dependencies
 If you want to use user embeddings during feature engineering (turned off by default) you will need:

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from omniscripts.benchmark import BaseBenchmark, BenchmarkResults
 
-from omniscripts.pandas_backend import pd
+from omniscripts.pandas_backend import pd, modin_cfg
 
 from .hm_utils import mapk, load_data, get_workdir_paths
 from .fe import get_age_shifts, attach_features
@@ -91,23 +91,44 @@ def train_model(*, train, valid=None, best_iteration=None):
     cat_feature_values = [c for c in feature_columns if c.endswith("idx")]
     cat_features = [feature_columns.index(c) for c in cat_feature_values]
 
+    data = train[feature_columns]
+    y = train["y"]
+    group_id = train["query_group"]
+
+    # We make this conversion because Catboost checks type of input dataframe agains pandas
+    if modin_cfg is not None:
+        data = data._to_pandas()
+        y = y._to_pandas()
+        group_id = group_id._to_pandas()
+
+
     train_dataset = catboost.Pool(
-        data=train[feature_columns],
-        label=train["y"],
-        group_id=train["query_group"],
+        data=data,
+        label=y,
+        group_id=group_id,
         cat_features=cat_features,
     )
 
-    valid_dataset = (
-        None
-        if valid is None
-        else catboost.Pool(
+    if valid is not None:
+        data = valid[feature_columns]
+        y = valid["y"]
+        group_id = valid["query_group"]
+
+        # We make this conversion because Catboost checks type of input dataframe agains pandas
+        if modin_cfg is not None:
+            data = data._to_pandas()
+            y = y._to_pandas()
+            group_id = group_id._to_pandas()
+
+
+        valid_dataset = catboost.Pool(
             data=valid[feature_columns],
             label=valid["y"],
             group_id=valid["query_group"],
             cat_features=cat_features,
         )
-    )
+    else:
+        valid_dataset = None
 
     params = {
         "loss_function": "YetiRank",
@@ -134,7 +155,13 @@ def predict(dataset, model):
     feature_columns = get_feature_cols(dataset)
 
     pred = dataset[["user", "item"]].reset_index(drop=True)
-    pred["pred"] = model.predict(dataset[feature_columns])
+
+    inf_data = dataset[feature_columns]
+
+    if modin_cfg is not None:
+        inf_data = inf_data._to_pandas()
+
+    pred["pred"] = model.predict(inf_data)
 
     pred = pred.groupby(["user", "item"])["pred"].max().reset_index()
     return (
