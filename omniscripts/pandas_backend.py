@@ -39,6 +39,15 @@ def set_backend(pandas_mode, ray_tmpdir, ray_memory):
     )
 
 
+def collect(df):
+    """Utility function to trigger execution for lazy libraries."""
+    if backend_cfg == "polars":
+        return df.collect()
+    else:
+        return _trigger_execution(df, modin_cfg=modin_cfg)
+
+
 def trigger_execution(*dfs):
     """Utility function to trigger execution for lazy pd libraries."""
+    # For polars we expect user to just apply .collect
     return _trigger_execution(*dfs, modin_cfg=modin_cfg)
