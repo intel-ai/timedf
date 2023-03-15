@@ -195,8 +195,11 @@ def create_candidates(
             .query("item != item_with and week <= week_with")[["item", "item_with"]]
             .reset_index(drop=True)
         )
-        gr_item_count = tr.iloc[:LARGE_NUMBER].groupby("item").size().reset_index(name="item_count")
-        gr_pair_count = tr.groupby(["item", "item_with"]).size(**grp_kwargs).reset_index(name="pair_count")
+        
+        tr = tr.iloc[:LARGE_NUMBER]
+
+        gr_item_count = tr.groupby("item").size().iloc[:LARGE_NUMBER].reset_index(name="item_count")
+        gr_pair_count = tr.groupby(["item", "item_with"]).size(**grp_kwargs).iloc[:LARGE_NUMBER].reset_index(name="pair_count")
         item2item = gr_pair_count.merge(gr_item_count, on="item")
         item2item["ratio"] = item2item["pair_count"] / item2item["item_count"]
         item2item = item2item.query("pair_count > @pair_count_threshold").reset_index(drop=True)
