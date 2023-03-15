@@ -122,9 +122,9 @@ def train_model(*, train, valid=None, best_iteration=None):
 
 
         valid_dataset = catboost.Pool(
-            data=valid[feature_columns],
-            label=valid["y"],
-            group_id=valid["query_group"],
+            data=data,
+            label=y,
+            group_id=group_id,
             cat_features=cat_features,
         )
     else:
