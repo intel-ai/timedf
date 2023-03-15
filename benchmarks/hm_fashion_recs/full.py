@@ -2,6 +2,7 @@
 
 import gc
 import logging
+import os
 from pathlib import Path
 
 import catboost
@@ -31,7 +32,11 @@ class CFG:
 LIMITED_DATA = True
 if LIMITED_DATA:
     CFG.train_weeks = 1
-    # CFG.n_iterations = 50
+
+DEBUG = bool(os.getenv("DEBUG", False))
+
+if DEBUG:
+    CFG.n_iterations = 50
 
 
 def concat_train(datasets, begin, num):
@@ -173,6 +178,30 @@ def predict(dataset, model):
     )
 
 
+def get_gt_hotfix(transactions):
+    # This is a hotfix for modin bug
+    # https://github.com/modin-project/modin/issues/5763
+    if modin_cfg is None:
+        return (
+            transactions.query("week == 0")
+            .groupby("user")["item"]
+            .apply(list)
+            .reset_index()
+            .rename(columns={"item": "gt"})
+        )
+    else:
+        import pdb
+        pdb.set_trace()
+        return (
+            transactions.query("week == 0")
+            .groupby("user")["item"]
+            .apply(list)
+            .reset_index()
+            .rename(columns={"item": "gt"})
+        )
+
+
+
 def validate_model(
     model, transactions, users, items, candidates_valid, age_shifts, user_features_path
 ):
@@ -188,6 +217,9 @@ def validate_model(
     )
 
     pred = predict(dataset_valid_all, model)
+
+    import pdb
+    pdb.set_trace()
 
     gt = (
         transactions.query("week == 0")

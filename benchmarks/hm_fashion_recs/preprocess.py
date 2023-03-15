@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import os
 import logging
 
 from omniscripts.pandas_backend import pd
@@ -19,8 +20,9 @@ from .lfm import train_lfm
 logger = logging.getLogger(__name__)
 
 
-DEBUG = False
-N = 50
+
+DEBUG = bool(os.getenv("DEBUG", False))
+N = 1000
 
 
 def transform_data(input_data_path, result_path):
