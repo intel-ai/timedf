@@ -1,8 +1,24 @@
+import os
 from pathlib import Path
 
 import numpy as np
 
 from omniscripts.pandas_backend import pd
+
+
+# TODO: modin bug, that's why we use iloc[]
+# https://github.com/modin-project/modin/issues/5461
+LARGE_NUMBER = 1_000_000_000
+# Use experimental code that modify benchmark
+EXPERIMENTAL = False
+
+DEBUG = bool(os.getenv("DEBUG", False))
+
+# Sieb to decrease size of transactions when debug is active
+N_SIEB = 1000
+
+# Use smaller train size, will significantly speed things up (by about 3 times)
+LIMITED_TRAIN = True
 
 
 def load_data(preprocessed_data_path):

@@ -11,6 +11,7 @@ import os
 import logging
 
 from omniscripts.pandas_backend import pd
+from .hm_utils import DEBUG, N_SIEB
 
 from . import schema
 from .tm import tm
@@ -18,11 +19,6 @@ from .lfm import train_lfm
 
 
 logger = logging.getLogger(__name__)
-
-
-
-DEBUG = bool(os.getenv("DEBUG", False))
-N = 1000
 
 
 def transform_data(input_data_path, result_path):
@@ -59,8 +55,9 @@ def transform_data(input_data_path, result_path):
         parse_dates=["t_dat"],
     )
 
+    # Decrease size of the dataset for performance
     if DEBUG:
-        transactions = transactions.iloc[::N, :]
+        transactions = transactions.iloc[::N_SIEB, :]
 
     (result_path / "images").mkdir(exist_ok=True, parents=True)
 
@@ -167,10 +164,11 @@ def create_user_ohe_agg(week, preprocessed_data_path, result_path):
 
 
 def run_complete_preprocessing(raw_data_path, preprocessed_path, paths, n_weeks, use_lfm=False):
-    transform_data(input_data_path=raw_data_path, result_path=paths["preprocessed_data"])
+    with tm.timeit('01-transform_data'):
+        transform_data(input_data_path=raw_data_path, result_path=paths["preprocessed_data"])
 
     for week in range(n_weeks + 1):
-        with tm.timeit(f'ohe_features_week={week}'):
+        with tm.timeit(f'02-ohe_features_week={week}'):
             create_user_ohe_agg(
                 week,
                 preprocessed_data_path=paths["preprocessed_data"],
@@ -179,6 +177,6 @@ def run_complete_preprocessing(raw_data_path, preprocessed_path, paths, n_weeks,
 
     if use_lfm:
         for week in range(1, n_weeks + 1):
-            with tm.timeit(f'lfm_features_week={week}'):
+            with tm.timeit(f'03-lfm_features_week={week}'):
                 train_lfm(week=week, preprocessed_path=preprocessed_path,
                            lfm_features_path=paths["lfm_features"])

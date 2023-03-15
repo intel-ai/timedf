@@ -12,7 +12,7 @@ from omniscripts.benchmark import BaseBenchmark, BenchmarkResults
 
 from omniscripts.pandas_backend import pd, modin_cfg
 
-from .hm_utils import mapk, load_data, get_workdir_paths
+from .hm_utils import mapk, load_data, get_workdir_paths, DEBUG, EXPERIMENTAL, LIMITED_TRAIN
 from .fe import get_age_shifts, attach_features
 from .candidates import create_candidates, make_weekly_candidates
 from .preprocess import run_complete_preprocessing
@@ -21,19 +21,15 @@ from .tm import tm
 
 logger = logging.getLogger(__name__)
 
-
 class CFG:
     train_weeks = 6
     n_iterations = 10_000
 
     use_lfm = True
 
-
-LIMITED_DATA = True
-if LIMITED_DATA:
+if LIMITED_TRAIN:
     CFG.train_weeks = 1
 
-DEBUG = bool(os.getenv("DEBUG", False))
 
 if DEBUG:
     CFG.n_iterations = 50

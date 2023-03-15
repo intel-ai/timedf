@@ -3,14 +3,17 @@ import logging
 
 import numpy as np
 
-from omniscripts.pandas_backend import pd
+from omniscripts.pandas_backend import pd, modin_cfg
+from .hm_utils import LARGE_NUMBER, EXPERIMENTAL
 
 from .tm import tm
 
 logger = logging.getLogger(__name__)
 
-# TODO: modin bug, that's why we use iloc[]
-LARGE_NUMBER = 1_000_000_000
+
+grp_kwargs = {}
+if EXPERIMENTAL and modin_cfg is not None:
+    grp_kwargs["exp_implementation"] = True
 
 class CFG:
     """Configuration for candidate generaton."""
@@ -66,9 +69,15 @@ def create_candidates(
 
         tr = tr.iloc[:LARGE_NUMBER]
 
-        gr_day = tr.groupby(["user", "item"])["day"].min().reset_index(name="day")
-        gr_week = tr.groupby(["user", "item"])["week"].min().reset_index(name="week")
-        gr_volume = tr.groupby(["user", "item"]).size().reset_index(name="volume")
+        # Experimental speedup for modin
+        if EXPERIMENTAL and modin_cfg is not None:
+            gr_day = tr.groupby(["user", "item"])[["day"]].min(**grp_kwargs).squeeze(axis=1).reset_index(name="day")
+            gr_week = tr.groupby(["user", "item"])[["week"]].min(**grp_kwargs).squeeze(axis=1).reset_index(name="week")
+            gr_volume = tr.groupby(["user", "item"]).size(**grp_kwargs).reset_index(name="volume")
+        else:
+            gr_day = tr.groupby(["user", "item"])["day"].min().reset_index(name="day")
+            gr_week = tr.groupby(["user", "item"])["week"].min().reset_index(name="week")
+            gr_volume = tr.groupby(["user", "item"]).size().reset_index(name="volume")
 
         gr_day["day_rank"] = gr_day.groupby("user")["day"].rank()
         gr_week["week_rank"] = gr_week.groupby("user")["week"].rank()
@@ -186,8 +195,8 @@ def create_candidates(
             .query("item != item_with and week <= week_with")[["item", "item_with"]]
             .reset_index(drop=True)
         )
-        gr_item_count = tr.groupby("item").size().reset_index(name="item_count")
-        gr_pair_count = tr.groupby(["item", "item_with"]).size().reset_index(name="pair_count")
+        gr_item_count = tr.groupby("item").size().iloc[:LARGE_NUMBER].reset_index(name="item_count")
+        gr_pair_count = tr.groupby(["item", "item_with"]).size(**grp_kwargs).iloc[:LARGE_NUMBER].reset_index(name="pair_count")
         item2item = gr_pair_count.merge(gr_item_count, on="item")
         item2item["ratio"] = item2item["pair_count"] / item2item["item_count"]
         item2item = item2item.query("pair_count > @pair_count_threshold").reset_index(drop=True)
