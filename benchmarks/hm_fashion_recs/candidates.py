@@ -191,8 +191,9 @@ def create_candidates(
         tr = fixi(tr)
         
         tr = (
+            fixi(
             tr.merge(tr.rename(columns={"item": "item_with", "week": "week_with"}), on="user")
-            .query("item != item_with and week <= week_with")[["item", "item_with"]]
+            .query("item != item_with and week <= week_with")[["item", "item_with"]])
             .reset_index(drop=True)
         )
 
