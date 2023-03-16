@@ -3,8 +3,9 @@ from typing import Union
 import logging
 
 import numpy as np
+from .hm_utils import EXPERIMENTAL
 
-from omniscripts.pandas_backend import pd
+from omniscripts.pandas_backend import pd, modin_cfg
 
 from .lfm import calc_embeddings
 from .tm import tm
@@ -154,12 +155,23 @@ def attach_features(
         df = df.merge(tmp, on="user", how="left")
 
     with tm.timeit("10-user-item freshness features"):
-        tmp = (
-            transactions.query("@week <= week")
-            .groupby(["user", "item"])["day"]
-            .min()
-            .reset_index(name="user_item_day_min")
-        )
+        if EXPERIMENTAL and modin_cfg is not None:
+            grp_kwargs = {"exp_implementation": True}
+            tmp = (
+                transactions.query("@week <= week")
+                .groupby(["user", "item"])[["day"]]
+                .min(**grp_kwargs)
+                .squeeze(axis=1)
+                .reset_index(name="user_item_day_min")
+            )
+        else:
+            tmp = (
+                transactions.query("@week <= week")
+                .groupby(["user", "item"])["day"]
+                .min()
+                .reset_index(name="user_item_day_min")
+            )
+
         tmp["user_item_day_min"] -= transactions.query("@week == week")["day"].min()
         df = df.merge(tmp, on=["item", "user"], how="left")
 
@@ -213,6 +225,9 @@ def attach_features(
         items_with_ohe = pd.get_dummies(
             items[["item"] + item_target_cols], columns=item_target_cols
         )
+
+        if EXPERIMENTAL and modin_cfg is not None:
+            items_with_ohe = items_with_ohe._repartition(axis=1)
 
         cols = [c for c in items_with_ohe.columns if c != "item"]
         items_with_ohe[cols] = items_with_ohe[cols] / items_with_ohe[cols].mean()
