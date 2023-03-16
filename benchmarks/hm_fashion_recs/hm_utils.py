@@ -20,6 +20,9 @@ N_SIEB = 1000
 # Use smaller train size, will significantly speed things up (by about 3 times)
 LIMITED_TRAIN = True
 
+def fixi(df):
+    return df.iloc[:len(df)]
+
 
 def load_data(preprocessed_data_path):
     transactions = pd.read_pickle(preprocessed_data_path / "transactions_train.pkl")

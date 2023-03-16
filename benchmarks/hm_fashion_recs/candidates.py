@@ -4,7 +4,7 @@ import logging
 import numpy as np
 
 from omniscripts.pandas_backend import pd, modin_cfg
-from .hm_utils import LARGE_NUMBER, EXPERIMENTAL
+from .hm_utils import LARGE_NUMBER, EXPERIMENTAL, fixi
 
 from .tm import tm
 
@@ -188,17 +188,15 @@ def create_candidates(
             ["user", "item", "week"]
         ].drop_duplicates(ignore_index=True)
 
-        tr = tr.iloc[:LARGE_NUMBER]
+        tr = fixi(tr)
         
         tr = (
             tr.merge(tr.rename(columns={"item": "item_with", "week": "week_with"}), on="user")
             .query("item != item_with and week <= week_with")[["item", "item_with"]]
             .reset_index(drop=True)
         )
-        
-        tr = tr.iloc[:LARGE_NUMBER]
 
-        gr_item_count = tr.groupby("item").size().iloc[:LARGE_NUMBER].reset_index(name="item_count")
+        gr_item_count = fixi(tr).groupby("item").size().reset_index(name="item_count")
         gr_pair_count = tr.groupby(["item", "item_with"]).size(**grp_kwargs).iloc[:LARGE_NUMBER].reset_index(name="pair_count")
         item2item = gr_pair_count.merge(gr_item_count, on="item")
         item2item["ratio"] = item2item["pair_count"] / item2item["item_count"]
