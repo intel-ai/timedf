@@ -15,7 +15,7 @@ EXPERIMENTAL = False
 DEBUG = bool(os.getenv("DEBUG", False))
 
 # Sieb to decrease size of transactions when debug is active
-N_SIEB = 100
+N_SIEB = 1000
 
 # Use smaller train size, will significantly speed things up (by about 3 times)
 LIMITED_TRAIN = True
