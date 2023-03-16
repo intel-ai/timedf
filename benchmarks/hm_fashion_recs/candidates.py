@@ -196,7 +196,7 @@ def create_candidates(
             .reset_index(drop=True)
         )
 
-        gr_item_count = fixi(tr).groupby("item").size().reset_index(name="item_count")
+        gr_item_count = fixi(fixi(tr).groupby("item").size()).reset_index(name="item_count")
         gr_pair_count = fixi(fixi(tr).groupby(["item", "item_with"]).size(**grp_kwargs)).reset_index(name="pair_count")
         item2item = gr_pair_count.merge(gr_item_count, on="item")
         item2item["ratio"] = item2item["pair_count"] / item2item["item_count"]
