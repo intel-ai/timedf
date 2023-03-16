@@ -10,12 +10,12 @@ from omniscripts.pandas_backend import pd
 # https://github.com/modin-project/modin/issues/5461
 LARGE_NUMBER = 1_000_000_000
 # Use experimental code that modify benchmark
-EXPERIMENTAL = False
+EXPERIMENTAL = True
 
 DEBUG = bool(os.getenv("DEBUG", False))
 
 # Sieb to decrease size of transactions when debug is active
-N_SIEB = 1000
+N_SIEB = 100
 
 # Use smaller train size, will significantly speed things up (by about 3 times)
 LIMITED_TRAIN = True
