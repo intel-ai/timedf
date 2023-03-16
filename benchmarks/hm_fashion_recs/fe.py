@@ -199,7 +199,8 @@ def attach_features(
             high = age + age_shifts[age]  # noqa: F841 used in pandas query
             tmp = (
                 fixi(
-                tr.query("@low <= age <= @high")
+                fixi(
+                tr.query("@low <= age <= @high"))
                 .groupby("item")
                 .size()
                 )
