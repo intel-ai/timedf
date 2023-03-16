@@ -3,7 +3,7 @@ from typing import Union
 import logging
 
 import numpy as np
-from .hm_utils import EXPERIMENTAL
+from .hm_utils import EXPERIMENTAL, fixi
 
 from omniscripts.pandas_backend import pd, modin_cfg
 
