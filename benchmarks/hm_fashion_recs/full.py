@@ -383,17 +383,17 @@ def main(raw_data_path, paths):
                 user_features_path=paths["user_features"],
             )
 
-        with tm.timeit('06-train_eval'):
-            best_iteration = train_eval(
-                train=train,
-                valid=valid,
-                candidates_valid=candidates_valid,
-                transactions=transactions,
-                users=users,
-                items=items,
-                age_shifts=age_shifts,
-                user_features_path=paths["user_features"],
-        )
+        # with tm.timeit('06-train_eval'):
+        #     best_iteration = train_eval(
+        #         train=train,
+        #         valid=valid,
+        #         candidates_valid=candidates_valid,
+        #         transactions=transactions,
+        #         users=users,
+        #         items=items,
+        #         age_shifts=age_shifts,
+        #         user_features_path=paths["user_features"],
+        # )
 
         del candidates_valid
         gc.collect()

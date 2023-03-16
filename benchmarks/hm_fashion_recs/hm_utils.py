@@ -10,7 +10,7 @@ from omniscripts.pandas_backend import pd
 # https://github.com/modin-project/modin/issues/5461
 LARGE_NUMBER = 1_000_000_000
 # Use experimental code that modify benchmark
-EXPERIMENTAL = True
+EXPERIMENTAL = bool(os.getenv("EXPERIMENTAL", False))
 
 DEBUG = bool(os.getenv("DEBUG", False))
 
