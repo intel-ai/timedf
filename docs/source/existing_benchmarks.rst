@@ -28,3 +28,18 @@ After defining environment variables and **activating conda** you need to run co
 ``./build_scripts/ny_taxi_ml.sh .``
 Of course, you can provide some or all environment variables with a command like this:
 ``PANDAS_MODE="Pandas" ./build_scripts/ny_taxi_ml.sh``
+
+Running existing benchmark
+--------------------------
+
+Let's reproduce one of existing benchmarks from unconfigured system. We expect you to have **activated conda environment**. We will use ``hm_fashion_recs.full``.
+
+#. ``git clone https://github.com/intel-ai/omniscripts.git && cd omniscripts``
+#. Create new environment where you will store all dependencies ``export ENV_NAME="hm"``
+#. Install omniscripts dependencies: ``conda create -y -n $ENV_NAME && conda activate $ENV_NAME && conda env update -f requirements/base.yml && conda env update -f requirements/reporting.yml``
+#. Install benchmark-specific dependencies: ``conda env update -f benchmarks/hm_fashion_recs/requirements.yaml``
+#. Install latest modin ``pip install "modin[all] @ git+https://github.com/modin-project/modin"``
+#. You need to download hm_fashion_recs dataset. You can do that from kaggle using the link from benchmark readme, located in ``benchmarks/hm_fashion_recs``. After downloading it, store it in a folder named ``hm_fashion_recs`` and store it's parent's location to an environment variable: ``export DATASETS_PWD="/datasets"``. In this example dataset itself is stored like this: ``/datasets/hm_fashion_recs/articles.csv``.
+#. Deactivate current conda env: ``conda deactivate``
+#. If you want to store results in a database, define environment variable with parameters: ``export DB_COMMON_OPTS=""``
+#. You can now run benchmark with pandas: ``PANDAS_MODE="Pandas" ./build_scripts/hm_fashion_recs_full.sh`` or modin on ray: ``PANDAS_MODE="Modin_on_ray" ./build_scripts/hm_fashion_recs_full.sh`` or HDK ``PANDAS_MODE="Modin_on_hdk" ./build_scripts/hm_fashion_recs_full.sh``
