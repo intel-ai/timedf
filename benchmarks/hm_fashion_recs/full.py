@@ -12,7 +12,7 @@ from omniscripts.benchmark import BaseBenchmark, BenchmarkResults
 
 from omniscripts.pandas_backend import pd, modin_cfg
 
-from .hm_utils import mapk, load_data, get_workdir_paths, DEBUG, EXPERIMENTAL, LIMITED_TRAIN
+from .hm_utils import mapk, load_data, get_workdir_paths, DEBUG, LIMITED_TRAIN
 from .fe import get_age_shifts, attach_features
 from .candidates import create_candidates, make_weekly_candidates
 from .preprocess import run_complete_preprocessing
@@ -91,44 +91,19 @@ def train_model(*, train, valid=None, best_iteration=None):
     cat_feature_values = [c for c in feature_columns if c.endswith("idx")]
     cat_features = [feature_columns.index(c) for c in cat_feature_values]
 
-    data = train[feature_columns]
-    y = train["y"]
-    group_id = train["query_group"]
-
-    # We make this conversion because Catboost checks type of input dataframe agains pandas
-    if modin_cfg is not None:
-        data = data._to_pandas()
-        y = y._to_pandas()
-        group_id = group_id._to_pandas()
-
-
     train_dataset = catboost.Pool(
-        data=data,
-        label=y,
-        group_id=group_id,
+        data=train[feature_columns],
+        label=train["y"],
+        group_id=train["query_group"],
         cat_features=cat_features,
     )
 
-    if valid is not None:
-        data = valid[feature_columns]
-        y = valid["y"]
-        group_id = valid["query_group"]
-
-        # We make this conversion because Catboost checks type of input dataframe agains pandas
-        if modin_cfg is not None:
-            data = data._to_pandas()
-            y = y._to_pandas()
-            group_id = group_id._to_pandas()
-
-
-        valid_dataset = catboost.Pool(
-            data=data,
-            label=y,
-            group_id=group_id,
-            cat_features=cat_features,
-        )
-    else:
-        valid_dataset = None
+    valid_dataset = None if valid is None else catboost.Pool(   
+        data=valid[feature_columns],
+        label=valid["y"],
+        group_id=valid["query_group"],
+        cat_features=cat_features,
+    )
 
     params = {
         "loss_function": "YetiRank",
@@ -173,48 +148,8 @@ def predict(dataset, model):
     )
 
 
-def get_gt_hotfix(transactions):
-    # This is a hotfix for modin bug
-    # https://github.com/modin-project/modin/issues/5763
-    if modin_cfg is None:
-        return (
-            transactions.query("week == 0")
-            .groupby("user")["item"]
-            .apply(list)
-            .reset_index()
-            .rename(columns={"item": "gt"})
-        )
-    else:
-        import pdb
-        pdb.set_trace()
-        return (
-            transactions.query("week == 0")
-            .groupby("user")["item"]
-            .apply(list)
-            .reset_index()
-            .rename(columns={"item": "gt"})
-        )
-
-
-
-def validate_model(
-    model, transactions, users, items, candidates_valid, age_shifts, user_features_path
-):
-    dataset_valid_all = attach_features(
-        transactions,
-        users,
-        items,
-        candidates_valid,
-        1,
-        CFG.train_weeks + 1,
-        age_shifts=age_shifts,
-        user_features_path=user_features_path,
-    )
-
-    pred = predict(dataset_valid_all, model)
-
-    import pdb
-    pdb.set_trace()
+def evaluate_model(model, transactions, dataset_evaluate):
+    pred = predict(dataset_evaluate, model)
 
     gt = (
         transactions.query("week == 0")
@@ -283,26 +218,17 @@ def prepare_submission(*, pred, working_dir, preprocessed_data_path):
     submission.to_csv(working_dir / "submission.csv", index=False)
 
 
-def train_eval(
-    train, valid, transactions, users, items, candidates_valid, age_shifts, user_features_path
-):
+def train_eval(train, valid, evaluate, transactions):
     
-    with tm.timeit('02-train'):
+    with tm.timeit('01-train'):
         model = train_model(train=train, valid=valid)
         best_iteration = model.get_best_iteration()
 
-    del train, valid
-    gc.collect()
-
-    with tm.timeit('03-eval'):
-        metric = validate_model(
+    with tm.timeit('02-eval'):
+        metric = evaluate_model(
             model=model,
-            transactions=transactions,
-            users=users,
-            items=items,
-            candidates_valid=candidates_valid,
-            age_shifts=age_shifts,
-            user_features_path=user_features_path,
+            dataset_evaluate=evaluate,
+            transactions=transactions
         )
     logger.info("mAP@12: %s", metric)
     return best_iteration
@@ -371,34 +297,51 @@ def main(raw_data_path, paths):
                 age_shifts=age_shifts,
             )
 
-        with tm.timeit('05-make_dataset'):
-            train, valid = make_dataset(
-                candidates=candidates,
+        with tm.timeit('05-make_datasets'):
+            with tm.timeit('01-training'):
+                train, valid = make_dataset(
+                    candidates=candidates,
+                    transactions=transactions,
+                    users=users,
+                    items=items,
+                    begin_shift=1,
+                    end_shift=1,
+                    age_shifts=age_shifts,
+                    user_features_path=paths["user_features"],
+                )
+
+            with tm.timeit('02-evaluation'):
+                eval = attach_features(
+                    transactions,
+                    users,
+                    items,
+                    candidates_valid,
+                    1,
+                    CFG.train_weeks + 1,
+                    age_shifts=age_shifts,
+                    user_features_path=paths["user_features"],
+                )
+
+        with tm.timeit('06-conversion'):
+            # Catboost requires pandas dataframes for training and evaluation
+            if modin_cfg is not None:
+                train = train._to_pandas()
+                valid = valid._to_pandas()
+                eval = eval._to_pandas()
+                transactions = transactions._to_pandas()
+
+        with tm.timeit('07-train_eval'):
+            best_iteration = train_eval(
+                train=train,
+                valid=valid,
+                evaluate=eval,
                 transactions=transactions,
-                users=users,
-                items=items,
-                begin_shift=1,
-                end_shift=1,
-                age_shifts=age_shifts,
-                user_features_path=paths["user_features"],
-            )
+        )
 
-        # with tm.timeit('06-train_eval'):
-        #     best_iteration = train_eval(
-        #         train=train,
-        #         valid=valid,
-        #         candidates_valid=candidates_valid,
-        #         transactions=transactions,
-        #         users=users,
-        #         items=items,
-        #         age_shifts=age_shifts,
-        #         user_features_path=paths["user_features"],
-        # )
-
-        del candidates_valid
+        del candidates_valid, train, valid, eval
         gc.collect()
 
-        # with tm.timeit('06-retrain_whole_dataset'):
+        # with tm.timeit('08-retrain_whole_dataset'):
         #     make_submission(
         #         candidates=candidates,
         #         transactions=transactions,
