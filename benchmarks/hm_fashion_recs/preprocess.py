@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import os
 import logging
 
 from omniscripts.pandas_backend import pd
