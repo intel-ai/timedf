@@ -133,9 +133,6 @@ def predict(dataset, model):
 
     inf_data = dataset[feature_columns]
 
-    if modin_cfg is not None:
-        inf_data = inf_data._to_pandas()
-
     pred["pred"] = model.predict(inf_data)
 
     pred = pred.groupby(["user", "item"])["pred"].max().reset_index()
