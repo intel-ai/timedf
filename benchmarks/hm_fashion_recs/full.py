@@ -340,7 +340,7 @@ def main(raw_data_path, paths):
                 evaluate=eval,
                 transactions=transactions,
             )
-            print('Best iteration is:', best_iteration)
+            print("Best iteration is:", best_iteration)
 
         del candidates_valid, train, valid, eval
         gc.collect()
