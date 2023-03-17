@@ -197,14 +197,8 @@ def attach_features(
         for age in range(16, 100):
             low = age - age_shifts[age]  # noqa: F841 used in pandas query
             high = age + age_shifts[age]  # noqa: F841 used in pandas query
-            tmp = (
-                fixi(
-                fixi(
-                tr.query("@low <= age <= @high"))
-                .groupby("item")
-                .size()
-                )
-                .reset_index(name="age_volume")
+            tmp = fixi(fixi(tr.query("@low <= age <= @high")).groupby("item").size()).reset_index(
+                name="age_volume"
             )
             tmp["age_volume"] = tmp["age_volume"].rank(ascending=False)
             tmp["age"] = age

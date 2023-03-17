@@ -20,8 +20,9 @@ N_SIEB = 100
 # Use smaller train size, will significantly speed things up (by about 3 times)
 LIMITED_TRAIN = True
 
+
 def fixi(df):
-    return df.iloc[:len(df)]
+    return df.iloc[: len(df)]
 
 
 def load_data(preprocessed_data_path):

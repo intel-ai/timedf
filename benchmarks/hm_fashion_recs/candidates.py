@@ -15,6 +15,7 @@ grp_kwargs = {}
 if EXPERIMENTAL and modin_cfg is not None:
     grp_kwargs["exp_implementation"] = True
 
+
 class CFG:
     """Configuration for candidate generaton."""
 
@@ -71,8 +72,18 @@ def create_candidates(
 
         # Experimental speedup for modin
         if EXPERIMENTAL and modin_cfg is not None:
-            gr_day = tr.groupby(["user", "item"])[["day"]].min(**grp_kwargs).squeeze(axis=1).reset_index(name="day")
-            gr_week = tr.groupby(["user", "item"])[["week"]].min(**grp_kwargs).squeeze(axis=1).reset_index(name="week")
+            gr_day = (
+                tr.groupby(["user", "item"])[["day"]]
+                .min(**grp_kwargs)
+                .squeeze(axis=1)
+                .reset_index(name="day")
+            )
+            gr_week = (
+                tr.groupby(["user", "item"])[["week"]]
+                .min(**grp_kwargs)
+                .squeeze(axis=1)
+                .reset_index(name="week")
+            )
             gr_volume = tr.groupby(["user", "item"]).size(**grp_kwargs).reset_index(name="volume")
         else:
             gr_day = tr.groupby(["user", "item"])["day"].min().reset_index(name="day")
@@ -189,16 +200,17 @@ def create_candidates(
         ].drop_duplicates(ignore_index=True)
 
         tr = fixi(tr)
-        
-        tr = (
-            fixi(
-            tr.merge(tr.rename(columns={"item": "item_with", "week": "week_with"}), on="user")
-            .query("item != item_with and week <= week_with")[["item", "item_with"]])
-            .reset_index(drop=True)
-        )
+
+        tr = fixi(
+            tr.merge(
+                tr.rename(columns={"item": "item_with", "week": "week_with"}), on="user"
+            ).query("item != item_with and week <= week_with")[["item", "item_with"]]
+        ).reset_index(drop=True)
 
         gr_item_count = tr.groupby("item").size().reset_index(name="item_count")
-        gr_pair_count = tr.groupby(["item", "item_with"]).size(**grp_kwargs).reset_index(name="pair_count")
+        gr_pair_count = (
+            tr.groupby(["item", "item_with"]).size(**grp_kwargs).reset_index(name="pair_count")
+        )
         item2item = gr_pair_count.merge(gr_item_count, on="item")
         item2item["ratio"] = item2item["pair_count"] / item2item["item_count"]
         item2item = item2item.query("pair_count > @pair_count_threshold").reset_index(drop=True)

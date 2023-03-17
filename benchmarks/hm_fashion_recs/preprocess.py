@@ -164,11 +164,11 @@ def create_user_ohe_agg(week, preprocessed_data_path, result_path):
 
 
 def run_complete_preprocessing(raw_data_path, preprocessed_path, paths, n_weeks, use_lfm=False):
-    with tm.timeit('01-transform_data'):
+    with tm.timeit("01-transform_data"):
         transform_data(input_data_path=raw_data_path, result_path=paths["preprocessed_data"])
 
     for week in range(n_weeks + 1):
-        with tm.timeit(f'02-ohe_features_week={week}'):
+        with tm.timeit(f"02-ohe_features_week={week}"):
             create_user_ohe_agg(
                 week,
                 preprocessed_data_path=paths["preprocessed_data"],
@@ -177,6 +177,9 @@ def run_complete_preprocessing(raw_data_path, preprocessed_path, paths, n_weeks,
 
     if use_lfm:
         for week in range(1, n_weeks + 1):
-            with tm.timeit(f'03-lfm_features_week={week}'):
-                train_lfm(week=week, preprocessed_path=preprocessed_path,
-                           lfm_features_path=paths["lfm_features"])
+            with tm.timeit(f"03-lfm_features_week={week}"):
+                train_lfm(
+                    week=week,
+                    preprocessed_path=preprocessed_path,
+                    lfm_features_path=paths["lfm_features"],
+                )

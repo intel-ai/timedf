@@ -21,11 +21,13 @@ from .tm import tm
 
 logger = logging.getLogger(__name__)
 
+
 class CFG:
     train_weeks = 6
     n_iterations = 10_000
 
     use_lfm = True
+
 
 if LIMITED_TRAIN:
     CFG.train_weeks = 1
@@ -54,7 +56,7 @@ def make_dataset(
 
     datasets = []
     for i, candidates_subset in enumerate(candidates):
-        with tm.timeit(f'attach_features_week={i}'):
+        with tm.timeit(f"attach_features_week={i}"):
             dataset = attach_features(
                 transactions,
                 users,
@@ -66,12 +68,14 @@ def make_dataset(
                 user_features_path=user_features_path,
             )
 
-            dataset["query_group"] = dataset["week"].astype(str) + "_" + dataset["user"].astype(str)
+            dataset["query_group"] = (
+                dataset["week"].astype(str) + "_" + dataset["user"].astype(str)
+            )
             dataset = dataset.sort_values(by="query_group").reset_index(drop=True)
             datasets.append(dataset)
 
     valid = datasets[0]
-    with tm.timeit('concat'):
+    with tm.timeit("concat"):
         train = concat_train(datasets, end_shift, CFG.train_weeks)
 
     return train, valid
@@ -98,11 +102,15 @@ def train_model(*, train, valid=None, best_iteration=None):
         cat_features=cat_features,
     )
 
-    valid_dataset = None if valid is None else catboost.Pool(   
-        data=valid[feature_columns],
-        label=valid["y"],
-        group_id=valid["query_group"],
-        cat_features=cat_features,
+    valid_dataset = (
+        None
+        if valid is None
+        else catboost.Pool(
+            data=valid[feature_columns],
+            label=valid["y"],
+            group_id=valid["query_group"],
+            cat_features=cat_features,
+        )
     )
 
     params = {
@@ -216,23 +224,18 @@ def prepare_submission(*, pred, working_dir, preprocessed_data_path):
 
 
 def train_eval(train, valid, evaluate, transactions):
-    
-    with tm.timeit('01-train'):
+    with tm.timeit("01-train"):
         model = train_model(train=train, valid=valid)
         best_iteration = model.get_best_iteration()
 
-    with tm.timeit('02-eval'):
-        metric = evaluate_model(
-            model=model,
-            dataset_evaluate=evaluate,
-            transactions=transactions
-        )
+    with tm.timeit("02-eval"):
+        metric = evaluate_model(model=model, dataset_evaluate=evaluate, transactions=transactions)
     logger.info("mAP@12: %s", metric)
     return best_iteration
 
 
 def make_submission(candidates, transactions, users, items, best_iteration, age_shifts, paths):
-    with tm.timeit('01-make_dataset'):
+    with tm.timeit("01-make_dataset"):
         train, valid = make_dataset(
             candidates=candidates,
             transactions=transactions,
@@ -242,16 +245,16 @@ def make_submission(candidates, transactions, users, items, best_iteration, age_
             end_shift=0,
             age_shifts=age_shifts,
             user_features_path=paths["user_features"],
-        )   
+        )
 
-    with tm.timeit('02-train'):
+    with tm.timeit("02-train"):
         model = train_model(train=train, best_iteration=best_iteration)
 
     del train, valid
     del candidates
     gc.collect()
 
-    with tm.timeit('03-predict'):
+    with tm.timeit("03-predict"):
         pred = predict_new_week(
             model=model,
             transactions=transactions,
@@ -260,31 +263,35 @@ def make_submission(candidates, transactions, users, items, best_iteration, age_
             age_shifts=age_shifts,
             user_features_path=paths["user_features"],
         )
-    with tm.timeit('04-prepare_sub'):
+    with tm.timeit("04-prepare_sub"):
         prepare_submission(
-            pred=pred, working_dir=paths["workdir"], preprocessed_data_path=paths["preprocessed_data"]
+            pred=pred,
+            working_dir=paths["workdir"],
+            preprocessed_data_path=paths["preprocessed_data"],
         )
 
 
 def main(raw_data_path, paths):
-    with tm.timeit('total'):
-        with tm.timeit('01-processing'):
+    with tm.timeit("total"):
+        with tm.timeit("01-processing"):
             # print('Skipped')
             run_complete_preprocessing(
                 raw_data_path=raw_data_path,
-                preprocessed_path=paths['preprocessed_data'],
-                paths=paths, n_weeks=CFG.train_weeks + 1, use_lfm=CFG.use_lfm
+                preprocessed_path=paths["preprocessed_data"],
+                paths=paths,
+                n_weeks=CFG.train_weeks + 1,
+                use_lfm=CFG.use_lfm,
             )
-        
-        with tm.timeit('02-load_processed'):
+
+        with tm.timeit("02-load_processed"):
             transactions, users, items = load_data(
                 preprocessed_data_path=paths["preprocessed_data"]
             )
 
-        with tm.timeit('03-age_shifts'):
+        with tm.timeit("03-age_shifts"):
             age_shifts = get_age_shifts(transactions=transactions, users=users)
 
-        with tm.timeit('04-weekly_candidates'):
+        with tm.timeit("04-weekly_candidates"):
             candidates, candidates_valid = make_weekly_candidates(
                 transactions=transactions,
                 users=users,
@@ -294,8 +301,8 @@ def main(raw_data_path, paths):
                 age_shifts=age_shifts,
             )
 
-        with tm.timeit('05-make_datasets'):
-            with tm.timeit('01-training'):
+        with tm.timeit("05-make_datasets"):
+            with tm.timeit("01-training"):
                 train, valid = make_dataset(
                     candidates=candidates,
                     transactions=transactions,
@@ -307,7 +314,7 @@ def main(raw_data_path, paths):
                     user_features_path=paths["user_features"],
                 )
 
-            with tm.timeit('02-evaluation'):
+            with tm.timeit("02-evaluation"):
                 eval = attach_features(
                     transactions,
                     users,
@@ -319,7 +326,7 @@ def main(raw_data_path, paths):
                     user_features_path=paths["user_features"],
                 )
 
-        with tm.timeit('06-conversion'):
+        with tm.timeit("06-conversion"):
             # Catboost requires pandas dataframes for training and evaluation
             if modin_cfg is not None:
                 train = train._to_pandas()
@@ -327,13 +334,13 @@ def main(raw_data_path, paths):
                 eval = eval._to_pandas()
                 transactions = transactions._to_pandas()
 
-        with tm.timeit('07-train_eval'):
+        with tm.timeit("07-train_eval"):
             best_iteration = train_eval(
                 train=train,
                 valid=valid,
                 evaluate=eval,
                 transactions=transactions,
-        )
+            )
 
         del candidates_valid, train, valid, eval
         gc.collect()
