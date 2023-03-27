@@ -102,7 +102,6 @@ class H2OBackendImpl(H2OBackend):
         dtypes = {
             **{n: pl.Categorical for n in ["id1", "id2", "id3", "id4", "id5", "id6"]},
             **{n: pl.Float64 for n in ["v1", "v2", "v3"]},
-            # "v3":pl.Float64
         }
         super().__init__(dtypes)
 
