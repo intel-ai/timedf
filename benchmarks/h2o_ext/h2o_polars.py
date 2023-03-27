@@ -4,37 +4,37 @@ from polars import col
 from .h2o_utils import H2OBackend
 
 
-def q1(x):
+def groupby_q1(x):
     return x.groupby("id1").agg(pl.sum("v1"))
 
 
-def q2(x):
+def groupby_q2(x):
     return x.groupby(["id1", "id2"]).agg(pl.sum("v1"))
 
 
-def q3(x):
+def groupby_q3(x):
     return x.groupby("id3").agg([pl.sum("v1"), pl.mean("v3").alias("v3_mean")])
 
 
-def q4(x):
+def groupby_q4(x):
     return x.groupby("id4").agg([pl.mean("v1"), pl.mean("v2"), pl.mean("v3")])
 
 
-def q5(x):
+def groupby_q5(x):
     return x.groupby("id6").agg([pl.sum("v1"), pl.sum("v2"), pl.sum("v3")])
 
 
-def q6(x):
+def groupby_q6(x):
     return x.groupby(["id4", "id5"]).agg(
         [pl.median("v3").alias("v3_median"), pl.std("v3").alias("v3_std")]
     )
 
 
-def q7(x):
+def groupby_q7(x):
     return x.groupby("id3").agg([(pl.max("v1") - pl.min("v2")).alias("range_v1_v2")])
 
 
-def q8(x):
+def groupby_q8(x):
     return (
         x.drop_nulls("v3")
         .sort("v3", reverse=True)
@@ -44,58 +44,58 @@ def q8(x):
     )
 
 
-def q9(x):
+def groupby_q9(x):
     return x.groupby(["id2", "id4"]).agg((pl.pearson_corr("v1", "v2") ** 2).alias("r2"))
 
 
-def q10(x):
+def groupby_q10(x):
     return x.groupby(["id1", "id2", "id3", "id4", "id5", "id6"]).agg(
         [pl.sum("v3").alias("v3"), pl.count("v1").alias("count")]
     )
 
 
 name2groupby_query = {
-    "q01": q1,
-    "q02": q2,
-    "q03": q3,
-    "q04": q4,
-    "q05": q5,
-    "q06": q6,
-    "q07": q7,
-    "q08": q8,
-    "q09": q9,
-    "q10": q10,
+    "q01": groupby_q1,
+    "q02": groupby_q2,
+    "q03": groupby_q3,
+    "q04": groupby_q4,
+    "q05": groupby_q5,
+    "q06": groupby_q6,
+    "q07": groupby_q7,
+    "q08": groupby_q8,
+    "q09": groupby_q9,
+    "q10": groupby_q10,
 }
 
 
-def q1(data):
+def join_q1(data):
     return data["df"].join(data["small"], on="id1")
 
 
-def q2(data):
+def join_q2(data):
     return data["df"].join(data["medium"], on="id2")
 
 
-def q3(data):
+def join_q3(data):
     return data["df"].join(data["medium"], how="left", on="id2")
 
 
-def q4(data):
+def join_q4(data):
     return data["df"].join(data["medium"], on="id5")
 
 
-def q5(data):
+def join_q5(data):
     return data["df"].join(data["big"], on="id3")
 
 
 class H2OBackendImpl(H2OBackend):
     name2groupby_query = name2groupby_query
     name2join_query = {
-        "q01": q1,
-        "q02": q2,
-        "q03": q3,
-        "q04": q4,
-        "q05": q5,
+        "q01": join_q1,
+        "q02": join_q2,
+        "q03": join_q3,
+        "q04": join_q4,
+        "q05": join_q5,
     }
 
     def __init__(self):
