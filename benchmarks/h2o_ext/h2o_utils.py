@@ -1,3 +1,4 @@
+import abc
 from pathlib import Path
 
 from omniscripts import TimerManager
@@ -10,7 +11,7 @@ def filter_dict(d, names):
     return {key: val for key, val in d.items() if key in names}
 
 
-class H2OBackend:
+class H2OBackend(abc.ABC):
     name2groupby_query = None
     name2join_query = None
 
@@ -25,12 +26,12 @@ class H2OBackend:
 
         self.dtypes = {name: filter_dict(dtypes, cols) for name, cols in name2cols.items()}
 
-    @staticmethod
-    def load_groupby_data(paths):
+    @abc.abstractmethod
+    def load_groupby_data(self, paths):
         pass
 
-    @staticmethod
-    def load_join_data(paths):
+    @abc.abstractmethod
+    def load_join_data(self, paths):
         pass
 
 
@@ -53,5 +54,3 @@ def get_load_info(data_path):
         "join_medium": paths[2],
         "join_big": paths[3],
     }
-    # Hotfix for modin Path reading error
-    # return {name: str(p) for name, p in paths.items()}

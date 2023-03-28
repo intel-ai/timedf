@@ -6,7 +6,10 @@ from omniscripts.pandas_backend import pd, backend_cfg
 
 from .h2o_utils import H2OBackend
 
-gb_params = {"as_index": False}
+# Without {"observed": True}, pandas fails groupby_q10 because of memory problem
+# Looks like it builds cartesian product for all categorical values and there are too many of them.
+# https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.groupby.html
+gb_params = {"as_index": False, "observed": True}
 
 
 def groupby_q1(x):
@@ -116,14 +119,13 @@ class H2OBackendImpl(H2OBackend):
 
     def __init__(self):
         dtypes = {
-            **{n: "string" for n in ["id1", "id2", "id3", "id4", "id5", "id6"]},
+            **{n: "category" for n in ["id1", "id2", "id3", "id4", "id5", "id6"]},
             **{n: "float64" for n in ["v1", "v2", "v3"]},
         }
         super().__init__(dtypes)
 
     def load_groupby_data(self, paths):
-        # return pd.read_csv(paths['groupby'], dtype=self.dtypes['groupby'])
-        return pd.read_csv(paths["groupby"])
+        return pd.read_csv(paths["groupby"], dtype=self.dtypes["groupby"])
 
     def load_join_data(self, paths):
         df = pd.read_csv(paths["join_df"], dtype=self.dtypes["groupby"])
