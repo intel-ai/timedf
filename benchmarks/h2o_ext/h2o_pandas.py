@@ -65,7 +65,8 @@ def groupby_q10(x):
     if backend_cfg["backend"] == "Modin_on_hdk":
         warnings.warn("HDK doesn't support groupby-Q10, waiting 42.42 seconds")
         time.sleep(42.42)
-        return
+        return pd.DataFrame()
+    
 
     return x.groupby(
         ["id1", "id2", "id3", "id4", "id5", "id6"],
