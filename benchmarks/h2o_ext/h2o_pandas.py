@@ -119,7 +119,7 @@ class H2OBackendImpl(H2OBackend):
 
     def __init__(self):
         dtypes = {
-            **{n: "category" for n in ["id1", "id2", "id3", "id4", "id5", "id6"]},
+            **{n: "string" for n in ["id1", "id2", "id3", "id4", "id5", "id6"]},
             **{n: "float64" for n in ["v1", "v2", "v3"]},
         }
         super().__init__(dtypes)
