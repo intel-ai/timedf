@@ -19,7 +19,6 @@ There are 10 groupby queries and 5 join queries.
 ### Supported backends:
 - Pandas
 - Modin
-- Polars
 
 ### Sources
 - https://h2oai.github.io/db-benchmark/

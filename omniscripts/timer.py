@@ -22,7 +22,7 @@ class TimerManager:
     >>>     heavy_call()
     """
 
-    def __init__(self, allow_overwrite=False, verbose=False) -> None:
+    def __init__(self, allow_overwrite=False) -> None:
         """Initialize root timer.
 
         Parameters
@@ -33,8 +33,6 @@ class TimerManager:
         # name for the next timer to start, also acts as timer state
         self.prepared_name = None
         self.timer_stack = self.TimerStack(allow_overwrite=allow_overwrite)
-
-        self.verbose = verbose
 
     def timeit(self, name):
         if self.prepared_name is not None:
@@ -49,7 +47,6 @@ class TimerManager:
 
         self.timer_stack.push(self.prepared_name)
         self.prepared_name = None
-
         return self
 
     def __exit__(self, type, value, traceback):
@@ -75,15 +72,12 @@ class TimerManager:
             self.start_stack.append(time.perf_counter())
             self.name_stack.append(name)
 
-            logger.error(f"enter {self._get_full_name()}")
-
         def pop(self):
             fullname = self._get_full_name()
             self.name_stack.pop()
 
             self._check_overwrite(fullname)
             self.fullname2time[fullname] = time.perf_counter() - self.start_stack.pop()
-            logger.error(f"exit  {fullname}: {self.fullname2time[fullname]}")
 
         def _check_name(self, name):
             if self.SEPARATOR in name:

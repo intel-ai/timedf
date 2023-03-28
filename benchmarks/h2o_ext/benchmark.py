@@ -2,7 +2,7 @@ import gc
 import importlib
 
 from omniscripts import BaseBenchmark, BenchmarkResults
-from omniscripts.pandas_backend import set_backend, collect
+from omniscripts.pandas_backend import trigger_execution
 
 from .h2o_utils import tm, get_load_info, H2OBackend
 
@@ -16,7 +16,7 @@ def main_groupby(paths, backend):
             gc.collect()
             with tm.timeit(name):
                 # Force action
-                collect(q(df))
+                trigger_execution(q(df))
 
 
 def main_join(paths, backend):
@@ -28,7 +28,7 @@ def main_join(paths, backend):
             gc.collect()
             with tm.timeit(name):
                 # Force action
-                collect(q(data))
+                trigger_execution(q(data))
 
 
 def main(data_path, backend):
@@ -38,21 +38,15 @@ def main(data_path, backend):
         main_join(paths, backend=backend)
 
 
-pandas_modes = ("Pandas", "Modin_on_ray", "Modin_on_hdk")
-backend2impl = {
-    "polars": "h2o_polars",
-    **{n: "h2o_pandas" for n in pandas_modes},
-}
+# Stores non-pandas implemenations
+backend2impl = {}
 
 
 class Benchmark(BaseBenchmark):
     def run_benchmark(self, params) -> BenchmarkResults:
         backend_name = params["pandas_mode"]
-
-        if backend_name in pandas_modes:
-            set_backend(backend_name, None, None)
-
-        module = importlib.import_module(f"benchmarks.h2o_ext.{backend2impl[backend_name]}")
+        backend_path = backend2impl.get(backend_name, "h2o_pandas")
+        module = importlib.import_module(f"benchmarks.h2o_ext.{backend_path}")
         backend: H2OBackend = module.H2OBackendImpl()
 
         main(data_path=params["data_file"], backend=backend)
