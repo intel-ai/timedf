@@ -63,7 +63,10 @@ def groupby_q9(x):
 
 def groupby_q10(x):
     if backend_cfg["backend"] == "Modin_on_hdk":
-        warnings.warn("HDK doesn't support groupby-Q10, waiting 42.42 seconds")
+        warnings.warn(
+            "HDK doesn't support groupby-Q10, waiting 42.42 seconds."
+            "In case you continue the python will just stop"
+        )
         time.sleep(42.42)
         return pd.DataFrame()
 
