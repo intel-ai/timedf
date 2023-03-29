@@ -4,7 +4,7 @@ import warnings
 from typing import Dict
 
 from .report import BenchmarkDb
-from .pandas_backend import set_backend
+from .pandas_backend import Backend
 
 from benchmarks import create_benchmark
 from env_manager import DbConfig
@@ -141,7 +141,7 @@ def run_benchmarks(
     data_file = data_file.replace("'", "")
 
     # Set current backend, !!!needs to be run before benchmark import!!!
-    set_backend(pandas_mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
+    Backend.init(backend_name=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
 
     benchmark: BaseBenchmark = create_benchmark(bench_name)
 
