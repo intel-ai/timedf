@@ -1,7 +1,7 @@
 import warnings
 import time
 
-from omniscripts.pandas_backend import pd, backend_cfg
+from omniscripts.pandas_backend import pd, Backend
 
 
 from .h2o_utils import H2OBackend
@@ -62,10 +62,13 @@ def groupby_q9(x):
 
 
 def groupby_q10(x):
-    if backend_cfg["backend"] == "Modin_on_hdk":
-        warnings.warn("HDK doesn't support groupby-Q10, waiting 42.42 seconds")
+    if Backend.get_name() == "Modin_on_hdk":
+        warnings.warn(
+            "HDK doesn't support groupby-Q10, waiting 42.42 seconds."
+            "In case you continue the python will just stop"
+        )
         time.sleep(42.42)
-        return
+        return pd.DataFrame()
 
     return x.groupby(
         ["id1", "id2", "id3", "id4", "id5", "id6"],

@@ -3,51 +3,107 @@
     2. Get pandas in each benchmark module with `from utils.pandas_backend import pd`, this will use
      correct version of backend.
 """
+# This will be replaced by modin.pandas after set_backend call
 import pandas as pd  # noqa: F401 this import exists to provide vscode support for backend users
 
+from env_manager.arg_parser import supported_backends
 from .modin_utils import (
     import_pandas_into_module_namespace,
-    trigger_execution_base as _trigger_execution,
+    trigger_execution_base as _trigger_execution_pandas,
 )
 
-# Modin config, none if pandas is used
-# Variable will hold the state, used for `trigger_execution`
-modin_cfg = None
-backend_cfg = {}
+__all__ = ["Backend"]
 
 
-def _get_modin_config(pandas_mode):
-    if pandas_mode != "Pandas":
-        import modin.config as cfg
+pandas_backends = [
+    "Pandas",
+    "Modin_on_ray",
+    "Modin_on_dask",
+    "Modin_on_python",
+    "Modin_on_hdk",
+]
 
-        return cfg
-    else:
-        return None
+nonpandas_backends = [
+    "polars",
+]
 
-
-def set_backend(pandas_mode, ray_tmpdir, ray_memory):
-    global backend_cfg
-    backend_cfg["backend"] = pandas_mode
-
-    if pandas_mode == "polars":
-        return
-
-    global modin_cfg
-    modin_cfg = _get_modin_config(pandas_mode)
-    import_pandas_into_module_namespace(
-        namespace=globals(), mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory
+if sorted(supported_backends) != sorted([*pandas_backends, *nonpandas_backends]):
+    raise ValueError(
+        "Discovered inconsistency in supported backends\n"
+        f"According to argparser supported backends are: {sorted(supported_backends)}\n"
+        "According to backend module supported backends are: "
+        f"{sorted([*pandas_backends, nonpandas_backends])}"
     )
 
 
-def collect(df):
-    """Utility function to trigger execution for lazy libraries."""
-    if backend_cfg['backend'] == "polars":
-        return df.collect()
-    else:
-        return _trigger_execution(df, modin_cfg=modin_cfg)
+class Backend:
+    """Singleton storing backend utilities and configurations"""
 
+    _supported_backends = supported_backends
 
-def trigger_execution(*dfs):
-    """Utility function to trigger execution for lazy pd libraries."""
-    # For polars we expect user to just apply .collect
-    return _trigger_execution(*dfs, modin_cfg=modin_cfg)
+    # Backend was initalized and ready for work
+    _ready = False
+    # Backend name
+    _name = None
+
+    # Modin config, none if pandas is used
+    # Variable will hold the state, used for `trigger_execution`
+    _modin_cfg = None
+
+    @staticmethod
+    def init(backend_name: str, ray_tmpdir=None, ray_memory=None):
+        Backend._name = backend_name
+
+        if backend_name in pandas_backends and backend_name != "Pandas":
+            import modin.config as cfg
+
+            Backend._modin_cfg = cfg
+
+        if backend_name == "polars":
+            pass
+        elif backend_name == "Pandas":
+            pass
+        elif backend_name in pandas_backends:
+            import_pandas_into_module_namespace(
+                namespace=globals(),
+                mode=backend_name,
+                ray_tmpdir=ray_tmpdir,
+                ray_memory=ray_memory,
+            )
+        else:
+            raise ValueError(f"Unrecognized backend: {backend_name}")
+
+        Backend._ready = True
+
+    @staticmethod
+    def _check_ready():
+        if not Backend._ready:
+            raise ValueError("Attempting to use unitialized backend")
+
+    @staticmethod
+    def get_name():
+        Backend._check_ready()
+        return Backend._name
+
+    @staticmethod
+    def get_modin_cfg():
+        Backend._check_ready()
+        return Backend._modin_cfg
+
+    @staticmethod
+    def trigger_execution(*dfs):
+        """Utility function to trigger execution for lazy pd libraries. Returns actualized dfs."""
+        Backend._check_ready()
+
+        if Backend.get_name() == "polars":
+            results = [d.collect() for d in dfs]
+        elif Backend.get_name() in pandas_backends:
+            _trigger_execution_pandas(*dfs, modin_cfg=Backend.get_modin_cfg())
+            results = [*dfs]
+        else:
+            raise ValueError(f"no implementation for {Backend.get_name()}")
+
+        if len(dfs) == 1:
+            return results[0]
+        else:
+            return results

@@ -10,6 +10,17 @@ from typing import Union
 
 __all__ = ["add_sql_arguments", "prepare_parser", "DbConfig"]
 
+# Have to stay here because current module cannot import omniscripts because it is imported
+# in base conda
+supported_backends = [
+    "Pandas",
+    "Modin_on_ray",
+    "Modin_on_dask",
+    "Modin_on_python",
+    "Modin_on_hdk",
+    "polars",
+]
+
 # be careful with this line when moving `prepare_parser` function
 omniscript_path = os.path.dirname(os.path.dirname(__file__))
 
@@ -184,14 +195,7 @@ def prepare_parser():
     )
     benchmark.add_argument(
         "-pandas_mode",
-        choices=[
-            "Pandas",
-            "Modin_on_ray",
-            "Modin_on_dask",
-            "Modin_on_python",
-            "Modin_on_hdk",
-            "polars",
-        ],
+        choices=supported_backends,
         default="Pandas",
         help="Specifies which backend to use: "
         "plain Pandas, Modin runing on Ray or on Dask or on HDK",
