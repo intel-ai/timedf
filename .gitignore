@@ -1,5 +1,7 @@
 report.csv
 __pycache__
+build
+omniscripts.egg-info
 dask-worker-space
 *.tbl
 docs/build/*

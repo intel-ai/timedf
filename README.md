@@ -4,7 +4,9 @@
 
 Scripts require miniconda to be installed.
 
-Library requirements are located in `requirements` folder, that is mainly `requirements/base.yml` and `requirements/reporting.yml` (for reporting).
+Library requirements are located in `requirements` folder, that is mainly `requirements/base.txt` and `requirements/reporting.txt` (for reporting).
+
+Or you can install all requirements with: `pip install -e .[all]`
 
 ## Main benchmarks launching script
 

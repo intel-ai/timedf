@@ -1,0 +1,7 @@
+braceexpand
+s3fs
+numpy>=1.11
+pandas>=1.0.0
+scikit-learn-intelex
+psutil
+xgboost >=1.3

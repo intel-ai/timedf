@@ -3,10 +3,8 @@ import time
 import warnings
 from typing import Dict
 
-from .report import BenchmarkDb
 from .pandas_backend import set_backend
 
-from benchmarks import create_benchmark
 from env_manager import DbConfig
 
 
@@ -143,6 +141,8 @@ def run_benchmarks(
     # Set current backend, !!!needs to be run before benchmark import!!!
     set_backend(pandas_mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
 
+    from benchmarks import create_benchmark
+
     benchmark: BaseBenchmark = create_benchmark(bench_name)
 
     run_parameters = {
@@ -165,7 +165,12 @@ def run_benchmarks(
     run_id = int(round(time.time()))
     print(run_parameters)
 
-    reporter = db_config and BenchmarkDb(db_config.create_engine())
+    if db_config is not None:
+        from .report import BenchmarkDb
+
+        reporter = BenchmarkDb(db_config.create_engine())
+    else:
+        reporter = None
 
     for iter_num in range(1, iterations + 1):
         print(f"Iteration #{iter_num}")
