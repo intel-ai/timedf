@@ -96,7 +96,8 @@ class Backend:
         Backend._check_ready()
 
         if Backend.get_name() == "polars":
-            results = [d.collect() for d in dfs]
+            # Collect lazy frames
+            results = [d.collect() if hasattr(d, 'collect') else d for d in dfs]
         elif Backend.get_name() in pandas_backends:
             _trigger_execution_pandas(*dfs, modin_cfg=Backend.get_modin_cfg())
             results = [*dfs]
