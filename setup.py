@@ -20,7 +20,7 @@ all_reqs = reporting_reqs + dev_reqs
 
 setup(
     name="omniscripts",
-    version="0.1",
+    version="0.1.0",
     description="Tools for benchmarking data processing with data frames",
     long_description=long_description,
     author="???",
