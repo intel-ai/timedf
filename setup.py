@@ -23,8 +23,6 @@ setup(
     version="0.1.0",
     description="Tools for benchmarking data processing with data frames",
     long_description=long_description,
-    author="???",
-    author_email="???",
     url="https://github.com/intel-ai/omniscripts/",
     include_package_data=True,
     packages=find_packages(exclude=["scripts", "scripts.*"]),
