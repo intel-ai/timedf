@@ -7,7 +7,7 @@ from itertools import islice
 
 
 from omniscripts import BaseBenchmark, BenchmarkResults
-from omniscripts.pandas_backend import pd, trigger_execution
+from omniscripts.pandas_backend import pd, Backend
 from omniscripts.benchmark_utils import print_results
 
 
@@ -123,7 +123,7 @@ def load_data(dirpath: str, is_hdk_mode, debug=False):
     df = pd.concat(dfs, ignore_index=True)
 
     # To trigger execution
-    trigger_execution(df)
+    Backend.trigger_execution(df)
 
     return df
 
@@ -174,7 +174,7 @@ def filter_df(df, is_hdk_mode):
         )
 
     df = df.reset_index(drop=True)
-    trigger_execution(df)
+    Backend.trigger_execution(df)
     return df
 
 
@@ -198,7 +198,7 @@ def feature_engineering(df):
     dlat = df["dropoff_latitude"] - df["pickup_latitude"]
     df["e_distance"] = dlon * dlon + dlat * dlat
 
-    trigger_execution(df)
+    Backend.trigger_execution(df)
 
     return df
 
@@ -231,7 +231,7 @@ def split(df):
     # Drop the fare amount from X_test
     x_test = x_test.drop("fare_amount", axis=1)
 
-    trigger_execution(x_train, y_train, x_test, y_test)
+    Backend.trigger_execution(x_train, y_train, x_test, y_test)
 
     return {"x_train": x_train, "x_test": x_test, "y_train": y_train, "y_test": y_test}
 
@@ -272,7 +272,7 @@ def train(data: dict, use_modin_xgb: bool, debug=False):
     # prediction = pd.Series(booster.predict(xgb.DMatrix(X_test)))
 
     actual = data["y_test"]["fare_amount"].reset_index(drop=True)
-    trigger_execution(actual, prediction)
+    Backend.trigger_execution(actual, prediction)
     return None
 
 
