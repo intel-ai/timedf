@@ -1,3 +1,4 @@
+import runpy
 from pathlib import Path
 from setuptools import setup, find_packages
 
@@ -13,23 +14,22 @@ def parse_reqs(name):
 
 
 reporting_reqs = parse_reqs("reporting.txt")
-dev_reqs = parse_reqs("linters.txt") + parse_reqs("unittests.txt")
 
-all_reqs = reporting_reqs + dev_reqs
+all_reqs = reporting_reqs
+
+name = "omniscripts"
+version = runpy.run_path(root / name / "__version__.py")["__version__"]
 
 
 setup(
     name="omniscripts",
-    version="0.1",
-    description="Tools for benchmarking data processing with data frames",
+    version=version,
+    description="Benchmarks for data frame processing libraries",
     long_description=long_description,
-    author="???",
-    author_email="???",
     url="https://github.com/intel-ai/omniscripts/",
-    include_package_data=True,
     packages=find_packages(exclude=["scripts", "scripts.*"]),
     # I suggest we migrate from requirements.yaml to requirements.txt and just put these file here:
     install_requires=parse_reqs("base.txt"),
-    extras_require={"reporting": reporting_reqs, "dev": dev_reqs, "all": all_reqs},
+    extras_require={"reporting": reporting_reqs, "all": all_reqs},
     python_requires=">=3.8",
 )

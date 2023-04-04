@@ -1,5 +1,13 @@
 # Scripts that are used to run modin-specific benchmarks in automated way in TeamCity and for performance analysis in development cycle.
 
+
+## Installation
+
+`pip install .`
+
+If you want to use SQL database for result storage install with `[reporting]`:
+`pip install .[reporting]`
+
 ## Requirements
 
 Scripts require miniconda to be installed.
@@ -7,6 +15,13 @@ Scripts require miniconda to be installed.
 Library requirements are located in `requirements` folder, that is mainly `requirements/base.txt` and `requirements/reporting.txt` (for reporting).
 
 Or you can install all requirements with: `pip install -e .[all]`
+
+If you are a developer you might benefit from installing code style tools and testing dependencies:
+
+`pip install -r requirements/unittests.txt`
+
+`pip install -r requirements/linters.txt`
+
 
 ## Main benchmarks launching script
 
