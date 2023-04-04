@@ -3,7 +3,7 @@ import itertools as it
 import math
 import argparse
 
-from env_manager.arg_parser import add_sql_arguments
+from omniscripts.arg_parser import add_sql_arguments
 
 
 class DbReport:

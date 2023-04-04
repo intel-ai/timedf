@@ -1,17 +1,10 @@
 """Argument parsing"""
-# This module could be part of omniscripts module, but some of arguments are
-# shared between env_manager and omniscripts so it is stored here, because
-# env_manager have weaker requirements.
 import argparse
 from dataclasses import dataclass
-import os
 from typing import Union
 
 
 __all__ = ["add_sql_arguments", "prepare_parser", "DbConfig"]
-
-# be careful with this line when moving `prepare_parser` function
-omniscript_path = os.path.dirname(os.path.dirname(__file__))
 
 
 # This can be written as just a function, but we keep the dataclass to add validation and arg parsing in the future.
@@ -91,63 +84,6 @@ def prepare_parser():
     benchmark = parser.add_argument_group("benchmark")
     sql = parser.add_argument_group("sql")
     commits = parser.add_argument_group("commits")
-
-    possible_tasks = ["build", "benchmark"]
-
-    # Task
-    required.add_argument(
-        "-task",
-        dest="task",
-        required=True,
-        help=f"Task for execute {possible_tasks}. Use , separator for multiple tasks",
-    )
-
-    # Environment
-    optional.add_argument(
-        "-en", "--env_name", dest="env_name", default=None, help="Conda env name."
-    )
-    optional.add_argument(
-        "-ec",
-        "--env_check",
-        dest="env_check",
-        default=False,
-        type=str_arg_to_bool,
-        help="Check if env exists. If it exists don't recreate. Ignored if `--env_name` isn't set.",
-    )
-    optional.add_argument(
-        "-s",
-        "--save_env",
-        dest="save_env",
-        default=False,
-        type=str_arg_to_bool,
-        help="Save conda env after executing. Ignored if `--env_name` isn't set.",
-    )
-    optional.add_argument(
-        "-ci",
-        "--ci_requirements",
-        dest="ci_requirements",
-        default=os.path.join(omniscript_path, "ci_requirements.yml"),
-        help="File with ci requirements for conda env.",
-    )
-    optional.add_argument(
-        "-py",
-        "--python_version",
-        dest="python_version",
-        default="3.8",
-        help="Python version that should be installed in conda env.",
-    )
-
-    # Modin
-    optional.add_argument(
-        "-m", "--modin_path", dest="modin_path", default=None, help="Path to modin directory."
-    )
-    optional.add_argument(
-        "--modin_pkgs_dir",
-        dest="modin_pkgs_dir",
-        default=None,
-        type=str,
-        help="Path where to store built Modin dependencies (--target flag for pip), can be helpful if you have space limited home directory.",
-    )
 
     # Benchmark parameters
     benchmark.add_argument("-bench_name", dest="bench_name", help="Benchmark name.")
@@ -249,4 +185,4 @@ def prepare_parser():
         default="1234567890123456789012345678901234567890",
         help="Modin commit hash used for tests.",
     )
-    return parser, possible_tasks, omniscript_path
+    return parser
