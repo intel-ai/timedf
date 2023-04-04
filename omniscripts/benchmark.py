@@ -6,6 +6,7 @@ from typing import Dict
 from .pandas_backend import Backend
 
 from env_manager import DbConfig
+from .benchmarks import create_benchmark
 
 
 class BenchmarkResults:
@@ -140,8 +141,6 @@ def run_benchmarks(
 
     # Set current backend, !!!needs to be run before benchmark import!!!
     Backend.init(backend_name=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
-
-    from benchmarks import create_benchmark
 
     benchmark: BaseBenchmark = create_benchmark(bench_name)
 
