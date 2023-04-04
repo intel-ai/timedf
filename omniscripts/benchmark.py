@@ -3,7 +3,6 @@ import time
 import warnings
 from typing import Dict
 
-from .report import BenchmarkDb
 from .pandas_backend import Backend
 
 from env_manager import DbConfig
