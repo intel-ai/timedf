@@ -3,7 +3,7 @@ import time
 import warnings
 from typing import Dict
 
-from .pandas_backend import set_backend
+from .pandas_backend import Backend
 
 from .arg_parser import DbConfig
 from .benchmarks import create_benchmark
@@ -140,7 +140,7 @@ def run_benchmarks(
     data_file = data_file.replace("'", "")
 
     # Set current backend, !!!needs to be run before benchmark import!!!
-    set_backend(pandas_mode=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
+    Backend.init(backend_name=pandas_mode, ray_tmpdir=ray_tmpdir, ray_memory=ray_memory)
 
     benchmark: BaseBenchmark = create_benchmark(bench_name)
 

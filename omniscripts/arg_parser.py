@@ -3,6 +3,8 @@ import argparse
 from dataclasses import dataclass
 from typing import Union
 
+from .pandas_backend import Backend
+
 
 __all__ = ["add_sql_arguments", "prepare_parser", "DbConfig"]
 
@@ -119,9 +121,9 @@ def prepare_parser():
     )
     benchmark.add_argument(
         "-pandas_mode",
-        choices=["Pandas", "Modin_on_ray", "Modin_on_dask", "Modin_on_python", "Modin_on_hdk"],
+        choices=Backend.supported_backends,
         default="Pandas",
-        help="Specifies which version of Pandas to use: "
+        help="Specifies which backend to use: "
         "plain Pandas, Modin runing on Ray or on Dask or on HDK",
     )
     benchmark.add_argument(
