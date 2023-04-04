@@ -1,4 +1,4 @@
-# tests
+# Requirements for unittests in CI
 pytest 
 psutil
 numpy
