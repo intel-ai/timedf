@@ -79,7 +79,6 @@ def add_sql_arguments(parser):
 
 def prepare_parser():
     parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
-    required = parser.add_argument_group("common")
     optional = parser.add_argument_group("optional arguments")
     benchmark = parser.add_argument_group("benchmark")
     sql = parser.add_argument_group("sql")
