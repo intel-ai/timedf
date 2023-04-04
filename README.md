@@ -16,7 +16,7 @@ Library requirements are located in `requirements` folder, that is mainly `requi
 
 Or you can install all requirements with: `pip install -e .[all]`
 
-If you are a developer you might benefit from installing linter and tesing dependencies:
+If you are a developer you might benefit from installing code style tools and testing dependencies:
 
 `pip install -r requirements/unittests.txt`
 
