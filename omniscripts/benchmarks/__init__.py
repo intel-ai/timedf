@@ -2,6 +2,7 @@ import importlib
 from pathlib import Path
 
 
+# We keep benchmark import lazy to let the library initialize tool configuration before import
 def create_benchmark(bench_name):
     # We are trying to dynamically import provided benchmark and want to catch
     # probelms with this import to report to user
