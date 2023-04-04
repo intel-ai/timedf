@@ -16,6 +16,13 @@ Library requirements are located in `requirements` folder, that is mainly `requi
 
 Or you can install all requirements with: `pip install -e .[all]`
 
+If you are a developer you might benefit from installing linter and tesing dependencies:
+
+`pip install -r requirements/unittests.txt`
+
+`pip install -r requirements/linters.txt`
+
+
 ## Main benchmarks launching script
 
 Main script is called `run_modin_tests.py`. ```run_modin_tests.py -h``` will show all script's parameters. 
