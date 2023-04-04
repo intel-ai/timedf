@@ -1,5 +1,13 @@
 # Scripts that are used to run modin-specific benchmarks in automated way in TeamCity and for performance analysis in development cycle.
 
+
+## Installation
+
+`pip install .`
+
+If you want to use SQL database for result storage install with `[reporting]`:
+`pip install .[reporting]`
+
 ## Requirements
 
 Scripts require miniconda to be installed.
