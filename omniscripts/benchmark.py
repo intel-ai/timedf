@@ -5,7 +5,7 @@ from typing import Dict
 
 from .pandas_backend import set_backend
 
-from env_manager import DbConfig
+from .arg_parser import DbConfig
 
 
 class BenchmarkResults:
