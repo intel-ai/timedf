@@ -28,6 +28,7 @@ nonpandas_backends = [
 
 supported_backends = pandas_backends + nonpandas_backends
 
+
 class Backend:
     """Singleton storing backend utilities and configurations"""
 
