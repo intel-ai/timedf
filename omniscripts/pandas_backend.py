@@ -50,14 +50,14 @@ class Backend:
     # Variable will hold the state, used for `trigger_execution`
     _modin_cfg = None
 
-    @staticmethod
-    def init(backend_name: str, ray_tmpdir=None, ray_memory=None):
-        Backend._name = backend_name
+    @classmethod
+    def init(cls, backend_name: str, ray_tmpdir=None, ray_memory=None):
+        cls._name = backend_name
 
         if backend_name in pandas_backends and backend_name != "Pandas":
             import modin.config as cfg
 
-            Backend._modin_cfg = cfg
+            cls._modin_cfg = cfg
 
         if backend_name == "polars":
             pass
@@ -73,36 +73,36 @@ class Backend:
         else:
             raise ValueError(f"Unrecognized backend: {backend_name}")
 
-        Backend._ready = True
+        cls._ready = True
 
-    @staticmethod
-    def _check_ready():
-        if not Backend._ready:
+    @classmethod
+    def _check_ready(cls):
+        if not cls._ready:
             raise ValueError("Attempting to use unitialized backend")
 
-    @staticmethod
-    def get_name():
-        Backend._check_ready()
-        return Backend._name
+    @classmethod
+    def get_name(cls):
+        cls._check_ready()
+        return cls._name
 
-    @staticmethod
-    def get_modin_cfg():
-        Backend._check_ready()
-        return Backend._modin_cfg
+    @classmethod
+    def get_modin_cfg(cls):
+        cls._check_ready()
+        return cls._modin_cfg
 
-    @staticmethod
-    def trigger_execution(*dfs):
+    @classmethod
+    def trigger_execution(cls, *dfs):
         """Utility function to trigger execution for lazy pd libraries. Returns actualized dfs."""
-        Backend._check_ready()
+        cls._check_ready()
 
-        if Backend.get_name() == "polars":
+        if cls.get_name() == "polars":
             # Collect lazy frames
             results = [d.collect() if hasattr(d, "collect") else d for d in dfs]
-        elif Backend.get_name() in pandas_backends:
-            _trigger_execution_pandas(*dfs, modin_cfg=Backend.get_modin_cfg())
+        elif cls.get_name() in pandas_backends:
+            _trigger_execution_pandas(*dfs, modin_cfg=cls.get_modin_cfg())
             results = [*dfs]
         else:
-            raise ValueError(f"no implementation for {Backend.get_name()}")
+            raise ValueError(f"no implementation for {cls.get_name()}")
 
         if len(dfs) == 1:
             return results[0]
