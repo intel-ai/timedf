@@ -8,13 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Check code style
+      - name: Check code style and run pytest
         run: |
-          pip install -r requirements/linters.txt
+          pip install -r requirements/dev_reqs.txt
           black . --check --diff
           flake8
-          
-      - name: Test with pytest
-        run: |
-          pip install -r requirements/unittests.txt
           pytest

@@ -4,3 +4,7 @@ psutil
 numpy
 pandas
 sqlalchemy==1.4
+# codestyle & linters for developers
+black
+flake8
+flake8-per-file-ignores
