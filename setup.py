@@ -32,4 +32,10 @@ setup(
     install_requires=parse_reqs("base.txt"),
     extras_require={"reporting": reporting_reqs, "all": all_reqs},
     python_requires=">=3.8",
+    entry_points={
+        "console_scripts": [
+            "report-xlsx = omniscripts.scripts.report_xlsx:main",
+            "benchmark-run = omniscripts.scripts.benchmark_run:main",
+        ],
+    }
 )
