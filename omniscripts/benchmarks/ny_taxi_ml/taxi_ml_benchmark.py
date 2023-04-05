@@ -51,11 +51,7 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_hdk_m
             "Modin_on_hdk mode doesn't support import of compressed files yet"
         )
 
-    return pd.read_csv(
-        filepath,
-        dtype=col2dtype,
-        parse_dates=parse_dates,
-    )
+    return pd.read_csv(filepath, dtype=col2dtype, parse_dates=parse_dates)
 
 
 @measure_time

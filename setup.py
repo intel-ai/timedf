@@ -36,6 +36,6 @@ setup(
         "console_scripts": [
             "report-xlsx = omniscripts.scripts.report_xlsx:main",
             "benchmark-run = omniscripts.scripts.benchmark_run:main",
-        ],
-    }
+        ]
+    },
 )
