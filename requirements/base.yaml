@@ -4,7 +4,6 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - conda
   - pip
   - braceexpand
   - s3fs
