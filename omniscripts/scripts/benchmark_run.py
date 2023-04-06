@@ -42,8 +42,6 @@ def main():
         "optimizer": args.optimizer,
         # Used only for census
         "gpu_memory": args.gpu_memory,
-        # Used only in ny_taxi
-        "validation": args.validation,
         # Used only for old H2O
         "extended_functionality": args.extended_functionality,
         # Add benchmark-specific arguments

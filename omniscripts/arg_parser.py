@@ -1,6 +1,7 @@
 """Argument parsing"""
 import argparse
 from dataclasses import dataclass
+from typing import Callable
 
 from .pandas_backend import Backend
 
@@ -167,11 +168,12 @@ def prepare_general_parser():
         default="1234567890123456789012345678901234567890",
         help="Modin commit hash used for tests.",
     )
-
     return parser
 
 
-def parse_args(add_benchmark_args):
+def parse_args(add_benchmark_args: Callable[[argparse.ArgumentParser], None]):
+    """Parse arguments including benchmark-specific arguments that will be added using provided 
+    `add_benchmark_args` callable"""
     parser = prepare_general_parser()
     benchmark_parser = parser.add_argument_group("benchmark_specific")
     add_benchmark_args(benchmark_parser)
@@ -185,4 +187,5 @@ def parse_args(add_benchmark_args):
         password=args.db_pass,
         name=args.db_name,
     )
+
     return args, db_config
