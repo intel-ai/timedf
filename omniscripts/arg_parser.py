@@ -172,7 +172,7 @@ def prepare_general_parser():
 
 
 def parse_args(add_benchmark_args: Callable[[argparse.ArgumentParser], None]):
-    """Parse arguments including benchmark-specific arguments that will be added using provided 
+    """Parse arguments including benchmark-specific arguments that will be added using provided
     `add_benchmark_args` callable"""
     parser = prepare_general_parser()
     benchmark_parser = parser.add_argument_group("benchmark_specific")
