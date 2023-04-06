@@ -25,7 +25,7 @@ PANDAS_MACHINE_NAME=$HOST_NAME-pandas
 export MODIN_ENGINE=ray
 
 asv run --launch-method=spawn --config asv.conf.json \
-    -b ^hdk --machine $RAY_MACHINE_NAME -a repeat=3 -a number=1 \
+    -b ^benchmarks --machine $RAY_MACHINE_NAME -a repeat=3 -a number=1 \
     --show-stderr --python=same --set-commit-hash HEAD
 RAY_RESULT_NAME=`ls .asv/results/$RAY_MACHINE_NAME/ | grep existing`
 
