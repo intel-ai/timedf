@@ -1,4 +1,4 @@
-from .benchmark import BaseBenchmark, BenchmarkResults, run_benchmarks
+from .benchmark import BaseBenchmark, BenchmarkResults
 from .timer import TimerManager
 from . import benchmark_utils
 from . import scripts

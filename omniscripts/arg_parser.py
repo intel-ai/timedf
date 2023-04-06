@@ -1,12 +1,11 @@
 """Argument parsing"""
 import argparse
 from dataclasses import dataclass
-from typing import Union
 
 from .pandas_backend import Backend
 
 
-__all__ = ["add_sql_arguments", "prepare_parser", "DbConfig"]
+__all__ = ["add_sql_arguments", "prepare_general_parser", "parse_args", "DbConfig"]
 
 
 # This can be written as just a function, but we keep the dataclass to add validation and arg parsing in the future.
@@ -40,17 +39,6 @@ class DbConfig:
         return create_engine(url)
 
 
-def str_arg_to_bool(v: Union[bool, str]) -> bool:
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ("yes", "true", "t", "y", "1"):
-        return True
-    elif v.lower() in ("no", "false", "f", "n", "0"):
-        return False
-    else:
-        raise argparse.ArgumentTypeError("Cannot recognize boolean value.")
-
-
 def add_sql_arguments(parser):
     parser.add_argument(
         "-db_driver",
@@ -79,7 +67,7 @@ def add_sql_arguments(parser):
     )
 
 
-def prepare_parser():
+def prepare_general_parser():
     parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
     optional = parser.add_argument_group("optional arguments")
     benchmark = parser.add_argument_group("benchmark")
@@ -87,9 +75,9 @@ def prepare_parser():
     commits = parser.add_argument_group("commits")
 
     # Benchmark parameters
-    benchmark.add_argument("-bench_name", dest="bench_name", help="Benchmark name.")
+    benchmark.add_argument("bench_name", help="Benchmark name.")
     benchmark.add_argument(
-        "-data_file", dest="data_file", help="A datafile that should be loaded."
+        "-data_file", dest="data_file", help="A datafile that should be loaded.", required=True
     )
     benchmark.add_argument(
         "-dfiles_num",
@@ -104,13 +92,6 @@ def prepare_parser():
         default=1,
         type=int,
         help="Number of iterations to run. All results will be submitted to the DB.",
-    )
-    benchmark.add_argument(
-        "-validation",
-        dest="validation",
-        default=False,
-        type=str_arg_to_bool,
-        help="validate queries results (by comparison with Pandas queries results).",
     )
     benchmark.add_argument(
         "-optimizer",
@@ -128,7 +109,7 @@ def prepare_parser():
     )
     benchmark.add_argument(
         "-ray_tmpdir",
-        default="/tmp",
+        default="f/tmp",
         help="Location where to keep Ray plasma store. "
         "It should have enough space to keep -ray_memory",
     )
@@ -140,14 +121,14 @@ def prepare_parser():
     )
     benchmark.add_argument(
         "-no_ml",
-        default=None,
-        type=str_arg_to_bool,
+        default=False,
+        action="store_true",
         help="Do not run machine learning benchmark, only ETL part",
     )
     benchmark.add_argument(
         "-use_modin_xgb",
         default=False,
-        type=str_arg_to_bool,
+        action="store_true",
         help="Whether to use Modin XGBoost for ML part, relevant for Plasticc benchmark only",
     )
     optional.add_argument(
@@ -162,7 +143,7 @@ def prepare_parser():
         "-extended_functionality",
         dest="extended_functionality",
         default=False,
-        type=str_arg_to_bool,
+        action="store_true",
         help="Extends functionality of H2O benchmark by adding 'chk' functions and verbose local reporting of results",
     )
     # SQL database parameters
@@ -186,4 +167,22 @@ def prepare_parser():
         default="1234567890123456789012345678901234567890",
         help="Modin commit hash used for tests.",
     )
+
     return parser
+
+
+def parse_args(add_benchmark_args):
+    parser = prepare_general_parser()
+    benchmark_parser = parser.add_argument_group("benchmark_specific")
+    add_benchmark_args(benchmark_parser)
+    args = parser.parse_args()
+
+    db_config = DbConfig(
+        driver=args.db_driver,
+        server=args.db_server,
+        port=args.db_port,
+        user=args.db_user,
+        password=args.db_pass,
+        name=args.db_name,
+    )
+    return args, db_config
