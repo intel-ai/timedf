@@ -109,7 +109,7 @@ def prepare_general_parser():
     )
     benchmark.add_argument(
         "-ray_tmpdir",
-        default="f/tmp",
+        default="/tmp",
         help="Location where to keep Ray plasma store. "
         "It should have enough space to keep -ray_memory",
     )
