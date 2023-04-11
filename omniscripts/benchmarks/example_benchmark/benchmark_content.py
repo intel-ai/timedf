@@ -28,11 +28,13 @@ class Benchmark(BaseBenchmark):
         parser.add_argument(
             "-my_param",
             default="my_value",
-            help="You can pass your own value with this way.",
+            help="You can pass your own value this way.",
         )
 
     def run_benchmark(self, params) -> BenchmarkResults:
         N = 10_000
+
+        print("My param is ", params["my_param"])
 
         # This command will measure time it took to run nested block and record it with
         # 'load_data' key
