@@ -21,7 +21,7 @@ tm = TimerManager()
 class Benchmark(BaseBenchmark):
     # You can pass benchmark-specific parameters by creating this field and
     # writing `add_benchmark_args` function
-    __params__ = ("example_param",)
+    __params__ = ("my_param",)
 
     # Parse your benchmark-specific arguments
     def add_benchmark_args(self, parser: argparse.ArgumentParser):
