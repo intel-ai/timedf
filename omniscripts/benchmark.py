@@ -164,12 +164,7 @@ def run_benchmarks(
     run_id = int(round(time.time()))
     print(run_parameters)
 
-    if db_config is not None:
-        from .report import BenchmarkDb
-
-        reporter = BenchmarkDb(db_config.create_engine())
-    else:
-        reporter = None
+    reporter = db_config.maybeCreateBenchmarkDb()
 
     for iter_num in range(1, iterations + 1):
         print(f"Iteration #{iter_num}")

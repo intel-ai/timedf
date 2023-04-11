@@ -25,7 +25,10 @@ class DbConfig:
     password: str = None
     name: str = None
 
-    def create_engine(self):
+    def is_config_complete(self):
+        return self.user is not None
+
+    def _create_engine(self):
         from sqlalchemy import create_engine
         from sqlalchemy.engine.url import URL
 
@@ -38,6 +41,14 @@ class DbConfig:
             database=self.name,
         )
         return create_engine(url)
+
+    def maybeCreateBenchmarkDb(self):
+        if self.is_config_complete():
+            from .report import BenchmarkDb
+
+            return BenchmarkDb(self._create_engine())
+        else:
+            return None
 
 
 def str_arg_to_bool(v: Union[bool, str]) -> bool:
