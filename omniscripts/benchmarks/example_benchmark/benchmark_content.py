@@ -1,3 +1,5 @@
+import argparse
+
 import numpy as np
 
 # No pandas is needed, it is imported on the next line
@@ -17,8 +19,18 @@ tm = TimerManager()
 
 
 class Benchmark(BaseBenchmark):
-    # This is optional to give user warning if he provided these arguments for some reason
-    __unsupported_params__ = ("optimizer", "dfiles_num")
+    # You can pass benchmark-specific parameters by creating this field and 
+    # writing `add_benchmark_args` function
+    __params__ = ("example_param",)
+
+    # Parse your benchmark-specific arguments
+    def add_benchmark_args(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-my_param",
+            dest="commit_modin",
+            default="1234567890123456789012345678901234567890",
+            help="Modin commit hash used for tests.",
+        )
 
     def run_benchmark(self, params) -> BenchmarkResults:
         N = 10_000

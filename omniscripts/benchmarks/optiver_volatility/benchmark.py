@@ -15,7 +15,6 @@ def benchmark(paths):
 
 
 class Benchmark(BaseBenchmark):
-    __unsupported_params__ = ("optimizer", "dfiles_num")
 
     def run_benchmark(self, params) -> BenchmarkResults:
         paths = get_workdir_paths(params["data_file"])

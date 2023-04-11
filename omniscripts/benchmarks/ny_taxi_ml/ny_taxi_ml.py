@@ -1,4 +1,4 @@
-import os
+import argparse
 from collections import OrderedDict
 from timeit import default_timer as timer
 from pathlib import Path
@@ -272,39 +272,37 @@ def train(data: dict, use_modin_xgb: bool, debug=False):
     return None
 
 
-def run_benchmark(parameters):
-    parameters["no_ml"] = parameters["no_ml"] or False
-
-    debug = bool(os.getenv("DEBUG", False))
+def run_benchmark(params):
+    debug = params["debug"]
 
     task2time = {}
-    is_hdk_mode = parameters["pandas_mode"] == "Modin_on_hdk"
+    is_hdk_mode = params["pandas_mode"] == "Modin_on_hdk"
     df, task2time["load_data"] = load_data(
-        parameters["data_file"], is_hdk_mode=is_hdk_mode, debug=debug
+        params["data_file"], is_hdk_mode=is_hdk_mode, debug=debug
     )
     df, task2time["filter_df"] = filter_df(df, is_hdk_mode=is_hdk_mode)
     df, task2time["feature_engineering"] = feature_engineering(df)
-    print_results(results=task2time, backend=parameters["pandas_mode"])
+    print_results(results=task2time, backend=params["pandas_mode"])
 
     task2time["total_data_processing_with_load"] = sum(task2time.values())
     task2time["total_data_processing_no_load"] = (
         task2time["total_data_processing_with_load"] - task2time["load_data"]
     )
 
-    backend_name = parameters["pandas_mode"]
-    if not parameters["no_ml"]:
+    backend_name = params["pandas_mode"]
+    if not params["no_ml"]:
         print("using ml with dataframes from Pandas")
 
         data, task2time["split_time"] = split(df)
         data: Dict[str, Any]
 
         task2time["train_time"] = train(
-            data, use_modin_xgb=parameters["use_modin_xgb"], debug=debug
+            data, use_modin_xgb=params["use_modin_xgb"], debug=debug
         )
 
-        print_results(results=task2time, backend=parameters["pandas_mode"])
+        print_results(results=task2time, backend=params["pandas_mode"])
 
-        if parameters["use_modin_xgb"]:
+        if params["use_modin_xgb"]:
             backend_name = backend_name + "_modin_xgb"
 
         task2time["total_time_with_ml"] = (
@@ -317,6 +315,16 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
+    __params__ = ("debug",)
+
+    def add_benchmark_args(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-debug",
+            dest="debug",
+            default=False,
+            action="store_true",
+            help="Debug mode, will load less data and decreate iteration number",
+        )
 
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)
