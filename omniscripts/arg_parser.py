@@ -91,7 +91,6 @@ def prepare_general_parser():
     benchmark.add_argument(
         "-data_file", dest="data_file", help="A datafile that should be loaded.", required=True
     )
-
     benchmark.add_argument(
         "-iterations",
         dest="iterations",
