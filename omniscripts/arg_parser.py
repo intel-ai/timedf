@@ -87,12 +87,9 @@ def prepare_general_parser():
 
     # Benchmark parameters
     benchmark.add_argument("bench_name", help="Benchmark name.")
-    benchmark.add_argument(
-        "-data_file", dest="data_file", help="A datafile that should be loaded.", required=True
-    )
+    benchmark.add_argument("-data_file", help="A datafile that should be loaded.", required=True)
     benchmark.add_argument(
         "-iterations",
-        dest="iterations",
         default=1,
         type=int,
         help="Number of iterations to run. All results will be submitted to the DB.",
@@ -134,19 +131,16 @@ def prepare_general_parser():
     # Additional information
     commits.add_argument(
         "-commit_hdk",
-        dest="commit_hdk",
         default="1234567890123456789012345678901234567890",
         help="HDK commit hash used for tests.",
     )
     commits.add_argument(
         "-commit_omniscripts",
-        dest="commit_omniscripts",
         default="1234567890123456789012345678901234567890",
         help="Omniscripts commit hash used for tests.",
     )
     commits.add_argument(
         "-commit_modin",
-        dest="commit_modin",
         default="1234567890123456789012345678901234567890",
         help="Modin commit hash used for tests.",
     )

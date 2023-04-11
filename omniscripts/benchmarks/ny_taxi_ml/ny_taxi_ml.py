@@ -320,7 +320,6 @@ class Benchmark(BaseBenchmark):
     def add_benchmark_args(self, parser: argparse.ArgumentParser):
         parser.add_argument(
             "-debug",
-            dest="debug",
             default=False,
             action="store_true",
             help="Debug mode, will load less data and decreate iteration number",

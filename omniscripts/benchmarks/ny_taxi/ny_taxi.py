@@ -383,7 +383,6 @@ class Benchmark(BaseBenchmark):
     def add_benchmark_args(self, parser: argparse.ArgumentParser):
         parser.add_argument(
             "-validation",
-            dest="validation",
             default=False,
             action="store_true",
             help="validate queries results (by comparison with Pandas queries results).",

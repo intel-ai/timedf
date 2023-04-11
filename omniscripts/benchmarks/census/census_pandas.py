@@ -321,7 +321,6 @@ class Benchmark(BaseBenchmark):
         parser.add_argument(
             "-optimizer",
             choices=["intel", "stock"],
-            dest="optimizer",
             default="intel",
             help="Optimizer to use.",
         )

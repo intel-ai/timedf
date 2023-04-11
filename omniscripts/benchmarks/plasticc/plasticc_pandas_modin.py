@@ -329,7 +329,6 @@ class Benchmark(BaseBenchmark):
     def add_benchmark_args(self, parser: argparse.ArgumentParser):
         parser.add_argument(
             "-gpu_memory",
-            dest="gpu_memory",
             type=int,
             help="specify the memory of your gpu"
             "(This controls the lines to be used. Also work for CPU version. )",
