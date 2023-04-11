@@ -1,33 +1,22 @@
-# Scripts that are used to run modin-specific benchmarks in automated way in TeamCity and for performance analysis in development cycle.
+# Omniscripts
 
+Scripts that are used to run benchmarks for dataframe libraries, such as modin.
 
+[Full documentation](https://omniscripts.readthedocs.io/en/latest/)
 ## Installation
 
 `pip install .`
 
 If you want to use SQL database for result storage install with `[reporting]`:
-`pip install .[reporting]`
+`pip install ".[reporting]"`
 
 ## Requirements
 
-Scripts require miniconda to be installed.
-
-Library requirements are located in `requirements` folder, that is mainly `requirements/base.txt` and `requirements/reporting.txt` (for reporting).
-
-Or you can install all requirements with: `pip install -e .[all]`
-
-If you are a developer you might benefit from installing code style tools and testing dependencies:
-
-`pip install -r requirements/unittests.txt`
-
-`pip install -r requirements/linters.txt`
-
+We recommend using dedicated conda environment to run benchmarks.
 
 ## Main benchmarks launching script
 
-Main script is called `run_modin_tests.py`. ```run_modin_tests.py -h``` will show all script's parameters. 
-Script automatically creates conda environment if it doesn't exist or you want to recreate it.
-All subsequent work is being done in created conda environment. Environment can be removed or saved after executing.
+Main script is called `benchmark-run`. `benchmark-run -h` will show all parameters. 
 
 Results can be stored in SQL database and visualized using Grafana charts, xlsx or any other tool capable of extracting SQL data.
 
@@ -35,6 +24,15 @@ The easiest way to run scripts is to use pre-written scripts from `build_scripts
 
 Also there is `docker/e2e-hdk/all.sh` which can be served as example of all steps that have to be done for benchmarks launching including report generation.
 
+
+## Development
+
+If you are a developer you might benefit from installing code style tools and testing dependencies:
+
+`pip install -r requirements/dev_reqs.txt`
+
 ## Standalone benchmark launch
 
 TBD
+
+
