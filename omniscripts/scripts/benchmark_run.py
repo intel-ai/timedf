@@ -29,6 +29,7 @@ def legacy_patch(run_parameters):
         "dfiles_num": None,
         "gpu_memory": 16,
         "optimizer": "intel",
+        "extended_functionality": False
     }
     for name, default_val in patch.items():
         run_parameters[name] = run_parameters.get(name, default_val)
@@ -49,8 +50,6 @@ def main():
         "no_ml": args.no_ml,
         # Used in ny_taxi_ml and plasticc
         "use_modin_xgb": args.use_modin_xgb,
-        # Used only for old H2O
-        "extended_functionality": args.extended_functionality,
         # Add benchmark-specific arguments
         **{k: getattr(args, k) for k in benchmark.__params__},
     }
