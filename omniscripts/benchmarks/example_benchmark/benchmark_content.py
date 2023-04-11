@@ -27,9 +27,8 @@ class Benchmark(BaseBenchmark):
     def add_benchmark_args(self, parser: argparse.ArgumentParser):
         parser.add_argument(
             "-my_param",
-            dest="commit_modin",
-            default="1234567890123456789012345678901234567890",
-            help="Modin commit hash used for tests.",
+            default="my_value",
+            help="You can pass your own value with this way.",
         )
 
     def run_benchmark(self, params) -> BenchmarkResults:
