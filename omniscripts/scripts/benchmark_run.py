@@ -24,15 +24,15 @@ def make_benchmark() -> BaseBenchmark:
 def legacy_patch(run_parameters):
     # We patch run_parameters because database expects all params, including benchmark-specific
     # TODO: Legacy fix, to be removed after database migration to reflect benchmark-specific fields
-    patch = {
-        "validation": False,
-        "dfiles_num": None,
-        "gpu_memory": 16,
-        "optimizer": "intel",
-        "extended_functionality": False,
-    }
-    for name, default_val in patch.items():
-        run_parameters[name] = run_parameters.get(name, default_val)
+    fields = [
+        "validation",
+        "dfiles_num",
+        "gpu_memory",
+        "optimizer",
+        "extended_functionality",
+    ]
+    for name in fields:
+        run_parameters[name] = run_parameters.get(name, "")
 
 
 def main():
