@@ -31,4 +31,3 @@ jobs:
           python -m pip install --upgrade pip
           pip install .
           PANDAS_MODE="Pandas" benchmark-run -b example_benchmark -data_file "/datasets"
-    
