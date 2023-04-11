@@ -378,7 +378,6 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
-    __unsupported_params__ = ("no_ml",)
     __params__ = ("validation", "dfiles_num")
 
     def add_benchmark_args(self, parser: argparse.ArgumentParser):
