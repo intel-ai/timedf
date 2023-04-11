@@ -1,9 +1,9 @@
-
 import argparse
-import numpy as np
-from sklearn import config_context
 import warnings
 from timeit import default_timer as timer
+
+import numpy as np
+from sklearn import config_context
 
 from omniscripts import BaseBenchmark, BenchmarkResults
 from omniscripts.pandas_backend import pd
