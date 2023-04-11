@@ -64,12 +64,7 @@ def main():
         "commit_modin": args.commit_modin,
     }
 
-    if db_config is not None:
-        from ..report import BenchmarkDb
-
-        reporter = BenchmarkDb(db_config.create_engine())
-    else:
-        reporter = None
+    benchmarkDb = db_config.maybeCreateBenchmarkDb()
 
     run_id = int(round(time.time()))
     print(run_parameters)
@@ -78,8 +73,8 @@ def main():
         print(f"Iteration #{iter_num}")
         results = benchmark.run(run_parameters)
 
-        if reporter is not None:
-            reporter.report(
+        if benchmarkDb is not None:
+            benchmarkDb.report(
                 iteration_no=iter_num,
                 name2time=results.measurements,
                 params=results.params,

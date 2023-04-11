@@ -6,7 +6,6 @@ from contextlib import suppress
 import pandas as pd
 import pandas.io.formats.excel
 
-from omniscripts.report import BenchmarkDb
 from omniscripts.arg_parser import add_sql_arguments, DbConfig
 
 # This is necessary to allow custom header formatting
@@ -143,6 +142,8 @@ def main():
         password=args.db_pass,
         name=args.db_name,
     )
+    from omniscripts.report import BenchmarkDb
+
     db = BenchmarkDb(engine=db_config.create_engine())
 
     iterations = db.load_iterations(node=args.node)

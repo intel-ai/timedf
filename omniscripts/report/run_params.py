@@ -5,6 +5,7 @@ import re
 import socket
 import subprocess
 from typing import Dict, Any, Union, Pattern
+import warnings
 
 
 def _get_host_info() -> Dict[str, str]:
@@ -23,7 +24,7 @@ def _get_host_info() -> Dict[str, str]:
         if matches is not None and len(matches.groups()) == 1:
             return matches.groups()[0]
         else:
-            return "N/A"
+            return ""
 
     def get_lspcu_dict() -> Dict[str, str]:
         """System data from lscpu"""
@@ -38,8 +39,15 @@ def _get_host_info() -> Dict[str, str]:
             "cpu_l3_cache": re.compile("^L3 cache: +(.+)$", flags=re.MULTILINE),
         }
 
-        data = subprocess.Popen(["lscpu"], stdout=subprocess.PIPE)
-        output = str(data.communicate()[0].strip().decode())
+        try:
+            data = subprocess.Popen(["lscpu"], stdout=subprocess.PIPE)
+            output = str(data.communicate()[0].strip().decode())
+        except FileNotFoundError:
+            warnings.warn(
+                "Couldn't run `lscpu` is this linux? Description of host machine will be"
+                " incomplete"
+            )
+            output = ""
         return {t: match_and_assign(p, output) for t, p in lscpu_patterns.items()}
 
     def get_meminfo_dict() -> Dict[str, str]:
@@ -56,8 +64,16 @@ def _get_host_info() -> Dict[str, str]:
             "hugepage_size": re.compile("^Hugepagesize: +(.+)$", flags=re.MULTILINE),
         }
 
-        with open("/proc/meminfo", "r") as proc_meminfo:
-            output = proc_meminfo.read().strip()
+        try:
+            with open("/proc/meminfo", "r") as proc_meminfo:
+                output = proc_meminfo.read().strip()
+        except FileNotFoundError:
+            warnings.warn(
+                "Couldn't open `/proc/meminfo` is this linux?\n"
+                "Description of host machine will be incomplete"
+            )
+            output = ""
+
         return {t: match_and_assign(p, output) for t, p in proc_meminfo_patterns.items()}
 
     return {**get_basic_host_dict(), **get_lspcu_dict(), **get_meminfo_dict()}

@@ -8,9 +8,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Check code style and run pytest
+      - name: Check code quality and run pytest
         run: |
           pip install -r requirements/dev_reqs.txt
           black . --check --diff
           flake8
           pytest
+
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.9"]
+        # This will be activated after https://github.com/intel-ai/omniscripts/issues/367
+        exclude:
+          - os: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package and run example_benchmark
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+          PANDAS_MODE="Pandas" benchmark-run -b example_benchmark -data_file "/datasets"
