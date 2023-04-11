@@ -126,7 +126,8 @@ def prepare_general_parser():
         "-use_modin_xgb",
         default=False,
         action="store_true",
-        help="Whether to use Modin XGBoost for ML part, relevant for Plasticc benchmark only",
+        help="Whether to use Modin XGBoost for ML part, relevant for `plasticc` and `ny_taxi_ml` "
+        " benchmark.",
     )
     # SQL database parameters
     add_sql_arguments(sql)
