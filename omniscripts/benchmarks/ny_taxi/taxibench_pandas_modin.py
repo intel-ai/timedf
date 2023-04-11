@@ -379,7 +379,7 @@ def run_benchmark(parameters):
 
 class Benchmark(BaseBenchmark):
     __unsupported_params__ = ("optimizer", "no_ml", "gpu_memory")
-    __parms__ = ("validation",)
+    __params__ = ("validation",)
 
     def add_benchmark_args(self, parser: argparse.ArgumentParser):
         parser.add_argument(
