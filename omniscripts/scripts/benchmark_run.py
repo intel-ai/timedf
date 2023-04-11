@@ -24,7 +24,14 @@ def make_benchmark() -> BaseBenchmark:
 def legacy_patch(run_parameters):
     # We patch run_parameters because database expects all params, including benchmark-specific
     # TODO: Legacy fix, to be removed after database migration to reflect benchmark-specific fields
-    run_parameters["validation"] = run_parameters.get("validation", "False")
+    patch = {
+        "validation": False,
+        "dfiles_num": None,
+        "gpu_memory": 16,
+        "optimizer": "intel",
+    }
+    for name, default_val in patch.items():
+        run_parameters[name] = run_parameters.get(name, default_val)
 
 
 def main():
@@ -40,14 +47,8 @@ def main():
         "data_file": data_file,
         "pandas_mode": args.pandas_mode,
         "no_ml": args.no_ml,
-        # used only in ny_taxi
-        "dfiles_num": args.dfiles_num,
         # Used in ny_taxi_ml and plasticc
         "use_modin_xgb": args.use_modin_xgb,
-        # Used only for census
-        "optimizer": args.optimizer,
-        # Used only for census
-        "gpu_memory": args.gpu_memory,
         # Used only for old H2O
         "extended_functionality": args.extended_functionality,
         # Add benchmark-specific arguments

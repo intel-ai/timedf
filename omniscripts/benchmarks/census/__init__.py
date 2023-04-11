@@ -1,1 +1,1 @@
-from .census_pandas_modin import Benchmark
+from .census_pandas import Benchmark
