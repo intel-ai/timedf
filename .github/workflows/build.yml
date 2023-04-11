@@ -14,3 +14,13 @@ jobs:
           black . --check --diff
           flake8
           pytest
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install library and run sample benchmark with Pandas
+        run: |
+          pip install .
+          PANDAS_MODE="Pandas" benchmark-run -b example_benchmark -data_file "/datasets"
+    
