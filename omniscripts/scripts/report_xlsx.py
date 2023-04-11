@@ -143,7 +143,7 @@ def main():
         name=args.db_name,
     )
     from omniscripts.report import BenchmarkDb
-    
+
     db = BenchmarkDb(engine=db_config.create_engine())
 
     iterations = db.load_iterations(node=args.node)
