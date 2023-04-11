@@ -597,6 +597,5 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
-    
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)
