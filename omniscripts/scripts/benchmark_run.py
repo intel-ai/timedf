@@ -29,7 +29,7 @@ def legacy_patch(run_parameters):
         "dfiles_num": None,
         "gpu_memory": 16,
         "optimizer": "intel",
-        "extended_functionality": False
+        "extended_functionality": False,
     }
     for name, default_val in patch.items():
         run_parameters[name] = run_parameters.get(name, default_val)

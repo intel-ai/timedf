@@ -81,7 +81,6 @@ def add_sql_arguments(parser):
 
 def prepare_general_parser():
     parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
-    optional = parser.add_argument_group("optional arguments")
     benchmark = parser.add_argument_group("benchmark")
     sql = parser.add_argument_group("sql")
     commits = parser.add_argument_group("commits")
@@ -128,13 +127,6 @@ def prepare_general_parser():
         default=False,
         action="store_true",
         help="Whether to use Modin XGBoost for ML part, relevant for Plasticc benchmark only",
-    )
-    benchmark.add_argument(
-        "-extended_functionality",
-        dest="extended_functionality",
-        default=False,
-        action="store_true",
-        help="Extends functionality of H2O benchmark by adding 'chk' functions and verbose local reporting of results",
     )
     # SQL database parameters
     add_sql_arguments(sql)

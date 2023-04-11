@@ -15,7 +15,6 @@ def benchmark(paths):
 
 
 class Benchmark(BaseBenchmark):
-
     def run_benchmark(self, params) -> BenchmarkResults:
         paths = get_workdir_paths(params["data_file"])
         benchmark(paths=paths)

@@ -316,7 +316,7 @@ def run_benchmark(parameters):
 
 class Benchmark(BaseBenchmark):
     __params__ = ("optimizer",)
-    
+
     def add_benchmark_args(self, parser: argparse.ArgumentParser):
         parser.add_argument(
             "-optimizer",

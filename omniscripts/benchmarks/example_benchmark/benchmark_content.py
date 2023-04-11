@@ -19,7 +19,7 @@ tm = TimerManager()
 
 
 class Benchmark(BaseBenchmark):
-    # You can pass benchmark-specific parameters by creating this field and 
+    # You can pass benchmark-specific parameters by creating this field and
     # writing `add_benchmark_args` function
     __params__ = ("example_param",)
 

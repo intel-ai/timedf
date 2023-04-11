@@ -584,7 +584,7 @@ def queries_modin(filename, pandas_mode, extended_functionality):
 
 def run_benchmark(parameters):
     parameters["extended_functionality"] = parameters.get("extended_functionality", False)
-    
+
     results, run_params = queries_modin(
         filename=parameters["data_file"],
         pandas_mode=parameters["pandas_mode"],
