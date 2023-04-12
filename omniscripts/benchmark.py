@@ -77,3 +77,7 @@ class BaseBenchmark(abc.ABC):
     @abc.abstractmethod
     def run_benchmark(self, params) -> BenchmarkResults:
         pass
+
+    @abc.abstractmethod
+    def load_data(self, target_dir, reload=False):
+        pass

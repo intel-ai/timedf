@@ -10,6 +10,8 @@ dependencies:
   - numpy>=1.11
   - pandas>=1.0.0
   - scikit-learn-intelex
+  - boto3
+  - botocore
   - modin-hdk
   - modin-ray
   - polars

@@ -11,6 +11,7 @@ from omniscripts.benchmark_utils import (
     load_data_modin_on_hdk,
     print_results,
 )
+from omniscripts.tools.s3load import download_folder
 
 
 accepted_data_files_for_pandas_import_mode = ["trips_xaa", "trips_xab", "trips_xac"]
@@ -392,3 +393,13 @@ class Benchmark(BaseBenchmark):
 
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)
+
+    def load_data(self, target_dir, reload=False):
+        # $awsd sync s3://modin-datasets/taxi /datasets/taxi --no-sign-request --exclude "*" --include "trips_xa[abcdefghijklmnopqrst].csv"
+        download_folder(
+            "modin-datasets",
+            "taxi",
+            target_dir,
+            reload=reload,
+            pattern="trips_xa[abcdefghijklmnopqrst].csv",
+        )

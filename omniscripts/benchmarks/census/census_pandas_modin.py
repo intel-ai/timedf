@@ -4,6 +4,7 @@ from sklearn import config_context
 import warnings
 from timeit import default_timer as timer
 
+from omniscripts.tools.s3load import download_folder
 from omniscripts import BaseBenchmark, BenchmarkResults
 from omniscripts.pandas_backend import pd
 from omniscripts.benchmark_utils import (
@@ -321,3 +322,6 @@ class Benchmark(BaseBenchmark):
 
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)
+
+    def load_data(self, target_dir, reload=False):
+        download_folder("modin-datasets", "census", target_dir, reload=reload)

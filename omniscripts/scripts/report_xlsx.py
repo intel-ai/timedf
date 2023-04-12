@@ -115,10 +115,7 @@ def parse_args():
         choices=["mean", "min", "max", "median"],
     )
     parser.add_argument(
-        "-node",
-        dest="node",
-        default=None,
-        help="Filter benchmark results by node",
+        "-node", dest="node", default=None, help="Filter benchmark results by node"
     )
     return parser.parse_args()
 

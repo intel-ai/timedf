@@ -1,5 +1,7 @@
 braceexpand
 s3fs
+boto3
+botocore
 numpy>=1.11
 pandas>=1.0.0
 scikit-learn-intelex
