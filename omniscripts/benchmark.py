@@ -78,6 +78,5 @@ class BaseBenchmark(abc.ABC):
     def run_benchmark(self, params) -> BenchmarkResults:
         pass
 
-    @abc.abstractmethod
     def load_data(self, target_dir, reload=False):
-        pass
+        raise NotImplementedError("No loading is availabe for this dataset")
