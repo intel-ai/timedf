@@ -29,8 +29,3 @@ def download_folder(bucket_name, s3_folder_path, local_dir, reload, pattern=".*"
             print(f'Downloaded "{source}" from S3 bucket "{bucket_name}"')
 
     print(f'Done loading "s3://{bucket_name}/{s3_folder_path}"')
-
-
-# $awsd sync s3://modin-datasets/taxi /datasets/taxi --no-sign-request --exclude "*" --include "trips_xa[abcdefghijklmnopqrst].csv"
-# $awsd sync s3://modin-datasets/plasticc /datasets/plasticc --no-sign-request --exclude "*" --include "*.csv"
-# $awsd sync s3://modin-datasets/census /datasets/census --no-sign-request
