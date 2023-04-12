@@ -395,7 +395,6 @@ class Benchmark(BaseBenchmark):
         return run_benchmark(params)
 
     def load_data(self, target_dir, reload=False):
-        # $awsd sync s3://modin-datasets/taxi /datasets/taxi --no-sign-request --exclude "*" --include "trips_xa[abcdefghijklmnopqrst].csv"
         download_folder(
             "modin-datasets",
             "taxi",
