@@ -1,5 +1,4 @@
 braceexpand
-s3fs
 boto3
 botocore
 numpy>=1.11
