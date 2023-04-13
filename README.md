@@ -34,5 +34,3 @@ If you are a developer you might benefit from installing code style tools and te
 ## Standalone benchmark launch
 
 TBD
-
-
