@@ -1,7 +1,5 @@
 #!/bin/bash -e
 
-mkdir -p ${PWD}/tmp
-
 # ENV_NAME must be defined
 if [[ -z "${ENV_NAME}" ]]; then
   echo "Please, provide ENV_NAME environment variable"
@@ -22,7 +20,6 @@ fi
 conda run --live-stream -n $ENV_NAME benchmark-run $BENCH_NAME    \
                            -data_file "${DATA_FILE}"              \
                            -pandas_mode ${PANDAS_MODE}            \
-                           -ray_tmpdir ${PWD}/tmp                 \
                            ${ADDITIONAL_OPTS}                     \
                            ${DB_COMMON_OPTS}                      \
                            "$@"
