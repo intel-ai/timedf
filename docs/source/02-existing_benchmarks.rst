@@ -19,7 +19,7 @@ We expect you to have **activated conda environment**.
 We will use ``ny_taxi_ml`` benchmark as an example.
 
 #. Download data **TBD** and set environment variable with path to your dataset storage: ``export DATASETS_PWD="/datasets"``
-#. Create new environment where you will store all dependencies ``export ENV_NAME="ny_taxi_ml" && conda create -y -n $ENV_NAME python=3.9 pip``
+#. Create new environment where you will store all dependencies ``export ENV_NAME="ny_taxi_ml" && conda create -y -n $ENV_NAME python=3.9``
 #. Clone repository and install dependencies: ``git clone https://github.com/intel-ai/omniscripts.git && cd omniscripts && pip install ".[all]"``
 #. *Optinal, not needed for ny_taxi_ml*. Install benchmark-specific dependencies: ``conda env -n $ENV_NAME update -f omniscripts/benchmarks/$BENCHMARK_NAME/requirements.yaml``
 #. *Optinal, not needed for ny_taxi_ml*. If you want to store results in a database, define environment variable with parameters: ``export DB_COMMON_OPTS=""``. For example, to save results to local sqlite database (essentially just file on your filesystem) use ``export DB_COMMON_OPTS="-db_name db.sqlite"``
