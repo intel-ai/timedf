@@ -1,3 +1,4 @@
+from omniscripts.tools.kaggle_load import download_dataset
 from .preprocess import transform_data, create_user_ohe_agg
 from .hm_utils import load_data, get_workdir_paths
 from .candidates import make_one_week_candidates, drop_trivial_users
@@ -76,3 +77,12 @@ class Benchmark(BaseBenchmark):
         print(task2time)
 
         return BenchmarkResults(task2time)
+
+    def load_data(self, target_dir, reload=False):
+        rules_url = "https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations/rules"
+        download_dataset(
+            "h-and-m-personalized-fashion-recommendations",
+            local_dir=target_dir,
+            reload=reload,
+            rules_url=rules_url,
+        )
