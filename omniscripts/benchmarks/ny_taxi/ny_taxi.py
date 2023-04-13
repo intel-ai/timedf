@@ -1,12 +1,13 @@
 # Original SQL queries can be found here https://tech.marksblogg.com/billion-nyc-taxi-rides-nvidia-pascal-titan-x-mapd.html
 import argparse
 from collections import OrderedDict
+from itertools import islice
+from pathlib import Path
 from timeit import default_timer as timer
 
 from omniscripts import BenchmarkResults, BaseBenchmark
 from omniscripts.pandas_backend import pd
 from omniscripts.benchmark_utils import (
-    files_names_from_pattern,
     load_data_pandas,
     load_data_modin_on_hdk,
     print_results,
@@ -14,7 +15,6 @@ from omniscripts.benchmark_utils import (
 
 
 accepted_data_files_for_pandas_import_mode = ["trips_xaa", "trips_xab", "trips_xac"]
-
 
 ny_taxi_data_files_sizes_MB = OrderedDict(
     {
@@ -360,11 +360,12 @@ def run_benchmark(parameters):
 
     pd_queries_outputs = {} if parameters["validation"] else None
 
-    pandas_files_limit = parameters["dfiles_num"]
-    filename = files_names_from_pattern(parameters["data_file"])[:pandas_files_limit]
+    n_files = parameters["dfiles_num"]
+    dataset_root = Path(parameters["data_file"])
+    filename = [str(dataset_root / s) for s in islice(ny_taxi_data_files_sizes_MB, n_files)]
     results = etl(
         filename=filename,
-        files_limit=pandas_files_limit,
+        files_limit=n_files,
         columns_names=columns_names,
         columns_types=columns_types,
         output_for_validation=pd_queries_outputs,
