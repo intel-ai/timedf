@@ -1,12 +1,12 @@
 """Argument parsing"""
 import argparse
 from dataclasses import dataclass
-from typing import Union
+from typing import Callable
 
 from .pandas_backend import Backend
 
 
-__all__ = ["add_sql_arguments", "prepare_parser", "DbConfig"]
+__all__ = ["add_sql_arguments", "prepare_general_parser", "parse_args", "DbConfig"]
 
 
 # This can be written as just a function, but we keep the dataclass to add validation and arg parsing in the future.
@@ -25,7 +25,10 @@ class DbConfig:
     password: str = None
     name: str = None
 
-    def create_engine(self):
+    def is_config_complete(self):
+        return self.user is not None
+
+    def _create_engine(self):
         from sqlalchemy import create_engine
         from sqlalchemy.engine.url import URL
 
@@ -39,16 +42,13 @@ class DbConfig:
         )
         return create_engine(url)
 
+    def maybeCreateBenchmarkDb(self):
+        if self.is_config_complete():
+            from .report import BenchmarkDb
 
-def str_arg_to_bool(v: Union[bool, str]) -> bool:
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ("yes", "true", "t", "y", "1"):
-        return True
-    elif v.lower() in ("no", "false", "f", "n", "0"):
-        return False
-    else:
-        raise argparse.ArgumentTypeError("Cannot recognize boolean value.")
+            return BenchmarkDb(self._create_engine())
+        else:
+            return None
 
 
 def add_sql_arguments(parser):
@@ -79,45 +79,20 @@ def add_sql_arguments(parser):
     )
 
 
-def prepare_parser():
+def prepare_general_parser():
     parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
-    optional = parser.add_argument_group("optional arguments")
     benchmark = parser.add_argument_group("benchmark")
     sql = parser.add_argument_group("sql")
     commits = parser.add_argument_group("commits")
 
     # Benchmark parameters
-    benchmark.add_argument("-bench_name", dest="bench_name", help="Benchmark name.")
-    benchmark.add_argument(
-        "-data_file", dest="data_file", help="A datafile that should be loaded."
-    )
-    benchmark.add_argument(
-        "-dfiles_num",
-        dest="dfiles_num",
-        default=None,
-        type=int,
-        help="Number of datafiles to load into database for processing.",
-    )
+    benchmark.add_argument("bench_name", help="Benchmark name.")
+    benchmark.add_argument("-data_file", help="A datafile that should be loaded.", required=True)
     benchmark.add_argument(
         "-iterations",
-        dest="iterations",
         default=1,
         type=int,
         help="Number of iterations to run. All results will be submitted to the DB.",
-    )
-    benchmark.add_argument(
-        "-validation",
-        dest="validation",
-        default=False,
-        type=str_arg_to_bool,
-        help="validate queries results (by comparison with Pandas queries results).",
-    )
-    benchmark.add_argument(
-        "-optimizer",
-        choices=["intel", "stock"],
-        dest="optimizer",
-        default=None,
-        help="Optimizer to use.",
     )
     benchmark.add_argument(
         "-pandas_mode",
@@ -140,50 +115,53 @@ def prepare_parser():
     )
     benchmark.add_argument(
         "-no_ml",
-        default=None,
-        type=str_arg_to_bool,
+        default=False,
+        action="store_true",
         help="Do not run machine learning benchmark, only ETL part",
     )
     benchmark.add_argument(
         "-use_modin_xgb",
         default=False,
-        type=str_arg_to_bool,
-        help="Whether to use Modin XGBoost for ML part, relevant for Plasticc benchmark only",
-    )
-    optional.add_argument(
-        "-gpu_memory",
-        dest="gpu_memory",
-        type=int,
-        help="specify the memory of your gpu"
-        "(This controls the lines to be used. Also work for CPU version. )",
-        default=None,
-    )
-    benchmark.add_argument(
-        "-extended_functionality",
-        dest="extended_functionality",
-        default=False,
-        type=str_arg_to_bool,
-        help="Extends functionality of H2O benchmark by adding 'chk' functions and verbose local reporting of results",
+        action="store_true",
+        help="Whether to use Modin XGBoost for ML part, relevant for `plasticc` and `ny_taxi_ml` "
+        " benchmark.",
     )
     # SQL database parameters
     add_sql_arguments(sql)
     # Additional information
     commits.add_argument(
         "-commit_hdk",
-        dest="commit_hdk",
         default="1234567890123456789012345678901234567890",
         help="HDK commit hash used for tests.",
     )
     commits.add_argument(
         "-commit_omniscripts",
-        dest="commit_omniscripts",
         default="1234567890123456789012345678901234567890",
         help="Omniscripts commit hash used for tests.",
     )
     commits.add_argument(
         "-commit_modin",
-        dest="commit_modin",
         default="1234567890123456789012345678901234567890",
         help="Modin commit hash used for tests.",
     )
     return parser
+
+
+def parse_args(add_benchmark_args: Callable[[argparse.ArgumentParser], None]):
+    """Parse arguments including benchmark-specific arguments that will be added using provided
+    `add_benchmark_args` callable"""
+    parser = prepare_general_parser()
+    benchmark_parser = parser.add_argument_group("benchmark_specific")
+    add_benchmark_args(benchmark_parser)
+    args = parser.parse_args()
+
+    db_config = DbConfig(
+        driver=args.db_driver,
+        server=args.db_server,
+        port=args.db_port,
+        user=args.db_user,
+        password=args.db_pass,
+        name=args.db_name,
+    )
+
+    return args, db_config

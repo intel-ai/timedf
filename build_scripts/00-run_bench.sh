@@ -19,8 +19,7 @@ fi
 
 # ENV_NAME must be provided
 # live stream will provide live stdout and stderr
-conda run --live-stream -n $ENV_NAME python3 run_modin_tests.py   \
-                           -bench_name $BENCH_NAME                \
+conda run --live-stream -n $ENV_NAME benchmark-run $BENCH_NAME    \
                            -data_file "${DATA_FILE}"              \
                            -pandas_mode ${PANDAS_MODE}            \
                            -ray_tmpdir ${PWD}/tmp                 \

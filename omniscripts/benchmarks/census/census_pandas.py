@@ -1,8 +1,9 @@
-# coding: utf-8
-import numpy as np
-from sklearn import config_context
+import argparse
 import warnings
 from timeit import default_timer as timer
+
+import numpy as np
+from sklearn import config_context
 
 from omniscripts import BaseBenchmark, BenchmarkResults
 from omniscripts.pandas_backend import pd
@@ -172,9 +173,6 @@ def ml(X, y, random_state, n_runs, test_size, optimizer, ml_keys, ml_score_keys)
 
 
 def run_benchmark(parameters):
-    parameters["optimizer"] = parameters["optimizer"] or "intel"
-    parameters["no_ml"] = parameters["no_ml"] or False
-
     # ML specific
     N_RUNS = 50
     TEST_SIZE = 0.1
@@ -317,7 +315,15 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
-    __unsupported_params__ = ("dfiles_num", "gpu_memory")
+    __params__ = ("optimizer",)
+
+    def add_benchmark_args(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-optimizer",
+            choices=["intel", "stock"],
+            default="intel",
+            help="Optimizer to use.",
+        )
 
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)

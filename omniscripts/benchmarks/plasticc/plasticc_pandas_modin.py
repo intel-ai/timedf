@@ -1,3 +1,4 @@
+import argparse
 from collections import OrderedDict
 from functools import partial
 from timeit import default_timer as timer
@@ -266,9 +267,6 @@ def compute_skip_rows(gpu_memory):
 
 
 def run_benchmark(parameters):
-    parameters["gpu_memory"] = parameters["gpu_memory"] or 16
-    parameters["no_ml"] = parameters["no_ml"] or False
-
     skip_rows = compute_skip_rows(parameters["gpu_memory"])
 
     dtypes = OrderedDict(
@@ -326,7 +324,16 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
-    __unsupported_params__ = ("dfiles_num",)
+    __params__ = ("gpu_memory",)
+
+    def add_benchmark_args(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-gpu_memory",
+            type=int,
+            help="specify the memory of your gpu"
+            "(This controls the lines to be used. Also work for CPU version. )",
+            default=16,
+        )
 
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)

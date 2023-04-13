@@ -98,9 +98,7 @@ Benchmark class provides interface for omniscripts library to interact with your
  
     # You need to call your benchmark class exactly "Benchmark"
     class Benchmark(BaseBenchmark):
-        # This is optional to give user warning if he provided these arguments for some reason
-        __unsupported_params__ = ("optimizer", "dfiles_num")
-    
+        
         # Write your payload in this function
         def run_benchmark(self, params) -> BenchmarkResults:
             pass

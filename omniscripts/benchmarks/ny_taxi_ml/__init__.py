@@ -1,1 +1,1 @@
-from .taxi_ml_benchmark import Benchmark
+from .ny_taxi_ml import Benchmark

@@ -1,4 +1,5 @@
 # Original SQL queries can be found here https://tech.marksblogg.com/billion-nyc-taxi-rides-nvidia-pascal-titan-x-mapd.html
+import argparse
 from collections import OrderedDict
 from timeit import default_timer as timer
 
@@ -377,7 +378,22 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
-    __unsupported_params__ = ("optimizer", "no_ml", "gpu_memory")
+    __params__ = ("validation", "dfiles_num")
+
+    def add_benchmark_args(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-validation",
+            default=False,
+            action="store_true",
+            help="validate queries results (by comparison with Pandas queries results).",
+        )
+        parser.add_argument(
+            "-dfiles_num",
+            dest="dfiles_num",
+            default=None,
+            type=int,
+            help="Number of datafiles to load into database for processing.",
+        )
 
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)

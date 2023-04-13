@@ -583,6 +583,8 @@ def queries_modin(filename, pandas_mode, extended_functionality):
 
 
 def run_benchmark(parameters):
+    parameters["extended_functionality"] = parameters.get("extended_functionality", False)
+
     results, run_params = queries_modin(
         filename=parameters["data_file"],
         pandas_mode=parameters["pandas_mode"],
@@ -595,7 +597,5 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
-    __unsupported_params__ = ("dfiles_num", "gpu_memory", "no_ml", "optimizer", "validation")
-
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)

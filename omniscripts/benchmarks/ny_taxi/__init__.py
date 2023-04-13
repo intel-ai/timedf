@@ -1,1 +1,1 @@
-from .taxibench_pandas_modin import Benchmark
+from .ny_taxi import Benchmark

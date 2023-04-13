@@ -1,4 +1,4 @@
-import os
+import argparse
 from collections import OrderedDict
 from timeit import default_timer as timer
 from pathlib import Path
@@ -273,9 +273,7 @@ def train(data: dict, use_modin_xgb: bool, debug=False):
 
 
 def run_benchmark(parameters):
-    parameters["no_ml"] = parameters["no_ml"] or False
-
-    debug = bool(os.getenv("DEBUG", False))
+    debug = parameters["debug"]
 
     task2time = {}
     is_hdk_mode = parameters["pandas_mode"] == "Modin_on_hdk"
@@ -317,7 +315,15 @@ def run_benchmark(parameters):
 
 
 class Benchmark(BaseBenchmark):
-    __unsupported_params__ = ("optimizer", "dfiles_num")
+    __params__ = ("debug",)
+
+    def add_benchmark_args(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-debug",
+            default=False,
+            action="store_true",
+            help="Debug mode, will load less data and decreate iteration number",
+        )
 
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)
