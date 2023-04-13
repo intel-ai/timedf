@@ -12,6 +12,6 @@ We recommend performing this installation into clean conda environment with ``py
 
 So the combined command is::
 
-    conda create -n omniscripts python=3.9 pip -y && conda activate omniscripts && \
+    conda create -n omniscripts python=3.9 -y && conda activate omniscripts && \
     git clone https://github.com/intel-ai/omniscripts.git && cd omniscripts && pip install ".[all]"
 

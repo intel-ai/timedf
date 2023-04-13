@@ -21,7 +21,7 @@ We will use ``ny_taxi_ml`` benchmark as an example.
 #. Download data **TBD** and set environment variable with path to your dataset storage: ``export DATASETS_PWD="/datasets"``
 #. Create new environment where you will store all dependencies ``export ENV_NAME="ny_taxi_ml" && conda create -y -n $ENV_NAME python=3.9 pip``
 #. Clone repository and install dependencies: ``git clone https://github.com/intel-ai/omniscripts.git && cd omniscripts && pip install ".[all]"``
-#. *Optinal, not needed for ny_taxi_ml*. Install benchmark-specific dependencies: ``conda env -n $ENV_NAME update -f omniscripts/benchmarks/BENCHMARK_NAME/requirements.yaml``
+#. *Optinal, not needed for ny_taxi_ml*. Install benchmark-specific dependencies: ``conda env -n $ENV_NAME update -f omniscripts/benchmarks/$BENCHMARK_NAME/requirements.yaml``
 #. *Optinal, not needed for ny_taxi_ml*. If you want to store results in a database, define environment variable with parameters: ``export DB_COMMON_OPTS=""``. For example, to save results to local sqlite database (essentially just file on your filesystem) use ``export DB_COMMON_OPTS="-db_name db.sqlite"``
 #. You can now run benchmark with pandas: ``PANDAS_MODE="Pandas" ./build_scripts/ny_taxi_ml.sh`` or modin on ray: ``PANDAS_MODE="Modin_on_ray" ./build_scripts/ny_taxi_ml.sh`` or HDK ``PANDAS_MODE="Modin_on_hdk" ./build_scripts/ny_taxi_ml.sh``
 
@@ -44,7 +44,7 @@ Validating intermediate dataframes
 ----------------------------------
 
 You might want to validate that dataframe processing library is providing results, consistent with other libraries.
-This is an optional result validation feature that is not yet available, but be provided in the future.
+This is an optional result validation feature that is not yet available, but will be provided in the future.
 
 **TBD**
 
@@ -55,14 +55,14 @@ There are preset configurations for existing benchmarks, located in ``build_scri
 
 To run these scripts you need to define several environment variables:
 
-1. ``PANDAS_MODE`` needs to be one of pandas modes, supported by run_modin_tests.py . Currently that's ``Pandas``, ``Modin_on_ray``, ``Modin_on_hdk``
+1. ``PANDAS_MODE`` needs to be one of pandas modes, supported by ``run_modin_tests.py``. Currently that's: ``Pandas``, ``Modin_on_ray``, ``Modin_on_hdk``.
 2. ``DATASETS_PWD`` - root of datasets storage.
 3. ``ENV_NAME`` - name of the conda environment to use.
 
 Some additional parameters are optional:
 
-1. ``DB_COMMON_OPTS`` - should contain database parameters as supported by ``run_modin_tests.py`` , if not provided no result saving will be performed. To save to local sqlite file use ``export DB_COMMON_OPTS="-db_name db.sqlite"``.
-2. ``ADDITIONAL_OPTS``` - additonal arguments for `benchmark-run` command
+1. ``DB_COMMON_OPTS`` - should contain database parameters as supported by ``run_modin_tests.py``, if not provided no result saving will be performed. To save to local sqlite file use ``export DB_COMMON_OPTS="-db_name db.sqlite"``.
+2. ``ADDITIONAL_OPTS``` - additional arguments for `benchmark-run` command.
 
 After defining environment variables and **activating conda** you need to run command like this:
 ``./build_scripts/ny_taxi_ml.sh .``
