@@ -1,6 +1,5 @@
 import abc
 import argparse
-import warnings
 from typing import Dict
 
 
@@ -42,8 +41,6 @@ class BenchmarkResults:
 
 
 class BaseBenchmark(abc.ABC):
-    # Unsupported running parameters to warn user about
-    __unsupported_params__ = tuple()
     # Tuple with parameters, specific for this benchmark
     __params__ = tuple()
 
@@ -52,11 +49,7 @@ class BaseBenchmark(abc.ABC):
         during the run"""
         pass
 
-    def prerun(self, params):
-        self.check_support(params)
-
     def run(self, params) -> BenchmarkResults:
-        self.prerun(params)
         results = self.run_benchmark(params)
         if not isinstance(results, BenchmarkResults):
             raise ValueError(
@@ -64,15 +57,6 @@ class BaseBenchmark(abc.ABC):
             )
 
         return results
-
-    def check_support(self, params):
-        ignored_params = {}
-        for param in self.__unsupported_params__:
-            if params.get(param) is not None:
-                ignored_params[param] = params[param]
-
-        if ignored_params:
-            warnings.warn(f"Parameters {ignored_params} are ignored", RuntimeWarning)
 
     @abc.abstractmethod
     def run_benchmark(self, params) -> BenchmarkResults:

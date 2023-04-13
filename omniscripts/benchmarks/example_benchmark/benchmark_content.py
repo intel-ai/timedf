@@ -1,3 +1,5 @@
+import argparse
+
 import numpy as np
 
 # No pandas is needed, it is imported on the next line
@@ -17,11 +19,22 @@ tm = TimerManager()
 
 
 class Benchmark(BaseBenchmark):
-    # This is optional to give user warning if he provided these arguments for some reason
-    __unsupported_params__ = ("optimizer", "dfiles_num")
+    # You can pass benchmark-specific parameters by creating this field and
+    # writing `add_benchmark_args` function
+    __params__ = ("my_param",)
+
+    # Parse your benchmark-specific arguments
+    def add_benchmark_args(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-my_param",
+            default="my_value",
+            help="You can pass your own value this way.",
+        )
 
     def run_benchmark(self, params) -> BenchmarkResults:
         N = 10_000
+
+        print("My param is ", params["my_param"])
 
         # This command will measure time it took to run nested block and record it with
         # 'load_data' key

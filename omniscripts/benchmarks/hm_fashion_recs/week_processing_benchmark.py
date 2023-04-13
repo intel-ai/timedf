@@ -67,8 +67,6 @@ def main(raw_data_path, paths):
 
 
 class Benchmark(BaseBenchmark):
-    __unsupported_params__ = ("optimizer", "dfiles_num")
-
     def run_benchmark(self, parameters):
         paths = get_workdir_paths()
         main(raw_data_path=parameters["data_file"], paths=paths)

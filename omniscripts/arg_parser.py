@@ -81,36 +81,18 @@ def add_sql_arguments(parser):
 
 def prepare_general_parser():
     parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
-    optional = parser.add_argument_group("optional arguments")
     benchmark = parser.add_argument_group("benchmark")
     sql = parser.add_argument_group("sql")
     commits = parser.add_argument_group("commits")
 
     # Benchmark parameters
     benchmark.add_argument("bench_name", help="Benchmark name.")
-    benchmark.add_argument(
-        "-data_file", dest="data_file", help="A datafile that should be loaded.", required=True
-    )
-    benchmark.add_argument(
-        "-dfiles_num",
-        dest="dfiles_num",
-        default=None,
-        type=int,
-        help="Number of datafiles to load into database for processing.",
-    )
+    benchmark.add_argument("-data_file", help="A datafile that should be loaded.", required=True)
     benchmark.add_argument(
         "-iterations",
-        dest="iterations",
         default=1,
         type=int,
         help="Number of iterations to run. All results will be submitted to the DB.",
-    )
-    benchmark.add_argument(
-        "-optimizer",
-        choices=["intel", "stock"],
-        dest="optimizer",
-        default=None,
-        help="Optimizer to use.",
     )
     benchmark.add_argument(
         "-pandas_mode",
@@ -141,41 +123,24 @@ def prepare_general_parser():
         "-use_modin_xgb",
         default=False,
         action="store_true",
-        help="Whether to use Modin XGBoost for ML part, relevant for Plasticc benchmark only",
-    )
-    optional.add_argument(
-        "-gpu_memory",
-        dest="gpu_memory",
-        type=int,
-        help="specify the memory of your gpu"
-        "(This controls the lines to be used. Also work for CPU version. )",
-        default=None,
-    )
-    benchmark.add_argument(
-        "-extended_functionality",
-        dest="extended_functionality",
-        default=False,
-        action="store_true",
-        help="Extends functionality of H2O benchmark by adding 'chk' functions and verbose local reporting of results",
+        help="Whether to use Modin XGBoost for ML part, relevant for `plasticc` and `ny_taxi_ml` "
+        " benchmark.",
     )
     # SQL database parameters
     add_sql_arguments(sql)
     # Additional information
     commits.add_argument(
         "-commit_hdk",
-        dest="commit_hdk",
         default="1234567890123456789012345678901234567890",
         help="HDK commit hash used for tests.",
     )
     commits.add_argument(
         "-commit_omniscripts",
-        dest="commit_omniscripts",
         default="1234567890123456789012345678901234567890",
         help="Omniscripts commit hash used for tests.",
     )
     commits.add_argument(
         "-commit_modin",
-        dest="commit_modin",
         default="1234567890123456789012345678901234567890",
         help="Modin commit hash used for tests.",
     )
