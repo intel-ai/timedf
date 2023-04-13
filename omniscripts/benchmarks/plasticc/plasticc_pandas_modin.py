@@ -9,7 +9,7 @@ from sklearn.preprocessing import LabelEncoder
 from omniscripts import BaseBenchmark, BenchmarkResults
 from omniscripts.pandas_backend import pd
 from omniscripts.benchmark_utils import print_results, split
-from omniscripts.tools.s3load import download_folder
+from omniscripts.tools.s3_load import download_folder
 
 
 def ravel_column_names(cols):

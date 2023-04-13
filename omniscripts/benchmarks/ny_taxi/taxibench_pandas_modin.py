@@ -11,7 +11,7 @@ from omniscripts.benchmark_utils import (
     load_data_modin_on_hdk,
     print_results,
 )
-from omniscripts.tools.s3load import download_folder
+from omniscripts.tools.s3_load import download_folder
 
 
 accepted_data_files_for_pandas_import_mode = ["trips_xaa", "trips_xab", "trips_xac"]
