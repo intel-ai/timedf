@@ -48,10 +48,13 @@ def feature_engieering(week, paths, use_lfm):
     return dataset
 
 
-def main(raw_data_path, paths):
+def main(paths):
     with tm.timeit("total"):
         with tm.timeit("01-initial_transform"):
-            transform_data(input_data_path=raw_data_path, result_path=paths["preprocessed_data"])
+            transform_data(
+                input_data_path=paths['raw_data_path'],
+                result_path=paths["preprocessed_data"]
+            )
 
         week = 0
         with tm.timeit("02-create_user_ohe_agg"):
@@ -67,8 +70,8 @@ def main(raw_data_path, paths):
 
 class Benchmark(BaseBenchmark):
     def run_benchmark(self, parameters):
-        paths = get_workdir_paths()
-        main(raw_data_path=parameters["data_file"], paths=paths)
+        paths = get_workdir_paths(parameters["data_file"])
+        main(paths)
 
         task2time = tm.get_results()
         print(task2time)
