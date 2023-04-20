@@ -52,8 +52,7 @@ def main(paths):
     with tm.timeit("total"):
         with tm.timeit("01-initial_transform"):
             transform_data(
-                input_data_path=paths['raw_data_path'],
-                result_path=paths["preprocessed_data"]
+                input_data_path=paths["raw_data_path"], result_path=paths["preprocessed_data"]
             )
 
         week = 0
