@@ -7,7 +7,7 @@ if [[ -z "${ENV_NAME}" ]]; then
 fi
 
 if [[ -z "${PANDAS_MODE}" ]]; then
-  echo "Please, provide PANDAS_MODE environment variable" 
+  echo "Please, provide PANDAS_MODE environment variable"
   exit 1
 else
   echo "PANDAS_MODE=${PANDAS_MODE}"
@@ -18,7 +18,7 @@ fi
 # ENV_NAME must be provided
 # live stream will provide live stdout and stderr
 conda run --live-stream -n $ENV_NAME benchmark-run $BENCH_NAME    \
-                           -data_file "${DATASETS_PWD}/${BENCH_NAME}" \
+                           -data_file "${DATA)_FILE}" \
                            -pandas_mode ${PANDAS_MODE}            \
                            ${ADDITIONAL_OPTS}                     \
                            ${DB_COMMON_OPTS}                      \
