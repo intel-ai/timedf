@@ -4,7 +4,6 @@ import logging
 
 from omniscripts.pandas_backend import pd
 
-from .lfm import calc_embeddings
 from .tm import tm
 
 
@@ -254,6 +253,8 @@ def attach_features(
         df = df.merge(ohe, on=["user", "item"])
 
     if lfm_features_path is not None:
+        from .lfm import calc_embeddings
+        
         with tm.timeit("15-lfm features"):
             seen_users = transactions.query(  # noqa: F841 used in pandas query
                 "week >= @pretrain_week"
