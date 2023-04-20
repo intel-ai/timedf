@@ -43,9 +43,7 @@ class TimerManager:
         # name for the next timer to start, also acts as timer state
         self.prepared_name = None
         self.timer_stack = self.TimerStack(allow_overwrite=allow_overwrite)
-
-        self.check_verbosity(verbosity)
-        self._verbosity = verbosity
+        self.verbosity = verbosity
 
     @staticmethod
     def check_verbosity(verbosity):
