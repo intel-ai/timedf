@@ -11,12 +11,12 @@ benchmarks with Pandas API.
    :caption: Contents:
    :numbered:
 
-   install
-   adding_new_benchmark
-   library_tools
-   existing_benchmarks
-   arbitrary_workload
-   future
+   01-install
+   02-existing_benchmarks
+   03-adding_new_benchmark
+   04-library_tools
+   05-arbitrary_workload
+   06-future
 
 
 

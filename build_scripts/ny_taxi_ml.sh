@@ -8,4 +8,4 @@ else
     USE_MODIN_XGB=""
 fi
 
-source $(dirname "$0")/00-run_bench.sh "${USE_MODIN_XGB}"
+source $(dirname "$0")/00-run_bench.sh ${USE_MODIN_XGB}

@@ -114,7 +114,7 @@ xlsx generation
 
 To generate xlsx table with experiment results run (from library root)::
 
-    PYTHONPATH=./  python scripts/generate_report.py -report_path RESULT_FILE_PATH.xlsx -agg median DB_OPTIONS
+    report-xlsx -report_path RESULT_FILE_PATH.xlsx -agg median DB_OPTIONS
 
 ``DB_OPTIONS`` stand for connection parameters for your database.
 In case of sqlite database it's enough to provide path to sqlite file like this: ``db_name PATH.sqlite``.

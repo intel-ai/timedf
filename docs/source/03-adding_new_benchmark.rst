@@ -1,10 +1,7 @@
 Adding new benchmark
 ====================
 
-There is an easy way to add your own benchmark to our suit. 
-
-Benchmark content
------------------
+There is an easy way to add your own benchmark to our suit.
 
 Each benchmark consists of following steps:
 
@@ -14,19 +11,22 @@ Each benchmark consists of following steps:
 
 The library simplifies these steps for you, so you can focus on payload part.
 
+Writing benchmark payload
+-------------------------
+
 ``BenchmarkBase`` class is an interface for new benchmarks. 
 If you want to add new benchmark you need to:
 
-1. Create directory inside of benchmarks folder and name it with your ``BENCHMARK_NAME``. You will store new benchmark's code in that directory and won't need to change anything else
-2. Write your payload however you want inside of this directory, here is a minimal example with comments, this code is expected to be stored in benchmarks/example_benchmark/benchmark_content.py
+1. Create directory inside of ``omniscripts/benchmarks`` folder and name it with your ``BENCHMARK_NAME``. You will store new benchmark's code in that directory and won't need to change anything else
+2. Write your payload however you want inside of this directory, here is a minimal example with comments, this code is expected to be stored in ``omniscripts/benchmarks/example_benchmark/benchmark_content.py``
 
-.. literalinclude:: ../../benchmarks/example_benchmark/benchmark_content.py
+.. literalinclude:: ../../omniscripts/benchmarks/example_benchmark/benchmark_content.py
     :language: python
     :linenos:
 
 3. Add ``__init__.py``  file along with benchmark_content  file:
 
-.. literalinclude:: ../../benchmarks/example_benchmark/__init__.py
+.. literalinclude:: ../../omniscripts/benchmarks/example_benchmark/__init__.py
     :language: python
     :linenos:
 
@@ -36,14 +36,16 @@ Running new benchmark
 How to run
 ^^^^^^^^^^
 
+You've modified library source code, so now you need to install it once again (or simply use ``pip install -e ".[all]"`` to use your folder version).
+
 You can run your new benchmark with::
 
-    python3 run_modin_tests.py -task benchmark -b example_benchmark -data_file "/MY_DATASET_PATH"
+    benchmark-run -b example_benchmark -data_file "/MY_DATASET_PATH"
 
 
 To see all available params run::
     
-    python3 run_modin_tests.py -h 
+    benchmark-run -h 
 
 Benchmark run and iterations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -53,7 +55,7 @@ account for random effects.
 
 You can set number of iterations with ``-iterations N`` parameter::
     
-    python3 run_modin_tests.py ... -iterations N
+    benchmark-run ... -iterations N
 
 Your payload will be run ``N`` times and results of each iteration will be recorded separately. So during analysis you will be
 able to aggregate results however you want (min, max, median, mean).
@@ -63,12 +65,14 @@ Database connection
 ^^^^^^^^^^^^^^^^^^^
 
 You need to have SQL database to store benchmark results.
-Any database supported by ``sqlalchemy 1.4`` can be used,
+If you don't have one, you can just use sqlite database that is essentialy just file on your filesystem.
+
+Any database supported by ``sqlalchemy==1.4`` can be used,
 so you can use most of databases, including MySQL, PostgreSQL, sqlite.
 
-You set parameters of you SQL table running parameters to ``run_modin_tests.py``::
+You set DB connection configuration with console arguments to ``benchmark-run``::
 
-    python3 run_modin_tests.py -task benchmark \
+    benchmark-run -task benchmark \
         -b example_benchmark -data_file "/MY_DATASET_PATH" \
         -db_driver mysql+mysqlconnector \
         -db_server my_server.com \
@@ -76,6 +80,13 @@ You set parameters of you SQL table running parameters to ``run_modin_tests.py``
         -db_user my_username  \
         -db_pass my_pass  \
         -db_name my_database_name \
+
+To save results to sqlite database (essentially just file ``db.sqlite``)::
+
+    benchmark-run -task benchmark \
+        -b example_benchmark -data_file "/MY_DATASET_PATH" \
+        -db_driver sqlite+pysqlite \
+        -db_name db.sqlite \
 
 Benchmark result storage
 ------------------------
