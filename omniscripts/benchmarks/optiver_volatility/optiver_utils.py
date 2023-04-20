@@ -1,8 +1,6 @@
 from pathlib import Path
 import traceback
 
-from omniscripts import TimerManager
-
 
 def print_trace(name: str = ""):
     print(f'ERROR RAISED IN {name or "anonymous"}')
@@ -29,6 +27,3 @@ def get_workdir_paths(raw_data_path, workdir="./optiver_workdir"):
     workdir.mkdir(exist_ok=True, parents=True)
 
     return paths
-
-
-tm = TimerManager()

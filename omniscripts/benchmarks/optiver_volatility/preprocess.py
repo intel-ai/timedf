@@ -3,9 +3,10 @@ from pathlib import Path
 
 import numpy as np
 
+from omniscripts import tm
 from omniscripts.pandas_backend import pd
 
-from .optiver_utils import print_trace, tm
+from .optiver_utils import print_trace
 
 
 def calc_wap1(df: pd.DataFrame) -> pd.Series:
