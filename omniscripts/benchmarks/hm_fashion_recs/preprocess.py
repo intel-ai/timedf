@@ -10,10 +10,10 @@ from typing import Any
 
 import logging
 
+from omniscripts import tm
 from omniscripts.pandas_backend import pd
 
 from . import schema
-from .tm import tm
 
 
 logger = logging.getLogger(__name__)

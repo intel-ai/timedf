@@ -5,6 +5,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+VERBOSITY_LEVELS = (0, 1, 2)
+
+
 class TimerManager:
     """
     Utility timer that can measure time using `timeit` function.
@@ -22,7 +25,7 @@ class TimerManager:
     >>>     heavy_call()
     """
 
-    def __init__(self, allow_overwrite=False, verbose: int = 0) -> None:
+    def __init__(self, allow_overwrite=False, verbosity: int = 0) -> None:
         """Initialize root timer.
 
         Parameters
@@ -30,7 +33,7 @@ class TimerManager:
         allow_overwrite, optional
             Allow rewriting of measured time, by default False
 
-        verbose:
+        verbosity:
             Write timer stack status to stdout.
             Possible values:
                 0: no writing (default)
@@ -41,9 +44,24 @@ class TimerManager:
         self.prepared_name = None
         self.timer_stack = self.TimerStack(allow_overwrite=allow_overwrite)
 
-        if verbose not in (0, 1, 2):
-            raise ValueError(f"Provided verbose={verbose}, but possible values are (0, 1, 2)")
-        self.verbose = verbose
+        self.check_verbosity(verbosity)
+        self._verbosity = verbosity
+
+    @staticmethod
+    def check_verbosity(verbosity):
+        if verbosity not in VERBOSITY_LEVELS:
+            raise ValueError(
+                f"Provided verbosity={verbosity}," "but possible values are {VERBOSITY_LEVELS}"
+            )
+
+    @property
+    def verbosity(self):
+        return self._verbose
+
+    @verbosity.setter
+    def verbosity(self, value):
+        self.check_verbosity(value)
+        self._verbosity = value
 
     def timeit(self, name):
         if self.prepared_name is not None:
@@ -57,7 +75,7 @@ class TimerManager:
             raise ValueError("Attempted to start timer, but it has no name")
 
         self.timer_stack.push(self.prepared_name)
-        if self.verbose > 1:
+        if self._verbosity > 1:
             level = self.timer_stack.get_current_level() - 1
             print("  " * level + f"{self.timer_stack.get_full_name()} started")
         self.prepared_name = None
@@ -66,7 +84,7 @@ class TimerManager:
     def __exit__(self, type, value, traceback):
         fullname = self.timer_stack.get_full_name()
         self.timer_stack.pop()
-        if self.verbose > 0:
+        if self._verbosity > 0:
             level = self.timer_stack.get_current_level()
             print("  " * level + f"{fullname}: {self.timer_stack.fullname2time[fullname]}")
 
@@ -115,3 +133,7 @@ class TimerManager:
 
         def get_results(self):
             return dict(self.fullname2time)
+
+
+# # Global timer manager for benchmarks
+tm = TimerManager()

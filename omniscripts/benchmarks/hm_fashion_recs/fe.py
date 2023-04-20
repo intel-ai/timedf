@@ -3,8 +3,7 @@ from typing import Union
 import logging
 
 from omniscripts.pandas_backend import pd
-
-from .tm import tm
+from omniscripts import tm
 
 
 logger = logging.getLogger(__name__)

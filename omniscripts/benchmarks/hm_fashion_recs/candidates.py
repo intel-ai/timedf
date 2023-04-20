@@ -3,9 +3,8 @@ import logging
 
 import numpy as np
 
+from omniscripts import tm
 from omniscripts.pandas_backend import pd
-
-from .tm import tm
 
 logger = logging.getLogger(__name__)
 
