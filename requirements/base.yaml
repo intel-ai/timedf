@@ -1,0 +1,19 @@
+# You need libmamba solver for installation or mamba directly due to long modin installation
+# https://modin.readthedocs.io/en/stable/getting_started/installation.html
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - pip
+  - braceexpand
+  - s3fs
+  - numpy>=1.11
+  - pandas>=1.0.0
+  - scikit-learn-intelex
+  - modin-hdk
+  - modin-ray
+  - polars
+  - psutil
+  - git>=2.0.0
+  - pip:
+    - xgboost>=1.3

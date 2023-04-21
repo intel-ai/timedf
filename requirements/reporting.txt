@@ -1,0 +1,4 @@
+# utilities for reporting results to SQL database and xlsx files
+mysql-connector-python
+sqlalchemy==1.4
+XlsxWriter

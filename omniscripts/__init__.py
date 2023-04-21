@@ -1,6 +1,9 @@
-from .benchmark import BaseBenchmark, BenchmarkResults, run_benchmarks
-from .timer import TimerManager
+from .benchmark import BaseBenchmark, BenchmarkResults
+from .timer import TimerManager, tm
 from . import benchmark_utils
+from . import scripts
 
 # ! Do not store pandas_backend here, it will potentially store just pandas, without chaning it on
 # command
+
+from .__version__ import __version__
