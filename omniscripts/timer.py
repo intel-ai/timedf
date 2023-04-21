@@ -77,7 +77,6 @@ class TimerManager:
             level = self.timer_stack.get_current_level() - 1
             print("  " * level + f"{self.timer_stack.get_full_name()} started")
         self.prepared_name = None
-
         return self
 
     def __exit__(self, type, value, traceback):
@@ -107,15 +106,12 @@ class TimerManager:
             self.start_stack.append(time.perf_counter())
             self.name_stack.append(name)
 
-            logger.error(f"enter {self._get_full_name()}")
-
         def pop(self):
             fullname = self.get_full_name()
             self.name_stack.pop()
 
             self._check_overwrite(fullname)
             self.fullname2time[fullname] = time.perf_counter() - self.start_stack.pop()
-            logger.error(f"exit  {fullname}: {self.fullname2time[fullname]}")
 
         def _check_name(self, name):
             if self.SEPARATOR in name:

@@ -6,7 +6,7 @@ import numpy as np
 
 from .hm_utils import EXPERIMENTAL, fixi
 from omniscripts import tm
-from omniscripts.pandas_backend import pd, modin_cfg
+from omniscripts.pandas_backend import pd, Backend
 
 
 logger = logging.getLogger(__name__)
@@ -153,7 +153,7 @@ def attach_features(
         df = df.merge(tmp, on="user", how="left")
 
     with tm.timeit("10-user-item freshness features"):
-        if EXPERIMENTAL and modin_cfg is not None:
+        if EXPERIMENTAL and Backend.get_modin_cfg() != 'Pandas':
             grp_kwargs = {"exp_implementation": True}
             tmp = (
                 transactions.query("@week <= week")
@@ -221,7 +221,7 @@ def attach_features(
             items[["item"] + item_target_cols], columns=item_target_cols
         )
 
-        if EXPERIMENTAL and modin_cfg is not None:
+        if EXPERIMENTAL and Backend.get_modin_cfg() is not None:
             items_with_ohe = items_with_ohe._repartition(axis=1)
 
         cols = [c for c in items_with_ohe.columns if c != "item"]

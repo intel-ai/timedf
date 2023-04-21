@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from omniscripts import BenchmarkResults, BaseBenchmark, tm
 
 from .preprocess import transform_data, create_user_ohe_agg
