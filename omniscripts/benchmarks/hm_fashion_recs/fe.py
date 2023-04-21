@@ -153,7 +153,7 @@ def attach_features(
         df = df.merge(tmp, on="user", how="left")
 
     with tm.timeit("10-user-item freshness features"):
-        if EXPERIMENTAL and Backend.get_modin_cfg() != 'Pandas':
+        if EXPERIMENTAL and Backend.get_modin_cfg() is not None:
             grp_kwargs = {"exp_implementation": True}
             tmp = (
                 transactions.query("@week <= week")

@@ -4,14 +4,14 @@ import logging
 import numpy as np
 
 from omniscripts import tm
-from omniscripts.pandas_backend import pd
+from omniscripts.pandas_backend import pd, Backend
 from .hm_utils import LARGE_NUMBER, EXPERIMENTAL, fixi
 
 logger = logging.getLogger(__name__)
 
 
 grp_kwargs = {}
-if EXPERIMENTAL and modin_cfg is not None:
+if EXPERIMENTAL and Backend.get_modin_cfg() is not None:
     grp_kwargs["exp_implementation"] = True
 
 
@@ -70,7 +70,7 @@ def create_candidates(
         tr = tr.iloc[:LARGE_NUMBER]
 
         # Experimental speedup for modin
-        if EXPERIMENTAL and modin_cfg is not None:
+        if EXPERIMENTAL and Backend.get_modin_cfg() is not None:
             gr_day = (
                 tr.groupby(["user", "item"])[["day"]]
                 .min(**grp_kwargs)
