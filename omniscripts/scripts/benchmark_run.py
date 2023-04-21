@@ -1,6 +1,7 @@
 import os
 import time
 
+from omniscripts.timer import tm
 from omniscripts.arg_parser import parse_args, prepare_general_parser
 from omniscripts.benchmark import BaseBenchmark
 from omniscripts.benchmarks import create_benchmark
@@ -43,6 +44,8 @@ def main():
     args, db_config = parse_args(benchmark.add_benchmark_args)
 
     data_file = args.data_file.replace("'", "")
+    # Set verbosity level for global object, shared with benchmarks
+    tm.verbosity = args.verbosity
 
     run_parameters = {
         "data_file": data_file,

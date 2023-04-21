@@ -1,8 +1,8 @@
-from omniscripts import BenchmarkResults, BaseBenchmark
+from omniscripts import BenchmarkResults, BaseBenchmark, tm
 
 from .preprocess import preprocess
 from .prepare_dataset import prepare_dataset
-from .optiver_utils import get_workdir_paths, tm
+from .optiver_utils import get_workdir_paths
 
 
 def benchmark(paths):
