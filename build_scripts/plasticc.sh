@@ -5,7 +5,6 @@
 export MODIN_HDK_FRAGMENT_SIZE=32000000
 
 BENCH_NAME="plasticc"
-DATASET_PATH="${DATASETS_PWD}/${BENCH_NAME}"
 
 # This benchmark also support USE_MODIN_XGB="-use_modin_xgb"
 USE_MODIN_XGB=""
