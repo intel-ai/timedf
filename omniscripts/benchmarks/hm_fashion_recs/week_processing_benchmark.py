@@ -1,5 +1,4 @@
-from omniscripts import tm
-from omniscripts import BenchmarkResults, BaseBenchmark
+from omniscripts import BenchmarkResults, BaseBenchmark, tm
 
 from .preprocess import transform_data, create_user_ohe_agg
 from .hm_utils import load_data, get_workdir_paths
