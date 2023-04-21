@@ -1,5 +1,4 @@
 """Utils to be used by inividual benchmarks"""
-import glob
 import os
 from timeit import default_timer as timer
 
@@ -12,7 +11,6 @@ repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file_
 directories = {"repository_root": repository_root_directory}
 
 __all__ = [
-    "files_names_from_pattern",
     "load_data_pandas",
     "load_data_modin_on_hdk",
     "split",
@@ -113,29 +111,6 @@ def expand_braces(pattern: str):
         expanded.append(prefix + choice + suffix)
 
     return expanded
-
-
-def files_names_from_pattern(files_pattern):
-    try:
-        from braceexpand import braceexpand
-    except ModuleNotFoundError:
-        braceexpand = None
-
-    data_files_names = None
-    path_expander = glob.glob
-    data_files_names = (
-        list(braceexpand(files_pattern)) if braceexpand else expand_braces(files_pattern)
-    )
-
-    if "://" in files_pattern:
-        from .s3_client import s3_client
-
-        if all(map(s3_client.s3like, data_files_names)):
-            path_expander = s3_client.glob
-        else:
-            raise ValueError(f"some of s3like links are bad: {data_files_names}")
-
-    return sorted([x for f in data_files_names for x in path_expander(f)])
 
 
 def print_results(results, backend=None, ignore_fields=[]):
