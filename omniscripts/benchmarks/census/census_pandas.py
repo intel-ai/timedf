@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 import warnings
 from timeit import default_timer as timer
 
@@ -278,8 +279,10 @@ def run_benchmark(parameters):
 
     ml_score_keys = ["mse_mean", "cod_mean", "mse_dev", "cod_dev"]
 
-    if parameters["data_file"].endswith(".csv"):
-        csv_size = getsize(parameters["data_file"])
+    path = str(Path(parameters["data_file"]) / "ipums_education2income_1970-2010.csv.gz")
+
+    if path.endswith(".csv"):
+        csv_size = getsize(path)
     else:
         print("WARNING: uncompressed datafile not found, default value for dataset_size is set")
         # deafault csv_size value (unit - MB) obtained by calling getsize
@@ -288,7 +291,7 @@ def run_benchmark(parameters):
         csv_size = 2100.0
 
     df, X, y, results = etl(
-        parameters["data_file"],
+        path,
         columns_names=columns_names,
         columns_types=columns_types,
         etl_keys=etl_keys,

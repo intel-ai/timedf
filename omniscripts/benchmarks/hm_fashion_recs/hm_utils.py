@@ -13,12 +13,13 @@ def load_data(preprocessed_data_path):
     return transactions, users, items
 
 
-def get_workdir_paths(workdir="./hm_tmpdir"):
+def get_workdir_paths(raw_data_path, workdir="./hm_tmpdir"):
     """Get paths in the workdir, which is shared across several scripts, and create necessary
     folders."""
     workdir = Path(workdir)
 
     paths = dict(
+        raw_data_path=Path(raw_data_path),
         workdir=workdir,
         preprocessed_data=workdir / "preprocessed",
         artifacts=workdir / "artifacts",

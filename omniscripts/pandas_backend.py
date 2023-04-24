@@ -3,6 +3,8 @@
     2. Get pandas in each benchmark module with `from utils.pandas_backend import pd`, this will use
      correct version of backend.
 """
+from pathlib import Path
+
 # This will be replaced by modin.pandas after set_backend call
 import pandas as pd  # noqa: F401 this import exists to provide vscode support for backend users
 
@@ -57,6 +59,7 @@ class Backend:
         elif backend_name == "Pandas":
             pass
         elif backend_name in pandas_backends:
+            Path(ray_tmpdir).mkdir(parents=True, exist_ok=True)
             import_pandas_into_module_namespace(
                 namespace=globals(),
                 mode=backend_name,

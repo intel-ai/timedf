@@ -4,22 +4,22 @@
 - 1, 2のみのカテゴリを0, 1に変換する(カラムは上書きされる)
 """
 from __future__ import annotations
+from pathlib import Path
 
 from typing import Any
 
 import logging
 
+from omniscripts import tm
 from omniscripts.pandas_backend import pd
 
 from . import schema
-from .tm import tm
-from .lfm import train_lfm
 
 
 logger = logging.getLogger(__name__)
 
 
-def transform_data(input_data_path, result_path):
+def transform_data(input_data_path: Path, result_path: Path):
     """
     - Convert all categories including article_id and category_id to 0-indexed serial numbers (column with _idx is added)
     - Convert categories with only None, 1 to 0, 1 (columns are overwritten)
@@ -157,7 +157,7 @@ def create_user_ohe_agg(week, preprocessed_data_path, result_path):
             users.to_pickle(save_path)
 
 
-def run_complete_preprocessing(raw_data_path, paths, n_weeks, use_lfm=False):
+def run_complete_preprocessing(raw_data_path: Path, paths, n_weeks, use_lfm=False):
     transform_data(input_data_path=raw_data_path, result_path=paths["preprocessed_data"])
 
     for week in range(n_weeks + 1):
@@ -168,5 +168,7 @@ def run_complete_preprocessing(raw_data_path, paths, n_weeks, use_lfm=False):
         )
 
     if use_lfm:
+        from .lfm import train_lfm
+
         for week in range(1, n_weeks + 1):
             train_lfm(week=week, lfm_features_path=paths["lfm_features"])

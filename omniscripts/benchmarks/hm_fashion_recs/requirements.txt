@@ -1,0 +1,6 @@
+# These requirements are optional and turned off by default
+lightfm
+faiss
+# Used only in notebook for training
+matplotlib
+catboost
