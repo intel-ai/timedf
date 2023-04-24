@@ -14,7 +14,7 @@ The library simplifies these steps for you, so you can focus on payload part.
 Writing benchmark payload
 -------------------------
 
-``BenchmarkBase`` class is an interface for new benchmarks. 
+``BenchmarkBase`` class is an interface for new benchmarks.
 If you want to add new benchmark you need to:
 
 1. Create directory inside of ``omniscripts/benchmarks`` folder and name it with your ``BENCHMARK_NAME``. You will store new benchmark's code in that directory and won't need to change anything else
@@ -44,8 +44,8 @@ You can run your new benchmark with::
 
 
 To see all available params run::
-    
-    benchmark-run -h 
+
+    benchmark-run -h
 
 Benchmark run and iterations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -54,7 +54,7 @@ Each benchmark **run** consists of one or several **iterations** to
 account for random effects.
 
 You can set number of iterations with ``-iterations N`` parameter::
-    
+
     benchmark-run ... -iterations N
 
 Your payload will be run ``N`` times and results of each iteration will be recorded separately. So during analysis you will be
@@ -72,8 +72,8 @@ so you can use most of databases, including MySQL, PostgreSQL, sqlite.
 
 You set DB connection configuration with console arguments to ``benchmark-run``::
 
-    benchmark-run -task benchmark \
-        -b example_benchmark -data_file "/MY_DATASET_PATH" \
+    benchmark-run example_benchmark \
+        -data_file "/MY_DATASET_PATH" \
         -db_driver mysql+mysqlconnector \
         -db_server my_server.com \
         -db_port 3306 \
@@ -83,8 +83,8 @@ You set DB connection configuration with console arguments to ``benchmark-run``:
 
 To save results to sqlite database (essentially just file ``db.sqlite``)::
 
-    benchmark-run -task benchmark \
-        -b example_benchmark -data_file "/MY_DATASET_PATH" \
+    benchmark-run example_benchmark \
+        -data_file "/MY_DATASET_PATH" \
         -db_driver sqlite+pysqlite \
         -db_name db.sqlite \
 
@@ -106,7 +106,7 @@ iteration
 =================  ========   ===================  ==================================================================
 Column             Type       Example              Description
 =================  ========   ===================  ==================================================================
-id                 int        122                  Primary key, unique for iteration 
+id                 int        122                  Primary key, unique for iteration
 benchmark          varchar    plasticc             Benchmark name
 run_id             int        1234123              Unique run id for this run
 iteration_no       int        3                    Iteration number in it's run
@@ -121,7 +121,7 @@ pandas_mode        varchar    Modin_on_hdk         Pandas mode, used for this ru
 params             json       {'n_rows': 4000000}  Parameters passed by benchmark author using ``benchmark_specific_record``
 =================  ========   ===================  ==================================================================
 
-measurement 
+measurement
     one row per each measurement, so one iteration have many measurements
 
 =================  ========   ===================  ==================================================================
