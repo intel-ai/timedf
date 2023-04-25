@@ -21,7 +21,7 @@ name = "omniscripts"
 version = runpy.run_path(root / name / "__version__.py")["__version__"]
 
 setup(
-    name="omniscripts",
+    name=name,
     version=version,
     description="Benchmarks for data frame processing libraries",
     long_description=long_description,
