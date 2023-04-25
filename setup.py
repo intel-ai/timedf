@@ -20,8 +20,6 @@ all_reqs = reporting_reqs
 name = "omniscripts"
 version = runpy.run_path(root / name / "__version__.py")["__version__"]
 
-print(find_namespace_packages(include=["omniscripts_benchmarks.*"]))
-
 setup(
     name="omniscripts",
     version=version,
