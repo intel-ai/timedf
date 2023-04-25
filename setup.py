@@ -28,7 +28,7 @@ setup(
     url="https://github.com/intel-ai/omniscripts/",
     packages=[
         *find_packages(exclude=["scripts", "scripts.*"]),
-        "omniscripts.scripts"
+        "omniscripts.scripts",
         *find_namespace_packages(include=["omniscripts_benchmarks.*"]),
     ],
     # namespace_packages=
