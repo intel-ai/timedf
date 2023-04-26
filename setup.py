@@ -30,7 +30,6 @@ setup(
         *find_packages(include=["omniscripts*"]),
         *find_namespace_packages(include=["omniscripts_benchmarks.*"]),
     ],
-    # namespace_packages=
     install_requires=parse_reqs("base.txt"),
     extras_require={"reporting": reporting_reqs, "all": all_reqs},
     python_requires=">=3.8",
