@@ -13,7 +13,7 @@ We have several benchmarks to run:
 ..
     #. H2O - H2O benchmark with join and groupby operations based on https://h2oai.github.io/db-benchmark/
 
-Each benchmark's source code is stored in it's own folder in ``omniscripts/benchmarks/``
+Each benchmark's source code is stored in it's own folder in ``omniscripts_benchmarks/``
 
 Loading data
 ------------
@@ -36,7 +36,7 @@ We expect you to have **installed omniscripts into conda environment named** ``"
 #. Run benchmark with pandas: ``benchmark-run plasticc -data_file ./datasets/plasticc -pandas_mode Pandas ${DB_COMMON_OPTS}``.
     #. To run with with modin on ray replace ``"Pandas"->"Modin_on_ray"``, for modin on HDK replace ``"Pandas"->"Modin_on_hdk"``.
     #. You can get a list of all possible parameters with ``benchmark-run -h``.
-    #. *Optinal, not needed for plasticc*. You might need to install benchmark-specific dependencies with: ``conda env -n $ENV_NAME update -f omniscripts/benchmarks/$BENCHMARK_NAME/requirements.yaml``
+    #. *Optinal, not needed for plasticc*. You might need to install benchmark-specific dependencies with: ``conda env -n $ENV_NAME update -f omniscripts_benchmarks/$BENCHMARK_NAME/requirements.yaml``
     #. *Optinal*. If you want to store results in a database, define environment variable with parameters: ``export DB_COMMON_OPTS=""``. For example, to save results to local sqlite database (essentially just file on your filesystem) use ``export DB_COMMON_OPTS="-db_name db.sqlite"``
 
 Validating intermediate dataframes
