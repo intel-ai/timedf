@@ -1,4 +1,3 @@
-from omniscripts.tools.kaggle_load import download_dataset
 from omniscripts import BenchmarkResults, BaseBenchmark, tm
 
 from .preprocess import preprocess
@@ -26,13 +25,12 @@ class Benchmark(BaseBenchmark):
         return BenchmarkResults(task2time)
 
     def load_data(self, target_dir, reload=False):
-        # kaggle competitions download -c optiver-realized-volatility-prediction
-        rules_url = (
-            "https://www.kaggle.com/competitions/optiver-realized-volatility-prediction/rules"
-        )
+        from omniscripts.tools.kaggle_load import download_dataset
+
+        url = "https://www.kaggle.com/competitions/optiver-realized-volatility-prediction/rules"
         download_dataset(
             "optiver-realized-volatility-prediction",
             local_dir=target_dir,
             reload=reload,
-            rules_url=rules_url,
+            rules_url=url,
         )

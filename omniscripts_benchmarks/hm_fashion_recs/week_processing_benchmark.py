@@ -1,4 +1,3 @@
-from omniscripts.tools.kaggle_load import download_dataset
 from omniscripts import BenchmarkResults, BaseBenchmark, tm
 
 from .preprocess import transform_data, create_user_ohe_agg
@@ -77,10 +76,12 @@ class Benchmark(BaseBenchmark):
         return BenchmarkResults(task2time)
 
     def load_data(self, target_dir, reload=False):
-        rules_url = "https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations/rules"
+        from omniscripts.tools.kaggle_load import download_dataset
+
+        url = "https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations/rules"
         download_dataset(
             "h-and-m-personalized-fashion-recommendations",
             local_dir=target_dir,
             reload=reload,
-            rules_url=rules_url,
+            rules_url=url,
         )

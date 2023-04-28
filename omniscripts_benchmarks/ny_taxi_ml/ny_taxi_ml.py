@@ -1,4 +1,6 @@
 import argparse
+import tarfile
+import shutil
 from collections import OrderedDict
 from timeit import default_timer as timer
 from pathlib import Path
@@ -56,7 +58,7 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_hdk_m
 
 @measure_time
 def load_data(dirpath: str, is_hdk_mode, debug=False):
-    dirpath: Path = Path(dirpath.strip("'\""))
+    dirpath = Path(dirpath)
 
     data_types_2014 = OrderedDict(
         [
@@ -327,3 +329,17 @@ class Benchmark(BaseBenchmark):
 
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)
+
+    def load_data(self, target_dir, reload=False):
+        from omniscripts.tools.s3_load import download_folder
+
+        filename = "ny_taxi_ml.tar.gz"
+        download_folder("modin-datasets", '', target_dir, reload=reload, pattern=filename)
+
+        print("Extracting files...")
+        with tarfile.open(target_dir / filename) as f:
+            f.extractall(target_dir)
+
+        print("Restoring structure...")
+        for name in ('2014', '2015', '2016'):
+            shutil.move(target_dir / 'ny_taxi_ml' / name, target_dir)

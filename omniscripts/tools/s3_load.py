@@ -11,14 +11,14 @@ def download_folder(bucket_name, s3_folder_path, local_dir, reload, pattern=".*"
     bucket = s3.Bucket(bucket_name)
     local_dir = Path(local_dir)
 
-    compliled = re.compile(f"{s3_folder_path}/{pattern}")
+    compiled = re.compile(pattern)
     print(s3_folder_path, bucket_name)
     for obj in bucket.objects.filter(Prefix=s3_folder_path):
         source = obj.key
         target = Path(local_dir) / Path(source).relative_to(s3_folder_path)
 
         print(f'Processing "{source}"...')
-        if re.match(compliled, source) is None:
+        if re.match(compiled, source) is None:
             print(f'Skipping "{source}", not matching "{pattern}"')
         elif target.exists() and not reload:
             print(f'Skipping "{source}", already exists locally')
