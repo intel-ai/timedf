@@ -334,12 +334,12 @@ class Benchmark(BaseBenchmark):
         from omniscripts.tools.s3_load import download_folder
 
         filename = "ny_taxi_ml.tar.gz"
-        download_folder("modin-datasets", '', target_dir, reload=reload, pattern=filename)
+        download_folder("modin-datasets", "", target_dir, reload=reload, pattern=filename)
 
         print("Extracting files...")
         with tarfile.open(target_dir / filename) as f:
             f.extractall(target_dir)
 
         print("Restoring structure...")
-        for name in ('2014', '2015', '2016'):
-            shutil.move(target_dir / 'ny_taxi_ml' / name, target_dir)
+        for name in ("2014", "2015", "2016"):
+            shutil.move(target_dir / "ny_taxi_ml" / name, target_dir)
