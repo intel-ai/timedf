@@ -17,16 +17,16 @@ Writing benchmark payload
 ``BenchmarkBase`` class is an interface for new benchmarks.
 If you want to add new benchmark you need to:
 
-1. Create directory inside of ``omniscripts/benchmarks`` folder and name it with your ``BENCHMARK_NAME``. You will store new benchmark's code in that directory and won't need to change anything else
-2. Write your payload however you want inside of this directory, here is a minimal example with comments, this code is expected to be stored in ``omniscripts/benchmarks/example_benchmark/benchmark_content.py``
+1. Create directory inside of ``omniscripts_benchmarks`` folder and name it with your ``BENCHMARK_NAME``. You will store new benchmark's code in that directory and won't need to change anything else
+2. Write your payload however you want inside of this directory, here is a minimal example with comments, this code is expected to be stored in ``omniscripts_benchmarks/example_benchmark/benchmark_content.py``
 
-.. literalinclude:: ../../omniscripts/benchmarks/example_benchmark/benchmark_content.py
+.. literalinclude:: ../../omniscripts_benchmarks/example_benchmark/benchmark_content.py
     :language: python
     :linenos:
 
 3. Add ``__init__.py``  file along with benchmark_content  file:
 
-.. literalinclude:: ../../omniscripts/benchmarks/example_benchmark/__init__.py
+.. literalinclude:: ../../omniscripts_benchmarks/example_benchmark/__init__.py
     :language: python
     :linenos:
 
