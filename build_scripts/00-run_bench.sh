@@ -18,7 +18,7 @@ fi
 # ENV_NAME must be provided
 # live stream will provide live stdout and stderr
 conda run --live-stream -n $ENV_NAME benchmark-run $BENCH_NAME    \
-                           -data_file "${DATASET_PATH}" \
+                           -data_file "${DATASETS_PWD}/${BENCH_NAME}" \
                            -pandas_mode ${PANDAS_MODE}            \
                            ${ADDITIONAL_OPTS}                     \
                            ${DB_COMMON_OPTS}                      \

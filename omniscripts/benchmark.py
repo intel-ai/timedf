@@ -1,6 +1,27 @@
 import abc
 import argparse
 from typing import Dict
+import importlib
+
+
+# # We keep benchmark import lazy to let the library initialize tool configuration before import
+def create_benchmark(bench_name):
+    # We are trying to dynamically import provided benchmark and want to catch
+    # probelms with this import to report to user
+    path = f"omniscripts_benchmarks.{bench_name}"
+    try:
+        return importlib.import_module(path, __name__).Benchmark()
+    except ModuleNotFoundError as f:
+        # The problem might be with some module that benchmark is using, like
+        # missing `import os` inside of the benchmark, so check that before
+        # creating error message
+        if str(f) != f"No module named '{path}'":
+            # Passthrough errors not directly related to benchmark module
+            raise
+        raise ValueError(
+            f'Attempted to create benchmark "{bench_name}", but it is missing from '
+            "the list of available benchmarks"
+        )
 
 
 class BenchmarkResults:

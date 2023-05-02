@@ -2,7 +2,6 @@
 eval source ${CONDA_PREFIX}/bin/activate ${ENV_NAME}
 
 # Basic config
-export MODIN_EXPERIMENTAL=true
 export MODIN_TEST_DATASET_SIZE=big
 export MODIN_ASV_DATASIZE_CONFIG=`pwd`/omniscripts/docker/microbenchmarks-hdk/modin-asv-datasize-config.json
 
