@@ -4,15 +4,10 @@ import logging
 import numpy as np
 
 from omniscripts import tm
-from omniscripts.pandas_backend import pd, Backend
-from .hm_utils import LARGE_NUMBER, EXPERIMENTAL, fixi
+from omniscripts.pandas_backend import pd
+from .hm_utils import check_experimental, modin_fix, grp_kwargs
 
 logger = logging.getLogger(__name__)
-
-
-grp_kwargs = {}
-if EXPERIMENTAL and Backend.get_modin_cfg() is not None:
-    grp_kwargs["exp_implementation"] = True
 
 
 class CFG:
@@ -67,10 +62,10 @@ def create_candidates(
             ["user", "item", "week", "day"]
         ].drop_duplicates(ignore_index=True)
 
-        tr = tr.iloc[:LARGE_NUMBER]
+        tr = modin_fix(tr)
 
         # Experimental speedup for modin
-        if EXPERIMENTAL and Backend.get_modin_cfg() is not None:
+        if check_experimental():
             gr_day = (
                 tr.groupby(["user", "item"])[["day"]]
                 .min(**grp_kwargs)
@@ -120,7 +115,7 @@ def create_candidates(
             ["user", "item"]
         ].drop_duplicates(ignore_index=True)
 
-        tr = tr.iloc[:LARGE_NUMBER]
+        tr = modin_fix(tr)
 
         popular_items = tr["item"].value_counts().index.values[:num_items]
         popular_items = pd.DataFrame(
@@ -144,7 +139,7 @@ def create_candidates(
             ["user", "item"]
         ].drop_duplicates(ignore_index=True)
 
-        tr = tr.iloc[:LARGE_NUMBER]
+        tr = modin_fix(tr)
 
         tr = tr.merge(users[["user", "age"]])
 
@@ -178,7 +173,7 @@ def create_candidates(
             ["user", "item"]
         ].drop_duplicates()
 
-        tr = tr.iloc[:LARGE_NUMBER].groupby("item").size().reset_index(name="volume")
+        tr = modin_fix(tr).groupby("item").size().reset_index(name="volume")
         tr = tr.merge(items[["item", category]], on="item")
         tr["cat_volume_rank"] = tr.groupby(category)["volume"].rank(ascending=False, method="min")
         tr = tr.query("cat_volume_rank <= @num_items_per_category").reset_index(drop=True)
@@ -198,9 +193,9 @@ def create_candidates(
             ["user", "item", "week"]
         ].drop_duplicates(ignore_index=True)
 
-        tr = fixi(tr)
+        tr = modin_fix(tr)
 
-        tr = fixi(
+        tr = modin_fix(
             tr.merge(
                 tr.rename(columns={"item": "item_with", "week": "week_with"}), on="user"
             ).query("item != item_with and week <= week_with")[["item", "item_with"]]
@@ -434,9 +429,7 @@ def drop_trivial_users(labels):
     bef = len(labels)
     df = labels[
         labels["user"].isin(
-            labels[["user", "y"]]
-            .drop_duplicates()
-            .iloc[:LARGE_NUMBER]
+            modin_fix(labels[["user", "y"]].drop_duplicates())
             .groupby("user")
             .size()
             .reset_index(name="sz")

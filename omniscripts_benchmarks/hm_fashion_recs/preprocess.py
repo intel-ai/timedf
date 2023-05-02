@@ -12,7 +12,6 @@ import logging
 
 from omniscripts import tm
 from omniscripts.pandas_backend import pd
-from .hm_utils import DEBUG, N_SIEB
 
 from . import schema
 
@@ -53,10 +52,6 @@ def transform_data(input_data_path: Path, result_path: Path):
         dtype=schema.TRANSACTIONS_ORIGINAL,
         parse_dates=["t_dat"],
     )
-
-    # Decrease size of the dataset for performance
-    if DEBUG:
-        transactions = transactions.iloc[::N_SIEB, :]
 
     (result_path / "images").mkdir(exist_ok=True, parents=True)
 

@@ -4,9 +4,9 @@ import logging
 
 import numpy as np
 
-from .hm_utils import EXPERIMENTAL, fixi
+from .hm_utils import check_experimental, modin_fix
 from omniscripts import tm
-from omniscripts.pandas_backend import pd, Backend
+from omniscripts.pandas_backend import pd
 
 
 logger = logging.getLogger(__name__)
@@ -153,7 +153,7 @@ def attach_features(
         df = df.merge(tmp, on="user", how="left")
 
     with tm.timeit("10-user-item freshness features"):
-        if EXPERIMENTAL and Backend.get_modin_cfg() is not None:
+        if check_experimental():
             grp_kwargs = {"exp_implementation": True}
             tmp = (
                 transactions.query("@week <= week")
@@ -195,9 +195,9 @@ def attach_features(
         for age in range(16, 100):
             low = age - age_shifts[age]  # noqa: F841 used in pandas query
             high = age + age_shifts[age]  # noqa: F841 used in pandas query
-            tmp = fixi(fixi(tr.query("@low <= age <= @high")).groupby("item").size()).reset_index(
-                name="age_volume"
-            )
+            tmp = modin_fix(
+                modin_fix(tr.query("@low <= age <= @high")).groupby("item").size()
+            ).reset_index(name="age_volume")
             tmp["age_volume"] = tmp["age_volume"].rank(ascending=False)
             tmp["age"] = age
             item_age_volumes.append(tmp)
@@ -221,7 +221,7 @@ def attach_features(
             items[["item"] + item_target_cols], columns=item_target_cols
         )
 
-        if EXPERIMENTAL and Backend.get_modin_cfg() is not None:
+        if check_experimental():
             items_with_ohe = items_with_ohe._repartition(axis=1)
 
         cols = [c for c in items_with_ohe.columns if c != "item"]

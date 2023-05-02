@@ -3,25 +3,27 @@ from pathlib import Path
 
 import numpy as np
 
-from omniscripts.pandas_backend import pd
+from omniscripts.pandas_backend import Backend, pd
+
+
+DEBUG = bool(os.getenv("DEBUG", False))
+
+
+# Use experimental code that modify benchmark
+def check_experimental():
+    EXPERIMENTAL = bool(os.getenv("EXPERIMENTAL", False))
+    return EXPERIMENTAL and Backend.get_modin_cfg() is not None
+
+
+if check_experimental():
+    grp_kwargs = {"exp_implementation": True}
+else:
+    grp_kwargs = {}
 
 
 # TODO: modin bug, that's why we use iloc[]
 # https://github.com/modin-project/modin/issues/5461
-LARGE_NUMBER = 1_000_000_000
-# Use experimental code that modify benchmark
-EXPERIMENTAL = bool(os.getenv("EXPERIMENTAL", False))
-
-DEBUG = bool(os.getenv("DEBUG", False))
-
-# Sieb to decrease size of transactions when debug is active
-N_SIEB = 100
-
-# Use smaller train size, will significantly speed things up (by about 3 times)
-LIMITED_TRAIN = True
-
-
-def fixi(df):
+def modin_fix(df):
     return df.iloc[: len(df)]
 
 
