@@ -28,10 +28,9 @@ To run benchmark you will first need to download the dataset::
 Running benchmark
 --------------------------
 
-Let's run one of benchmarks (``plasticc``) starting from an unconfigured system.
-We expect you to have **installed omniscripts into conda environment named** ``"ENV_NAME="omniscripts"`` :ref:`installation-label`.
+Let's run one of benchmarks (``plasticc``) starting from a system with :ref:`installed omniscripts in conda environment <installation-label>` named ``ENV_NAME="omniscripts"``.
 
-#. Activate your conda environment: ``conda activate $ENV_NAME``.
+#. Activate your conda environment: ``export ENV_NAME="omniscripts" && conda activate $ENV_NAME``.
 #. Download data ``benchmark-load plasticc ./datasets/plasticc``.
 #. Run benchmark with pandas: ``benchmark-run plasticc -data_file ./datasets/plasticc -pandas_mode Pandas ${DB_COMMON_OPTS}``.
     #. To run with with modin on ray replace ``"Pandas"->"Modin_on_ray"``, for modin on HDK replace ``"Pandas"->"Modin_on_hdk"``.
