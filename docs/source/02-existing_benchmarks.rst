@@ -29,7 +29,7 @@ Running benchmark
 --------------------------
 
 Let's run one of benchmarks (``plasticc``) starting from an unconfigured system.
-We expect you to have **installed omniscripts into conda environment named** ``"ENV_NAME="omniscripts"``.
+We expect you to have **installed omniscripts into conda environment named** ``"ENV_NAME="omniscripts"`` :ref:`installation-label`.
 
 #. Activate your conda environment: ``conda activate $ENV_NAME``.
 #. Download data ``benchmark-load plasticc ./datasets/plasticc``.
