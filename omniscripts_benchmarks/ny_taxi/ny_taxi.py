@@ -387,7 +387,7 @@ class Benchmark(BaseBenchmark):
         parser.add_argument(
             "-dfiles_num",
             dest="dfiles_num",
-            default=None,
+            default=1,
             type=int,
             help="Number of datafiles to load into database for processing.",
         )
