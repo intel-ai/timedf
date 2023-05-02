@@ -2,20 +2,19 @@
 
 import gc
 import logging
-from pathlib import Path
 
 import catboost
 import matplotlib.pyplot as plt
 import numpy as np
+
 from omniscripts.benchmark import BaseBenchmark, BenchmarkResults
+from omniscripts import tm
+from omniscripts.pandas_backend import Backend, pd
 
-from omniscripts.pandas_backend import pd, modin_cfg
-
-from .hm_utils import mapk, load_data, get_workdir_paths, DEBUG, LIMITED_TRAIN
+from .hm_utils import mapk, load_data, get_workdir_paths
 from .fe import get_age_shifts, attach_features
 from .candidates import create_candidates, make_weekly_candidates
 from .preprocess import run_complete_preprocessing
-from .tm import tm
 
 
 logger = logging.getLogger(__name__)
@@ -28,9 +27,11 @@ class CFG:
     use_lfm = True
 
 
+LIMITED_TRAIN = True
 if LIMITED_TRAIN:
     CFG.train_weeks = 1
 
+DEBUG = True
 if DEBUG:
     CFG.n_iterations = 10
 
@@ -270,12 +271,12 @@ def make_submission(candidates, transactions, users, items, best_iteration, age_
         )
 
 
-def main(raw_data_path, paths):
+def main(paths):
     with tm.timeit("total"):
         with tm.timeit("01-processing"):
             # print('Skipped')
             run_complete_preprocessing(
-                raw_data_path=raw_data_path,
+                raw_data_path=paths["raw_data_path"],
                 preprocessed_path=paths["preprocessed_data"],
                 paths=paths,
                 n_weeks=CFG.train_weeks + 1,
@@ -327,7 +328,7 @@ def main(raw_data_path, paths):
 
         with tm.timeit("06-conversion"):
             # Catboost requires pandas dataframes for training and evaluation
-            if modin_cfg is not None:
+            if Backend.get_modin_cfg() is not None:
                 train = train._to_pandas()
                 valid = valid._to_pandas()
                 eval = eval._to_pandas()
@@ -361,8 +362,8 @@ class Benchmark(BaseBenchmark):
     __unsupported_params__ = ("optimizer", "dfiles_num")
 
     def run_benchmark(self, parameters):
-        paths = get_workdir_paths()
-        main(raw_data_path=Path(parameters["data_file"]), paths=paths)
+        paths = get_workdir_paths(parameters["data_file"])
+        main(paths=paths)
 
         task2time = tm.get_results()
         print(task2time)
