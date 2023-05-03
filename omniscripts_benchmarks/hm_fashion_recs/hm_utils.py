@@ -6,9 +6,6 @@ import numpy as np
 from omniscripts.pandas_backend import Backend, pd
 
 
-DEBUG = bool(os.getenv("DEBUG", False))
-
-
 # Use experimental code that modify benchmark
 def check_experimental():
     EXPERIMENTAL = bool(os.getenv("EXPERIMENTAL", False))
