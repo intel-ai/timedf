@@ -82,6 +82,7 @@ def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, pandas_mode):
     # pyarrow uses it in incompatible way
     if pandas_mode == "Modin_on_hdk":
         test = pd.read_csv(
+            # This file didn't come from kaggle competition
             "%s/test_set_skiprows.csv" % dataset_path,
             names=list(dtypes.keys()),
             dtype=dtypes,
@@ -337,3 +338,10 @@ class Benchmark(BaseBenchmark):
 
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)
+
+    def load_data(self, target_dir, reload=False):
+        from omniscripts.tools.s3_load import download_folder
+
+        download_folder(
+            "modin-datasets", "plasticc", target_dir, reload=reload, pattern=r".*\.csv"
+        )

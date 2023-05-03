@@ -330,3 +330,8 @@ class Benchmark(BaseBenchmark):
 
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)
+
+    def load_data(self, target_dir, reload=False):
+        from omniscripts.tools.s3_load import download_folder
+
+        download_folder("modin-datasets", "census", target_dir, reload=reload)
