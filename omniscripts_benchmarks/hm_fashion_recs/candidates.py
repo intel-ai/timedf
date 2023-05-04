@@ -5,7 +5,7 @@ import numpy as np
 
 from omniscripts import tm
 from omniscripts.pandas_backend import pd
-from .hm_utils import check_experimental, modin_fix, grp_kwargs
+from .hm_utils import check_experimental, modin_fix, exp_grp_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,7 @@ def create_candidates(
     target_users: np.ndarray,
     week: int,
     user_features_path: Path,
+    modin_exp: bool,
 ) -> pd.DataFrame:
     """
     transactions
@@ -65,20 +66,22 @@ def create_candidates(
         tr = modin_fix(tr)
 
         # Experimental speedup for modin
-        if check_experimental():
+        if check_experimental(modin_exp):
             gr_day = (
                 tr.groupby(["user", "item"])[["day"]]
-                .min(**grp_kwargs)
+                .min(**exp_grp_kwargs)
                 .squeeze(axis=1)
                 .reset_index(name="day")
             )
             gr_week = (
                 tr.groupby(["user", "item"])[["week"]]
-                .min(**grp_kwargs)
+                .min(**exp_grp_kwargs)
                 .squeeze(axis=1)
                 .reset_index(name="week")
             )
-            gr_volume = tr.groupby(["user", "item"]).size(**grp_kwargs).reset_index(name="volume")
+            gr_volume = (
+                tr.groupby(["user", "item"]).size(**exp_grp_kwargs).reset_index(name="volume")
+            )
         else:
             gr_day = tr.groupby(["user", "item"])["day"].min().reset_index(name="day")
             gr_week = tr.groupby(["user", "item"])["week"].min().reset_index(name="week")
@@ -202,8 +205,9 @@ def create_candidates(
         ).reset_index(drop=True)
 
         gr_item_count = tr.groupby("item").size().reset_index(name="item_count")
+        kwargs = exp_grp_kwargs if check_experimental(modin_exp) else {}
         gr_pair_count = (
-            tr.groupby(["item", "item_with"]).size(**grp_kwargs).reset_index(name="pair_count")
+            tr.groupby(["item", "item_with"]).size(**kwargs).reset_index(name="pair_count")
         )
         item2item = gr_pair_count.merge(gr_item_count, on="item")
         item2item["ratio"] = item2item["pair_count"] / item2item["item_count"]

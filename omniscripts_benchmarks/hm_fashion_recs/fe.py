@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-from .hm_utils import check_experimental, modin_fix
+from .hm_utils import check_experimental, modin_fix, exp_grp_kwargs
 from omniscripts import tm
 from omniscripts.pandas_backend import pd
 
@@ -57,6 +57,7 @@ def attach_features(
     pretrain_week: int,
     age_shifts,
     user_features_path: Path,
+    modin_exp=bool,
     lfm_features_path: Union[None, Path] = None,
 ) -> pd.DataFrame:
     """
@@ -153,12 +154,11 @@ def attach_features(
         df = df.merge(tmp, on="user", how="left")
 
     with tm.timeit("10-user-item freshness features"):
-        if check_experimental():
-            grp_kwargs = {"exp_implementation": True}
+        if check_experimental(modin_exp):
             tmp = (
                 transactions.query("@week <= week")
                 .groupby(["user", "item"])[["day"]]
-                .min(**grp_kwargs)
+                .min(**exp_grp_kwargs)
                 .squeeze(axis=1)
                 .reset_index(name="user_item_day_min")
             )
@@ -221,7 +221,7 @@ def attach_features(
             items[["item"] + item_target_cols], columns=item_target_cols
         )
 
-        if check_experimental():
+        if check_experimental(modin_exp):
             items_with_ohe = items_with_ohe._repartition(axis=1)
 
         cols = [c for c in items_with_ohe.columns if c != "item"]

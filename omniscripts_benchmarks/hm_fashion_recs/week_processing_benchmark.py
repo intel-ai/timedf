@@ -1,3 +1,4 @@
+import argparse
 from omniscripts import BenchmarkResults, BaseBenchmark, tm
 
 from .preprocess import transform_data, create_user_ohe_agg
@@ -84,4 +85,14 @@ class Benchmark(BaseBenchmark):
             local_dir=target_dir,
             reload=reload,
             rules_url=url,
+        )
+
+    def add_benchmark_args(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-modin_exp",
+            default=False,
+            action="store_true",
+            help="Use experimental modin groupby from "
+            "https://modin.readthedocs.io/en/latest/flow/modin/experimental/reshuffling_groupby.html."
+            "\nand perform one additional reshuffling",
         )

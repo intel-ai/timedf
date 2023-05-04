@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import numpy as np
@@ -6,16 +5,13 @@ import numpy as np
 from omniscripts.pandas_backend import Backend, pd
 
 
-# Use experimental code that modify benchmark
-def check_experimental():
-    EXPERIMENTAL = bool(os.getenv("EXPERIMENTAL", False))
-    return EXPERIMENTAL and Backend.get_modin_cfg() is not None
+# Use experimental groupby from
+# https://modin.readthedocs.io/en/latest/flow/modin/experimental/reshuffling_groupby.html
+def check_experimental(modin_exp):
+    return modin_exp and Backend.get_modin_cfg() is not None
 
 
-if check_experimental():
-    grp_kwargs = {"exp_implementation": True}
-else:
-    grp_kwargs = {}
+exp_grp_kwargs = {"exp_implementation": True}
 
 
 # TODO: modin bug, that's why we use iloc[]
