@@ -446,7 +446,9 @@ def drop_trivial_users(labels):
     return df
 
 
-def make_one_week_candidates(transactions, users, items, week, user_features_path, age_shifts):
+def make_one_week_candidates(
+    transactions, users, items, week, user_features_path, age_shifts, modin_exp
+):
     target_users = transactions.query("week == @week")["user"].unique()
 
     candidates = create_candidates(
@@ -457,6 +459,7 @@ def make_one_week_candidates(transactions, users, items, week, user_features_pat
         week=week + 1,
         user_features_path=user_features_path,
         age_shifts=age_shifts,
+        modin_exp=modin_exp,
     )
     candidates = merge_labels(candidates=candidates, transactions=transactions, week=week)
     candidates["week"] = week
