@@ -1,17 +1,30 @@
 from pathlib import Path
+from contextlib import contextmanager
 
 import numpy as np
 
 from omniscripts.pandas_backend import Backend, pd
 
 
-# Use experimental groupby from
-# https://modin.readthedocs.io/en/latest/flow/modin/experimental/reshuffling_groupby.html
 def check_experimental(modin_exp):
     return modin_exp and Backend.get_modin_cfg() is not None
 
 
-exp_grp_kwargs = {"exp_implementation": True}
+# Use experimental groupby from
+# https://modin.readthedocs.io/en/latest/flow/modin/experimental/reshuffling_groupby.html
+@contextmanager
+def maybe_modin_exp(modin_exp):
+    if check_experimental(modin_exp):
+        import modin
+
+        modin.config.ExperimentalGroupbyImpl.put(True)
+
+        try:
+            yield None
+        finally:
+            modin.config.ExperimentalGroupbyImpl.put(False)
+    else:
+        yield None
 
 
 # TODO: modin bug, that's why we use iloc[]
