@@ -17,12 +17,17 @@ def maybe_modin_exp(modin_exp):
     if check_experimental(modin_exp):
         import modin
 
-        modin.config.ExperimentalGroupbyImpl.put(True)
+        if hasattr(modin.config, "ExperimentalGroupbyImpl"):
+            print("Activating exp function")
+            modin.config.ExperimentalGroupbyImpl.put(True)
+        else:
+            print("Using modin without support of experimental groupby")
 
         try:
             yield None
         finally:
-            modin.config.ExperimentalGroupbyImpl.put(False)
+            if hasattr(modin.config, "ExperimentalGroupbyImpl"):
+                modin.config.ExperimentalGroupbyImpl.put(False)
     else:
         yield None
 
