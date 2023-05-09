@@ -80,7 +80,7 @@ def main():
                 iteration_no=iter_num,
                 name2time=results.measurements,
                 params=results.params,
-                benchmark=args.bench_name,
+                benchmark=args.save_name or args.bench_name,
                 run_id=run_id,
                 run_params={**run_parameters, **report_args},
             )

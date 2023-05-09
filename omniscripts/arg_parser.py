@@ -86,7 +86,7 @@ def prepare_general_parser():
     commits = parser.add_argument_group("commits")
 
     # Benchmark parameters
-    benchmark.add_argument("bench_name", help="Benchmark name.")
+    benchmark.add_argument("bench_name", help="Benchmark to run.")
     benchmark.add_argument("-data_file", help="A datafile that should be loaded.", required=True)
     benchmark.add_argument(
         "-iterations",
@@ -135,6 +135,11 @@ def prepare_general_parser():
         action="store_true",
         help="Whether to use Modin XGBoost for ML part, relevant for `plasticc` and `ny_taxi_ml` "
         " benchmark.",
+    )
+    benchmark.add_argument(
+        "-save_name",
+        default=None,
+        help="Save benchmark in DB under this name. Saves with `bench_name` name by default.",
     )
     # SQL database parameters
     add_sql_arguments(sql)
