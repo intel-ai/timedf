@@ -26,7 +26,7 @@ class DbConfig:
     name: str = None
 
     def is_config_complete(self):
-        return self.user is not None
+        return self.name is not None
 
     def _create_engine(self):
         from sqlalchemy import create_engine
