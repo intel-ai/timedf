@@ -25,13 +25,11 @@ class CFG:
     dim = 16
 
 
-def train_lfm(*, lfm_features_path: Path, week: int, dim: int = CFG.dim):
-    dataset = "100"
-
-    path_prefix = lfm_features_path / f"lfm_i_i_dataset{dataset}_week{week}_dim{dim}"
-    transactions = pd.read_pickle(f"input/{dataset}/transactions_train.pkl")
-    users = pd.read_pickle(f"input/{dataset}/users.pkl")
-    items = pd.read_pickle(f"input/{dataset}/items.pkl")
+def train_lfm(*, preprocessed_path: Path, lfm_features_path: Path, week: int, dim: int = CFG.dim):
+    path_prefix = lfm_features_path / f"lfm_i_i_week{week}_dim{dim}"
+    transactions = pd.read_pickle(preprocessed_path / "transactions_train.pkl")
+    users = pd.read_pickle(preprocessed_path / "users.pkl")
+    items = pd.read_pickle(preprocessed_path / "items.pkl")
     n_user = len(users)
     n_item = len(items)
     a = transactions.query("@week <= week")[["user", "item"]].drop_duplicates(ignore_index=True)

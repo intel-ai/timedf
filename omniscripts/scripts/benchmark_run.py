@@ -74,6 +74,7 @@ def main():
     for iter_num in range(1, args.iterations + 1):
         print(f"Iteration #{iter_num}")
         results = benchmark.run(run_parameters)
+        tm.reset()
 
         if benchmarkDb is not None:
             benchmarkDb.report(

@@ -1,8 +1,41 @@
 from pathlib import Path
+from contextlib import contextmanager
 
 import numpy as np
 
-from omniscripts.pandas_backend import pd
+from omniscripts.pandas_backend import Backend, pd
+
+
+def check_experimental(modin_exp):
+    return modin_exp and Backend.get_modin_cfg() is not None
+
+
+# Use experimental groupby from
+# https://modin.readthedocs.io/en/latest/flow/modin/experimental/reshuffling_groupby.html
+@contextmanager
+def maybe_modin_exp(modin_exp):
+    if check_experimental(modin_exp):
+        import modin
+
+        if hasattr(modin.config, "ExperimentalGroupbyImpl"):
+            print("Activating exp function")
+            modin.config.ExperimentalGroupbyImpl.put(True)
+        else:
+            print("Using modin without support of experimental groupby")
+
+        try:
+            yield None
+        finally:
+            if hasattr(modin.config, "ExperimentalGroupbyImpl"):
+                modin.config.ExperimentalGroupbyImpl.put(False)
+    else:
+        yield None
+
+
+# TODO: modin bug, that's why we use iloc[]
+# https://github.com/modin-project/modin/issues/5461
+def modin_fix(df):
+    return df.iloc[: len(df)]
 
 
 def load_data(preprocessed_data_path):

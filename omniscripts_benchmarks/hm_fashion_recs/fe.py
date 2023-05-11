@@ -2,8 +2,11 @@ from pathlib import Path
 from typing import Union
 import logging
 
-from omniscripts.pandas_backend import pd
+import numpy as np
+
+from .hm_utils import check_experimental, maybe_modin_exp, modin_fix
 from omniscripts import tm
+from omniscripts.pandas_backend import pd
 
 
 logger = logging.getLogger(__name__)
@@ -54,6 +57,7 @@ def attach_features(
     pretrain_week: int,
     age_shifts,
     user_features_path: Path,
+    modin_exp=bool,
     lfm_features_path: Union[None, Path] = None,
 ) -> pd.DataFrame:
     """
@@ -150,12 +154,15 @@ def attach_features(
         df = df.merge(tmp, on="user", how="left")
 
     with tm.timeit("10-user-item freshness features"):
-        tmp = (
-            transactions.query("@week <= week")
-            .groupby(["user", "item"])["day"]
-            .min()
-            .reset_index(name="user_item_day_min")
-        )
+        with maybe_modin_exp(modin_exp):
+            tmp = (
+                transactions.query("@week <= week")
+                .groupby(["user", "item"])[["day"]]
+                .min()
+                .squeeze(axis=1)
+                .reset_index(name="user_item_day_min")
+            )
+
         tmp["user_item_day_min"] -= transactions.query("@week == week")["day"].min()
         df = df.merge(tmp, on=["item", "user"], how="left")
 
@@ -181,12 +188,9 @@ def attach_features(
         for age in range(16, 100):
             low = age - age_shifts[age]  # noqa: F841 used in pandas query
             high = age + age_shifts[age]  # noqa: F841 used in pandas query
-            tmp = (
-                tr.query("@low <= age <= @high")
-                .groupby("item")
-                .size()
-                .reset_index(name="age_volume")
-            )
+            tmp = modin_fix(
+                modin_fix(tr.query("@low <= age <= @high")).groupby("item").size()
+            ).reset_index(name="age_volume")
             tmp["age_volume"] = tmp["age_volume"].rank(ascending=False)
             tmp["age"] = age
             item_age_volumes.append(tmp)
@@ -199,7 +203,8 @@ def attach_features(
             cols = [c for c in tmp.columns if c != "user"]
             # tmp = tmp[['user'] + cols]
             tmp[cols] = tmp[cols] / tmp[cols].mean()
-            tmp[f"{c}_most_freq_idx"] = tmp[cols].idxmax(axis=1)
+
+            tmp[f"{c}_most_freq_idx"] = np.argmax(tmp[cols].values, axis=1)
             df = df.merge(tmp[["user", f"{c}_most_freq_idx"]])
 
     with tm.timeit("14-ohe dot products"):
@@ -208,6 +213,9 @@ def attach_features(
         items_with_ohe = pd.get_dummies(
             items[["item"] + item_target_cols], columns=item_target_cols
         )
+
+        if check_experimental(modin_exp):
+            items_with_ohe = items_with_ohe._repartition(axis=1)
 
         cols = [c for c in items_with_ohe.columns if c != "item"]
         items_with_ohe[cols] = items_with_ohe[cols] / items_with_ohe[cols].mean()

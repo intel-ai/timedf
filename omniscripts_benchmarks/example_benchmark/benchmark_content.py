@@ -10,12 +10,10 @@ import numpy as np
 from omniscripts.pandas_backend import pd
 
 from omniscripts import BaseBenchmark, BenchmarkResults
-from omniscripts import TimerManager
-
 
 # This is an optional tool to simplity time tracking, without it you need to gather timing results
 # manually into a simple dict (measurement: time_s) like {'load_data': 11.1, 'fe': 1.122}
-tm = TimerManager()
+from omniscripts import tm
 
 
 class Benchmark(BaseBenchmark):

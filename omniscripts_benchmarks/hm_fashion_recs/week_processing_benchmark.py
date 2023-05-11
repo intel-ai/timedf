@@ -1,3 +1,4 @@
+import argparse
 from omniscripts import BenchmarkResults, BaseBenchmark, tm
 
 from .preprocess import transform_data, create_user_ohe_agg
@@ -6,7 +7,7 @@ from .candidates import make_one_week_candidates, drop_trivial_users
 from .fe import attach_features, get_age_shifts
 
 
-def feature_engieering(week, paths, use_lfm):
+def feature_engieering(week, paths, use_lfm, modin_exp):
     with tm.timeit("01-load_data"):
         transactions, users, items = load_data(paths["preprocessed_data"])
 
@@ -21,6 +22,7 @@ def feature_engieering(week, paths, use_lfm):
             week=week,
             user_features_path=paths["user_features"],
             age_shifts=age_shifts,
+            modin_exp=modin_exp,
         )
 
         candidates = drop_trivial_users(week_candidates)
@@ -39,6 +41,7 @@ def feature_engieering(week, paths, use_lfm):
             age_shifts=age_shifts,
             user_features_path=paths["user_features"],
             lfm_features_path=paths["lfm_features"] if use_lfm else None,
+            modin_exp=modin_exp,
         )
 
     dataset["query_group"] = dataset["week"].astype(str) + "_" + dataset["user"].astype(str)
@@ -46,7 +49,7 @@ def feature_engieering(week, paths, use_lfm):
     return dataset
 
 
-def main(paths):
+def main(paths, modin_exp):
     with tm.timeit("total"):
         with tm.timeit("01-initial_transform"):
             transform_data(
@@ -62,13 +65,16 @@ def main(paths):
             )
 
         with tm.timeit("03-fe"):
-            feature_engieering(week=week, paths=paths, use_lfm=False)
+            feature_engieering(week=week, paths=paths, use_lfm=False, modin_exp=modin_exp)
 
 
 class Benchmark(BaseBenchmark):
+    __params__ = ("modin_exp",)
+
     def run_benchmark(self, parameters):
         paths = get_workdir_paths(parameters["data_file"])
-        main(paths)
+        modin_exp = parameters["modin_exp"]
+        main(paths, modin_exp=modin_exp)
 
         task2time = tm.get_results()
         print(task2time)
@@ -84,4 +90,14 @@ class Benchmark(BaseBenchmark):
             local_dir=target_dir,
             reload=reload,
             rules_url=url,
+        )
+
+    def add_benchmark_args(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-modin_exp",
+            default=False,
+            action="store_true",
+            help="Use experimental modin groupby from "
+            "https://modin.readthedocs.io/en/latest/flow/modin/experimental/reshuffling_groupby.html."
+            "\nand perform one additional reshuffling",
         )
