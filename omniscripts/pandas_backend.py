@@ -22,7 +22,7 @@ pandas_backends = [
     "Modin_on_dask",
     "Modin_on_python",
     "Modin_on_hdk",
-    "Modin_on_Unidist_mpi",
+    "Modin_on_unidist_mpi",
 ]
 
 nonpandas_backends = [
