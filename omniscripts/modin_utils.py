@@ -47,6 +47,13 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
             os.environ["MODIN_STORAGE_FORMAT"] = "hdk"
             os.environ["MODIN_EXPERIMENTAL"] = "True"
             print("Pandas backend: Modin on HDK")
+        elif mode == "Modin_on_Unidist_mpi":
+            os.environ["MODIN_ENGINE"] = "unidist"
+            os.environ["UNIDIST_BACKEND"] = "mpi"
+            if 'MODIN_CPUS' in os.environ:
+                os.environ["UNIDIST_CPUS"] = os.environ["MODIN_CPUS"]
+            import unidist
+            unidist.init()
         else:
             raise ValueError(f"Unknown pandas mode {mode}")
         import modin.pandas as pd
