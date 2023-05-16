@@ -159,6 +159,12 @@ def prepare_general_parser():
         default="1234567890123456789012345678901234567890",
         help="Modin commit hash used for tests.",
     )
+    commits.add_argument(
+        "-num_threads",
+        default=None,
+        type=int,
+        help="Number of threads used for data processing",
+    )
     return parser
 
 

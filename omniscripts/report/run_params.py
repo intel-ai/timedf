@@ -103,6 +103,7 @@ class RunParams:
         "commit_hdk",
         "commit_omniscripts",
         "commit_modin",
+        "num_threads",
     )
 
     def _validate_params(self, params):

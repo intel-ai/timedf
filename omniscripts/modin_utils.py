@@ -6,7 +6,9 @@ import numpy as np
 import pandas as pd
 
 
-def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_memory=None):
+def import_pandas_into_module_namespace(
+    namespace, mode, ray_tmpdir=None, ray_memory=None, num_threads=None
+):
     def init_modin_on_hdk(pd):
         # Calcite initialization
         data = {"a": [1, 2, 3]}
@@ -18,6 +20,8 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
         print("Pandas backend: pure Pandas")
         import pandas as pd
     else:
+        if num_threads:
+            os.environ["MODIN_CPUS"] = str(num_threads)
         if mode == "Modin_on_ray":
             import ray
 
@@ -31,6 +35,7 @@ def import_pandas_into_module_namespace(namespace, mode, ray_tmpdir=None, ray_me
                     _plasma_directory=ray_tmpdir,
                     _memory=ray_memory,
                     object_store_memory=ray_memory,
+                    num_cpus=num_threads,
                 )
             os.environ["MODIN_ENGINE"] = "ray"
             print(

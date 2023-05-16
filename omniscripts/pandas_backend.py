@@ -3,6 +3,7 @@
     2. Get pandas in each benchmark module with `from utils.pandas_backend import pd`, this will use
      correct version of backend.
 """
+import os
 from pathlib import Path
 
 # This will be replaced by modin.pandas after set_backend call
@@ -47,7 +48,7 @@ class Backend:
     _modin_cfg = None
 
     @classmethod
-    def init(cls, backend_name: str, ray_tmpdir=None, ray_memory=None):
+    def init(cls, backend_name: str, ray_tmpdir=None, ray_memory=None, num_threads=None):
         cls._name = backend_name
 
         if backend_name in pandas_backends and backend_name != "Pandas":
@@ -56,7 +57,8 @@ class Backend:
             cls._modin_cfg = cfg
 
         if backend_name == "polars":
-            pass
+            if num_threads:
+                os.environ["POLARS_MAX_THREADS"] = str(num_threads)
         elif backend_name == "Pandas":
             pass
         elif backend_name in pandas_backends:
@@ -66,6 +68,7 @@ class Backend:
                 mode=backend_name,
                 ray_tmpdir=ray_tmpdir,
                 ray_memory=ray_memory,
+                num_threads=num_threads,
             )
         else:
             raise ValueError(f"Unrecognized backend: {backend_name}")
