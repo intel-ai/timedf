@@ -118,7 +118,7 @@ def execute(
     if isinstance(df, (pd.DataFrame, np.ndarray)):
         return
 
-    if trigger_hdk_import and modin_cfg.StorageFormat.get() == "hdk":
+    if modin_cfg.StorageFormat.get() == "hdk":
         trigger_import(df, modin_cfg=modin_cfg)
 
     if modin_cfg.StorageFormat.get() == "hdk":
