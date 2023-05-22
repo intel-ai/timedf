@@ -120,8 +120,6 @@ def execute(
 
     if modin_cfg.StorageFormat.get() == "hdk":
         trigger_import(df, modin_cfg=modin_cfg)
-
-    if modin_cfg.StorageFormat.get() == "hdk":
         df._query_compiler._modin_frame._execute()
         return
 
