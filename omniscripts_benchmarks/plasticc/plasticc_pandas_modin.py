@@ -76,11 +76,11 @@ def etl_cpu(df, df_meta, etl_times):
     return df_meta
 
 
-def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, pandas_mode):
+def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, backend):
     train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)
     # Currently we need to avoid skip_rows in Mode_on_hdk mode since
     # pyarrow uses it in incompatible way
-    if pandas_mode == "Modin_on_hdk":
+    if backend == "Modin_on_hdk":
         test = pd.read_csv(
             # This file didn't come from kaggle competition
             "%s/test_set_skiprows.csv" % dataset_path,
@@ -125,7 +125,7 @@ def split_step(train_final, test_final):
     return (X_train, y_train, X_test, y_test, Xt, classes, class_weights), split_time
 
 
-def etl(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys, pandas_mode):
+def etl(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys, backend):
     etl_times = {key: 0.0 for key in etl_keys}
 
     t0 = timer()
@@ -134,7 +134,7 @@ def etl(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys, pandas_mode):
         skip_rows=skip_rows,
         dtypes=dtypes,
         meta_dtypes=meta_dtypes,
-        pandas_mode=pandas_mode,
+        backend=backend,
     )
     etl_times["t_readcsv"] += timer() - t0
 
@@ -310,15 +310,15 @@ def run_benchmark(parameters):
         dtypes=dtypes,
         meta_dtypes=meta_dtypes,
         etl_keys=etl_keys,
-        pandas_mode=parameters["pandas_mode"],
+        backend=parameters["backend"],
     )
 
-    print_results(results=results, backend=parameters["pandas_mode"])
+    print_results(results=results, backend=parameters["backend"])
 
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
         ml_times = ml(train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"])
-        print_results(results=ml_times, backend=parameters["pandas_mode"])
+        print_results(results=ml_times, backend=parameters["backend"])
         results.update(ml_times)
 
     return BenchmarkResults(results)

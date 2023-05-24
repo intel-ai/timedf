@@ -93,7 +93,7 @@ class RunParams:
         "no_ml",
         "use_modin_xgb",
         "optimizer",
-        "pandas_mode",
+        "backend",
         "ray_tmpdir",
         "ray_memory",
         "gpu_memory",

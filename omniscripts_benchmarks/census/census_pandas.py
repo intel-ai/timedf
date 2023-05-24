@@ -35,11 +35,11 @@ def cod(y_test, y_pred):
 # https://rapidsai-data.s3.us-east-2.amazonaws.com/datasets/ipums_education2income_1970-2010.csv.gz
 
 
-def etl(filename, columns_names, columns_types, etl_keys, pandas_mode):
+def etl(filename, columns_names, columns_types, etl_keys, backend):
     etl_times = {key: 0.0 for key in etl_keys}
 
     t0 = timer()
-    if pandas_mode == "Modin_on_hdk":
+    if backend == "Modin_on_hdk":
         df = load_data_modin_on_hdk(
             filename=filename,
             columns_names=columns_names,
@@ -294,10 +294,10 @@ def run_benchmark(parameters):
         columns_names=columns_names,
         columns_types=columns_types,
         etl_keys=etl_keys,
-        pandas_mode=parameters["pandas_mode"],
+        backend=parameters["backend"],
     )
 
-    print_results(results=results, backend=parameters["pandas_mode"])
+    print_results(results=results, backend=parameters["backend"])
 
     if not parameters["no_ml"]:
         ml_scores, ml_times = ml(
@@ -310,8 +310,8 @@ def run_benchmark(parameters):
             ml_keys=ml_keys,
             ml_score_keys=ml_score_keys,
         )
-        print_results(results=ml_times, backend=parameters["pandas_mode"])
-        print_results(results=ml_scores, backend=parameters["pandas_mode"])
+        print_results(results=ml_times, backend=parameters["backend"])
+        print_results(results=ml_scores, backend=parameters["backend"])
         results.update(ml_times)
 
     return BenchmarkResults(results, params={"dataset_size": csv_size})

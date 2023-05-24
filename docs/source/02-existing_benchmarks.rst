@@ -32,7 +32,7 @@ Let's run one of benchmarks (``plasticc``) starting from a system with :ref:`ins
 
 #. Activate your conda environment: ``export ENV_NAME="omniscripts" && conda activate $ENV_NAME``.
 #. Download data ``benchmark-load plasticc ./datasets/plasticc``.
-#. Run benchmark with pandas: ``benchmark-run plasticc -data_file ./datasets/plasticc -pandas_mode Pandas ${DB_COMMON_OPTS}``.
+#. Run benchmark with pandas: ``benchmark-run plasticc -data_file ./datasets/plasticc -backend Pandas ${DB_COMMON_OPTS}``.
     #. To run with with modin on ray replace ``"Pandas"->"Modin_on_ray"``, for modin on HDK replace ``"Pandas"->"Modin_on_hdk"``.
     #. You can get a list of all possible parameters with ``benchmark-run -h``.
     #. *Optinal, not needed for plasticc*. You might need to install benchmark-specific dependencies with: ``conda env -n $ENV_NAME update -f omniscripts_benchmarks/$BENCHMARK_NAME/requirements.yaml``

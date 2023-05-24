@@ -95,6 +95,7 @@ def prepare_general_parser():
         help="Number of iterations to run. All results will be submitted to the DB.",
     )
     benchmark.add_argument(
+        "-backend",
         "-pandas_mode",
         choices=Backend.supported_backends,
         default="Pandas",
@@ -138,8 +139,15 @@ def prepare_general_parser():
     )
     benchmark.add_argument(
         "-save_name",
+        "-save_benchmark_name",
         default=None,
         help="Save benchmark in DB under this name. Saves with `bench_name` name by default.",
+    )
+
+    benchmark.add_argument(
+        "-save_backend_name",
+        default=None,
+        help="Save backend in DB under this name. Saves with `backend` name by default.",
     )
     # SQL database parameters
     add_sql_arguments(sql)

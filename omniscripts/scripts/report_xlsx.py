@@ -25,7 +25,7 @@ def write_benchmark(df, writer, table_name, benchmark_cols):
 
     Rough structure of the sheet
     -------------------------------------------------------------------------
-    | pandas_mode                                    | Pandas | Ray  | HDK  |
+    | backend                                    | Pandas | Ray  | HDK  |
     -------------------------------------------------------------------------
     | cpu_mghz                                       | ...... | .... | .... | <- Hidden benchmark- specific run params
     | `other run params specific for this benchmark` | ...... | .... | .... | <- Hidden benchmark- specific run params
@@ -147,10 +147,10 @@ def main():
     db = BenchmarkDb(engine=db_config.create_engine())
 
     iterations = db.load_iterations(node=args.node)
-    iterations = iterations.groupby(["benchmark", "pandas_mode"], as_index=False).last()
+    iterations = iterations.groupby(["benchmark", "backend"], as_index=False).last()
 
     benchmark_col = "benchmark"
-    backend_col = "pandas_mode"
+    backend_col = "backend"
 
     iteration_cols = ["id", "iteration_no", "run_id", "date"] + [benchmark_col]
     run_cols = [c for c in iterations.columns if c not in iteration_cols]
@@ -161,7 +161,7 @@ def main():
         df, measurements = db.load_benchmark_results_agg(
             benchmark=benchmark, node=args.node, agg=args.agg
         )
-        df = df.groupby("pandas_mode", as_index=False).last()
+        df = df.groupby("backend", as_index=False).last()
         df = df[[backend_col, *(c for c in df.columns if c not in host_params + iteration_cols)]]
         write_benchmark(df, writer=writer, table_name=benchmark, benchmark_cols=measurements)
 

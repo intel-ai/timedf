@@ -116,7 +116,7 @@ server_name        varchar    my_laptop            Host name
 *other host info*  ...        ...                  *Additional host info such as RAM, CPU, architecture. Generated automatically*
 data_file          varchar    '/mnt/datasets`      Path to data file that was provided from console
 ...                varchar    ...                  *Other console arguments, saved automatically*
-pandas_mode        varchar    Modin_on_hdk         Pandas mode, used for this run
+backend        varchar    Modin_on_hdk         Pandas mode, used for this run
 ...                varchar    ...                  *Other console arguments, saved automatically*
 params             json       {'n_rows': 4000000}  Parameters passed by benchmark author using ``benchmark_specific_record``
 =================  ========   ===================  ==================================================================
