@@ -2,9 +2,9 @@ import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from omniscripts.report.schema import Iteration, Base
-from omniscripts.report.benchmark_db import BenchmarkDb
-from omniscripts.report.run_params import RunParams
+from timedf.report.schema import Iteration, Base
+from timedf.report.benchmark_db import BenchmarkDb
+from timedf.report.run_params import RunParams
 
 
 @pytest.fixture(scope="session")

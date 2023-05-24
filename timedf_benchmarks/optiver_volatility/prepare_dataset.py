@@ -8,8 +8,8 @@ from sklearn.manifold import TSNE
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import minmax_scale
 
-from omniscripts import tm
-from omniscripts.pandas_backend import pd
+from timedf import tm
+from timedf.pandas_backend import pd
 
 from .optiver_utils import print_trace
 

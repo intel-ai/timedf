@@ -10,8 +10,8 @@ from typing import Any
 
 import logging
 
-from omniscripts import tm
-from omniscripts.pandas_backend import pd
+from timedf import tm
+from timedf.pandas_backend import pd
 
 from . import schema
 

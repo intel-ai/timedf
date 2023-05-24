@@ -8,9 +8,9 @@ from typing import Any, Iterable, Tuple, Union, Dict
 from itertools import islice
 
 
-from omniscripts import BaseBenchmark, BenchmarkResults
-from omniscripts.pandas_backend import pd, Backend
-from omniscripts.benchmark_utils import print_results
+from timedf import BaseBenchmark, BenchmarkResults
+from timedf.pandas_backend import pd, Backend
+from timedf.benchmark_utils import print_results
 
 
 def measure_time(func):
@@ -331,7 +331,7 @@ class Benchmark(BaseBenchmark):
         return run_benchmark(params)
 
     def load_data(self, target_dir, reload=False):
-        from omniscripts.tools.s3_load import download_folder
+        from timedf.tools.s3_load import download_folder
 
         filename = "ny_taxi_ml.tar.gz"
         download_folder("modin-datasets", "", target_dir, reload=reload, pattern=filename)

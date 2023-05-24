@@ -1,5 +1,5 @@
 import argparse
-from omniscripts import BenchmarkResults, BaseBenchmark, tm
+from timedf import BenchmarkResults, BaseBenchmark, tm
 
 from .preprocess import transform_data, create_user_ohe_agg
 from .hm_utils import load_data, get_workdir_paths
@@ -82,7 +82,7 @@ class Benchmark(BaseBenchmark):
         return BenchmarkResults(task2time)
 
     def load_data(self, target_dir, reload=False):
-        from omniscripts.tools.kaggle_load import download_dataset
+        from timedf.tools.kaggle_load import download_dataset
 
         url = "https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations/rules"
         download_dataset(

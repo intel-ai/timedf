@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 import numpy as np
 
-from omniscripts.pandas_backend import Backend, pd
+from timedf.pandas_backend import Backend, pd
 
 
 def check_experimental(modin_exp):

@@ -6,7 +6,7 @@ from contextlib import suppress
 import pandas as pd
 import pandas.io.formats.excel
 
-from omniscripts.arg_parser import add_sql_arguments, DbConfig
+from timedf.arg_parser import add_sql_arguments, DbConfig
 
 # This is necessary to allow custom header formatting
 pandas.io.formats.excel.ExcelFormatter.header_style = None
@@ -142,7 +142,7 @@ def main():
         password=args.db_pass,
         name=args.db_name,
     )
-    from omniscripts.report import BenchmarkDb
+    from timedf.report import BenchmarkDb
 
     db = BenchmarkDb(engine=db_config.create_engine())
 

@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from omniscripts.benchmark import create_benchmark
+from timedf.benchmark import create_benchmark
 
 
 def parse_args():

@@ -7,13 +7,13 @@ import numpy as np
 # params. If you not working with pandas API you have no point in using it.
 # However, if you are measuring pandas against pandas API library like modin you are advised to use
 # this tool.
-from omniscripts.pandas_backend import pd
+from timedf.pandas_backend import pd
 
-from omniscripts import BaseBenchmark, BenchmarkResults
+from timedf import BaseBenchmark, BenchmarkResults
 
 # This is an optional tool to simplity time tracking, without it you need to gather timing results
 # manually into a simple dict (measurement: time_s) like {'load_data': 11.1, 'fe': 1.122}
-from omniscripts import tm
+from timedf import tm
 
 
 class Benchmark(BaseBenchmark):

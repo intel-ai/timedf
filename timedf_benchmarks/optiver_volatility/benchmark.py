@@ -1,4 +1,4 @@
-from omniscripts import BenchmarkResults, BaseBenchmark, tm
+from timedf import BenchmarkResults, BaseBenchmark, tm
 
 from .preprocess import preprocess
 from .prepare_dataset import prepare_dataset
@@ -25,7 +25,7 @@ class Benchmark(BaseBenchmark):
         return BenchmarkResults(task2time)
 
     def load_data(self, target_dir, reload=False):
-        from omniscripts.tools.kaggle_load import download_dataset
+        from timedf.tools.kaggle_load import download_dataset
 
         url = "https://www.kaggle.com/competitions/optiver-realized-volatility-prediction/rules"
         download_dataset(

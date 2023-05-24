@@ -26,8 +26,8 @@ from pytorch_tabnet.metrics import Metric
 from pytorch_tabnet.tab_model import TabNetRegressor
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 
-from omniscripts import tm
-from omniscripts.pandas_backend import pd
+from timedf import tm
+from timedf.pandas_backend import pd
 
 from .optiver_utils import get_workdir_paths
 

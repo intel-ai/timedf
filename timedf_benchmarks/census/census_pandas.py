@@ -6,9 +6,9 @@ from timeit import default_timer as timer
 import numpy as np
 from sklearn import config_context
 
-from omniscripts import BaseBenchmark, BenchmarkResults
-from omniscripts.pandas_backend import pd
-from omniscripts.benchmark_utils import (
+from timedf import BaseBenchmark, BenchmarkResults
+from timedf.pandas_backend import pd
+from timedf.benchmark_utils import (
     load_data_pandas,
     load_data_modin_on_hdk,
     print_results,
@@ -332,6 +332,6 @@ class Benchmark(BaseBenchmark):
         return run_benchmark(params)
 
     def load_data(self, target_dir, reload=False):
-        from omniscripts.tools.s3_load import download_folder
+        from timedf.tools.s3_load import download_folder
 
         download_folder("modin-datasets", "census", target_dir, reload=reload)

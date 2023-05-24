@@ -7,7 +7,7 @@ import numpy as np
 from scipy import sparse
 from lightfm import LightFM
 
-from omniscripts.pandas_backend import pd
+from timedf.pandas_backend import pd
 
 
 LIGHTFM_PARAMS = {

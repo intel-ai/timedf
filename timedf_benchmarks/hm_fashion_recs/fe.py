@@ -5,8 +5,8 @@ import logging
 import numpy as np
 
 from .hm_utils import check_experimental, maybe_modin_exp, modin_fix
-from omniscripts import tm
-from omniscripts.pandas_backend import pd
+from timedf import tm
+from timedf.pandas_backend import pd
 
 
 logger = logging.getLogger(__name__)
