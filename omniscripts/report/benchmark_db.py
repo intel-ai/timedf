@@ -27,6 +27,7 @@ class BenchmarkDb:
         self,
         *,
         benchmark: str,
+        backend: str,
         run_id: int,
         run_params: Dict[str, str],
         iteration_no: int,
@@ -39,6 +40,8 @@ class BenchmarkDb:
         ----------
         benchmark
             Name of the current benchmark
+        backend
+            Name of the backend
         run_id
             Unique id for the current run that will contain several iterations with results
         run_params
@@ -58,6 +61,7 @@ class BenchmarkDb:
                 make_iteration(
                     run_id=run_id,
                     benchmark=benchmark,
+                    backend=backend,
                     iteration_no=iteration_no,
                     run_params=run_params,
                     name2time=name2time,
@@ -100,10 +104,10 @@ class BenchmarkDb:
         # because schema requires this data. It might be best to relax this requirement in the
         # future or move run_params into schemaless part
         run_params = {k: "null" for k in RunParams.fields}
-        run_params["backend"] = backend
         self.report(
             benchmark=benchmark,
             run_id=run_id,
+            backend=backend,
             run_params=run_params,
             iteration_no=iteration_no,
             name2time=name2time,

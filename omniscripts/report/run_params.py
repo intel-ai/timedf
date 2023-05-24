@@ -93,7 +93,6 @@ class RunParams:
         "no_ml",
         "use_modin_xgb",
         "optimizer",
-        "backend",
         "ray_tmpdir",
         "ray_memory",
         "gpu_memory",
