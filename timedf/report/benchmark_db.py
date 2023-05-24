@@ -33,7 +33,7 @@ class BenchmarkDb:
         name2time: Dict[str, float],
         params: Dict[str, str] | None = None,
     ):
-        """Report results of current for one of omniscripts benchmarks.
+        """Report results of current for one of timedf benchmarks.
 
         Parameters
         ----------

@@ -2,32 +2,32 @@ Arbitrary workload
 ==================
 
 If you are a developer working with your own benchmark (maybe from customer workload)
-and you don't want to implement your benchmark as part of ``omniscripts``  you can,
-nonetheless, use omniscripts library to simplify benchmarking for you.
+and you don't want to implement your benchmark as part of ``timedf``  you can,
+nonetheless, use timedf library to simplify benchmarking for you.
 
 The basic pipeline is:
 
-#. You make omniscripts library available for your own benchmark script
+#. You make timedf library available for your own benchmark script
 #. You gather benchmark measurements by yourself or with ``TimerManager``
 #. You import ``BenchmarkDd``, connect to intermediate database (easiest DB to run by yourself if sqlite, that is essentially just a file) and report results like this::
 
     from sqlalchemy import create_engine
- 
-    from omniscripts.report import BenchmarkDb
-    
-    
+
+    from timedf.report import BenchmarkDb
+
+
     # your benchmark code
     ...
     ...
     # example of results, can be anything in a form Dict[str, float]
     benchmark_results = {'load_data': 11.1, 'etl': 12.0, ...}
-    
-    
+
+
     # you can connect to other database, but this is the easiest option
     engine = create_engine('sqlite+pysqlite:///db_file.sql')
-    
+
     db = BenchmarkDb(engine)
-    
+
     db.report_arbitrary(
             benchmark='my_benchmark',
             run_i = 122, # needs to be unique for this run, if you manually run this benchmark multiple times (iterations), then provide the same value for each iteration

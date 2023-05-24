@@ -150,9 +150,9 @@ def prepare_general_parser():
         help="HDK commit hash used for tests.",
     )
     commits.add_argument(
-        "-commit_omniscripts",
+        "-commit_timedf",
         default="1234567890123456789012345678901234567890",
-        help="Omniscripts commit hash used for tests.",
+        help="timedf commit hash used for tests.",
     )
     commits.add_argument(
         "-commit_modin",

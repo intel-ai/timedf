@@ -1,10 +1,10 @@
 import os
 import time
 
-from omniscripts.timer import tm
-from omniscripts.arg_parser import parse_args, prepare_general_parser
-from omniscripts.benchmark import BaseBenchmark, create_benchmark
-from omniscripts.pandas_backend import Backend
+from timedf.timer import tm
+from timedf.arg_parser import parse_args, prepare_general_parser
+from timedf.benchmark import BaseBenchmark, create_benchmark
+from timedf.pandas_backend import Backend
 
 
 def make_benchmark() -> BaseBenchmark:
@@ -66,7 +66,7 @@ def main():
         "ray_tmpdir": args.ray_tmpdir,
         "ray_memory": args.ray_memory,
         "commit_hdk": args.commit_hdk,
-        "commit_omniscripts": args.commit_omniscripts,
+        "commit_timedf": args.commit_timedf,
         "commit_modin": args.commit_modin,
     }
 

@@ -8,7 +8,7 @@ import importlib
 def create_benchmark(bench_name):
     # We are trying to dynamically import provided benchmark and want to catch
     # probelms with this import to report to user
-    path = f"omniscripts_benchmarks.{bench_name}"
+    path = f"timedf_benchmarks.{bench_name}"
     try:
         return importlib.import_module(path, __name__).Benchmark()
     except ModuleNotFoundError as f:

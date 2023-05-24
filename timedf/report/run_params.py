@@ -101,7 +101,7 @@ class RunParams:
         "extended_functionality",
         # Commit hashes
         "commit_hdk",
-        "commit_omniscripts",
+        "commit_timedf",
         "commit_modin",
         "num_threads",
     )

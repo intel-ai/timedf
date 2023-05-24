@@ -1,5 +1,5 @@
 #!/bin/bash -e
-cd omniscripts
+cd timedf
 
 export ADDITIONAL_OPTS="-iterations 3"
 
