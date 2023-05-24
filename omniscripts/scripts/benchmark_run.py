@@ -85,7 +85,8 @@ def main():
                 iteration_no=iter_num,
                 name2time=results.measurements,
                 params=results.params,
-                benchmark=args.save_name or args.bench_name,
+                benchmark=args.save_benchmark_name or args.bench_name,
+                backend=args.save_backend_name or args.backend,
                 run_id=run_id,
                 run_params={**run_parameters, **report_args},
             )
