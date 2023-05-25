@@ -93,6 +93,7 @@ def trigger_import(*dfs):
         if (
             df._query_compiler._modin_frame._partitions[0][0].frame_id is None
             and df._query_compiler._modin_frame._has_arrow_table()
+            and len(df.columns) > 0
         ):
             table = df._query_compiler._modin_frame._partitions[0][0].get()
             frame_id = DbWorker().import_arrow_table(table)  # to trigger real execution
