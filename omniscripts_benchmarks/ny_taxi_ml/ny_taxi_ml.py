@@ -121,7 +121,7 @@ def load_data(dirpath: str, is_hdk_mode, debug=False):
     df = pd.concat(dfs, ignore_index=True)
 
     # To trigger execution
-    Backend.trigger_execution(df)
+    Backend.trigger_loading(df)
 
     return df
 

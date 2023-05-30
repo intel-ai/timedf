@@ -11,7 +11,7 @@ import pandas as pd  # noqa: F401 this import exists to provide vscode support f
 
 from .modin_utils import (
     import_pandas_into_module_namespace,
-    trigger_execution_base as _trigger_execution_pandas,
+    execute as execute_pandas,
 )
 
 __all__ = ["Backend"]
@@ -91,16 +91,21 @@ class Backend:
         return cls._modin_cfg
 
     @classmethod
-    def trigger_execution(cls, *dfs):
-        """Utility function to trigger execution for lazy pd libraries. Returns actualized dfs."""
+    def trigger_execution(cls, *dfs, trigger_hdk_import=False):
+        """Utility function to trigger execution for lazy pd libraries. Returns actualized dfs.
+        Some backends require separate method for data loading from disk, use `trigger_loading`
+        for that."""
         cls._check_ready()
 
         if cls.get_name() == "polars":
             # Collect lazy frames
             results = [d.collect() if hasattr(d, "collect") else d for d in dfs]
         elif cls.get_name() in pandas_backends:
-            _trigger_execution_pandas(*dfs, modin_cfg=cls.get_modin_cfg())
-            results = [*dfs]
+            cfg = cls.get_modin_cfg()
+            results = [
+                execute_pandas(df, modin_cfg=cfg, trigger_hdk_import=trigger_hdk_import)
+                for df in dfs
+            ]
         else:
             raise ValueError(f"no implementation for {cls.get_name()}")
 
@@ -108,3 +113,8 @@ class Backend:
             return results[0]
         else:
             return results
+
+    @classmethod
+    def trigger_loading(cls, *dfs):
+        """Trigger data loading for lazy libraries, should be called after reading data from disk."""
+        return cls.trigger_execution(*dfs, trigger_hdk_import=True)

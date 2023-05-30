@@ -76,28 +76,29 @@ def import_pandas_into_module_namespace(
         space["pd"] = pd
 
 
-def trigger_import(*dfs):
+def trigger_import(df: pd.DataFrame):
     """
-    Trigger import execution for DataFrames obtained by HDK engine.
+    Trigger import execution for DataFrame obtained by HDK engine.
     Parameters
     ----------
-    *dfs : iterable
-        DataFrames to trigger import.
+    dfs : DataFrame
+        DataFrame for trigger import.
     """
     from modin.experimental.core.execution.native.implementations.hdk_on_native.db_worker import (
         DbWorker,
     )
 
-    for df in dfs:
-        df.shape  # to trigger real execution
-        if (
-            df._query_compiler._modin_frame._partitions[0][0].frame_id is None
-            and df._query_compiler._modin_frame._has_arrow_table()
-            and len(df.columns) > 0
-        ):
-            table = df._query_compiler._modin_frame._partitions[0][0].get()
-            frame_id = DbWorker().import_arrow_table(table)  # to trigger real execution
-            df._query_compiler._modin_frame._partitions[0][0].frame_id = frame_id
+    df.shape  # to trigger real execution
+    if (
+        df._query_compiler._modin_frame._partitions[0][0].frame_id is None
+        and df._query_compiler._modin_frame._has_arrow_table()
+        # Check that it's dataframe (not Series) with columns
+        and hasattr(df, "columns")
+        and len(df.columns) > 0
+    ):
+        table = df._query_compiler._modin_frame._partitions[0][0].get()
+        frame_id = DbWorker().import_arrow_table(table)  # to trigger real execution
+        df._query_compiler._modin_frame._partitions[0][0].frame_id = frame_id
 
 
 def execute(
@@ -115,49 +116,30 @@ def execute(
         Modin configuration that defines values for `StorageFormat` and `Engine`.
         If None, pandas backend is assumed.
     """
-    if modin_cfg is None:
-        return
-
-    df.shape
-
-    if isinstance(df, (pd.DataFrame, np.ndarray)):
-        return
-
-    if modin_cfg.StorageFormat.get().lower() == "hdk":
-        df._query_compiler._modin_frame._execute()
-        trigger_import(df)
-        return
-
-    partitions = df._query_compiler._modin_frame._partitions.flatten()
-    mgr_cls = df._query_compiler._modin_frame._partition_mgr_cls
-    if len(partitions) and hasattr(mgr_cls, "wait_partitions"):
-        mgr_cls.wait_partitions(partitions)
-        return
-
-    # compatibility with old Modin versions
-    all(map(lambda partition: partition.drain_call_queue() or True, partitions))
-    if modin_cfg.Engine.get().lower() == "ray":
-        from ray import wait
-
-        all(map(lambda partition: wait([partition._data]), partitions))
-    elif modin_cfg.Engine.get().lower() == "dask":
-        from dask.distributed import wait
-
-        all(map(lambda partition: wait(partition._data), partitions))
-    elif modin_cfg.Engine.get().lower() == "python":
+    if modin_cfg is None or isinstance(df, (pd.DataFrame, np.ndarray)):
         pass
+    elif modin_cfg.StorageFormat.get().lower() == "hdk":
+        df.shape
+        df._query_compiler._modin_frame._execute()
+        if trigger_hdk_import:
+            trigger_import(df)
+    else:
+        df.shape
+        partitions = df._query_compiler._modin_frame._partitions.flatten()
+        mgr_cls = df._query_compiler._modin_frame._partition_mgr_cls
+        if len(partitions) and hasattr(mgr_cls, "wait_partitions"):
+            mgr_cls.wait_partitions(partitions)
+        else:
+            # compatibility with old Modin versions
+            all(map(lambda partition: partition.drain_call_queue() or True, partitions))
+            if modin_cfg.Engine.get().lower() == "ray":
+                from ray import wait
 
+                all(map(lambda partition: wait([partition._data]), partitions))
+            elif modin_cfg.Engine.get().lower() == "dask":
+                from dask.distributed import wait
 
-def trigger_execution_base(*dfs, modin_cfg=Union[None, ConfigParser]):
-    """Utility function to trigger execution for lazy pd libraries.
-
-    Parameters
-    ----------
-    dfs:
-        Dataframes or numpy arrays to materialize
-    modin_cfg:
-        Modin configuration that defines values for `StorageFormat` and `Engine`.
-        If None, pandas backend is assumed.
-    """
-    for df in dfs:
-        execute(df, modin_cfg=modin_cfg)
+                all(map(lambda partition: wait(partition._data), partitions))
+            elif modin_cfg.Engine.get().lower() == "python":
+                pass
+    return df
