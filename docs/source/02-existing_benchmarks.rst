@@ -38,6 +38,12 @@ Let's run one of benchmarks (``plasticc``) starting from a system with :ref:`ins
     #. *Optinal, not needed for plasticc*. You might need to install benchmark-specific dependencies with: ``conda env -n $ENV_NAME update -f omniscripts_benchmarks/$BENCHMARK_NAME/requirements.yaml``
     #. *Optinal*. If you want to store results in a database, define environment variable with parameters: ``export DB_COMMON_OPTS=""``. For example, to save results to local sqlite database (essentially just file on your filesystem) use ``export DB_COMMON_OPTS="-db_name db.sqlite"``
 
+
+If you want to customize name of your backend or name of your benchmark you can use these arguments:
+
+#. ``-save_benchmark_name BENCHMARK_NAME`` - benchmark name for DB storage
+#. ``-save_backend_name BACKEND_NAME`` - name of the backend used for DB storage. You can use this for experimental branches of libraries.
+
 Validating intermediate dataframes
 ----------------------------------
 
