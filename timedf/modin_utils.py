@@ -89,16 +89,14 @@ def trigger_import(df: pd.DataFrame):
     )
 
     df.shape  # to trigger real execution
+
+    p = df._query_compiler._modin_frame._partitions[0][0]
     if (
-        df._query_compiler._modin_frame._partitions[0][0].frame_id is None
+        p.frame_id is None
         and df._query_compiler._modin_frame._has_arrow_table()
-        # Check that it's dataframe (not Series) with columns
-        and hasattr(df, "columns")
-        and len(df.columns) > 0
+        and not isinstance(table := p.get(), pd.DataFrame)
     ):
-        table = df._query_compiler._modin_frame._partitions[0][0].get()
-        frame_id = DbWorker().import_arrow_table(table)  # to trigger real execution
-        df._query_compiler._modin_frame._partitions[0][0].frame_id = frame_id
+        p.frame_id = DbWorker().import_arrow_table(table)  # to trigger real execution
 
 
 def execute(

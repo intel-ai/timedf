@@ -91,10 +91,7 @@ class Backend:
         return cls._modin_cfg
 
     @classmethod
-    def trigger_execution(cls, *dfs, trigger_hdk_import=False):
-        """Utility function to trigger execution for lazy pd libraries. Returns actualized dfs.
-        Some backends require separate method for data loading from disk, use `trigger_loading`
-        for that."""
+    def _trigger_execution(cls, *dfs, trigger_hdk_import):
         cls._check_ready()
 
         if cls.get_name() == "polars":
@@ -115,6 +112,13 @@ class Backend:
             return results
 
     @classmethod
+    def trigger_execution(cls, *dfs):
+        """Utility function to trigger execution for lazy pd libraries. Returns actualized dfs.
+        Some backends require separate method for data loading from disk, use `trigger_loading`
+        for that."""
+        cls._trigger_execution(*dfs, trigger_hdk_import=False)
+
+    @classmethod
     def trigger_loading(cls, *dfs):
         """Trigger data loading for lazy libraries, should be called after reading data from disk."""
-        return cls.trigger_execution(*dfs, trigger_hdk_import=True)
+        return cls._trigger_execution(*dfs, trigger_hdk_import=True)

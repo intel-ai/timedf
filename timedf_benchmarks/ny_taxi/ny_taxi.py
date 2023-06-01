@@ -6,7 +6,7 @@ from pathlib import Path
 from timeit import default_timer as timer
 
 from timedf import BenchmarkResults, BaseBenchmark
-from timedf.pandas_backend import pd
+from timedf.pandas_backend import pd, Backend
 from timedf.benchmark_utils import load_data_pandas, load_data_modin_on_hdk, print_results
 
 
@@ -69,7 +69,7 @@ def q1(df, pandas_mode):
         q1_output = df.groupby("cab_type")["cab_type"].count()
     else:
         q1_output = df.groupby("cab_type").size()
-        q1_output.shape  # to trigger real execution
+        Backend.trigger_execution(q1_output)
     query_time = timer() - t0
 
     return query_time, q1_output
@@ -87,7 +87,7 @@ def q2(df, pandas_mode):
         ]
     else:
         q2_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
-        q2_output.shape  # to trigger real execution
+        Backend.trigger_execution(q2_output)
     query_time = timer() - t0
 
     return query_time, q2_output
@@ -114,7 +114,7 @@ def q3(df, pandas_mode):
     else:
         df["pickup_datetime"] = df["pickup_datetime"].dt.year
         q3_output = df.groupby(["passenger_count", "pickup_datetime"]).size()
-        q3_output.shape  # to trigger real execution
+        Backend.trigger_execution(q3_output)  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q3_output
@@ -168,7 +168,7 @@ def q4(df, pandas_mode):
             .reset_index()
             .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
         )
-        q4_output.shape  # to trigger real execution
+        Backend.trigger_execution(q4_output)  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q4_output
@@ -209,18 +209,7 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
         ]
 
     concatenated_df = pd.concat(df_from_each_file, ignore_index=True)
-    # this is to trigger data import in `Modin_on_hdk` mode
-    if pandas_mode == "Modin_on_hdk":
-        from modin.experimental.core.execution.native.implementations.hdk_on_native.db_worker import (
-            DbWorker,
-        )
-
-        concatenated_df.shape
-        concatenated_df._query_compiler._modin_frame._partitions[0][
-            0
-        ].frame_id = DbWorker().import_arrow_table(
-            concatenated_df._query_compiler._modin_frame._partitions[0][0].get()
-        )
+    Backend.trigger_loading(concatenated_df)
     etl_results["t_readcsv"] = timer() - t0
 
     queries = {"Query1": q1, "Query2": q2, "Query3": q3, "Query4": q4}
