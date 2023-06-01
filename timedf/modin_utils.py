@@ -90,9 +90,14 @@ def trigger_import(*dfs):
 
     for df in dfs:
         df.shape  # to trigger real execution
-        df._query_compiler._modin_frame._partitions[0][0].frame_id = DbWorker().import_arrow_table(
-            df._query_compiler._modin_frame._partitions[0][0].get()
-        )  # to trigger real execution
+        if (
+            df._query_compiler._modin_frame._partitions[0][0].frame_id is None
+            and df._query_compiler._modin_frame._has_arrow_table()
+            and len(df.columns) > 0
+        ):
+            table = df._query_compiler._modin_frame._partitions[0][0].get()
+            frame_id = DbWorker().import_arrow_table(table)  # to trigger real execution
+            df._query_compiler._modin_frame._partitions[0][0].frame_id = frame_id
 
 
 def execute(
@@ -118,9 +123,9 @@ def execute(
     if isinstance(df, (pd.DataFrame, np.ndarray)):
         return
 
-    if modin_cfg.StorageFormat.get() == "hdk":
-        trigger_import(df, modin_cfg=modin_cfg)
+    if modin_cfg.StorageFormat.get().lower() == "hdk":
         df._query_compiler._modin_frame._execute()
+        trigger_import(df)
         return
 
     partitions = df._query_compiler._modin_frame._partitions.flatten()
@@ -131,15 +136,15 @@ def execute(
 
     # compatibility with old Modin versions
     all(map(lambda partition: partition.drain_call_queue() or True, partitions))
-    if modin_cfg.Engine.get() == "ray":
+    if modin_cfg.Engine.get().lower() == "ray":
         from ray import wait
 
         all(map(lambda partition: wait([partition._data]), partitions))
-    elif modin_cfg.Engine.get() == "dask":
+    elif modin_cfg.Engine.get().lower() == "dask":
         from dask.distributed import wait
 
         all(map(lambda partition: wait(partition._data), partitions))
-    elif modin_cfg.Engine.get() == "python":
+    elif modin_cfg.Engine.get().lower() == "python":
         pass
 
 
