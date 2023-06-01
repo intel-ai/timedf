@@ -17,7 +17,7 @@ reporting_reqs = parse_reqs("reporting.txt")
 
 all_reqs = reporting_reqs
 
-name = "omniscripts"
+name = "timedf"
 version = runpy.run_path(root / name / "__version__.py")["__version__"]
 
 setup(
@@ -25,19 +25,19 @@ setup(
     version=version,
     description="Benchmarks for data frame processing libraries",
     long_description=long_description,
-    url="https://github.com/intel-ai/omniscripts/",
+    url="https://github.com/intel-ai/timedf/",
     packages=[
-        *find_packages(include=["omniscripts*"]),
-        *find_namespace_packages(include=["omniscripts_benchmarks.*"]),
+        *find_packages(include=["timedf*"]),
+        *find_namespace_packages(include=["timedf_benchmarks.*"]),
     ],
     install_requires=parse_reqs("base.txt"),
     extras_require={"reporting": reporting_reqs, "all": all_reqs},
     python_requires=">=3.8",
     entry_points={
         "console_scripts": [
-            "report-xlsx = omniscripts.scripts.report_xlsx:main",
-            "benchmark-run = omniscripts.scripts.benchmark_run:main",
-            "benchmark-load = omniscripts.scripts.benchmark_load:main",
+            "report-xlsx = timedf.scripts.report_xlsx:main",
+            "benchmark-run = timedf.scripts.benchmark_run:main",
+            "benchmark-load = timedf.scripts.benchmark_load:main",
         ]
     },
 )

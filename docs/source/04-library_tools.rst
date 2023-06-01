@@ -4,14 +4,14 @@ Benchmarking utilities
 Library
 -------
 
-When you are writing new benchmark you can use several tools, provided by omniscripts library.
+When you are writing new benchmark you can use several tools, provided by timedf library.
 
 pandas backend
 ^^^^^^^^^^^^^^
 
 Pandas is the most popular python library for data processing and we support modin backend for it. You can automatically use either pandas or modin with this import::
 
-    from omniscripts.pandas_backend import pd
+    from timedf.pandas_backend import pd
 
 The actual backend will be picked depending on ``-backend``  parameter.
 
@@ -23,7 +23,7 @@ timer
 When writing benchmarks we often need to measure time it takes to perform particular block of code. The library contains
 a tool for that purpose that can perform this task well, using context manager::
 
-    from omniscripts import TimerManager
+    from timedf import TimerManager
 
     tm = TimerManager()
 
@@ -41,7 +41,7 @@ a tool for that purpose that can perform this task well, using context manager::
 
 Timer manager supports nested measurements like this::
 
-    from omniscripts import TimerManager
+    from timedf import TimerManager
 
     tm = TimerManager()
 
@@ -92,9 +92,9 @@ so use it in main thread only.
 Benchmark
 ^^^^^^^^^
 
-Benchmark class provides interface for omniscripts library to interact with your benchmark::
+Benchmark class provides interface for timedf library to interact with your benchmark::
 
-    from omniscripts import BaseBenchmark, BenchmarkResults
+    from timedf import BaseBenchmark, BenchmarkResults
 
     # You need to call your benchmark class exactly "Benchmark"
     class Benchmark(BaseBenchmark):

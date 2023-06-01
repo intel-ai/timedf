@@ -29,7 +29,7 @@ done
 #
 ####################
 
-# Set location to store datasets, 
+# Set location to store datasets,
 # WARNING: paths need to be absolute, otherwise docker will not mount. The `($readlink -m ...)` part will make provided path absolute, so use it if necessary
 # WARNING: don't store datasets in the same folder as dockerfile, to avoid long context loading during docker build
 export DATASETS_PATH=$(readlink -m $DATASETS_PATH)
@@ -39,8 +39,8 @@ export DB_COMMON_OPTS
 
 echo "Configured parameters: DATSETS_ROOT=$DATASETS_PATH, RESULTS_DIR=$RESULTS_DIR, REPORT=$REPORT"
 
-# Archive omniscripts for the upload 
-tar -cf omniscripts.tar  --exclude=e2e-hdk ../../.
+# Archive timedf for the upload
+tar -cf timedf.tar  --exclude=e2e-hdk ../../.
 
 # Build the image, use optional `--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy}` to configure proxy.
 echo "Building docker image"
