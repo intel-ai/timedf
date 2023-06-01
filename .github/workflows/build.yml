@@ -21,7 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.9"]
-        # This will be activated after https://github.com/intel-ai/omniscripts/issues/367
+        # This will be activated after https://github.com/intel-ai/timedf/issues/367
         exclude:
           - os: windows-latest
     steps:

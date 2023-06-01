@@ -42,11 +42,11 @@ RUN conda update -n base -c defaults conda -y && \
 ENV DATASETS_PWD /datasets
 ENV TBB_MALLOC_USE_HUGE_PAGES 1
 
-# change omniscripts owner
+# change timedf owner
 USER root
-ADD omniscripts.tar omniscripts
+ADD timedf.tar timedf
 COPY run_benchmarks.sh ${HOME}
-RUN chown -R ${USER}:${USER} omniscripts && chown -R ${USER}:${USER} run_benchmarks.sh
+RUN chown -R ${USER}:${USER} timedf && chown -R ${USER}:${USER} run_benchmarks.sh
 
 # Return to user
 USER ${USER}
