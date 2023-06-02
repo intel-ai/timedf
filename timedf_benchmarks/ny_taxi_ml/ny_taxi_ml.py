@@ -278,20 +278,20 @@ def run_benchmark(parameters):
     debug = parameters["debug"]
 
     task2time = {}
-    is_hdk_mode = parameters["pandas_mode"] == "Modin_on_hdk"
+    is_hdk_mode = parameters["backend"] == "Modin_on_hdk"
     df, task2time["load_data"] = load_data(
         parameters["data_file"], is_hdk_mode=is_hdk_mode, debug=debug
     )
     df, task2time["filter_df"] = filter_df(df, is_hdk_mode=is_hdk_mode)
     df, task2time["feature_engineering"] = feature_engineering(df)
-    print_results(results=task2time, backend=parameters["pandas_mode"])
+    print_results(results=task2time, backend=parameters["backend"])
 
     task2time["total_data_processing_with_load"] = sum(task2time.values())
     task2time["total_data_processing_no_load"] = (
         task2time["total_data_processing_with_load"] - task2time["load_data"]
     )
 
-    backend_name = parameters["pandas_mode"]
+    backend_name = parameters["backend"]
     if not parameters["no_ml"]:
         print("using ml with dataframes from Pandas")
 
@@ -302,7 +302,7 @@ def run_benchmark(parameters):
             data, use_modin_xgb=parameters["use_modin_xgb"], debug=debug
         )
 
-        print_results(results=task2time, backend=parameters["pandas_mode"])
+        print_results(results=task2time, backend=parameters["backend"])
 
         if parameters["use_modin_xgb"]:
             backend_name = backend_name + "_modin_xgb"

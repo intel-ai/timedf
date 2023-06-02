@@ -19,7 +19,7 @@ fi
 # live stream will provide live stdout and stderr
 conda run --live-stream -n $ENV_NAME benchmark-run $BENCH_NAME    \
                            -data_file "${DATASETS_PWD}/${BENCH_NAME}" \
-                           -pandas_mode ${PANDAS_MODE}            \
+                           -backend ${PANDAS_MODE}            \
                            ${ADDITIONAL_OPTS}                     \
                            ${DB_COMMON_OPTS}                      \
                            "$@"

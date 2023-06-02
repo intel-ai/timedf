@@ -31,7 +31,7 @@ The basic pipeline is:
     db.report_arbitrary(
             benchmark='my_benchmark',
             run_i = 122, # needs to be unique for this run, if you manually run this benchmark multiple times (iterations), then provide the same value for each iteration
-            backend = 'my_backend', # this will be stored in `iteration.pandas_mode`
+            backend = 'my_backend', # this will be stored in `iteration.backend`
             iteration_no= 1, # if you perform multiple iterations manually, then provide correct counter, this will be stored in `iteration.iteration_no`
             name2time =  benchmark_results,
             params = {'n_cpu': 32}, # you can report whatever you want to later use this for analysis, this data is stored in `iteration.params`

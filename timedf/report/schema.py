@@ -35,6 +35,7 @@ Iteration = type(
         "id": Column(Integer, primary_key=True),
         # Name of the benchmark
         "benchmark": make_string(),
+        "backend": make_string(),
         # Iteration counter
         "iteration_no": Column(Integer, nullable=False),
         # Run id, each run contains 1 or more iterations
@@ -70,6 +71,7 @@ class Measurement(Base):
 def make_iteration(
     run_id: int,
     benchmark: str,
+    backend: str,
     iteration_no: int,
     run_params,
     name2time: Dict[str, float],
@@ -81,6 +83,7 @@ def make_iteration(
     return Iteration(
         run_id=run_id,
         benchmark=benchmark,
+        backend=backend,
         iteration_no=iteration_no,
         params=params,
         **HostParams().prepare_report_dict(),

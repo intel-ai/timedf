@@ -63,9 +63,9 @@ def run_queries(queries, parameters, etl_results, output_for_validation=None):
 # FROM trips
 # GROUP BY cab_type;
 # @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
-def q1(df, pandas_mode):
+def q1(df, backend):
     t0 = timer()
-    if pandas_mode != "Modin_on_hdk":
+    if backend != "Modin_on_hdk":
         q1_output = df.groupby("cab_type")["cab_type"].count()
     else:
         q1_output = df.groupby("cab_type").size()
@@ -79,9 +79,9 @@ def q1(df, pandas_mode):
 #       avg(total_amount)
 # FROM trips
 # GROUP BY passenger_count;
-def q2(df, pandas_mode):
+def q2(df, backend):
     t0 = timer()
-    if pandas_mode != "Modin_on_hdk":
+    if backend != "Modin_on_hdk":
         q2_output = df.groupby("passenger_count", as_index=False).mean()[
             ["passenger_count", "total_amount"]
         ]
@@ -99,9 +99,9 @@ def q2(df, pandas_mode):
 # FROM trips
 # GROUP BY passenger_count,
 #         pickup_year;
-def q3(df, pandas_mode):
+def q3(df, backend):
     t0 = timer()
-    if pandas_mode != "Modin_on_hdk":
+    if backend != "Modin_on_hdk":
         transformed = pd.DataFrame(
             {
                 "pickup_datetime": df["pickup_datetime"].dt.year,
@@ -142,9 +142,9 @@ def q3(df, pandas_mode):
 #         pickup_year,
 #         distance
 # ORDER BY passenger_count, pickup_year, distance, the_count;
-def q4(df, pandas_mode):
+def q4(df, backend):
     t0 = timer()
-    if pandas_mode != "Modin_on_hdk":
+    if backend != "Modin_on_hdk":
         transformed = pd.DataFrame(
             {
                 "passenger_count": df["passenger_count"],
@@ -174,15 +174,15 @@ def q4(df, pandas_mode):
     return query_time, q4_output
 
 
-def etl(filename, files_limit, columns_names, columns_types, output_for_validation, pandas_mode):
-    if pandas_mode == "Modin_on_hdk" and any(f.endswith(".gz") for f in filename):
+def etl(filename, files_limit, columns_names, columns_types, output_for_validation, backend):
+    if backend == "Modin_on_hdk" and any(f.endswith(".gz") for f in filename):
         raise NotImplementedError(
             "Modin_on_hdk mode doesn't support import of compressed files yet"
         )
 
     etl_results = {}
     t0 = timer()
-    if pandas_mode == "Modin_on_hdk":
+    if backend == "Modin_on_hdk":
         df_from_each_file = [
             load_data_modin_on_hdk(
                 filename=f,
@@ -203,7 +203,7 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
                 use_gzip=f.endswith(".gz"),
                 parse_dates=["pickup_datetime", "dropoff_datetime"],
                 pd=pd,
-                pandas_mode=pandas_mode,
+                backend=backend,
             )
             for f in filename
         ]
@@ -217,8 +217,8 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
     queries_parameters = {
         query_name: {
             # FIXME seems like such copy op can affect benchmark
-            "df": concatenated_df.copy() if pandas_mode == "Modin_on_hdk" else concatenated_df,
-            "pandas_mode": pandas_mode,
+            "df": concatenated_df.copy() if backend == "Modin_on_hdk" else concatenated_df,
+            "backend": backend,
         }
         for query_name in queries
     }
@@ -354,10 +354,10 @@ def run_benchmark(parameters):
         columns_names=columns_names,
         columns_types=columns_types,
         output_for_validation=pd_queries_outputs,
-        pandas_mode=parameters["pandas_mode"],
+        backend=parameters["backend"],
     )
 
-    print_results(results=results, backend=parameters["pandas_mode"])
+    print_results(results=results, backend=parameters["backend"])
     return BenchmarkResults(
         results, params={"dataset_size": get_ny_taxi_dataset_size(parameters["dfiles_num"])}
     )

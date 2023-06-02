@@ -15,7 +15,7 @@ def make_benchmark() -> BaseBenchmark:
 
     # Set current backend, !!!needs to be run before benchmark import!!!
     Backend.init(
-        backend_name=args.pandas_mode,
+        backend_name=args.backend,
         ray_tmpdir=args.ray_tmpdir,
         ray_memory=args.ray_memory,
         num_threads=args.num_threads,
@@ -51,7 +51,7 @@ def main():
 
     run_parameters = {
         "data_file": data_file,
-        "pandas_mode": args.pandas_mode,
+        "backend": args.backend,
         "no_ml": args.no_ml,
         "num_threads": args.num_threads,
         # Used in ny_taxi_ml and plasticc
@@ -85,7 +85,8 @@ def main():
                 iteration_no=iter_num,
                 name2time=results.measurements,
                 params=results.params,
-                benchmark=args.save_name or args.bench_name,
+                benchmark=args.save_benchmark_name or args.bench_name,
+                backend=args.save_backend_name or args.backend,
                 run_id=run_id,
                 run_params={**run_parameters, **report_args},
             )

@@ -13,7 +13,7 @@ Pandas is the most popular python library for data processing and we support mod
 
     from timedf.pandas_backend import pd
 
-The actual backend will be picked depending on ``-pandas_mode``  parameter.
+The actual backend will be picked depending on ``-backend``  parameter.
 
 Currently supported values: ``"Pandas"`` , ``"Modin_on_ray"``, ``"Modin_on_hdk"``
 
