@@ -117,10 +117,10 @@ def execute(
     if modin_cfg is None or isinstance(df, (pd.DataFrame, np.ndarray)):
         pass
     elif modin_cfg.StorageFormat.get().lower() == "hdk":
-        df.shape
-        df._query_compiler._modin_frame._execute()
         if trigger_hdk_import:
             trigger_import(df)
+        else:
+            df._query_compiler._modin_frame._execute()
     else:
         df.shape
         partitions = df._query_compiler._modin_frame._partitions.flatten()
