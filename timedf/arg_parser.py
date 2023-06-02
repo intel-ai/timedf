@@ -138,8 +138,8 @@ def prepare_general_parser():
         " benchmark.",
     )
     benchmark.add_argument(
-        "-save_name",
         "-save_benchmark_name",
+        "-save_name",
         default=None,
         help="Save benchmark in DB under this name. Saves with `bench_name` name by default.",
     )
