@@ -116,7 +116,7 @@ class Backend:
         """Utility function to trigger execution for lazy pd libraries. Returns actualized dfs.
         Some backends require separate method for data loading from disk, use `trigger_loading`
         for that."""
-        cls._trigger_execution(*dfs, trigger_hdk_import=False)
+        return cls._trigger_execution(*dfs, trigger_hdk_import=False)
 
     @classmethod
     def trigger_loading(cls, *dfs):
