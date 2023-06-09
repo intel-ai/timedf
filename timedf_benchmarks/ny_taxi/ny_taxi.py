@@ -86,7 +86,7 @@ def q2(df, backend):
             ["passenger_count", "total_amount"]
         ]
     else:
-        q2_output = df.groupby("passenger_count").agg({"total_amount": "mean"}, numeric_only=True)
+        q2_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
         Backend.trigger_execution(q2_output)
     query_time = timer() - t0
 
