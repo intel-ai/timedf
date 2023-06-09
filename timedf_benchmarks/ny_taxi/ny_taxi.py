@@ -82,11 +82,11 @@ def q1(df, backend):
 def q2(df, backend):
     t0 = timer()
     if backend != "Modin_on_hdk":
-        q2_output = df.groupby("passenger_count", as_index=False).mean()[
+        q2_output = df.groupby("passenger_count", as_index=False).mean(numeric_only=True)[
             ["passenger_count", "total_amount"]
         ]
     else:
-        q2_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
+        q2_output = df.groupby("passenger_count").agg({"total_amount": "mean"}, numeric_only=True)
         Backend.trigger_execution(q2_output)
     query_time = timer() - t0
 
