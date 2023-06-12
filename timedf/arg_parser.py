@@ -32,7 +32,7 @@ class DbConfig:
         """Provide helpful messages for selected drivers."""
         if self.driver == "mysql+mysqlconnector":
             try:
-                import mysql
+                import mysql  # noqa: F401
             except ModuleNotFoundError as e:
                 raise ModuleNotFoundError(
                     f"Provided DB driver {self.driver}, but it is not installed.\n"
