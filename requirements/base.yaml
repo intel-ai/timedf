@@ -10,7 +10,6 @@ dependencies:
   - scikit-learn-intelex
   - kaggle
   - boto3
-  - botocore
   - modin-hdk
   - modin-ray
   - unidist-mpi
