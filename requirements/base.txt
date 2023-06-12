@@ -1,4 +1,3 @@
-braceexpand
 numpy>=1.11
 scikit-learn-intelex
 psutil

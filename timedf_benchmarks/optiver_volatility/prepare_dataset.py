@@ -382,7 +382,7 @@ def stock_id_embeddings(df2, pivot, df_pv):
         with tm.timeit("LDA train"):
             stock_id_emb = pd.DataFrame(
                 lda.fit_transform(pivot.transpose()),
-                index=df_pv.pivot("time_id", "stock_id", "vol").columns,
+                index=df_pv.pivot(index="time_id", columns="stock_id", values="vol").columns,
             )
 
         for i in range(lda_n):
