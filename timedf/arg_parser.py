@@ -28,9 +28,22 @@ class DbConfig:
     def is_config_available(self):
         return self.name is not None
 
+    def _validate_driver(self):
+        """Provide helpful messages for selected drivers."""
+        if self.driver == "mysql+mysqlconnector":
+            try:
+                import mysql
+            except ModuleNotFoundError as e:
+                raise ModuleNotFoundError(
+                    f"Provided DB driver {self.driver}, but it is not installed.\n"
+                    "You can install it with `pip install mysql-connector-python`\n"
+                ) from e
+
     def _create_engine(self):
         from sqlalchemy import create_engine
         from sqlalchemy.engine.url import URL
+
+        self._validate_driver()
 
         url = URL.create(
             host=self.server,
