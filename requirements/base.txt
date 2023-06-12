@@ -10,4 +10,3 @@ unidist[mpi]
 # Tools to load datasets
 kaggle
 boto3
-botocore
