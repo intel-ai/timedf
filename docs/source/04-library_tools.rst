@@ -11,7 +11,7 @@ pandas backend
 
 Pandas is the most popular python library for data processing and we support modin backend for it. You can automatically use either pandas or modin with this import::
 
-    from timedf.pandas_backend import pd
+    from timedf.backend import pd
 
 The actual backend will be picked depending on ``-backend``  parameter.
 

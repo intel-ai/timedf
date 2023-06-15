@@ -3,7 +3,7 @@ import argparse
 from dataclasses import dataclass
 from typing import Callable
 
-from .pandas_backend import Backend
+from .backend import Backend
 
 
 __all__ = ["add_sql_arguments", "prepare_general_parser", "parse_args", "DbConfig"]

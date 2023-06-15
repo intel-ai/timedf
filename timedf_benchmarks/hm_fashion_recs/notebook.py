@@ -7,7 +7,7 @@ import catboost
 import matplotlib.pyplot as plt
 import numpy as np
 
-from timedf.pandas_backend import pd
+from timedf.backend import pd
 
 from .hm_utils import mapk, load_data, get_workdir_paths
 from .fe import get_age_shifts, attach_features

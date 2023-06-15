@@ -6,7 +6,7 @@ from pathlib import Path
 from timeit import default_timer as timer
 
 from timedf import BenchmarkResults, BaseBenchmark
-from timedf.pandas_backend import pd, Backend
+from timedf.backend import pd, Backend
 from timedf.benchmark_utils import load_data_pandas, load_data_modin_on_hdk, print_results
 
 

@@ -6,7 +6,7 @@ import numpy as np
 
 from .hm_utils import check_experimental, maybe_modin_exp, modin_fix
 from timedf import tm
-from timedf.pandas_backend import pd
+from timedf.backend import pd
 
 
 logger = logging.getLogger(__name__)

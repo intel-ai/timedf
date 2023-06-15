@@ -4,7 +4,7 @@ import logging
 import numpy as np
 
 from timedf import tm
-from timedf.pandas_backend import pd
+from timedf.backend import pd
 from .hm_utils import maybe_modin_exp, modin_fix
 
 logger = logging.getLogger(__name__)

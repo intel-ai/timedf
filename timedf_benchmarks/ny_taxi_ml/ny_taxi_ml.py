@@ -9,7 +9,7 @@ from itertools import islice
 
 
 from timedf import BaseBenchmark, BenchmarkResults
-from timedf.pandas_backend import pd, Backend
+from timedf.backend import pd, Backend
 from timedf.benchmark_utils import print_results
 
 

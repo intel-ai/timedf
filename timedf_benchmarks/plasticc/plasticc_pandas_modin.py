@@ -8,7 +8,7 @@ import pandas
 from sklearn.preprocessing import LabelEncoder
 
 from timedf import BaseBenchmark, BenchmarkResults
-from timedf.pandas_backend import pd
+from timedf.backend import pd
 from timedf.benchmark_utils import print_results, split
 
 

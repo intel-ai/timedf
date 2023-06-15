@@ -7,7 +7,7 @@ import numpy as np
 # params. If you not working with pandas API you have no point in using it.
 # However, if you are measuring pandas against pandas API library like modin you are advised to use
 # this tool.
-from timedf.pandas_backend import pd
+from timedf.backend import pd
 
 from timedf import BaseBenchmark, BenchmarkResults
 

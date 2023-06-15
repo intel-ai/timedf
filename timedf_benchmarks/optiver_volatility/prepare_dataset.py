@@ -9,7 +9,7 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import minmax_scale
 
 from timedf import tm
-from timedf.pandas_backend import pd
+from timedf.backend import pd
 
 from .optiver_utils import print_trace
 

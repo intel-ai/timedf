@@ -28,6 +28,7 @@ pandas_backends = [
 
 nonpandas_backends = [
     "polars",
+    "hdk",
 ]
 
 supported_backends = pandas_backends + nonpandas_backends
@@ -59,6 +60,11 @@ class Backend:
         if backend_name == "polars":
             if num_threads:
                 os.environ["POLARS_MAX_THREADS"] = str(num_threads)
+        elif backend_name == 'hdk':
+            import pyhdk
+
+            # This will be used to configure HDK when options will be relevant
+            pyhdk.init()
         elif backend_name == "Pandas":
             pass
         elif backend_name in pandas_backends:
@@ -97,6 +103,13 @@ class Backend:
         if cls.get_name() == "polars":
             # Collect lazy frames
             results = [d.collect() if hasattr(d, "collect") else d for d in dfs]
+        elif cls.get_name() == 'hdk':
+            # We expect HDK to trigger execution manually in benchmark source code with *.run()
+            # The reason is that checks such as
+            # `from pyhdk.hdk import QueryNode; isinstance(df, QueryNode)` can take ~0.5s to run
+            # significantly affecting performance of small queries.
+            # Just running *.run() here doesn't work because it can lead to double execution.
+            results = [*dfs]
         elif cls.get_name() in pandas_backends:
             cfg = cls.get_modin_cfg()
             results = [

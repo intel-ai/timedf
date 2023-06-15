@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 
 from timedf import tm
-from timedf.pandas_backend import pd
+from timedf.backend import pd
 
 from .optiver_utils import print_trace
 

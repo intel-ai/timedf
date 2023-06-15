@@ -4,7 +4,7 @@ import time
 from timedf.timer import tm
 from timedf.arg_parser import parse_args, prepare_general_parser
 from timedf.benchmark import BaseBenchmark, create_benchmark
-from timedf.pandas_backend import Backend
+from timedf.backend import Backend
 
 
 def make_benchmark() -> BaseBenchmark:

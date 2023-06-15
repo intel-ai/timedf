@@ -7,7 +7,7 @@ import numpy as np
 from sklearn import config_context
 
 from timedf import BaseBenchmark, BenchmarkResults
-from timedf.pandas_backend import pd
+from timedf.backend import pd
 from timedf.benchmark_utils import (
     load_data_pandas,
     load_data_modin_on_hdk,
