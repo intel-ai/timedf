@@ -5,16 +5,12 @@ channels:
   - conda-forge
 dependencies:
   - pip
-  - numpy>=1.11
-  - pandas>=1.0.0
   - scikit-learn-intelex
   - kaggle
   - boto3
-  - modin-hdk
-  - modin-ray
+  - modin-all
   - unidist-mpi
   - polars
-  - psutil
   - git>=2.0.0
   - pip:
     - xgboost>=1.3

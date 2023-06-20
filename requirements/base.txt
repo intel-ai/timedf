@@ -1,11 +1,8 @@
-numpy>=1.11
 scikit-learn-intelex
-psutil
 xgboost>=1.3
 # DF libs
-pandas>=1.0.0
 polars
-modin[ray]
+modin[all]
 unidist[mpi]
 # Tools to load datasets
 kaggle
