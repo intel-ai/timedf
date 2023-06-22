@@ -64,7 +64,7 @@ class Backend:
             import pyhdk
 
             # This will be used to configure HDK when options will be relevant
-            pyhdk.init()
+            pyhdk.init(enable_cpu_groupby_multifrag_kernels=True)
         elif backend_name == "Pandas":
             pass
         elif backend_name in pandas_backends:
