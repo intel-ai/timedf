@@ -392,5 +392,5 @@ class Benchmark(BaseBenchmark):
             "taxi",
             target_dir,
             reload=reload,
-            pattern="trips_xa[abcdefghijklmnopqrst].csv",
+            pattern="taxi/trips_xa[abcdefghijklmnopqrst].csv$",
         )

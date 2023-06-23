@@ -334,7 +334,13 @@ class Benchmark(BaseBenchmark):
         from timedf.tools.s3_load import download_folder
 
         filename = "ny_taxi_ml.tar.gz"
-        download_folder("modin-datasets", "", target_dir, reload=reload, pattern=filename)
+        download_folder(
+            "modin-datasets",
+            "ny_taxi_ml",
+            target_dir,
+            reload=reload,
+            pattern=f"ny_taxi_ml/{filename}",
+        )
 
         print("Extracting files...")
         with tarfile.open(target_dir / filename) as f:
