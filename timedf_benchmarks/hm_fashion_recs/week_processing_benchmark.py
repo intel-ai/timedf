@@ -74,6 +74,9 @@ class Benchmark(BaseBenchmark):
     def run_benchmark(self, parameters):
         paths = get_workdir_paths(parameters["data_file"])
         modin_exp = parameters["modin_exp"]
+        import modin.config.__main__ as cfg_cmd
+
+        cfg_cmd.print_config_help()
         main(paths, modin_exp=modin_exp)
 
         task2time = tm.get_results()
