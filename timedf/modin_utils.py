@@ -83,19 +83,26 @@ def trigger_import(df: pd.DataFrame):
     Trigger import execution for DataFrame obtained by HDK engine.
     Parameters
     ----------
-    dfs : DataFrame
+    df : DataFrame
         DataFrame for trigger import.
     """
+    modin_frame = df._query_compiler._modin_frame
+    if hasattr(modin_frame, "force_import"):
+        modin_frame.force_import()
+        return
+
+    # The code below has been kept for backwards compatibility and will be removed in the future.
+
     from modin.experimental.core.execution.native.implementations.hdk_on_native.db_worker import (
         DbWorker,
     )
 
     df.shape  # to trigger real execution
 
-    p = df._query_compiler._modin_frame._partitions[0][0]
+    p = modin_frame._partitions[0][0]
     if (
         p.frame_id is None
-        and df._query_compiler._modin_frame._has_arrow_table()
+        and modin_frame._has_arrow_table()
         and not isinstance(table := p.get(), pd.DataFrame)
     ):
         p.frame_id = DbWorker().import_arrow_table(table)  # to trigger real execution
