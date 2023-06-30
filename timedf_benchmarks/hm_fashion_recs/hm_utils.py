@@ -32,12 +32,6 @@ def maybe_modin_exp(modin_exp):
         yield None
 
 
-# TODO: modin bug, that's why we use iloc[]
-# https://github.com/modin-project/modin/issues/5461
-def modin_fix(df):
-    return df.iloc[: len(df)]
-
-
 def load_data(preprocessed_data_path):
     transactions = pd.read_pickle(preprocessed_data_path / "transactions_train.pkl")
     users = pd.read_pickle(preprocessed_data_path / "users.pkl")

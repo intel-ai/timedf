@@ -5,7 +5,7 @@ import numpy as np
 
 from timedf import tm
 from timedf.backend import pd
-from .hm_utils import maybe_modin_exp, modin_fix
+from .hm_utils import maybe_modin_exp
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +63,6 @@ def create_candidates(
             ["user", "item", "week", "day"]
         ].drop_duplicates(ignore_index=True)
 
-        tr = modin_fix(tr)
-
         # Experimental speedup for modin
         with maybe_modin_exp(modin_exp):
             gr_day = (
@@ -109,8 +107,6 @@ def create_candidates(
             ["user", "item"]
         ].drop_duplicates(ignore_index=True)
 
-        tr = modin_fix(tr)
-
         popular_items = tr["item"].value_counts().index.values[:num_items]
         popular_items = pd.DataFrame(
             {"item": popular_items, "rank": range(num_items), "crossjoinkey": 1}
@@ -132,8 +128,6 @@ def create_candidates(
         tr = transactions.query("@week_start <= week < @week_start + @num_weeks")[
             ["user", "item"]
         ].drop_duplicates(ignore_index=True)
-
-        tr = modin_fix(tr)
 
         tr = tr.merge(users[["user", "age"]])
 
@@ -167,7 +161,7 @@ def create_candidates(
             ["user", "item"]
         ].drop_duplicates()
 
-        tr = modin_fix(tr).groupby("item").size().reset_index(name="volume")
+        tr = tr.groupby("item").size().reset_index(name="volume")
         tr = tr.merge(items[["item", category]], on="item")
         tr["cat_volume_rank"] = tr.groupby(category)["volume"].rank(ascending=False, method="min")
         tr = tr.query("cat_volume_rank <= @num_items_per_category").reset_index(drop=True)
@@ -187,9 +181,7 @@ def create_candidates(
             ["user", "item", "week"]
         ].drop_duplicates(ignore_index=True)
 
-        tr = modin_fix(tr)
-
-        tr = modin_fix(
+        tr = (
             tr.merge(
                 tr.rename(columns={"item": "item_with", "week": "week_with"}), on="user"
             ).query("item != item_with and week <= week_with")[["item", "item_with"]]
@@ -424,7 +416,8 @@ def drop_trivial_users(labels):
     bef = len(labels)
     df = labels[
         labels["user"].isin(
-            modin_fix(labels[["user", "y"]].drop_duplicates())
+            labels[["user", "y"]]
+            .drop_duplicates()
             .groupby("user")
             .size()
             .reset_index(name="sz")
