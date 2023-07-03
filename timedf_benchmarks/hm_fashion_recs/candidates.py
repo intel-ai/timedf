@@ -3,8 +3,8 @@ import logging
 
 import numpy as np
 
-from omniscripts import tm
-from omniscripts.pandas_backend import pd
+from timedf import tm
+from timedf.backend import pd
 
 logger = logging.getLogger(__name__)
 
