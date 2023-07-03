@@ -5,8 +5,8 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-project = "omniscripts"
-copyright = "2023, Omniscripts developers"
+project = "timedf"
+copyright = "2023, timedf developers"
 author = "Omniscript developers"
 
 # -- General configuration ---------------------------------------------------

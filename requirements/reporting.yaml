@@ -3,7 +3,6 @@ channels:
   - conda-forge
 dependencies:
   - pip
-  - mysql-connector-python
   - sqlalchemy==1.4
   - pip:
     - XlsxWriter

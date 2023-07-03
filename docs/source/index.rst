@@ -1,8 +1,8 @@
-Omniscripts
+timedf
 ===========
 
-The goal of this repository is to simplify dataframe 
-benchmarking and provide a set of pre-defined representative 
+The goal of this repository is to simplify dataframe
+benchmarking and provide a set of pre-defined representative
 benchmarks with Pandas API.
 
 

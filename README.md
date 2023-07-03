@@ -1,8 +1,8 @@
-# Omniscripts
+# timedf
 
 Scripts that are used to run benchmarks for dataframe libraries, such as modin.
 
-[Full documentation](https://omniscripts.readthedocs.io/en/latest/)
+[Full documentation](https://timedf.readthedocs.io/en/latest/)
 ## Installation
 
 `pip install .`
@@ -16,7 +16,7 @@ We recommend using dedicated conda environment to run benchmarks.
 
 ## Main benchmarks launching script
 
-Main script is called `benchmark-run`. `benchmark-run -h` will show all parameters. 
+Main script is called `benchmark-run`. `benchmark-run -h` will show all parameters.
 
 Results can be stored in SQL database and visualized using Grafana charts, xlsx or any other tool capable of extracting SQL data.
 

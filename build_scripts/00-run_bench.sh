@@ -17,9 +17,20 @@ fi
 
 # ENV_NAME must be provided
 # live stream will provide live stdout and stderr
-conda run --live-stream -n $ENV_NAME benchmark-run $BENCH_NAME    \
+if [ ${PANDAS_MODE} = "Modin_on_unidist_mpi" ]; then
+    conda run --live-stream -n $ENV_NAME mpiexec -n 1 benchmark-run $BENCH_NAME    \
                            -data_file "${DATASETS_PWD}/${BENCH_NAME}" \
-                           -pandas_mode ${PANDAS_MODE}            \
+                           -backend ${PANDAS_MODE}            \
                            ${ADDITIONAL_OPTS}                     \
                            ${DB_COMMON_OPTS}                      \
                            "$@"
+else
+  conda run --live-stream -n $ENV_NAME benchmark-run $BENCH_NAME    \
+                           -data_file "${DATASETS_PWD}/${BENCH_NAME}" \
+                           -backend ${PANDAS_MODE}            \
+                           ${ADDITIONAL_OPTS}                     \
+                           ${DB_COMMON_OPTS}                      \
+                           "$@"
+
+fi
+
