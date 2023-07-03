@@ -65,11 +65,8 @@ def run_queries(queries, parameters, etl_results, output_for_validation=None):
 # @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
 def q1(df, backend):
     t0 = timer()
-    if backend != "Modin_on_hdk":
-        q1_output = df.groupby("cab_type")["cab_type"].count()
-    else:
-        q1_output = df.groupby("cab_type").size()
-        Backend.trigger_execution(q1_output)
+    q1_output = df.groupby("cab_type").size()
+    Backend.trigger_execution(q1_output)
     query_time = timer() - t0
 
     return query_time, q1_output
@@ -81,13 +78,8 @@ def q1(df, backend):
 # GROUP BY passenger_count;
 def q2(df, backend):
     t0 = timer()
-    if backend != "Modin_on_hdk":
-        q2_output = df.groupby("passenger_count", as_index=False).mean(numeric_only=True)[
-            ["passenger_count", "total_amount"]
-        ]
-    else:
-        q2_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
-        Backend.trigger_execution(q2_output)
+    q2_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
+    Backend.trigger_execution(q2_output)
     query_time = timer() - t0
 
     return query_time, q2_output
@@ -101,20 +93,9 @@ def q2(df, backend):
 #         pickup_year;
 def q3(df, backend):
     t0 = timer()
-    if backend != "Modin_on_hdk":
-        transformed = pd.DataFrame(
-            {
-                "pickup_datetime": df["pickup_datetime"].dt.year,
-                "passenger_count": df["passenger_count"],
-            }
-        )
-        q3_output = transformed.groupby(
-            ["pickup_datetime", "passenger_count"], as_index=False
-        ).size()
-    else:
-        df["pickup_datetime"] = df["pickup_datetime"].dt.year
-        q3_output = df.groupby(["passenger_count", "pickup_datetime"]).size()
-        Backend.trigger_execution(q3_output)  # to trigger real execution
+    df["pickup_year"] = df["pickup_datetime"].dt.year
+    q3_output = df.groupby(["passenger_count", "pickup_year"]).size()
+    Backend.trigger_execution(q3_output)  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q3_output
@@ -144,31 +125,22 @@ def q3(df, backend):
 # ORDER BY passenger_count, pickup_year, distance, the_count;
 def q4(df, backend):
     t0 = timer()
+    df["pickup_year"] = df["pickup_datetime"].dt.year
+    df["trip_distance"] = df["trip_distance"].astype("int64")
     if backend != "Modin_on_hdk":
-        transformed = pd.DataFrame(
-            {
-                "passenger_count": df["passenger_count"],
-                "pickup_datetime": df["pickup_datetime"].dt.year,
-                "trip_distance": df["trip_distance"].astype("int64"),
-            }
-        )
         q4_output = (
-            transformed.groupby(
-                ["passenger_count", "pickup_datetime", "trip_distance"], as_index=False
-            )
+            df.groupby(["passenger_count", "pickup_datetime", "trip_distance"], as_index=False)
             .size()
             .sort_values(by=["pickup_datetime", "size"], ascending=[True, False])
         )
     else:
-        df["pickup_datetime"] = df["pickup_datetime"].dt.year
-        df["trip_distance"] = df["trip_distance"].astype("int64")
         q4_output = (
             df.groupby(["passenger_count", "pickup_datetime", "trip_distance"], sort=False)
             .size()
             .reset_index()
             .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
         )
-        Backend.trigger_execution(q4_output)  # to trigger real execution
+    Backend.trigger_execution(q4_output)  # to trigger real execution
     query_time = timer() - t0
 
     return query_time, q4_output
@@ -215,12 +187,7 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
     queries = {"Query1": q1, "Query2": q2, "Query3": q3, "Query4": q4}
     etl_results.update({q: 0.0 for q in queries})
     queries_parameters = {
-        query_name: {
-            # FIXME seems like such copy op can affect benchmark
-            "df": concatenated_df.copy() if backend == "Modin_on_hdk" else concatenated_df,
-            "backend": backend,
-        }
-        for query_name in queries
+        query_name: {"df": concatenated_df.copy(), "backend": backend} for query_name in queries
     }
 
     return run_queries(
