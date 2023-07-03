@@ -71,6 +71,16 @@ def main(paths, modin_exp):
 class Benchmark(BaseBenchmark):
     __params__ = ("modin_exp",)
 
+    def add_benchmark_args(self, parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "-modin_exp",
+            default=False,
+            action="store_true",
+            help="Use experimental modin groupby from "
+            "https://modin.readthedocs.io/en/latest/flow/modin/experimental/reshuffling_groupby.html."
+            "\nand perform one additional reshuffling",
+        )
+
     def run_benchmark(self, parameters):
         paths = get_workdir_paths(parameters["data_file"])
         modin_exp = parameters["modin_exp"]
@@ -90,14 +100,4 @@ class Benchmark(BaseBenchmark):
             local_dir=target_dir,
             reload=reload,
             rules_url=url,
-        )
-
-    def add_benchmark_args(self, parser: argparse.ArgumentParser):
-        parser.add_argument(
-            "-modin_exp",
-            default=False,
-            action="store_true",
-            help="Use experimental modin groupby from "
-            "https://modin.readthedocs.io/en/latest/flow/modin/experimental/reshuffling_groupby.html."
-            "\nand perform one additional reshuffling",
         )

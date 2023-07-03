@@ -3,9 +3,8 @@ import logging
 
 import numpy as np
 
-from timedf import tm
-from timedf.backend import pd
-from .hm_utils import maybe_modin_exp, modin_fix
+from omniscripts import tm
+from omniscripts.pandas_backend import pd
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,6 @@ def create_candidates(
     target_users: np.ndarray,
     week: int,
     user_features_path: Path,
-    modin_exp: bool,
 ) -> pd.DataFrame:
     """
     transactions
@@ -63,20 +61,9 @@ def create_candidates(
             ["user", "item", "week", "day"]
         ].drop_duplicates(ignore_index=True)
 
-        tr = modin_fix(tr)
-
-        # Experimental speedup for modin
-        with maybe_modin_exp(modin_exp):
-            gr_day = (
-                tr.groupby(["user", "item"])[["day"]].min().squeeze(axis=1).reset_index(name="day")
-            )
-            gr_week = (
-                tr.groupby(["user", "item"])[["week"]]
-                .min()
-                .squeeze(axis=1)
-                .reset_index(name="week")
-            )
-            gr_volume = tr.groupby(["user", "item"]).size().reset_index(name="volume")
+        gr_day = tr.groupby(["user", "item"])["day"].min().reset_index(name="day")
+        gr_week = tr.groupby(["user", "item"])["week"].min().reset_index(name="week")
+        gr_volume = tr.groupby(["user", "item"]).size().reset_index(name="volume")
 
         gr_day["day_rank"] = gr_day.groupby("user")["day"].rank()
         gr_week["week_rank"] = gr_week.groupby("user")["week"].rank()
@@ -108,9 +95,6 @@ def create_candidates(
         tr = transactions.query("@week_start <= week < @week_start + @num_weeks")[
             ["user", "item"]
         ].drop_duplicates(ignore_index=True)
-
-        tr = modin_fix(tr)
-
         popular_items = tr["item"].value_counts().index.values[:num_items]
         popular_items = pd.DataFrame(
             {"item": popular_items, "rank": range(num_items), "crossjoinkey": 1}
@@ -132,9 +116,6 @@ def create_candidates(
         tr = transactions.query("@week_start <= week < @week_start + @num_weeks")[
             ["user", "item"]
         ].drop_duplicates(ignore_index=True)
-
-        tr = modin_fix(tr)
-
         tr = tr.merge(users[["user", "age"]])
 
         pops = []
@@ -167,7 +148,9 @@ def create_candidates(
             ["user", "item"]
         ].drop_duplicates()
 
-        tr = modin_fix(tr).groupby("item").size().reset_index(name="volume")
+        # TODO: modin bug, that's why we use iloc[]
+        LARGE_NUMBER = 1_000_000_000
+        tr = tr.iloc[:LARGE_NUMBER].groupby("item").size().reset_index(name="volume")
         tr = tr.merge(items[["item", category]], on="item")
         tr["cat_volume_rank"] = tr.groupby(category)["volume"].rank(ascending=False, method="min")
         tr = tr.query("cat_volume_rank <= @num_items_per_category").reset_index(drop=True)
@@ -186,20 +169,13 @@ def create_candidates(
         tr = transactions.query("@week_start <= week < @week_end")[
             ["user", "item", "week"]
         ].drop_duplicates(ignore_index=True)
-
-        tr = modin_fix(tr)
-
-        tr = modin_fix(
-            tr.merge(
-                tr.rename(columns={"item": "item_with", "week": "week_with"}), on="user"
-            ).query("item != item_with and week <= week_with")[["item", "item_with"]]
-        ).reset_index(drop=True)
-
+        tr = (
+            tr.merge(tr.rename(columns={"item": "item_with", "week": "week_with"}), on="user")
+            .query("item != item_with and week <= week_with")[["item", "item_with"]]
+            .reset_index(drop=True)
+        )
         gr_item_count = tr.groupby("item").size().reset_index(name="item_count")
-
-        with maybe_modin_exp(modin_exp):
-            gr_pair_count = tr.groupby(["item", "item_with"]).size().reset_index(name="pair_count")
-
+        gr_pair_count = tr.groupby(["item", "item_with"]).size().reset_index(name="pair_count")
         item2item = gr_pair_count.merge(gr_item_count, on="item")
         item2item["ratio"] = item2item["pair_count"] / item2item["item_count"]
         item2item = item2item.query("pair_count > @pair_count_threshold").reset_index(drop=True)
@@ -424,7 +400,8 @@ def drop_trivial_users(labels):
     bef = len(labels)
     df = labels[
         labels["user"].isin(
-            modin_fix(labels[["user", "y"]].drop_duplicates())
+            labels[["user", "y"]]
+            .drop_duplicates()
             .groupby("user")
             .size()
             .reset_index(name="sz")
@@ -437,9 +414,7 @@ def drop_trivial_users(labels):
     return df
 
 
-def make_one_week_candidates(
-    transactions, users, items, week, user_features_path, age_shifts, modin_exp
-):
+def make_one_week_candidates(transactions, users, items, week, user_features_path, age_shifts):
     target_users = transactions.query("week == @week")["user"].unique()
 
     candidates = create_candidates(
@@ -450,7 +425,6 @@ def make_one_week_candidates(
         week=week + 1,
         user_features_path=user_features_path,
         age_shifts=age_shifts,
-        modin_exp=modin_exp,
     )
     candidates = merge_labels(candidates=candidates, transactions=transactions, week=week)
     candidates["week"] = week
