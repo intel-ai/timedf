@@ -10,11 +10,12 @@ def import_pandas_into_module_namespace(
     namespace, mode, ray_tmpdir=None, ray_memory=None, num_threads=None
 ):
     def init_modin_on_hdk(pd):
+        from modin.experimental.sql import query
+
         # Calcite initialization
         data = {"a": [1, 2, 3]}
         df = pd.DataFrame(data)
-        df = df + 1
-        _ = df.index
+        query("SELECT * FROM df", df=df)
 
     if mode == "Pandas":
         print("Pandas backend: pure Pandas")
