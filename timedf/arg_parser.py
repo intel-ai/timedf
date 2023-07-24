@@ -162,6 +162,11 @@ def prepare_general_parser():
         default=None,
         help="Save backend in DB under this name. Saves with `backend` name by default.",
     )
+    benchmark.add_argument(
+        "-tag",
+        default=None,
+        help="Tag this run with provided string to be able to find it in the database. Useful when user configure backend with some paramenters and want to be able to find results later on.",
+    )
     # SQL database parameters
     add_sql_arguments(sql)
     # Additional information
