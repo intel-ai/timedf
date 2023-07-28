@@ -40,6 +40,7 @@ def _get_host_info() -> Dict[str, str]:
         }
 
         try:
+            # This thing is reported as secutity issue, because lscpu can be replaced and because we use subprocess in general
             data = subprocess.Popen(["lscpu"], stdout=subprocess.PIPE)
             output = str(data.communicate()[0].strip().decode())
         except FileNotFoundError:

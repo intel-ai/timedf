@@ -29,7 +29,8 @@ def import_pandas_into_module_namespace(
             import ray
 
             if not ray_tmpdir:
-                ray_tmpdir = "/tmp"
+                # If we pass /tmp it is reported as https://bandit.readthedocs.io/en/1.7.5/plugins/b108_hardcoded_tmp_directory.html
+                ray_tmpdir = "./tmp_ray"
             if not ray_memory:
                 ray_memory = 200 * 1024 * 1024 * 1024
             if not ray.is_initialized():
