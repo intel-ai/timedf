@@ -128,9 +128,7 @@ class SklearnImport:
         self.train_test_split = None
 
     def get_train_test_split(self, optimizer):
-        if optimizer is None:
-            raise ValueError("optimizer parameter should be specified")
-
+        assert optimizer is not None, "optimizer parameter should be specified"
         if self.current_optimizer is not optimizer:
             self.current_optimizer = optimizer
 
