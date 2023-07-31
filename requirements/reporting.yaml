@@ -3,6 +3,6 @@ channels:
   - conda-forge
 dependencies:
   - pip
-  - sqlalchemy==1.4.49
+  - sqlalchemy==1.4.*
   - pip:
-    - XlsxWriter==3.1.2
+    - XlsxWriter

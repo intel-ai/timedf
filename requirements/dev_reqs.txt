@@ -1,9 +1,9 @@
 # Requirements for unittests in CI
 pytest==7.4.0
-psutil==5.9.5
-numpy==1.25.1
-pandas==2.0.3
-sqlalchemy==1.4
+psutil
+numpy
+pandas
+sqlalchemy==1.4.*
 # codestyle & linters for developers
 black==23.7.0
 flake8==6.0.0
