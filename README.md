@@ -1,3 +1,5 @@
+[![security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
+
 # timedf
 
 Scripts that are used to run benchmarks for dataframe libraries, such as modin.

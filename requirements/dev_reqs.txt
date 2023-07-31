@@ -7,3 +7,5 @@ sqlalchemy==1.4
 # codestyle & linters for developers
 black==23.7.0
 flake8==6.0.0
+bandit==1.7.5
+bandit-sarif-formatter==1.1.1
