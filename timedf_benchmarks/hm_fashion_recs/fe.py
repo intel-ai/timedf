@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-from .hm_utils import check_experimental, maybe_modin_exp
+from .hm_utils import check_experimental, maybe_modin_exp, maybe_modin_exp_numpy
 from timedf import tm
 from timedf.backend import pd
 
@@ -225,27 +225,31 @@ def attach_features(
         n_split = 10
         n_chunk = (len(users_items) + n_split - 1) // n_split
         ohe = []
-        for i in range(0, len(users_items), n_chunk):
-            users_items_small = users_items.iloc[i : i + n_chunk].reset_index(  # noqa: E203
-                drop=True
-            )
-            users_small = users_items_small["user"].values
-            items_small = users_items_small["item"].values
+        # try compute dtypes only once - good perf gain!
+        items_with_ohe.dtypes
+        users_with_ohe.dtypes
+        with maybe_modin_exp_numpy(modin_exp):
+            for i in range(0, len(users_items), n_chunk):
+                users_items_small = users_items.iloc[i : i + n_chunk].reset_index(  # noqa: E203
+                    drop=True
+                )
+                users_small = users_items_small["user"].values
+                items_small = users_items_small["item"].values
 
-            for item_col in item_target_cols:
-                i_cols = [c for c in items_with_ohe.columns if c.startswith(item_col)]
-                u_cols = [f"user_ohe_agg_{c}" for c in i_cols]
-                logger.info(users_with_ohe.shape)
+                for item_col in item_target_cols:
+                    i_cols = [c for c in items_with_ohe.columns if c.startswith(item_col)]
+                    u_cols = [f"user_ohe_agg_{c}" for c in i_cols]
+                    logger.info(users_with_ohe.shape)
 
-                users_items_small[f"{item_col}_ohe_score"] = (
-                    items_with_ohe[i_cols].values[items_small]
-                    * users_with_ohe[u_cols].values[users_small]
-                ).sum(axis=1)
+                    users_items_small[f"{item_col}_ohe_score"] = (
+                        items_with_ohe[i_cols].values[items_small]
+                        * users_with_ohe[u_cols].values[users_small]
+                    ).sum(axis=1)
 
-            ohe_cols = [f"{col}_ohe_score" for col in item_target_cols]
-            users_items_small = users_items_small[["user", "item"] + ohe_cols]
+                ohe_cols = [f"{col}_ohe_score" for col in item_target_cols]
+                users_items_small = users_items_small[["user", "item"] + ohe_cols]
 
-            ohe.append(users_items_small)
+                ohe.append(users_items_small)
         ohe = pd.concat(ohe)
         df = df.merge(ohe, on=["user", "item"])
 

@@ -32,6 +32,26 @@ def maybe_modin_exp(modin_exp):
         yield None
 
 
+@contextmanager
+def maybe_modin_exp_numpy(modin_exp):
+    if check_experimental(modin_exp):
+        import modin
+
+        if hasattr(modin.config, "ExperimentalNumPyAPI"):
+            print("Activating exp function")
+            modin.config.ExperimentalNumPyAPI.put(True)
+        else:
+            print("Using modin without support of experimental numpy API")
+
+        try:
+            yield None
+        finally:
+            if hasattr(modin.config, "ExperimentalNumPyAPI"):
+                modin.config.ExperimentalNumPyAPI.put(False)
+    else:
+        yield None
+
+
 def load_data(preprocessed_data_path):
     transactions = pd.read_pickle(preprocessed_data_path / "transactions_train.pkl")
     users = pd.read_pickle(preprocessed_data_path / "users.pkl")
