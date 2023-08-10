@@ -129,13 +129,14 @@ def prepare_general_parser():
     )
     benchmark.add_argument(
         "-verbosity",
-        help="""Level of verbosity for timers. Use 1 or 2 if you want to get more logging info.
+        help="""Level of verbosity for timers. Use 1, 2 or 3 if you want to get more logging info.
         Level 0: no writing (default)
               1: write about exit only
-              2: write about exit and enter""",
+              2: write about exit and enter
+              3: write profiler statistics""",
         default=0,
         type=int,
-        choices=(0, 1, 2),
+        choices=(0, 1, 2, 3),
     )
     benchmark.add_argument(
         "-no_ml",
