@@ -3,7 +3,7 @@ pytest==7.4.0
 psutil
 numpy
 pandas
-sqlalchemy==1.4.*
+sqlalchemy==2.0.*
 # codestyle & linters for developers
 black==23.7.0
 flake8==6.0.0
