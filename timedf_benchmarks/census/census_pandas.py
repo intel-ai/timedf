@@ -62,7 +62,7 @@ def etl(filename, columns_names, columns_types, etl_keys, backend):
     t_etl_start = timer()
 
     keep_cols = [
-        "YEAR0",
+        "YEAR",
         "DATANUM",
         "SERIAL",
         "CBSERIAL",
@@ -180,7 +180,7 @@ def run_benchmark(parameters):
     RANDOM_STATE = 777
 
     columns_names = [
-        "YEAR0",
+        "YEAR",
         "DATANUM",
         "SERIAL",
         "CBSERIAL",
