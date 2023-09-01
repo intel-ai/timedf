@@ -47,13 +47,22 @@ def clean(ddf, keep_cols: Iterable):
 
 
 def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_hdk_mode: bool):
+    dtype_backend="pyarrow" if Backend.get_name()=="Pandas_perf" else "numpy_nullable"
+    engine="pyarrow" if Backend.get_name()=="Pandas_perf" else None
     is_gz = ".gz" in filepath.suffixes
     if is_hdk_mode and is_gz:
         raise NotImplementedError(
             "Modin_on_hdk mode doesn't support import of compressed files yet"
         )
-
-    return pd.read_csv(filepath, dtype=col2dtype, parse_dates=parse_dates)
+    if Backend.get_name() == "Pandas_perf":
+        res = pd.read_csv(filepath, dtype=col2dtype, parse_dates=parse_dates, 
+            dtype_backend=dtype_backend,
+            engine=engine
+            )
+    else:
+        res = pd.read_csv(filepath, dtype=col2dtype, parse_dates=parse_dates, 
+            )
+    return res
 
 
 @measure_time
@@ -66,7 +75,6 @@ def load_data(dirpath: str, is_hdk_mode, debug=False):
             (" surcharge", "float64"),
             (" store_and_fwd_flag", "object"),
             (" tip_amount", "float64"),
-            ("tolls_amount", "float64"),
         ]
     )
     if is_hdk_mode:

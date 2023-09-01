@@ -56,13 +56,14 @@ def etl(filename, columns_names, columns_types, etl_keys, backend):
             nrows=None,
             use_gzip=filename.endswith(".gz"),
             pd=pd,
+            pandas_mode=backend
         )
     etl_times["t_readcsv"] = timer() - t0
 
     t_etl_start = timer()
 
     keep_cols = [
-        "YEAR0",
+        "YEAR",
         "DATANUM",
         "SERIAL",
         "CBSERIAL",
@@ -180,7 +181,7 @@ def run_benchmark(parameters):
     RANDOM_STATE = 777
 
     columns_names = [
-        "YEAR0",
+        "YEAR",
         "DATANUM",
         "SERIAL",
         "CBSERIAL",

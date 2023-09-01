@@ -19,6 +19,7 @@ __all__ = ["Backend"]
 
 pandas_backends = [
     "Pandas",
+    "Pandas_perf",
     "Modin_on_ray",
     "Modin_on_dask",
     "Modin_on_python",
@@ -65,6 +66,10 @@ class Backend:
 
             # This will be used to configure HDK when options will be relevant
             pyhdk.init()
+        elif backend_name == "Pandas_perf":
+            print("Enabling copy on write!")
+            pd.set_option("mode.copy_on_write", True)
+            pass
         elif backend_name == "Pandas":
             pass
         elif backend_name in pandas_backends:

@@ -38,6 +38,9 @@ def load_data_pandas(
     types = None
     if columns_types:
         types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
+    dtype_backend="pyarrow" if pandas_mode=="Pandas_perf" else "numpy_nullable"
+    engine="pyarrow" if pandas_mode=="Pandas_perf" else None
+    print(pandas_mode)
     return pd.read_csv(
         filename,
         names=columns_names,
@@ -46,6 +49,8 @@ def load_data_pandas(
         dtype=types,
         compression="gzip" if use_gzip else None,
         parse_dates=parse_dates,
+        dtype_backend=dtype_backend,
+        engine=engine,
     )
 
 
@@ -71,7 +76,6 @@ def load_data_modin_on_hdk(
             col: valtype for (col, valtype) in dtypes.items() if valtype not in parse_dates
         }
         dates_only = [col for (col, valtype) in dtypes.items() if valtype in parse_dates]
-
     return pd.read_csv(
         filename,
         names=columns_names,
