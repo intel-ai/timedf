@@ -38,8 +38,8 @@ def load_data_pandas(
     types = None
     if columns_types:
         types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
-    dtype_backend="pyarrow" if pandas_mode=="Pandas_perf" else "numpy_nullable"
-    engine="pyarrow" if pandas_mode=="Pandas_perf" else None
+    dtype_backend="pyarrow" if pandas_mode=="Pandas" else "numpy_nullable"
+    engine="pyarrow" if pandas_mode=="Pandas" else None
     print(pandas_mode)
     return pd.read_csv(
         filename,

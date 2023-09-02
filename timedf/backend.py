@@ -67,10 +67,12 @@ class Backend:
             # This will be used to configure HDK when options will be relevant
             pyhdk.init()
         elif backend_name == "Pandas_perf":
-            print("Enabling copy on write!")
-            pd.set_option("mode.copy_on_write", True)
+#            print("Enabling copy on write!")
+#            pd.set_option("mode.copy_on_write", True)
             pass
         elif backend_name == "Pandas":
+            print("Enabling copy on write!")
+            pd.set_option("mode.copy_on_write", True)            
             pass
         elif backend_name in pandas_backends:
             Path(ray_tmpdir).mkdir(parents=True, exist_ok=True)
