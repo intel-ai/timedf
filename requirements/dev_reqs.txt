@@ -1,5 +1,5 @@
 # Requirements for unittests in CI
-pytest==7.4.0
+pytest==7.4.1
 psutil
 numpy
 pandas
