@@ -6,7 +6,7 @@
 import os
 from pathlib import Path
 
-# This will be replaced by modin.pandas after set_backend call
+# This will be replaced by modin.pandas after Backend.init() call
 import pandas as pd  # noqa: F401 this import exists to provide vscode support for backend users
 
 from .modin_utils import (
