@@ -18,12 +18,26 @@ Each benchmark's source code is stored in it's own folder in ``timedf_benchmarks
 Loading data
 ------------
 
-To run benchmark you will first need to download the dataset::
+To run benchmark you will first need to download the dataset.
 
+``plasticc``::
+    pass
+
+
+``ny_taxi``::
+    pass
+
+
+``ny_taxi_ml``::
+    pass
+
+
+``hm_fashion_recs``::
     # This will download dataset for `$BENCHMARK` and put it into `$TARGET_DIR`
     benchmark-load $BENCHMARK $TARGET_DIR
     # For example
     benchmark-load census ./census
+
 
 Running benchmark
 --------------------------
