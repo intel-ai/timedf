@@ -1,6 +1,6 @@
 # Datasets
 
-This is a comprehensive list of public datasets used by this repository.
+This is a comprehensive list of public datasets used by this repository. Loading instructions are [available](https://timedf.readthedocs.io/en/latest/02-existing_benchmarks.html#loading-data).
 
 | timedf name         | Name (Link/Source)                                                                                             | License                                                                                         |
 | ------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
