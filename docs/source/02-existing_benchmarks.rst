@@ -15,29 +15,6 @@ We have several benchmarks to run:
 
 Each benchmark's source code is stored in it's own folder in ``timedf_benchmarks/``
 
-Loading data
-------------
-
-To run benchmark you will first need to download the dataset.
-
-``plasticc``::
-    pass
-
-
-``ny_taxi``::
-    pass
-
-
-``ny_taxi_ml``::
-    pass
-
-
-``hm_fashion_recs``::
-    # This will download dataset for `$BENCHMARK` and put it into `$TARGET_DIR`
-    benchmark-load $BENCHMARK $TARGET_DIR
-    # For example
-    benchmark-load census ./census
-
 
 Running benchmark
 --------------------------
@@ -45,7 +22,7 @@ Running benchmark
 Let's run one of benchmarks (``plasticc``) starting from a system with :ref:`installed timedf in conda environment <installation-label>` named ``ENV_NAME="timedf"``.
 
 #. Activate your conda environment: ``export ENV_NAME="timedf" && conda activate $ENV_NAME``.
-#. Download data ``benchmark-load plasticc ./datasets/plasticc``.
+#. Download data using (instructions)[https://github.com/intel-ai/timedf/blob/master/DATASETS.md].
 #. Run benchmark with pandas: ``benchmark-run plasticc -data_file ./datasets/plasticc -backend Pandas ${DB_COMMON_OPTS}``.
     #. To run with with modin on ray replace ``"Pandas"->"Modin_on_ray"``, for modin on HDK replace ``"Pandas"->"Modin_on_hdk"``.
     #. You can get a list of all possible parameters with ``benchmark-run -h``.
