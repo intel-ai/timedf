@@ -39,16 +39,14 @@ rm -rf ny_taxi_ml
 
 ### hm_fashion_recs
 
-1. You will need kaggle account to accept competition rules and load data, so [create it](kaggle.com) if necessary and login.
-2. Open [link](https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations), read rules and click "Join Competition".
+1. You will need kaggle account so [create it](kaggle.com) if necessary and login.
+2. Open [competition page](https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations), read rules and click "Join Competition".
 3. Install kaggle api with `pip install kaggle`.
 4. You will need to authorize your user using [kaggle token](https://www.kaggle.com/docs/api). Right now that requires you to:
-   a. Click "Create New Token" in [your user profile](https://www.kaggle.com/settings/account). It will trigger loading of `kaggle.json` file with your configuration.
-   b. Save `kaggle.json` file to `~/.kaggle/kaggle.json` (linux, macOS) or `C:\Users\<Windows-username>\.kaggle\kaggle.json` (Windows).
+   - Click "Create New Token" in [your user profile](https://www.kaggle.com/settings/account). It will trigger loading of `kaggle.json` file with your configuration.
+   - Save `kaggle.json` file to `~/.kaggle/kaggle.json` (linux, macOS) or `C:\Users\<Windows-username>\.kaggle\kaggle.json` (Windows).
 5. Run
-
-```
-cd $TARGET_DIR
-kaggle competitions download -c h-and-m-personalized-fashion-recommendations
-
-```
+   ```
+   cd $TARGET_DIR
+   kaggle competitions download -c h-and-m-personalized-fashion-recommendations
+   ```
