@@ -49,4 +49,5 @@ rm -rf ny_taxi_ml
    ```
    cd $TARGET_DIR
    kaggle competitions download -c h-and-m-personalized-fashion-recommendations
+   unzip h-and-m-personalized-fashion-recommendations.zip
    ```
