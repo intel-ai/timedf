@@ -3,15 +3,10 @@ Running available benchmarks
 
 We have several benchmarks to run:
 
-#. ``census`` - simple ETL and ML based on US census data.
 #. ``plasticc`` - simple ETL and ML for plasticc dataset https://plasticc.org/data-release/
 #. ``ny_taxi`` - 4 queries (mainly gropuby) for NY taxi dataset https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 #. ``ny_taxi_ml`` - simple ETL and ML based on NY taxi dataset https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 #. ``hm_fashion_recs`` - large benchmark with complex data processing for recommendation systems based on one of the top solutions to kaggle competiton https://www.kaggle.com/c/h-and-m-personalized-fashion-recommendations
-#. ``optiver_vol`` - benchmark with winning solution to optiver volatility competition based on https://www.kaggle.com/code/nyanpn/1st-place-public-2nd-place-solution/notebook
-
-..
-    #. H2O - H2O benchmark with join and groupby operations based on https://h2oai.github.io/db-benchmark/
 
 Each benchmark's source code is stored in it's own folder in ``timedf_benchmarks/``
 
