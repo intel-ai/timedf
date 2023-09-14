@@ -118,6 +118,7 @@ data_file          varchar    '/mnt/datasets`      Path to data file that was pr
 ...                varchar    ...                  *Other console arguments, saved automatically*
 backend        varchar    Modin_on_hdk         Pandas mode, used for this run
 ...                varchar    ...                  *Other console arguments, saved automatically*
+tag                varchar    new_patch            *Optional* tag for this run. Useful to identify unique runs, like experimental library version.
 params             json       {'n_rows': 4000000}  Parameters passed by benchmark author using ``benchmark_specific_record``
 =================  ========   ===================  ==================================================================
 

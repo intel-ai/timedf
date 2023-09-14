@@ -25,10 +25,11 @@ Let's run one of benchmarks (``plasticc``) starting from a system with :ref:`ins
     #. *Optinal*. If you want to store results in a database, define environment variable with parameters: ``export DB_COMMON_OPTS=""``. For example, to save results to local sqlite database (essentially just file on your filesystem) use ``export DB_COMMON_OPTS="-db_name db.sqlite"``
 
 
-If you want to customize name of your backend or name of your benchmark you can use these arguments:
+If you want to customize how this run is stored in the database use these arguments:
 
 #. ``-save_benchmark_name BENCHMARK_NAME`` - benchmark name for DB storage
 #. ``-save_backend_name BACKEND_NAME`` - name of the backend used for DB storage. You can use this for experimental branches of libraries.
+#. ``-tag TAG`` - tag for this run. This will be stored in ``tag`` column. Useful for identifying unique runs, such as experimental library versions.
 
 Validating intermediate dataframes
 ----------------------------------
