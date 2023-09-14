@@ -1,3 +1,5 @@
+import os
+import sys
 import argparse
 import tarfile
 import shutil
@@ -330,8 +332,10 @@ class Benchmark(BaseBenchmark):
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)
 
-    def load_data(self, target_dir, reload=False):
+    def load_data(self, target_dir: Path, reload=False):
         from timedf.tools.s3_load import download_folder
+
+        target_dir = target_dir.resolve()
 
         filename = "ny_taxi_ml.tar.gz"
         download_folder(
@@ -343,8 +347,14 @@ class Benchmark(BaseBenchmark):
         )
 
         print("Extracting files...")
-        with tarfile.open(target_dir / filename) as f:
-            f.extractall(target_dir)
+        with tarfile.open(target_dir / filename) as tarfile:
+            for f in tarfile.names:
+                if target_dir in (target_dir / f).resolve().parents:
+                    tarfile.extract(f, path=target_dir)
+                else:
+                    raise ValueError(
+                        f"Unsafe tar archive found, possible security issue with file {f}."
+                    )
 
         print("Restoring structure...")
         for name in ("2014", "2015", "2016"):
