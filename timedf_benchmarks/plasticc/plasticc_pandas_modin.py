@@ -18,22 +18,6 @@ def ravel_column_names(cols):
     return ["%s_%s" % (i, j) for i, j in zip(d0, d1)]
 
 
-def skew_workaround(table):
-    n = table["flux_count"]
-    m = table["flux_mean"]
-    s1 = table["flux_sum1"]
-    s2 = table["flux_sum2"]
-    s3 = table["flux_sum3"]
-
-    # change column name: 'skew' -> 'flux_skew'
-    skew = (
-        n * (n - 1).sqrt() / (n - 2) * (s3 - 3 * m * s2 + 2 * m * m * s1) / (s2 - m * s1).pow(1.5)
-    ).name("flux_skew")
-    table = table.mutate(skew)
-
-    return table
-
-
 def etl_cpu(df, df_meta, etl_times):
     t_etl_start = timer()
 
