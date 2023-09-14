@@ -66,7 +66,6 @@ def load_data(dirpath: str, is_hdk_mode, debug=False):
             (" surcharge", "float64"),
             (" store_and_fwd_flag", "object"),
             (" tip_amount", "float64"),
-            ("tolls_amount", "float64"),
         ]
     )
     if is_hdk_mode:
