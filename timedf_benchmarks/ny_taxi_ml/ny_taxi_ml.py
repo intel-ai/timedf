@@ -1,5 +1,3 @@
-import os
-import sys
 import argparse
 import tarfile
 import shutil
@@ -347,10 +345,10 @@ class Benchmark(BaseBenchmark):
         )
 
         print("Extracting files...")
-        with tarfile.open(target_dir / filename) as tarfile:
-            for f in tarfile.names:
+        with tarfile.open(target_dir / filename) as arc:
+            for f in arc.names:
                 if target_dir in (target_dir / f).resolve().parents:
-                    tarfile.extract(f, path=target_dir)
+                    arc.extract(f, path=target_dir)
                 else:
                     raise ValueError(
                         f"Unsafe tar archive found, possible security issue with file {f}."
