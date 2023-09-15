@@ -202,6 +202,7 @@ def parse_args(add_benchmark_args: Callable[[argparse.ArgumentParser], None]):
     benchmark_parser = parser.add_argument_group("benchmark_specific")
     add_benchmark_args(benchmark_parser)
     args = parser.parse_args()
+    print(args)
 
     db_config = DbConfig(
         driver=args.db_driver,
