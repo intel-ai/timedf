@@ -4,8 +4,6 @@ from timeit import default_timer as timer
 
 import psutil
 
-from .modin_utils import import_pandas_into_module_namespace
-
 
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 directories = {"repository_root": repository_root_directory}
