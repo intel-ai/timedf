@@ -29,7 +29,7 @@ def import_pandas_into_module_namespace(
             import ray
 
             if not ray_tmpdir:
-                ray_tmpdir = "./ray_tmp"
+                raise ValueError("`ray_tmpdir` wasn't provided")
             if not ray_memory:
                 ray_memory = 200 * 1024 * 1024 * 1024
             if not ray.is_initialized():
