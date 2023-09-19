@@ -60,7 +60,7 @@ def etl_cpu(df, df_meta, etl_times):
     return df_meta
 
 
-def load_data_pandas(dataset_path, skip_rows, dtypes, meta_dtypes, backend):
+def load_data(dataset_path, skip_rows, dtypes, meta_dtypes, backend):
     train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)
     # Currently we need to avoid skip_rows in Mode_on_hdk mode since
     # pyarrow uses it in incompatible way
@@ -113,7 +113,7 @@ def etl(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys, backend):
     etl_times = {key: 0.0 for key in etl_keys}
 
     t0 = timer()
-    train, train_meta, test, test_meta = load_data_pandas(
+    train, train_meta, test, test_meta = load_data(
         dataset_path=dataset_path,
         skip_rows=skip_rows,
         dtypes=dtypes,

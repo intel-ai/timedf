@@ -22,20 +22,14 @@ __all__ = [
 
 def load_data_pandas(
     filename,
+    pd,
     columns_names=None,
     columns_types=None,
     header=None,
     nrows=None,
     use_gzip=False,
     parse_dates=None,
-    pd=None,
-    pandas_mode="Pandas",
 ):
-    if not pd:
-        import_pandas_into_module_namespace(
-            namespace=load_data_pandas.__globals__, mode=pandas_mode
-        )
-    types = None
     if columns_types:
         types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
     return pd.read_csv(
@@ -50,13 +44,8 @@ def load_data_pandas(
 
 
 def load_data_modin_on_hdk(
-    filename, columns_names=None, columns_types=None, parse_dates=None, pd=None, skiprows=None
+    filename, pd, columns_names=None, columns_types=None, parse_dates=None, skiprows=None
 ):
-    if not pd:
-        import_pandas_into_module_namespace(
-            namespace=load_data_pandas.__globals__, mode="Modin_on_hdk"
-        )
-    dtypes = None
     if columns_types:
         dtypes = {
             columns_names[i]: columns_types[i] if (columns_types[i] != "category") else "string"
