@@ -28,6 +28,7 @@ def load_data_pandas(
     use_gzip=False,
     parse_dates=None,
 ):
+    types = None
     if columns_types:
         types = {columns_names[i]: columns_types[i] for i in range(len(columns_names))}
     return pd.read_csv(
@@ -44,6 +45,7 @@ def load_data_pandas(
 def load_data_modin_on_hdk(
     filename, pd, columns_names=None, columns_types=None, parse_dates=None, skiprows=None
 ):
+    dtypes = None
     if columns_types:
         dtypes = {
             columns_names[i]: columns_types[i] if (columns_types[i] != "category") else "string"
