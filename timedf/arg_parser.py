@@ -42,6 +42,7 @@ class DbConfig:
     def _create_engine(self):
         from sqlalchemy import create_engine
         from sqlalchemy.engine.url import URL
+        from sqlalchemy.pool import NullPool
 
         self._validate_driver()
 
@@ -53,7 +54,13 @@ class DbConfig:
             port=self.port,
             database=self.name,
         )
-        return create_engine(url)
+
+        # After moving from mySQL to MariaDB long-running benchmarks (~2hrs) had error during DB writing
+        # sqlalchemy.exc.OperationalError: (mysql.connector.errors.OperationalError) MySQL Connection not available
+        # This is likely caused by closed connection in the pool. We avoid using connection pool
+        # to solve this problem. This will make each write a bit slower because now we create
+        # connection for each request, but since benchmark run creates very few writes that shouldn't be a problem
+        return create_engine(url, poolclass=NullPool)
 
     def maybeCreateBenchmarkDb(self):
         if self.is_config_available():
