@@ -8,10 +8,6 @@ terms are listed below.
 --------------------------------------------------------------------------------
 1. boto3
 
-   H&M fashion recs benchmark
-   Copyright [2022] [Ryohei Wakatsuki and Keisho Oh]
-   https://github.com/ryowk/kaggle-h-and-m-personalized-fashion-recommendations/tree/b719d0391da546307a05b01323a39bbc83134de2
-
    kaggle
    Copyright 2018 Kaggle Inc
 
