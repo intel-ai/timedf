@@ -50,7 +50,7 @@ def _load_resources(lfm_features_path, week: int, dim: int = CFG.dim):
     path_prefix = lfm_features_path / f"lfm_i_i_week{week}_dim{dim}"
     model_path = f"{path_prefix}_model.pkl"
     with open(model_path, "rb") as f:
-        model = pickle.load(f)
+        model = pickle.load(f)  # nosec: pickle file generation is part of benchmark
     user_features = None
     item_features = None
     return model, user_features, item_features

@@ -103,6 +103,8 @@ class RunParams:
         "commit_timedf",
         "commit_modin",
         "num_threads",
+        # Optional tag to label specific runs by user
+        "tag",
     )
 
     def _validate_params(self, params):

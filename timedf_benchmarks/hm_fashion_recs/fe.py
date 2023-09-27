@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-from .hm_utils import check_experimental, maybe_modin_exp, modin_fix
+from .hm_utils import check_experimental, maybe_modin_exp
 from timedf import tm
 from timedf.backend import pd
 
@@ -95,13 +95,8 @@ def attach_features(
 
     with tm.timeit("05-item dynamic features (user features)"):
         week_end = week + CFG.item_age_feature_weeks
-        # TODO: this is an error in modin, right after merge you cannot print tmp, it leads to error
-        # iloc solves this issue for some reason
-        LARGE = 10_000_000_000
-        tmp = (
-            transactions.query("@week <= week < @week_end")
-            .iloc[:LARGE]
-            .merge(users[["user", "age"]], on="user")
+        tmp = transactions.query("@week <= week < @week_end").merge(
+            users[["user", "age"]], on="user"
         )
 
         tmp = tmp.groupby("item")["age"].agg(["mean", "std"])
@@ -110,9 +105,7 @@ def attach_features(
 
     with tm.timeit("06-item freshness features"):
         tmp = (
-            # TODO modin bug
             transactions.query("@week <= week")
-            .iloc[:LARGE]
             .groupby("item")["day"]
             .min()
             .reset_index(name="item_day_min")
@@ -123,9 +116,7 @@ def attach_features(
     with tm.timeit("07-item volume features"):
         week_end = week + CFG.item_volume_feature_weeks
         tmp = (
-            # FIXME: modin bug
             transactions.query("@week <= week < @week_end")
-            .iloc[:LARGE]
             .groupby("item")
             .size()
             .reset_index(name="item_volume")
@@ -146,7 +137,6 @@ def attach_features(
         week_end = week + CFG.user_volume_feature_weeks
         tmp = (
             transactions.query("@week <= week < @week_end")
-            .iloc[:LARGE]
             .groupby("user")
             .size()
             .reset_index(name="user_volume")
@@ -178,19 +168,19 @@ def attach_features(
 
     with tm.timeit("12-item age volume features"):
         week_end = week + CFG.age_volume_feature_weeks  # noqa: F841 used in pandas query
-        # FIXME: modin bug
-        tr = (
-            transactions.query("@week <= week < @week_end")[["user", "item"]]
-            .iloc[:LARGE]
-            .merge(users[["user", "age"]], on="user")
+        tr = transactions.query("@week <= week < @week_end")[["user", "item"]].merge(
+            users[["user", "age"]], on="user"
         )
         item_age_volumes = []
         for age in range(16, 100):
             low = age - age_shifts[age]  # noqa: F841 used in pandas query
             high = age + age_shifts[age]  # noqa: F841 used in pandas query
-            tmp = modin_fix(
-                modin_fix(tr.query("@low <= age <= @high")).groupby("item").size()
-            ).reset_index(name="age_volume")
+            tmp = (
+                tr.query("@low <= age <= @high")
+                .groupby("item")
+                .size()
+                .reset_index(name="age_volume")
+            )
             tmp["age_volume"] = tmp["age_volume"].rank(ascending=False)
             tmp["age"] = age
             item_age_volumes.append(tmp)

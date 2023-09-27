@@ -42,6 +42,7 @@ class DbConfig:
     def _create_engine(self):
         from sqlalchemy import create_engine
         from sqlalchemy.engine.url import URL
+        from sqlalchemy.pool import NullPool
 
         self._validate_driver()
 
@@ -53,7 +54,13 @@ class DbConfig:
             port=self.port,
             database=self.name,
         )
-        return create_engine(url)
+
+        # After moving from mySQL to MariaDB long-running benchmarks (~2hrs) had error during DB writing
+        # sqlalchemy.exc.OperationalError: (mysql.connector.errors.OperationalError) MySQL Connection not available
+        # This is likely caused by closed connection in the pool. We avoid using connection pool
+        # to solve this problem. This will make each write a bit slower because now we create
+        # connection for each request, but since benchmark run creates very few writes that shouldn't be a problem
+        return create_engine(url, poolclass=NullPool)
 
     def maybeCreateBenchmarkDb(self):
         if self.is_config_available():
@@ -129,13 +136,14 @@ def prepare_general_parser():
     )
     benchmark.add_argument(
         "-verbosity",
-        help="""Level of verbosity for timers. Use 1 or 2 if you want to get more logging info.
+        help="""Level of verbosity for timers. Use 1, 2 or 3 if you want to get more logging info.
         Level 0: no writing (default)
               1: write about exit only
-              2: write about exit and enter""",
+              2: write about exit and enter
+              3: write profiler statistics""",
         default=0,
         type=int,
-        choices=(0, 1, 2),
+        choices=(0, 1, 2, 3),
     )
     benchmark.add_argument(
         "-no_ml",
@@ -161,6 +169,11 @@ def prepare_general_parser():
         "-save_backend_name",
         default=None,
         help="Save backend in DB under this name. Saves with `backend` name by default.",
+    )
+    benchmark.add_argument(
+        "-tag",
+        default=None,
+        help="Tag this run with provided string to be able to find it in the database. Useful when user configure backend with some paramenters and want to be able to find results later on.",
     )
     # SQL database parameters
     add_sql_arguments(sql)

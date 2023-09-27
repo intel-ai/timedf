@@ -68,6 +68,7 @@ def main():
         "commit_hdk": args.commit_hdk,
         "commit_timedf": args.commit_timedf,
         "commit_modin": args.commit_modin,
+        "tag": args.tag,
     }
 
     benchmarkDb = db_config.maybeCreateBenchmarkDb()

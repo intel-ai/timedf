@@ -66,7 +66,6 @@ def load_data(dirpath: str, is_hdk_mode, debug=False):
             (" surcharge", "float64"),
             (" store_and_fwd_flag", "object"),
             (" tip_amount", "float64"),
-            ("tolls_amount", "float64"),
         ]
     )
     if is_hdk_mode:
@@ -330,8 +329,10 @@ class Benchmark(BaseBenchmark):
     def run_benchmark(self, params) -> BenchmarkResults:
         return run_benchmark(params)
 
-    def load_data(self, target_dir, reload=False):
+    def load_data(self, target_dir: Path, reload=False):
         from timedf.tools.s3_load import download_folder
+
+        target_dir = target_dir.resolve()
 
         filename = "ny_taxi_ml.tar.gz"
         download_folder(
@@ -343,8 +344,14 @@ class Benchmark(BaseBenchmark):
         )
 
         print("Extracting files...")
-        with tarfile.open(target_dir / filename) as f:
-            f.extractall(target_dir)
+        with tarfile.open(target_dir / filename) as arc:
+            for f in arc.names:
+                if target_dir in (target_dir / f).resolve().parents:
+                    arc.extract(f, path=target_dir)
+                else:
+                    raise ValueError(
+                        f"Unsafe tar archive found, possible security issue with file {f}."
+                    )
 
         print("Restoring structure...")
         for name in ("2014", "2015", "2016"):

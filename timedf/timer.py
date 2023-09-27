@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-VERBOSITY_LEVELS = (0, 1, 2)
+VERBOSITY_LEVELS = (0, 1, 2, 3)
 
 
 class TimerManager:
@@ -45,6 +45,7 @@ class TimerManager:
         self.allow_overwrite = allow_overwrite
         self.timer_stack = self.TimerStack(allow_overwrite=allow_overwrite)
         self.verbosity = verbosity
+        self.profiles = {}
 
     def reset(self):
         """Reset timer state"""
@@ -82,6 +83,12 @@ class TimerManager:
         if self._verbosity > 1:
             level = self.timer_stack.get_current_level() - 1
             print("  " * level + f"{self.timer_stack.get_full_name()} started")
+        if self._verbosity > 2:
+            import cProfile
+
+            profile = cProfile.Profile()
+            profile.enable()
+            self.profiles[self.timer_stack.get_full_name()] = profile
         self.prepared_name = None
         return self
 
@@ -91,6 +98,12 @@ class TimerManager:
         if self._verbosity > 0:
             level = self.timer_stack.get_current_level()
             print("  " * level + f"{fullname}: {self.timer_stack.fullname2time[fullname]}")
+        if self._verbosity > 2:
+            from pstats import SortKey
+
+            profile = self.profiles.pop(fullname)
+            profile.disable()
+            profile.print_stats(SortKey.CUMULATIVE)
 
     def get_results(self):
         return self.timer_stack.get_results()

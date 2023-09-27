@@ -1,3 +1,3 @@
 # utilities for reporting results to SQL database and xlsx files
-sqlalchemy==1.4
+sqlalchemy==1.4.*
 XlsxWriter

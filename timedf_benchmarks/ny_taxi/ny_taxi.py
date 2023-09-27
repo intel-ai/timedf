@@ -203,7 +203,6 @@ def etl(filename, files_limit, columns_names, columns_types, output_for_validati
                 use_gzip=f.endswith(".gz"),
                 parse_dates=["pickup_datetime", "dropoff_datetime"],
                 pd=pd,
-                pandas_mode=backend,
             )
             for f in filename
         ]

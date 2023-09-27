@@ -70,9 +70,8 @@ Utility files:
 3. Repository with original code: https://github.com/ryowk/kaggle-h-and-m-personalized-fashion-recommendations
 
 ### Known problems
-1. Modin have a problem with empty partitions, that's why in code we use workaround function `modin_fix` (defined in `hm_utils.py`). Issue: https://github.com/modin-project/modin/issues/5461
-2. Catboost checks type of input dataframe and gives error on getting modin dataframe, so we convert it manually.
-3. Modin is currently slow on this benchmark, so there is an option to activate experimental modin version with faster groupby operations, governed by `benchmark-run ... -modin_exp` flag and working with `check_experimental & maybe_modin_exp` functions from `hm_utils.py`.
+1. Catboost checks type of input dataframe and gives error on getting modin dataframe, so we convert it manually.
+2. Modin is currently slow on this benchmark, so there is an option to activate experimental modin version with faster groupby operations, governed by `benchmark-run ... -modin_exp` flag and working with `check_experimental & maybe_modin_exp` functions from `hm_utils.py`.
 
 ### Additional dependencies
 If you want to use user embeddings during feature engineering (turned off by default) you will need:
