@@ -40,7 +40,6 @@ def create_candidates(
     target_users: np.ndarray,
     week: int,
     user_features_path: Path,
-    modin_exp: bool,
 ) -> pd.DataFrame:
     """
     transactions
@@ -188,10 +187,7 @@ def create_candidates(
         ).reset_index(drop=True)
 
         gr_item_count = tr.groupby("item").size().reset_index(name="item_count")
-
-        with maybe_modin_exp(modin_exp):
-            gr_pair_count = tr.groupby(["item", "item_with"]).size().reset_index(name="pair_count")
-
+        gr_pair_count = tr.groupby(["item", "item_with"]).size().reset_index(name="pair_count")
         item2item = gr_pair_count.merge(gr_item_count, on="item")
         item2item["ratio"] = item2item["pair_count"] / item2item["item_count"]
         item2item = item2item.query("pair_count > @pair_count_threshold").reset_index(drop=True)
@@ -430,9 +426,7 @@ def drop_trivial_users(labels):
     return df
 
 
-def make_one_week_candidates(
-    transactions, users, items, week, user_features_path, age_shifts, modin_exp
-):
+def make_one_week_candidates(transactions, users, items, week, user_features_path, age_shifts):
     target_users = transactions.query("week == @week")["user"].unique()
 
     candidates = create_candidates(
@@ -443,7 +437,6 @@ def make_one_week_candidates(
         week=week + 1,
         user_features_path=user_features_path,
         age_shifts=age_shifts,
-        modin_exp=modin_exp,
     )
     candidates = merge_labels(candidates=candidates, transactions=transactions, week=week)
     candidates["week"] = week
