@@ -62,7 +62,6 @@ def run_queries(queries, parameters, etl_results, output_for_validation=None):
 #       count(*)
 # FROM trips
 # GROUP BY cab_type;
-# @hpat.jit fails with Invalid use of Function(<ufunc 'isnan'>) with argument(s) of type(s): (StringType), even when dtype is provided
 def q1(df, backend):
     t0 = timer()
     if backend != "Modin_on_hdk":
