@@ -3,6 +3,9 @@ import os
 from timeit import default_timer as timer
 
 import psutil
+import re
+
+_VM_PEAK_PATTERN = r"VmHWM:\s+(\d+)"
 
 
 repository_root_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -103,6 +106,7 @@ def expand_braces(pattern: str):
 
 
 def print_results(results, backend=None, ignore_fields=[]):
+    add_max_memory_usage(results)
     if backend:
         print(f"{backend} results:")
     for result_name, result in results.items():
@@ -156,6 +160,20 @@ def split(X, y, test_size=0.1, stratify=None, random_state=None, optimizer="inte
 def memory_usage():
     process = psutil.Process(os.getpid())
     return process.memory_info().rss / (1024**3)  # GB units
+
+
+def max_memory_usage(proc=psutil.Process()):
+    max_mem = 0
+    with open(f"/proc/{proc.pid}/status", "r") as stat:
+        for match in re.finditer(_VM_PEAK_PATTERN, stat.read()):
+            max_mem = float(match.group(1))
+            break
+    return max_mem + sum(max_memory_usage(c) for c in proc.children())
+
+
+def add_max_memory_usage(results):
+    if "max_memory_usage" not in results:
+        results["max_memory_usage"] = max_memory_usage() / (1024**2)
 
 
 def getsize(filename: str):
