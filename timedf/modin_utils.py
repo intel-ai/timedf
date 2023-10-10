@@ -27,6 +27,7 @@ def import_pandas_into_module_namespace(
             num_threads = int(os.environ["MODIN_CPUS"])
         if mode == "Modin_on_ray":
             import ray
+            from modin.core.execution.utils import set_env
 
             if not ray_tmpdir:
                 raise ValueError("`ray_tmpdir` wasn't provided")
@@ -37,15 +38,14 @@ def import_pandas_into_module_namespace(
                     "__MODIN_AUTOIMPORT_PANDAS__": "1",
                     "PYTHONWARNINGS": "ignore::FutureWarning",
                 }
-                extra_init_kw = {"runtime_env": {"env_vars": env_vars}}
-                ray.init(
-                    include_dashboard=False,
-                    _plasma_directory=ray_tmpdir,
-                    _memory=ray_memory,
-                    object_store_memory=ray_memory,
-                    num_cpus=num_threads,
-                    **extra_init_kw,
-                )
+                with set_env(**env_vars):
+                    ray.init(
+                        include_dashboard=False,
+                        _plasma_directory=ray_tmpdir,
+                        _memory=ray_memory,
+                        object_store_memory=ray_memory,
+                        num_cpus=num_threads,
+                    )
             os.environ["MODIN_ENGINE"] = "ray"
             print(
                 f"Pandas backend: Modin on Ray with tmp directory {ray_tmpdir} and memory {ray_memory}"
