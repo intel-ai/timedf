@@ -37,7 +37,7 @@ def import_pandas_into_module_namespace(
                     "__MODIN_AUTOIMPORT_PANDAS__": "1",
                     "PYTHONWARNINGS": "ignore::FutureWarning",
                 }
-                extra_init_kw = {"runtime_env":  {"env_vars": env_vars}}
+                extra_init_kw = {"runtime_env": {"env_vars": env_vars}}
                 ray.init(
                     include_dashboard=False,
                     _plasma_directory=ray_tmpdir,
