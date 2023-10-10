@@ -33,12 +33,18 @@ def import_pandas_into_module_namespace(
             if not ray_memory:
                 ray_memory = 200 * 1024 * 1024 * 1024
             if not ray.is_initialized():
+                env_vars = {
+                    "__MODIN_AUTOIMPORT_PANDAS__": "1",
+                    "PYTHONWARNINGS": "ignore::FutureWarning",
+                }
+                extra_init_kw = {"runtime_env":  {"env_vars": env_vars}}
                 ray.init(
                     include_dashboard=False,
                     _plasma_directory=ray_tmpdir,
                     _memory=ray_memory,
                     object_store_memory=ray_memory,
                     num_cpus=num_threads,
+                    **extra_init_kw,
                 )
             os.environ["MODIN_ENGINE"] = "ray"
             print(
