@@ -77,5 +77,4 @@ def assert_timer_results(results, quant, appr):
     assert results.pop("total.fe") == appr(2 * quant)
     assert results.pop("total.predict") == appr(3 * quant)
     assert results.pop("total") == appr(7 * quant)
-    assert results.pop("max_memory_usage")
     assert len(results) == 0

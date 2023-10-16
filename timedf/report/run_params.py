@@ -7,6 +7,8 @@ import subprocess
 from typing import Dict, Any, Union, Pattern
 import warnings
 
+from timedf.benchmark_utils import get_max_memory_usage
+
 
 def _get_host_info() -> Dict[str, str]:
     def get_basic_host_dict() -> Dict[str, Any]:
@@ -76,7 +78,11 @@ def _get_host_info() -> Dict[str, str]:
 
         return {t: match_and_assign(p, output) for t, p in proc_meminfo_patterns.items()}
 
-    return {**get_basic_host_dict(), **get_lspcu_dict(), **get_meminfo_dict()}
+    max_memory_mb = get_max_memory_usage()
+    if max_memory_mb is not None:
+        max_memory_mb = str(int(max_memory_mb))
+
+    return {**get_basic_host_dict(), **get_lspcu_dict(), **get_meminfo_dict(), 'max_memory_mb': max_memory_mb}
 
 
 class HostParams:

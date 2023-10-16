@@ -3,8 +3,6 @@ import argparse
 from typing import Dict
 import importlib
 
-from timedf.benchmark_utils import add_max_memory_usage
-
 
 # # We keep benchmark import lazy to let the library initialize tool configuration before import
 def create_benchmark(bench_name):
@@ -39,7 +37,6 @@ class BenchmarkResults:
             Additinal parameters of the current benchmark that need to be saved as well.
             Example: `{'dataset_size': 122, 'dfiles_n': 99}`
         """
-        add_max_memory_usage(measurements)
         self._validate_dict(measurements)
         self._validate_vals(measurements, float)
         self.measurements = measurements

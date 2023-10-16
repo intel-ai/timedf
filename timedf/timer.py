@@ -1,7 +1,6 @@
 import time
 import logging
 
-from timedf.benchmark_utils import add_max_memory_usage
 
 logger = logging.getLogger(__name__)
 
@@ -107,9 +106,7 @@ class TimerManager:
             profile.print_stats(SortKey.CUMULATIVE)
 
     def get_results(self):
-        results = self.timer_stack.get_results()
-        add_max_memory_usage(results)
-        return results
+        return self.timer_stack.get_results()
 
     class TimerStack:
         """Keeps internal stack of running timers (time and name) and resulting report."""

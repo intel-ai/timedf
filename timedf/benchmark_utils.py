@@ -1,9 +1,10 @@
 """Utils to be used by inividual benchmarks"""
 import os
+import re
+import warnings
 from timeit import default_timer as timer
 
 import psutil
-import re
 
 _VM_PEAK_PATTERN = r"VmHWM:\s+(\d+)"
 
@@ -106,7 +107,6 @@ def expand_braces(pattern: str):
 
 
 def print_results(results, backend=None, ignore_fields=[]):
-    add_max_memory_usage(results)
     if backend:
         print(f"{backend} results:")
     for result_name, result in results.items():
@@ -162,18 +162,24 @@ def memory_usage():
     return process.memory_info().rss / (1024**3)  # GB units
 
 
-def max_memory_usage(proc=psutil.Process()):
+def get_max_memory_usage(proc=psutil.Process()):
+    """Reads maximum memory usage in MB from process history. Returns None if query failed, which is
+    expected on non-linux systems."""
     max_mem = 0
-    with open(f"/proc/{proc.pid}/status", "r") as stat:
-        for match in re.finditer(_VM_PEAK_PATTERN, stat.read()):
-            max_mem = float(match.group(1))
-            break
+    try:
+        with open(f"/proc/{proc.pid}/status", "r") as stat:
+            for match in re.finditer(_VM_PEAK_PATTERN, stat.read()):
+                max_mem = float(match.group(1))
+                # MB conversion
+                max_mem = int(max_mem / 1024)
+                break
+    except FileNotFoundError:
+        warnings.warn(
+            "Couldn't open `/proc/{proc_id}/status` is this linux?. Couldn't find max memory usage"
+        )
+        return None
+
     return max_mem + sum(max_memory_usage(c) for c in proc.children())
-
-
-def add_max_memory_usage(results):
-    if "max_memory_usage" not in results:
-        results["max_memory_usage"] = max_memory_usage() / (1024**2)
 
 
 def getsize(filename: str):
