@@ -28,7 +28,11 @@ def test_timer():
     results = bt.get_results()
     appr = partial(approx, rel=0.01)
 
-    assert_timer_results(results, quant, appr)
+    assert results["total.load_data"] == appr(1 * quant)
+    assert results["total.fe"] == appr(2 * quant)
+    assert results["total.predict"] == appr(3 * quant)
+    assert results["total"] == appr(7 * quant)
+    assert len(results) == 4
 
 
 def test_timer_state_noname():
@@ -68,13 +72,9 @@ def test_timer_reset():
         results = tm.get_results()
         appr = partial(approx, rel=0.01)
 
-        assert_timer_results(results, quant, appr)
+        assert results["total.load_data"] == appr(1 * quant)
+        assert results["total.fe"] == appr(2 * quant)
+        assert results["total.predict"] == appr(3 * quant)
+        assert results["total"] == appr(7 * quant)
+        assert len(results) == 4
         tm.reset()
-
-
-def assert_timer_results(results, quant, appr):
-    assert results.pop("total.load_data") == appr(1 * quant)
-    assert results.pop("total.fe") == appr(2 * quant)
-    assert results.pop("total.predict") == appr(3 * quant)
-    assert results.pop("total") == appr(7 * quant)
-    assert len(results) == 0
