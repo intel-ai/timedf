@@ -82,7 +82,12 @@ def _get_host_info() -> Dict[str, str]:
     if max_memory_mb is not None:
         max_memory_mb = str(int(max_memory_mb))
 
-    return {**get_basic_host_dict(), **get_lspcu_dict(), **get_meminfo_dict(), 'max_memory_mb': max_memory_mb}
+    return {
+        **get_basic_host_dict(),
+        **get_lspcu_dict(),
+        **get_meminfo_dict(),
+        "max_memory_mb": max_memory_mb,
+    }
 
 
 class HostParams:
