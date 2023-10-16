@@ -179,7 +179,7 @@ def get_max_memory_usage(proc=psutil.Process()):
         )
         return None
 
-    return max_mem + sum(max_memory_usage(c) for c in proc.children())
+    return max_mem + sum(get_max_memory_usage(c) for c in proc.children())
 
 
 def getsize(filename: str):
