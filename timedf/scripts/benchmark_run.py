@@ -33,6 +33,9 @@ def legacy_patch(run_parameters):
         "gpu_memory",
         "optimizer",
         "extended_functionality",
+        "commit_hdk",
+        "commit_timedf",
+        "commit_modin",
     ]
     for name in fields:
         run_parameters[name] = run_parameters.get(name, "")

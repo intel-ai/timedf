@@ -103,7 +103,6 @@ def prepare_general_parser():
     parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
     benchmark = parser.add_argument_group("benchmark")
     sql = parser.add_argument_group("sql")
-    commits = parser.add_argument_group("commits")
 
     # Benchmark parameters
     benchmark.add_argument("bench_name", help="Benchmark to run.")
@@ -177,23 +176,7 @@ def prepare_general_parser():
     )
     # SQL database parameters
     add_sql_arguments(sql)
-    # Additional information
-    commits.add_argument(
-        "-commit_hdk",
-        default="1234567890123456789012345678901234567890",
-        help="HDK commit hash used for tests.",
-    )
-    commits.add_argument(
-        "-commit_timedf",
-        default="1234567890123456789012345678901234567890",
-        help="timedf commit hash used for tests.",
-    )
-    commits.add_argument(
-        "-commit_modin",
-        default="1234567890123456789012345678901234567890",
-        help="Modin commit hash used for tests.",
-    )
-    commits.add_argument(
+    benchmark.add_argument(
         "-num_threads",
         default=None,
         type=int,
