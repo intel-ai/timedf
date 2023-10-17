@@ -68,9 +68,6 @@ def main():
     report_args = {
         "ray_tmpdir": args.ray_tmpdir,
         "ray_memory": args.ray_memory,
-        "commit_hdk": args.commit_hdk,
-        "commit_timedf": args.commit_timedf,
-        "commit_modin": args.commit_modin,
         "tag": args.tag,
     }
 

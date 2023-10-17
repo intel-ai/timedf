@@ -109,13 +109,14 @@ class RunParams:
         "gpu_memory",
         "validation",
         "extended_functionality",
+        "num_threads",
+        # Optional tag to label specific runs by user
+        "tag",
+        # LEGACY BLOCK, right now they are required part of schema
         # Commit hashes
         "commit_hdk",
         "commit_timedf",
         "commit_modin",
-        "num_threads",
-        # Optional tag to label specific runs by user
-        "tag",
     )
 
     def _validate_params(self, params):
