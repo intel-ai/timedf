@@ -24,20 +24,6 @@ def make_benchmark() -> BaseBenchmark:
     return create_benchmark(bench_name)
 
 
-def legacy_patch(run_parameters):
-    # We patch run_parameters because database expects all params, including benchmark-specific
-    # TODO: Legacy fix, to be removed after database migration to reflect benchmark-specific fields
-    fields = [
-        "validation",
-        "dfiles_num",
-        "gpu_memory",
-        "optimizer",
-        "extended_functionality",
-    ]
-    for name in fields:
-        run_parameters[name] = run_parameters.get(name, "")
-
-
 def main():
     os.environ["PYTHONIOENCODING"] = "UTF-8"
     os.environ["PYTHONUNBUFFERED"] = "1"
@@ -59,8 +45,6 @@ def main():
         # Add benchmark-specific arguments
         **{k: getattr(args, k) for k in benchmark.__params__},
     }
-
-    legacy_patch(run_parameters)
 
     report_args = {
         "ray_tmpdir": args.ray_tmpdir,
