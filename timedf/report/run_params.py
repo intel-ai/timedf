@@ -112,11 +112,6 @@ class RunParams:
         "num_threads",
         # Optional tag to label specific runs by user
         "tag",
-        # LEGACY BLOCK, right now they are required part of schema
-        # Commit hashes
-        "commit_hdk",
-        "commit_timedf",
-        "commit_modin",
     )
 
     def _validate_params(self, params):
