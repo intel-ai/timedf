@@ -102,7 +102,6 @@ class RunParams:
         "data_file",
         "no_ml",
         "use_modin_xgb",
-        "optimizer",
         "ray_tmpdir",
         "ray_memory",
         "num_threads",
