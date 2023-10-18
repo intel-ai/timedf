@@ -100,15 +100,11 @@ class HostParams:
 class RunParams:
     fields = (
         "data_file",
-        "dfiles_num",
         "no_ml",
         "use_modin_xgb",
         "optimizer",
         "ray_tmpdir",
         "ray_memory",
-        "gpu_memory",
-        "validation",
-        "extended_functionality",
         "num_threads",
         # Optional tag to label specific runs by user
         "tag",
