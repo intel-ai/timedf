@@ -47,6 +47,8 @@ Iteration = type(
         **{name: make_string() for name in HostParams.fields},
         # run params
         **{name: make_string(nullable=True) for name in RunParams.fields},
+        # Backend params
+        "backend_params": Column(JSON, nullable=False),
         # Additional params without forced schema
         "params": Column(JSON),
     },
@@ -75,6 +77,7 @@ def make_iteration(
     iteration_no: int,
     run_params,
     name2time: Dict[str, float],
+    backend_params,
     params=None,
 ) -> Iteration:
     measurements_orm = [
@@ -86,6 +89,7 @@ def make_iteration(
         backend=backend,
         iteration_no=iteration_no,
         params=params,
+        backend_params=backend_params,
         **HostParams().prepare_report_dict(),
         **RunParams().prepare_report_dict(run_params),
         measurements=measurements_orm,

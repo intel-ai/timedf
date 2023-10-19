@@ -81,6 +81,8 @@ def main():
         "use_modin_xgb": args.use_modin_xgb,
     }
 
+    backend_v2, backend_params = legacy_get_backend_params(args)
+
     benchmarkDb = db_config.maybeCreateBenchmarkDb()
 
     run_id = int(round(time.time()))
@@ -99,6 +101,7 @@ def main():
                 benchmark=args.save_benchmark_name or args.bench_name,
                 backend=args.save_backend_name or args.backend,
                 run_id=run_id,
+                backend_params=backend_params,
                 run_params=legacy_remove_new_fields(
                     {**run_parameters, **report_args, **legacy_report}
                 ),
