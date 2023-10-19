@@ -52,9 +52,7 @@ class PandasBackend:
         if self.pandas_mode not in pandas_backends:
             raise ValueError(f"Unrecognized pandas_mode: {self.pandas_mode}")
 
-        print(self.pandas_mode, params)
         if self.pandas_mode != "Pandas":
-            print("Namespace changes!!")
             Path(ray_tmpdir).mkdir(parents=True, exist_ok=True)
             import_pandas_into_module_namespace(
                 namespace=globals(),
