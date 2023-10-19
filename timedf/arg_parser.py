@@ -6,7 +6,7 @@ from typing import Callable
 from .backend import Backend
 
 
-__all__ = ["add_sql_arguments", "prepare_general_parser", "parse_args", "DbConfig"]
+__all__ = ["prepare_sql_arguments", "prepare_general_parser", "parse_args", "DbConfig"]
 
 
 # This can be written as just a function, but we keep the dataclass to add validation and arg parsing in the future.
@@ -71,7 +71,7 @@ class DbConfig:
             return None
 
 
-def add_sql_arguments(parser):
+def prepare_sql_arguments(parser):
     parser.add_argument(
         "-db_driver",
         dest="db_driver",
@@ -99,41 +99,17 @@ def add_sql_arguments(parser):
     )
 
 
-def prepare_general_parser():
-    parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
-    benchmark = parser.add_argument_group("benchmark")
-    sql = parser.add_argument_group("sql")
-
-    # Benchmark parameters
-    benchmark.add_argument("bench_name", help="Benchmark to run.")
-    benchmark.add_argument("-data_file", help="A datafile that should be loaded.", required=True)
-    benchmark.add_argument(
+def prepare_base_parser(parser):
+    parser.add_argument("bench_name", help="Benchmark to run.")
+    parser.add_argument("-data_file", help="A datafile that should be loaded.", required=True)
+    parser.add_argument(
         "-iterations",
         default=1,
         type=int,
         help="Number of iterations to run. All results will be submitted to the DB.",
     )
-    benchmark.add_argument(
-        "-backend",
-        "-pandas_mode",
-        choices=Backend.supported_backends,
-        default="Pandas",
-        help="Specifies which backend to use: "
-        "plain Pandas, Modin runing on Ray or on Dask or on HDK",
-    )
-    benchmark.add_argument(
-        "-ray_tmpdir",
-        default="./tmp",
-        help="Location where to keep Ray plasma store. "
-        "It should have enough space to keep -ray_memory",
-    )
-    benchmark.add_argument(
-        "-ray_memory",
-        default=200 * 1024 * 1024 * 1024,
-        type=int,
-        help="Size of memory to allocate for Ray plasma store",
-    )
-    benchmark.add_argument(
+
+    parser.add_argument(
         "-verbosity",
         help="""Level of verbosity for timers. Use 1, 2 or 3 if you want to get more logging info.
         Level 0: no writing (default)
@@ -144,44 +120,77 @@ def prepare_general_parser():
         type=int,
         choices=(0, 1, 2, 3),
     )
-    benchmark.add_argument(
+    parser.add_argument(
         "-no_ml",
         default=False,
         action="store_true",
         help="Do not run machine learning benchmark, only ETL part",
     )
-    benchmark.add_argument(
+    parser.add_argument(
+        "-save_benchmark_name",
+        "-save_name",
+        default=None,
+        help="Save benchmark in DB under this name. Saves with `bench_name` name by default.",
+    )
+    parser.add_argument(
+        "-save_backend_name",
+        default=None,
+        help="Save backend in DB under this name. Saves with `backend` name by default.",
+    )
+
+    parser.add_argument(
+        "-tag",
+        default=None,
+        help="Tag this run with provided string to be able to find it in the database. Useful when user configure backend with some paramenters and want to be able to find results later on.",
+    )
+
+
+# TODO: move to modin backend in the future
+def prepare_modin_parser(parser):
+    parser.add_argument(
+        "-ray_tmpdir",
+        default="./tmp",
+        help="Location where to keep Ray plasma store. "
+        "It should have enough space to keep -ray_memory",
+    )
+    parser.add_argument(
+        "-ray_memory",
+        default=200 * 1024 * 1024 * 1024,
+        type=int,
+        help="Size of memory to allocate for Ray plasma store",
+    )
+    parser.add_argument(
         "-use_modin_xgb",
         default=False,
         action="store_true",
         help="Whether to use Modin XGBoost for ML part, relevant for `plasticc` and `ny_taxi_ml` "
         " benchmark.",
     )
-    benchmark.add_argument(
-        "-save_benchmark_name",
-        "-save_name",
-        default=None,
-        help="Save benchmark in DB under this name. Saves with `bench_name` name by default.",
-    )
 
-    benchmark.add_argument(
-        "-save_backend_name",
-        default=None,
-        help="Save backend in DB under this name. Saves with `backend` name by default.",
+
+def prepare_backend_parser(parser):
+    parser.add_argument(
+        "-backend",
+        help="Specifies which backend to use: "
+        "plain Pandas, Modin runing on Ray or on Dask or on HDK",
     )
-    benchmark.add_argument(
-        "-tag",
-        default=None,
-        help="Tag this run with provided string to be able to find it in the database. Useful when user configure backend with some paramenters and want to be able to find results later on.",
-    )
-    # SQL database parameters
-    add_sql_arguments(sql)
-    benchmark.add_argument(
+    parser.add_argument(
         "-num_threads",
         default=None,
         type=int,
         help="Number of threads used for data processing",
     )
+    prepare_modin_parser(parser)
+
+
+def prepare_general_parser():
+    parser = argparse.ArgumentParser(description="Run benchmarks for Modin perf testing")
+    benchmark = parser.add_argument_group("benchmark")
+    prepare_base_parser(benchmark)
+    backend = parser.add_argument_group("backend")
+    prepare_backend_parser(backend)
+    sql = parser.add_argument_group("sql")
+    prepare_sql_arguments(sql)
     return parser
 
 
