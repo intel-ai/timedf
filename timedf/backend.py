@@ -53,16 +53,20 @@ class Backend:
             return None
         return cls.get_backend_impl().params
 
-    # TODO LEGACY to be removed
+    # TODO LEGACY to be removed, we expect backends to trigger by themselves
     @classmethod
     def trigger_loading(cls, *dfs):
-        if cls.get_name().lower() != "pandas":
-            return None
-        return cls.get_backend_impl().trigger_loading(*dfs)
+        if cls.get_name().lower() in ["polars", "pandas"]:
+            cls.get_backend_impl().trigger_loading(*dfs)
+        if len(dfs) == 1:
+            return dfs[0]
+        return dfs
 
     # TODO LEGACY to be removed
     @classmethod
     def trigger_execution(cls, *dfs):
-        if cls.get_name().lower() != "pandas":
-            return None
-        return cls.get_backend_impl().trigger_execution(*dfs)
+        if cls.get_name().lower() in ["polars", "pandas"]:
+            cls.get_backend_impl().trigger_execution(*dfs)
+        if len(dfs) == 1:
+            return dfs[0]
+        return dfs

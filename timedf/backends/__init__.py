@@ -27,6 +27,9 @@ class PolarsBackend:
             os.environ["POLARS_MAX_THREADS"] = str(n)
 
     # TODO: just rewrite benchmark to trigger with polars tools and remove this function
+    def trigger_loading(self, *dfs):
+        return self.trigger_execution(*dfs)
+
     def trigger_execution(self, *dfs):
         results = [d.collect() if hasattr(d, "collect") else d for d in dfs]
 
