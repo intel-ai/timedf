@@ -13,7 +13,6 @@ def legacy_get_backend_params(args):
     # Old system just passed pandas mode as backend, so we fix that
     if backend.startswith("Modin") or backend == "Pandas":
         pandas_mode = str(backend)
-        print(pandas_mode)
         backend = "Pandas"
 
         params = {
@@ -24,7 +23,6 @@ def legacy_get_backend_params(args):
             "use_modin_xgb": args.use_modin_xgb,
             "num_threads": args.num_threads,
         }
-        print(params)
     else:
         params = {"num_threads": args.num_threads}
     return backend, params
