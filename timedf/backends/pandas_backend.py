@@ -44,10 +44,12 @@ class PandasBackend:
 
         # Modin config, none if pandas is used
         # Variable will hold the state, used for `trigger_execution`
+        self._modin_cfg = None
         if self.pandas_mode != "Pandas":
-            self._modin_cfg = self.params = params
-        else:
-            self._modin_cfg = self.params = None
+            import modin.config as cfg
+
+            self._modin_cfg = cfg
+        self.params = params
 
         if self.pandas_mode not in pandas_backends:
             raise ValueError(f"Unrecognized pandas_mode: {self.pandas_mode}")
@@ -73,7 +75,7 @@ class PandasBackend:
 
     def _trigger_execution(self, *dfs, trigger_hdk_import=False):
         results = [
-            execute_pandas(df, modin_cfg=self.params, trigger_hdk_import=trigger_hdk_import)
+            execute_pandas(df, modin_cfg=self._modin_cfg, trigger_hdk_import=trigger_hdk_import)
             for df in dfs
         ]
 
