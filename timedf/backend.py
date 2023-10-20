@@ -29,7 +29,7 @@ class Backend:
     @classmethod
     def get_name(cls):
         cls._check_ready()
-        if cls.get_backend_name() == "Pandas":
+        if cls.get_backend_name() == "pandas":
             return cls.get_backend_impl().pandas_mode
         else:
             return cls.get_backend_name()
@@ -47,16 +47,18 @@ class Backend:
     # TODO LEGACY to be removed
     @classmethod
     def get_modin_cfg(cls):
+        cls._check_ready()
         # TODO: deprecated legacy for old modin interface
         # Just use Backend.get_backend_impl().params
-        if cls.get_name().lower() != "pandas":
+        if cls.get_name() != "pandas":
             return None
         return cls.get_backend_impl().params
 
     # TODO LEGACY to be removed, we expect backends to trigger by themselves
     @classmethod
     def trigger_loading(cls, *dfs):
-        if cls.get_name().lower() in ["polars", "pandas"]:
+        cls._check_ready()
+        if cls.get_name() in ["polars", "pandas"]:
             cls.get_backend_impl().trigger_loading(*dfs)
         if len(dfs) == 1:
             return dfs[0]

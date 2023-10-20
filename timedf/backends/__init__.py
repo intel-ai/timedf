@@ -1,15 +1,14 @@
 import os
 import warnings
 
-from .pandas_backend import PandasBackend, pandas_backends
+from .pandas_backend import PandasBackend
 
 __all__ = ["create_backend", "HdkBackend", "PandasBackend", "PolarsBackend"]
 
 
 def create_backend(name, params):
     name2backend = {
-        # TODO: will be replaced to pandas in the future, since that's the backend
-        **{b: PandasBackend for b in pandas_backends},
+        "pandas": PandasBackend,
         "polars": PolarsBackend,
         "hdk": HdkBackend,
     }
@@ -17,7 +16,7 @@ def create_backend(name, params):
     if name in name2backend:
         return name2backend[name](params)
     else:
-        raise ValueError(f"Unrecognized backend: {name}")
+        raise ValueError(f"Unrecognized backend: {name}, possible values are {name2backend}")
 
 
 class PolarsBackend:

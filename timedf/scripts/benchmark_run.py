@@ -13,7 +13,7 @@ def legacy_get_backend_params(args):
     # Old system just passed pandas mode as backend, so we fix that
     if backend.startswith("Modin") or backend == "Pandas":
         pandas_mode = str(backend)
-        backend = "Pandas"
+        backend = "pandas"
 
         params = {
             "pandas_mode": pandas_mode,
