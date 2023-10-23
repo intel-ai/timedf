@@ -27,6 +27,7 @@ def test_dbreport(engine):
         name2time={"q1": 1.5, "q2": 11.2},
         params={k: "testval" for k in RunParams.fields},
         backend="testbackend",
+        backend_params={},
         benchmark="testbench",
         run_id=1,
         run_params={k: "testval" for k in RunParams.fields},
