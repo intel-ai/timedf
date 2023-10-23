@@ -6,7 +6,7 @@ from contextlib import suppress
 import pandas as pd
 import pandas.io.formats.excel
 
-from timedf.arg_parser import add_sql_arguments, DbConfig
+from timedf.arg_parser import prepare_sql_arguments, DbConfig
 
 # This is necessary to allow custom header formatting
 pandas.io.formats.excel.ExcelFormatter.header_style = None
@@ -100,7 +100,7 @@ def write_hostinfo(df, writer):
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate report with benchmark results")
     sql = parser.add_argument_group("db")
-    add_sql_arguments(sql)
+    prepare_sql_arguments(sql)
     parser.add_argument(
         "-report_path",
         dest="report_path",

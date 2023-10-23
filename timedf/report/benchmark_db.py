@@ -32,6 +32,7 @@ class BenchmarkDb:
         run_params: Dict[str, str],
         iteration_no: int,
         name2time: Dict[str, float],
+        backend_params: Dict[str, str],
         params: Dict[str, str] | None = None,
     ):
         """Report results of current for one of timedf benchmarks.
@@ -52,6 +53,8 @@ class BenchmarkDb:
             Iteration number for the report
         name2time
             Dict with measurements: (name, time in seconds)
+        backend_params
+            Dict with backend configuration
         params
             Additional params to report, will be added to a schemaless `params` column in the DB, can be used for
             storing benchmark-specific information such as dataset size.
@@ -65,6 +68,7 @@ class BenchmarkDb:
                     iteration_no=iteration_no,
                     run_params=run_params,
                     name2time=name2time,
+                    backend_params=backend_params,
                     params=params,
                 )
             )
@@ -78,6 +82,7 @@ class BenchmarkDb:
         backend: str,
         iteration_no: int = 1,
         name2time: Dict[str, float],
+        backend_params: Dict[str, str],
         params: Dict[str, str] | None = None,
     ):
         """Report results of arbitrary workload.
@@ -95,6 +100,8 @@ class BenchmarkDb:
             Counter of iteration
         name2time
             Dict with measurements: (name, time in seconds)
+        backend_params
+            Dict with backend configuration
         params
             Additional params to report, will be added to a schemaless `params` column in the DB, can be used for
             storing benchmark-specific information such as dataset size.
@@ -111,6 +118,7 @@ class BenchmarkDb:
             run_params=run_params,
             iteration_no=iteration_no,
             name2time=name2time,
+            backend_params=backend_params,
             params=params,
         )
 
