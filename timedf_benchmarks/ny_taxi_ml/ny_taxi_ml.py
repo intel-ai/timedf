@@ -8,6 +8,7 @@ from itertools import islice
 
 
 from timedf import BaseBenchmark, BenchmarkResults, tm
+from timedf.benchmark_utils import print_results
 from timedf.backend import pd, Backend
 
 
@@ -289,7 +290,7 @@ class Benchmark(BaseBenchmark):
             run_benchmark(params)
 
         task2time = tm.get_results()
-        print(task2time)
+        print_results(task2time)
         return BenchmarkResults(task2time)
 
     def load_data(self, target_dir: Path, reload=False):
