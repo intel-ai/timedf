@@ -2,14 +2,27 @@ import argparse
 import tarfile
 import shutil
 from collections import OrderedDict
+from timeit import default_timer as timer
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable, Tuple, Union, Dict
 from itertools import islice
 
 
-from timedf import BaseBenchmark, BenchmarkResults, tm
-from timedf.benchmark_utils import print_results
+from timedf import BaseBenchmark, BenchmarkResults
 from timedf.backend import pd, Backend
+from timedf.benchmark_utils import print_results
+
+
+def measure_time(func):
+    def wrapper(*args, **kwargs) -> Union[float, Tuple[Any, float]]:
+        start = timer()
+        res = func(*args, **kwargs)
+        if res is None:
+            return timer() - start
+        else:
+            return res, timer() - start
+
+    return wrapper
 
 
 def clean(ddf, keep_cols: Iterable):
@@ -33,9 +46,9 @@ def clean(ddf, keep_cols: Iterable):
     return ddf
 
 
-def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict):
+def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict, is_hdk_mode: bool):
     is_gz = ".gz" in filepath.suffixes
-    if Backend.get_name() == "Modin_on_hdk" and is_gz:
+    if is_hdk_mode and is_gz:
         raise NotImplementedError(
             "Modin_on_hdk mode doesn't support import of compressed files yet"
         )
@@ -43,7 +56,8 @@ def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict):
     return pd.read_csv(filepath, dtype=col2dtype, parse_dates=parse_dates)
 
 
-def load_data(dirpath: str, debug=False):
+@measure_time
+def load_data(dirpath: str, is_hdk_mode, debug=False):
     dirpath = Path(dirpath)
 
     data_types_2014 = OrderedDict(
@@ -54,7 +68,7 @@ def load_data(dirpath: str, debug=False):
             (" tip_amount", "float64"),
         ]
     )
-    if Backend.get_name() == "Modin_on_hdk":
+    if is_hdk_mode:
         # For HDK engine we need to remove this column because of "object" type
         # see https://github.com/modin-project/modin/issues/5210
         # But Ray backend requires fixed type to avoid inconsistent types across partitions
@@ -94,6 +108,7 @@ def load_data(dirpath: str, debug=False):
                         dirpath / filename,
                         parse_dates=date_cols,
                         col2dtype=dtypes,
+                        is_hdk_mode=is_hdk_mode,
                     ),
                     keep_cols,
                 )
@@ -110,10 +125,11 @@ def load_data(dirpath: str, debug=False):
     return df
 
 
-def filter_df(df):
+@measure_time
+def filter_df(df, is_hdk_mode):
     """apply a list of filter conditions to throw out records with missing or outlier values"""
     # Modin_on_hdk does not support query method, but Modin_on_ray works much faster using query method
-    if Backend.get_name == "Modin_on_hdk":
+    if is_hdk_mode:
         df = df[
             (df.fare_amount > 1)
             & (df.fare_amount < 500)
@@ -159,6 +175,7 @@ def filter_df(df):
     return df
 
 
+@measure_time
 def feature_engineering(df):
     #################################
     # Adding Interesting Features ###
@@ -183,6 +200,7 @@ def feature_engineering(df):
     return df
 
 
+@measure_time
 def split(df):
     #######################
     # Pick a Training Set #
@@ -215,6 +233,7 @@ def split(df):
     return {"x_train": x_train, "x_test": x_test, "y_train": y_train, "y_test": y_test}
 
 
+@measure_time
 def train(data: dict, use_modin_xgb: bool, debug=False):
     if use_modin_xgb:
         import modin.experimental.xgboost as xgb
@@ -257,21 +276,43 @@ def train(data: dict, use_modin_xgb: bool, debug=False):
 def run_benchmark(parameters):
     debug = parameters["debug"]
 
-    with tm.timeit("load_data"):
-        df = load_data(parameters["data_file"], debug=debug)
+    task2time = {}
+    is_hdk_mode = parameters["backend"] == "Modin_on_hdk"
+    df, task2time["load_data"] = load_data(
+        parameters["data_file"], is_hdk_mode=is_hdk_mode, debug=debug
+    )
+    df, task2time["filter_df"] = filter_df(df, is_hdk_mode=is_hdk_mode)
+    df, task2time["feature_engineering"] = feature_engineering(df)
+    print_results(results=task2time, backend=parameters["backend"])
 
-    with tm.timeit("filter_df"):
-        df = filter_df(df)
+    task2time["total_data_processing_with_load"] = sum(task2time.values())
+    task2time["total_data_processing_no_load"] = (
+        task2time["total_data_processing_with_load"] - task2time["load_data"]
+    )
 
-    with tm.timeit("feature_engineering"):
-        df = feature_engineering(df)
-
+    backend_name = parameters["backend"]
     if not parameters["no_ml"]:
-        with tm.timeit("split_time"):
-            data = split(df)
+        print("using ml with dataframes from Pandas")
 
-        with tm.timeit("train_time"):
-            train(data, use_modin_xgb=parameters["use_modin_xgb"], debug=debug)
+        data, task2time["split_time"] = split(df)
+        data: Dict[str, Any]
+
+        task2time["train_time"] = train(
+            data, use_modin_xgb=parameters["use_modin_xgb"], debug=debug
+        )
+
+        print_results(results=task2time, backend=parameters["backend"])
+
+        if parameters["use_modin_xgb"]:
+            backend_name = backend_name + "_modin_xgb"
+
+        task2time["total_time_with_ml"] = (
+            task2time["total_data_processing_with_load"]
+            + task2time["train_time"]
+            + task2time["split_time"]
+        )
+
+    return BenchmarkResults(task2time)
 
 
 class Benchmark(BaseBenchmark):
@@ -286,12 +327,7 @@ class Benchmark(BaseBenchmark):
         )
 
     def run_benchmark(self, params) -> BenchmarkResults:
-        with tm.timeit("total"):
-            run_benchmark(params)
-
-        task2time = tm.get_results()
-        print_results(task2time)
-        return BenchmarkResults(task2time)
+        return run_benchmark(params)
 
     def load_data(self, target_dir: Path, reload=False):
         from timedf.tools.s3_load import download_folder
