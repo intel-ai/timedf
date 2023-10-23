@@ -351,7 +351,8 @@ class Benchmark(BaseBenchmark):
         )
 
     def run_benchmark(self, params) -> BenchmarkResults:
-        run_benchmark(params)
+        with tm.timeit("total"):
+            run_benchmark(params)
 
         task2time = tm.get_results()
         print_results(task2time)
