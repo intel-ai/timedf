@@ -148,13 +148,11 @@ sklearn_import = SklearnImport()
 def split(X, y, test_size=0.1, stratify=None, random_state=None, optimizer="intel"):
     train_test_split = sklearn_import.get_train_test_split(optimizer)
 
-    t0 = timer()
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, stratify=stratify, random_state=random_state
     )
-    split_time = timer() - t0
 
-    return (X_train, y_train, X_test, y_test), split_time
+    return X_train, y_train, X_test, y_test
 
 
 def memory_usage():

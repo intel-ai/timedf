@@ -7,9 +7,13 @@ import numpy as np
 import pandas
 from sklearn.preprocessing import LabelEncoder
 
-from timedf import BaseBenchmark, BenchmarkResults
-from timedf.backend import pd
+from timedf import BaseBenchmark, BenchmarkResults, tm
+from timedf.backend import pd, Backend
 from timedf.benchmark_utils import print_results, split
+
+
+def is_hdk():
+    return Backend.get_name() == "Modin_on_hdk"
 
 
 def ravel_column_names(cols):
@@ -18,9 +22,7 @@ def ravel_column_names(cols):
     return ["%s_%s" % (i, j) for i, j in zip(d0, d1)]
 
 
-def etl_cpu(df, df_meta, etl_times):
-    t_etl_start = timer()
-
+def etl_cpu(df, df_meta):
     # workaround for both Modin_on_ray and Modin_on_hdk modes. Eventually this should be fixed
     df["flux_ratio_sq"] = (df["flux"] / df["flux_err"]) * (
         df["flux"] / df["flux_err"]
@@ -55,16 +57,15 @@ def etl_cpu(df, df_meta, etl_times):
     df_meta = df_meta.merge(agg_df, on="object_id", how="left")
 
     _ = df_meta.shape
-    etl_times["t_etl"] += timer() - t_etl_start
 
     return df_meta
 
 
-def load_data(dataset_path, skip_rows, dtypes, meta_dtypes, backend):
+def load_data(dataset_path, skip_rows, dtypes, meta_dtypes):
     train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)
     # Currently we need to avoid skip_rows in Mode_on_hdk mode since
     # pyarrow uses it in incompatible way
-    if backend == "Modin_on_hdk":
+    if is_hdk():
         test = pd.read_csv(
             # This file didn't come from kaggle competition
             "%s/test_set_skiprows.csv" % dataset_path,
@@ -102,31 +103,27 @@ def split_step(train_final, test_final):
     lbl = LabelEncoder()
     y = lbl.fit_transform(y)
 
-    (X_train, y_train, X_test, y_test), split_time = split(
-        X, y, test_size=0.1, stratify=y, random_state=126
-    )
+    with tm.timeit("t_train_test_split"):
+        X_train, y_train, X_test, y_test = split(X, y, test_size=0.1, stratify=y, random_state=126)
 
-    return (X_train, y_train, X_test, y_test, Xt, classes, class_weights), split_time
+    return X_train, y_train, X_test, y_test, Xt, classes, class_weights
 
 
-def etl(dataset_path, skip_rows, dtypes, meta_dtypes, etl_keys, backend):
-    etl_times = {key: 0.0 for key in etl_keys}
-
-    t0 = timer()
-    train, train_meta, test, test_meta = load_data(
-        dataset_path=dataset_path,
-        skip_rows=skip_rows,
-        dtypes=dtypes,
-        meta_dtypes=meta_dtypes,
-        backend=backend,
-    )
-    etl_times["t_readcsv"] += timer() - t0
+def etl(dataset_path, skip_rows, dtypes, meta_dtypes):
+    with tm.timeit("t_readcsv"):
+        train, train_meta, test, test_meta = load_data(
+            dataset_path=dataset_path,
+            skip_rows=skip_rows,
+            dtypes=dtypes,
+            meta_dtypes=meta_dtypes,
+        )
 
     # update etl_times
-    train_final = etl_cpu(train, train_meta, etl_times)
-    test_final = etl_cpu(test, test_meta, etl_times)
+    with tm.timeit("t_etl"):
+        train_final = etl_cpu(train, train_meta)
+        test_final = etl_cpu(test, test_meta)
 
-    return train_final, test_final, etl_times
+    return train_final, test_final
 
 
 def multi_weighted_logloss(y_true, y_preds, classes, class_weights, use_modin_xgb=False):
@@ -164,13 +161,10 @@ def xgb_multi_weighted_logloss(y_predicted, y_true, classes, class_weights, use_
     return "wloss", loss
 
 
-def ml(train_final, test_final, ml_keys, use_modin_xgb=False):
-    ml_times = {key: 0.0 for key in ml_keys}
-
-    (
-        (X_train, y_train, X_test, y_test, Xt, classes, class_weights),
-        ml_times["t_train_test_split"],
-    ) = split_step(train_final, test_final)
+def ml(train_final, test_final, use_modin_xgb=False):
+    X_train, y_train, X_test, y_test, Xt, classes, class_weights = split_step(
+        train_final, test_final
+    )
 
     if use_modin_xgb:
         import modin.experimental.xgboost as xgb
@@ -201,45 +195,38 @@ def ml(train_final, test_final, ml_keys, use_modin_xgb=False):
         use_modin_xgb=use_modin_xgb,
     )
 
-    t_ml_start = timer()
-    dtrain = xgb.DMatrix(data=X_train, label=y_train)
-    dvalid = xgb.DMatrix(data=X_test, label=y_test)
-    dtest = xgb.DMatrix(data=Xt)
-    ml_times["t_dmatrix"] += timer() - t_ml_start
+    with tm.timeit("t_ml"):
+        with tm.timeit("t_dmatrix"):
+            dtrain = xgb.DMatrix(data=X_train, label=y_train)
+            dvalid = xgb.DMatrix(data=X_test, label=y_test)
+            dtest = xgb.DMatrix(data=Xt)
 
-    watchlist = [(dvalid, "eval"), (dtrain, "train")]
+        watchlist = [(dvalid, "eval"), (dtrain, "train")]
 
-    t0 = timer()
-    clf = xgb.train(
-        cpu_params,
-        dtrain=dtrain,
-        num_boost_round=60,
-        evals=watchlist,
-        feval=func_loss,
-        early_stopping_rounds=10,
-        verbose_eval=1000,
-    )
-    ml_times["t_training"] += timer() - t0
+        with tm.timeit("t_training"):
+            clf = xgb.train(
+                cpu_params,
+                dtrain=dtrain,
+                num_boost_round=60,
+                evals=watchlist,
+                feval=func_loss,
+                early_stopping_rounds=10,
+                verbose_eval=1000,
+            )
 
-    t0 = timer()
-    yp = clf.predict(dvalid)
-    ml_times["t_infer"] += timer() - t0
+        with tm.timeit("t_infer_val"):
+            yp = clf.predict(dvalid)
 
-    if use_modin_xgb:
-        y_test = y_test.values
-        yp = yp.values
+        if use_modin_xgb:
+            y_test = y_test.values
+            yp = yp.values
 
-    cpu_loss = multi_weighted_logloss(y_test, yp, classes, class_weights)
+        cpu_loss = multi_weighted_logloss(y_test, yp, classes, class_weights)
 
-    t0 = timer()
-    ysub = clf.predict(dtest)  # noqa: F841 (unused variable)
-    ml_times["t_infer"] += timer() - t0
-
-    ml_times["t_ml"] = timer() - t_ml_start
+        with tm.timeit("t_infer_test"):
+            ysub = clf.predict(dtest)  # noqa: F841 (unused variable)
 
     print("validation cpu_loss:", cpu_loss)
-
-    return ml_times
 
 
 def compute_skip_rows(gpu_memory):
@@ -285,27 +272,15 @@ def run_benchmark(parameters):
         [(columns_names[i], meta_dtypes[i]) for i in range(len(meta_dtypes))]
     )
 
-    etl_keys = ["t_readcsv", "t_etl", "t_connect"]
-    ml_keys = ["t_train_test_split", "t_dmatrix", "t_training", "t_infer", "t_ml"]
-
-    train_final, test_final, results = etl(
+    train_final, test_final = etl(
         dataset_path=parameters["data_file"],
         skip_rows=skip_rows,
         dtypes=dtypes,
         meta_dtypes=meta_dtypes,
-        etl_keys=etl_keys,
-        backend=parameters["backend"],
     )
 
-    print_results(results=results, backend=parameters["backend"])
-
     if not parameters["no_ml"]:
-        print("using ml with dataframes from Pandas")
-        ml_times = ml(train_final, test_final, ml_keys, use_modin_xgb=parameters["use_modin_xgb"])
-        print_results(results=ml_times, backend=parameters["backend"])
-        results.update(ml_times)
-
-    return BenchmarkResults(results)
+        ml(train_final, test_final, use_modin_xgb=parameters["use_modin_xgb"])
 
 
 class Benchmark(BaseBenchmark):
@@ -321,7 +296,12 @@ class Benchmark(BaseBenchmark):
         )
 
     def run_benchmark(self, params) -> BenchmarkResults:
-        return run_benchmark(params)
+        run_benchmark(params)
+
+        task2time = tm.get_results()
+
+        print_results(task2time)
+        return BenchmarkResults(task2time)
 
     def load_data(self, target_dir, reload=False):
         from timedf.tools.s3_load import download_folder
