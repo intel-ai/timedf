@@ -256,24 +256,21 @@ def train(data: dict, use_modin_xgb: bool, debug=False):
 def run_benchmark(parameters):
     debug = parameters["debug"]
 
-    task2time = {}
+    with tm.timeit("load_data"):
+        df = load_data(parameters["data_file"], debug=debug)
 
-    with tm.timeit("total"):
-        with tm.timeit("load_data"):
-            df = load_data(parameters["data_file"], debug=debug)
+    with tm.timeit("filter_df"):
+        df = filter_df(df)
 
-        with tm.timeit("filter_df"):
-            df = filter_df(df)
+    with tm.timeit("feature_engineering"):
+        df = feature_engineering(df)
 
-        with tm.timeit("feature_engineering"):
-            df = feature_engineering(df)
+    if not parameters["no_ml"]:
+        with tm.timeit("split_time"):
+            data = split(df)
 
-        if not parameters["no_ml"]:
-            with tm.timeit("split_time"):
-                data = split(df)
-
-            with tm.timeit("train_time"):
-                train(data, use_modin_xgb=parameters["use_modin_xgb"], debug=debug)
+        with tm.timeit("train_time"):
+            train(data, use_modin_xgb=parameters["use_modin_xgb"], debug=debug)
 
 
 class Benchmark(BaseBenchmark):
