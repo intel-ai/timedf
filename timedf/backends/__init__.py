@@ -32,10 +32,10 @@ class PolarsBackend:
     def trigger_execution(self, *dfs):
         results = [d.collect() if hasattr(d, "collect") else d for d in dfs]
 
-        if len(dfs) == 1:
-            return dfs[0]
+        if len(results) == 1:
+            return results[0]
         else:
-            return dfs
+            return results
 
 
 # TODO: maybe we need general notification about unexpected params

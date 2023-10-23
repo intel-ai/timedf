@@ -3,8 +3,6 @@ import argparse
 from dataclasses import dataclass
 from typing import Callable
 
-from .backend import Backend
-
 
 __all__ = ["prepare_sql_arguments", "prepare_general_parser", "parse_args", "DbConfig"]
 
