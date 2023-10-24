@@ -1,7 +1,6 @@
 import argparse
 from collections import OrderedDict
 from functools import partial
-from timeit import default_timer as timer
 
 import numpy as np
 import pandas

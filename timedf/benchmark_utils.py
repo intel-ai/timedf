@@ -2,7 +2,6 @@
 import os
 import re
 import warnings
-from timeit import default_timer as timer
 
 import psutil
 
