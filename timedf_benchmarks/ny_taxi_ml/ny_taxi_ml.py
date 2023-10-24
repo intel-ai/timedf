@@ -12,6 +12,10 @@ from timedf.benchmark_utils import print_results
 from timedf.backend import pd, Backend
 
 
+def check_hdk():
+    return Backend.get_name() == "Modin_on_hdk"
+
+
 def clean(ddf, keep_cols: Iterable):
     # replace the extraneous spaces in column names and lower the font type
     tmp = {col: col.strip().lower() for col in list(ddf.columns)}
@@ -35,7 +39,7 @@ def clean(ddf, keep_cols: Iterable):
 
 def read_csv(filepath: Path, *, parse_dates=[], col2dtype: OrderedDict):
     is_gz = ".gz" in filepath.suffixes
-    if Backend.get_name() == "Modin_on_hdk" and is_gz:
+    if check_hdk() and is_gz:
         raise NotImplementedError(
             "Modin_on_hdk mode doesn't support import of compressed files yet"
         )
@@ -54,7 +58,7 @@ def load_data(dirpath: str, debug=False):
             (" tip_amount", "float64"),
         ]
     )
-    if Backend.get_name() == "Modin_on_hdk":
+    if check_hdk():
         # For HDK engine we need to remove this column because of "object" type
         # see https://github.com/modin-project/modin/issues/5210
         # But Ray backend requires fixed type to avoid inconsistent types across partitions
@@ -113,7 +117,7 @@ def load_data(dirpath: str, debug=False):
 def filter_df(df):
     """apply a list of filter conditions to throw out records with missing or outlier values"""
     # Modin_on_hdk does not support query method, but Modin_on_ray works much faster using query method
-    if Backend.get_name == "Modin_on_hdk":
+    if check_hdk():
         df = df[
             (df.fare_amount > 1)
             & (df.fare_amount < 500)
