@@ -145,7 +145,7 @@ columns_types = [
 ]
 
 
-def is_hdk():
+def check_hdk():
     return Backend.get_name() == "Modin_on_hdk"
 
 
@@ -168,7 +168,7 @@ def run_queries(queries, q2df, output_for_validation=None):
 # FROM trips
 # GROUP BY cab_type;
 def q1(df):
-    if not is_hdk():
+    if not check_hdk():
         q1_output = df.groupby("cab_type")["cab_type"].count()
     else:
         q1_output = df.groupby("cab_type").size()
@@ -182,7 +182,7 @@ def q1(df):
 # FROM trips
 # GROUP BY passenger_count;
 def q2(df):
-    if not is_hdk:
+    if not check_hdk():
         q2_output = df.groupby("passenger_count", as_index=False).mean(numeric_only=True)[
             ["passenger_count", "total_amount"]
         ]
@@ -200,7 +200,7 @@ def q2(df):
 # GROUP BY passenger_count,
 #         pickup_year;
 def q3(df):
-    if not is_hdk():
+    if not check_hdk():
         transformed = pd.DataFrame(
             {
                 "pickup_datetime": df["pickup_datetime"].dt.year,
@@ -241,7 +241,7 @@ def q3(df):
 #         distance
 # ORDER BY passenger_count, pickup_year, distance, the_count;
 def q4(df):
-    if not is_hdk():
+    if not check_hdk():
         transformed = pd.DataFrame(
             {
                 "passenger_count": df["passenger_count"],
@@ -271,13 +271,13 @@ def q4(df):
 
 
 def etl(filename, columns_names, columns_types, output_for_validation):
-    if is_hdk() and any(f.endswith(".gz") for f in filename):
+    if check_hdk() and any(f.endswith(".gz") for f in filename):
         raise NotImplementedError(
             "Modin_on_hdk mode doesn't support import of compressed files yet"
         )
 
     with tm.timeit("t_readcsv"):
-        if is_hdk():
+        if check_hdk():
             df_from_each_file = [
                 load_data_modin_on_hdk(
                     filename=f,
@@ -308,7 +308,7 @@ def etl(filename, columns_names, columns_types, output_for_validation):
     queries = {"Query1": q1, "Query2": q2, "Query3": q3, "Query4": q4}
     q2df = {
         # FIXME seems like such copy op can affect benchmark
-        query_name: concatenated_df.copy() if is_hdk() else concatenated_df
+        query_name: concatenated_df.copy() if check_hdk() else concatenated_df
         for query_name in queries
     }
 
