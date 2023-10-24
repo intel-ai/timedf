@@ -12,7 +12,7 @@ from timedf.backend import pd, Backend
 from timedf.benchmark_utils import print_results, split
 
 
-def is_hdk():
+def check_hdk():
     return Backend.get_name() == "Modin_on_hdk"
 
 
@@ -65,7 +65,7 @@ def load_data(dataset_path, skip_rows, dtypes, meta_dtypes):
     train = pd.read_csv("%s/training_set.csv" % dataset_path, dtype=dtypes)
     # Currently we need to avoid skip_rows in Mode_on_hdk mode since
     # pyarrow uses it in incompatible way
-    if is_hdk():
+    if check_hdk():
         test = pd.read_csv(
             # This file didn't come from kaggle competition
             "%s/test_set_skiprows.csv" % dataset_path,
@@ -296,7 +296,8 @@ class Benchmark(BaseBenchmark):
         )
 
     def run_benchmark(self, params) -> BenchmarkResults:
-        run_benchmark(params)
+        with tm.timeit("total"):
+            run_benchmark(params)
 
         task2time = tm.get_results()
 
