@@ -35,6 +35,39 @@ def test_timer():
     assert len(results) == 4
 
 
+def test_timer_acc():
+    quant = 0.1
+    bt = TimerManager()
+    time.sleep(1 * quant)
+
+    with bt.timeit("total"):
+        with bt.timeit("load_data"):
+            time.sleep(1 * quant)
+
+        time.sleep(1 * quant)
+
+        with bt.timeit("fe"):
+            time.sleep(2 * quant)
+
+        for i in range(10):
+            with bt.timeit("predict"):
+                time.sleep(3 * quant)
+                with bt.timeit("minor"):
+                    time.sleep(quant)
+
+    time.sleep(1 * quant)
+
+    results = bt.get_results()
+    appr = partial(approx, rel=0.01)
+
+    assert results["total.load_data"] == appr(1 * quant)
+    assert results["total.fe"] == appr(2 * quant)
+    assert results["total.predict"] == appr(40 * quant)
+    assert results["total.predict.minor"] == appr(10 * quant)
+    assert results["total"] == appr(44 * quant)
+    assert len(results) == 5
+
+
 def test_timer_state_noname():
     bt = TimerManager()
     with raises(ValueError):

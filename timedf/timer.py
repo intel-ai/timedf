@@ -17,6 +17,8 @@ class TimerManager:
     Notes
     ------
     TimeManager supports nested timings if called through the same object.
+    If you give the same name to measure twice, this will either lead to an error,
+    if allow_acc is False or accumulate measurements.
 
     Examples
     ----------
@@ -25,13 +27,13 @@ class TimerManager:
     >>>     heavy_call()
     """
 
-    def __init__(self, allow_overwrite=False, verbosity: int = 0) -> None:
+    def __init__(self, allow_acc=True, verbosity: int = 0) -> None:
         """Initialize root timer.
 
         Parameters
         ----------
-        allow_overwrite, optional
-            Allow rewriting of measured time, by default False
+        allow_acc, optional
+            Allow accumulating of measured time, by default True
 
         verbosity:
             Write timer stack status to stdout.
@@ -42,15 +44,15 @@ class TimerManager:
         """
         # name for the next timer to start, also acts as timer state
         self.prepared_name = None
-        self.allow_overwrite = allow_overwrite
-        self.timer_stack = self.TimerStack(allow_overwrite=allow_overwrite)
+        self.allow_acc = allow_acc
+        self.timer_stack = self.TimerStack(allow_acc=allow_acc)
         self.verbosity = verbosity
         self.profiles = {}
 
     def reset(self):
         """Reset timer state"""
         self.prepared_name = None
-        self.timer_stack = self.TimerStack(allow_overwrite=self.allow_overwrite)
+        self.timer_stack = self.TimerStack(allow_acc=self.allow_acc)
 
     @staticmethod
     def check_verbosity(verbosity):
@@ -113,11 +115,11 @@ class TimerManager:
 
         SEPARATOR = "."
 
-        def __init__(self, allow_overwrite=False) -> None:
+        def __init__(self, allow_acc=False) -> None:
             self.name_stack = []
             self.start_stack = []
 
-            self.allow_overwrite = allow_overwrite
+            self.allow_acc = allow_acc
             self.fullname2time = {}
 
         def push(self, name):
@@ -130,7 +132,8 @@ class TimerManager:
             self.name_stack.pop()
 
             self._check_overwrite(fullname)
-            self.fullname2time[fullname] = time.perf_counter() - self.start_stack.pop()
+            delta = time.perf_counter() - self.start_stack.pop()
+            self.fullname2time[fullname] = self.fullname2time.get(fullname, 0) + delta
 
         def _check_name(self, name):
             if self.SEPARATOR in name:
@@ -139,7 +142,7 @@ class TimerManager:
                 )
 
         def _check_overwrite(self, fullname):
-            if not self.allow_overwrite and fullname in self.fullname2time:
+            if not self.allow_acc and fullname in self.fullname2time:
                 raise ValueError(f"Trying to rewrite measurment for {fullname}")
 
         def get_full_name(self):
