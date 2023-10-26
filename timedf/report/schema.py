@@ -43,6 +43,7 @@ Iteration = type(
         # date of the current iteration
         "date": Column(DateTime(), nullable=False, server_default=func.now()),
         "measurements": relationship("Measurement", back_populates="iteration"),
+        "checksums": relationship("Checksum", back_populates="iteration"),
         # host info
         **{name: make_string() for name in HostParams.fields},
         # run params
@@ -95,6 +96,9 @@ def make_iteration(
     backend_params,
     params=None,
 ) -> Iteration:
+    import pdb
+
+    pdb.set_trace()
     measurements_orm = [
         Measurement(name=name, duration_s=time) for name, time in name2time.items()
     ]
