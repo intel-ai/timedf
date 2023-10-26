@@ -274,7 +274,7 @@ def q4(df):
         Backend.trigger_execution(q4_output)  # to trigger real execution
 
     with cs.check("q4") as c:
-        c.set(q4_output.mean())
+        c.set(q4_output[0].mean())
     return q4_output
 
 
