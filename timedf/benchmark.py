@@ -25,7 +25,9 @@ def create_benchmark(bench_name):
 
 
 class BenchmarkResults:
-    def __init__(self, measurements: Dict[str, float], params=None) -> None:
+    def __init__(
+        self, measurements: Dict[str, float], checksums: Dict[str, Dict] = None, params=None
+    ) -> None:
         """Structure with benchmark results that is enforcing benchmark output format.
 
         Parameters
@@ -33,6 +35,8 @@ class BenchmarkResults:
         measurements
             Benchmark results in seconds in (query, time_s) form.
             Example: `{'load_data': 12.2, 'fe': 20.1}`
+        checksums
+            Dict with checksums with structure {name: {'value': float, 'duration_s': float}}
         params
             Additinal parameters of the current benchmark that need to be saved as well.
             Example: `{'dataset_size': 122, 'dfiles_n': 99}`
@@ -40,6 +44,7 @@ class BenchmarkResults:
         self._validate_dict(measurements)
         self._validate_vals(measurements, float)
         self.measurements = measurements
+        self.checksums = checksums or {}
         self._validate_dict(params or {})
         self.params = self._convert_vals(params, str)
 

@@ -97,6 +97,7 @@ def main():
             benchmarkDb.report(
                 iteration_no=iter_num,
                 name2time=results.measurements,
+                checksums=results.checksums,
                 params=results.params,
                 benchmark=args.save_benchmark_name or args.bench_name,
                 backend=args.save_backend_name or args.backend,
