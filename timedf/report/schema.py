@@ -96,14 +96,11 @@ def make_iteration(
     backend_params,
     params=None,
 ) -> Iteration:
-    import pdb
-
-    pdb.set_trace()
     measurements_orm = [
         Measurement(name=name, duration_s=time) for name, time in name2time.items()
     ]
     checksums_orm = [
-        Checksum(name=k, duration_s=v["duration_s"], value=v["value"])
+        Checksum(name=k, duration_s=float(v["duration_s"]), value=float(v["value"]))
         for k, v in checksums.items()
     ]
     return Iteration(

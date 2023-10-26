@@ -1,7 +1,7 @@
 import time
 from functools import partial
 
-from pytest import approx, raises
+from pytest import approx
 
 import numpy as np
 
