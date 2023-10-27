@@ -220,7 +220,11 @@ def q3(df):
         Backend.trigger_execution(q3_output)  # to trigger real execution
 
     with cs.check("q3") as c:
-        c.set(q3_output.median())
+        if check_hdk():
+            val = q3_output.mean()
+        else:
+            val = q3_output["size"].mean()
+        c.set(val)
     return q3_output
 
 
@@ -262,6 +266,7 @@ def q4(df):
             .size()
             .sort_values(by=["pickup_datetime", "size"], ascending=[True, False])
         )
+        col = "size"
     else:
         df["pickup_datetime"] = df["pickup_datetime"].dt.year
         df["trip_distance"] = df["trip_distance"].astype("int64")
@@ -271,10 +276,11 @@ def q4(df):
             .reset_index()
             .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
         )
+        col = 0
         Backend.trigger_execution(q4_output)  # to trigger real execution
 
     with cs.check("q4") as c:
-        c.set(q4_output[0].mean())
+        c.set(q4_output[col].mean())
     return q4_output
 
 
