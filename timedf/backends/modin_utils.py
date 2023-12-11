@@ -48,19 +48,19 @@ def import_pandas_into_module_namespace(
                     )
             os.environ["MODIN_ENGINE"] = "ray"
             print(
-                f"Pandas backend: Modin on Ray with tmp directory {ray_tmpdir} and memory {ray_memory}"
+                f"Pandas backend: Modin on Ray with number of CPUs {num_threads}, tmp directory {ray_tmpdir} and memory {ray_memory}"
             )
         elif mode == "Modin_on_dask":
             os.environ["MODIN_ENGINE"] = "dask"
-            print("Pandas backend: Modin on Dask")
+            print(f"Pandas backend: Modin on Dask with number of CPUs {num_threads}")
         elif mode == "Modin_on_python":
             os.environ["MODIN_ENGINE"] = "python"
-            print("Pandas backend: Modin on pure Python")
+            print(f"Pandas backend: Modin on pure Python with number of CPUs {num_threads}")
         elif mode == "Modin_on_hdk":
             os.environ["MODIN_ENGINE"] = "native"
             os.environ["MODIN_STORAGE_FORMAT"] = "hdk"
             os.environ["MODIN_EXPERIMENTAL"] = "True"
-            print("Pandas backend: Modin on HDK")
+            print(f"Pandas backend: Modin on HDK with number of CPUs {num_threads}")
         elif mode == "Modin_on_unidist_mpi":
             os.environ["MODIN_ENGINE"] = "unidist"
             os.environ["UNIDIST_BACKEND"] = "mpi"
@@ -69,7 +69,7 @@ def import_pandas_into_module_namespace(
             import unidist
 
             unidist.init()
-            print("Pandas backend: Modin on Unidist with MPI")
+            print(f"Pandas backend: Modin on Unidist with MPI with number of CPUs {num_threads}")
         else:
             raise ValueError(f"Unknown pandas mode {mode}")
         import modin.pandas as pd
