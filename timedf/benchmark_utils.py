@@ -1,6 +1,7 @@
 """Utils to be used by inividual benchmarks"""
 import os
 import re
+import platform
 import warnings
 
 import psutil
@@ -160,8 +161,8 @@ def memory_usage():
 
 
 def get_max_memory_usage(proc=psutil.Process()):
-    """Reads maximum memory usage in MB from process history. Returns None if query failed, which is
-    expected on non-linux systems."""
+    """Reads maximum memory usage in MB from process history. Returns 0 on non-linux systems
+    or if the process is not alive."""
     max_mem = 0
     try:
         with open(f"/proc/{proc.pid}/status", "r") as stat:
@@ -171,10 +172,11 @@ def get_max_memory_usage(proc=psutil.Process()):
                 max_mem = int(max_mem / 1024)
                 break
     except FileNotFoundError:
-        warnings.warn(
-            "Couldn't open `/proc/{proc_id}/status` is this linux?. Couldn't find max memory usage"
-        )
-        return None
+        if platform.system() == "Linux":
+            warnings.warn(f"Couldn't open `/proc/{proc.pid}/status` file. Is the process alive?")
+        else:
+            warnings.warn("Couldn't get the max memory usage on a non-Linux platform.")
+        return 0
 
     return max_mem + sum(get_max_memory_usage(c) for c in proc.children())
 
