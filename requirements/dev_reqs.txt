@@ -5,7 +5,7 @@ numpy
 pandas
 sqlalchemy==1.4.*
 # codestyle & linters for developers
-black==23.10.0
+black==23.12.1
 flake8==6.1.0
 bandit==1.7.5
 bandit-sarif-formatter==1.1.1
