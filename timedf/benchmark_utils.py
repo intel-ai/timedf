@@ -160,6 +160,37 @@ def memory_usage():
     return process.memory_info().rss / (1024**3)  # GB units
 
 
+class LaunchedProcesses:
+    """
+    Keep track of processes launched for running the timedf benchmark.
+    The process list would contain a single process for all backends
+    except for Modin_on_unidist_mpi which would contain multiple processes
+    as unidist is backend is launched in SPMD mode.
+    """
+
+    __instance = None
+    process_list = []
+
+    @classmethod
+    def get_instance(cls):
+        """
+        Get instance of ``LaunchedProcesses``.
+
+        Returns
+        -------
+        LaunchedProcesses
+        """
+        if cls.__instance is None:
+            cls.__instance = LaunchedProcesses()
+        return cls.__instance
+
+    def set_process_list(self, process_list):
+        self.process_list = process_list
+
+    def get_process_list(self):
+        return self.process_list
+
+
 def get_max_memory_usage(proc=psutil.Process()):
     """Reads maximum memory usage in MB from process history. Returns 0 on non-linux systems
     or if the process is not alive."""

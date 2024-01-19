@@ -1,9 +1,10 @@
 import os
 import time
-
+import psutil
 from timedf.timer import tm
 from timedf.arg_parser import parse_args, prepare_general_parser
 from timedf.benchmark import BaseBenchmark, create_benchmark
+from timedf.benchmark_utils import LaunchedProcesses
 from timedf.backend import Backend
 
 
@@ -43,6 +44,18 @@ def make_benchmark() -> BaseBenchmark:
     bench_name = args.bench_name
 
     backend_name, backend_params = legacy_get_backend_params(args)
+    if (
+        backend_params["pandas_mode"] == "Modin_on_unidist_mpi"
+        and os.environ["UNIDIST_MPI_SPAWN"] == "False"
+    ):
+        from mpi4py import MPI
+
+        comm = MPI.COMM_WORLD
+        process_ids = comm.allgather(os.getpid())
+        launched_process_list = [psutil.Process(pid) for pid in process_ids]
+        LaunchedProcesses.get_instance().set_process_list(launched_process_list)
+    else:
+        LaunchedProcesses.get_instance().set_process_list([psutil.Process()])
     # Set current backend, !!!needs to be run before benchmark import!!!
     Backend.init(backend_name, backend_params)
     return create_benchmark(bench_name)
