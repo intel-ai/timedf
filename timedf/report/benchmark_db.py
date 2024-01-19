@@ -33,6 +33,7 @@ class BenchmarkDb:
         iteration_no: int,
         name2time: Dict[str, float],
         backend_params: Dict[str, str],
+        checksums: Dict[str, Dict] = None,
         params: Dict[str, str] | None = None,
     ):
         """Report results of current for one of timedf benchmarks.
@@ -55,10 +56,13 @@ class BenchmarkDb:
             Dict with measurements: (name, time in seconds)
         backend_params
             Dict with backend configuration
+        checksums
+            Dict with checksums with structure {name: {'value': float, 'duration_s': float}}
         params
             Additional params to report, will be added to a schemaless `params` column in the DB, can be used for
             storing benchmark-specific information such as dataset size.
         """
+        checksums = checksums or {}
         with Session(self.engine) as session:
             session.add(
                 make_iteration(
@@ -68,6 +72,7 @@ class BenchmarkDb:
                     iteration_no=iteration_no,
                     run_params=run_params,
                     name2time=name2time,
+                    checksums=checksums,
                     backend_params=backend_params,
                     params=params,
                 )
@@ -82,6 +87,7 @@ class BenchmarkDb:
         backend: str,
         iteration_no: int = 1,
         name2time: Dict[str, float],
+        checksums: Dict[str, Dict] = None,
         backend_params: Dict[str, str],
         params: Dict[str, str] | None = None,
     ):
@@ -100,6 +106,8 @@ class BenchmarkDb:
             Counter of iteration
         name2time
             Dict with measurements: (name, time in seconds)
+        checksums
+            Dict with checksums with structure {name: {'value': float, 'duration_s': float}}
         backend_params
             Dict with backend configuration
         params
@@ -118,6 +126,7 @@ class BenchmarkDb:
             run_params=run_params,
             iteration_no=iteration_no,
             name2time=name2time,
+            checksums=checksums,
             backend_params=backend_params,
             params=params,
         )
@@ -158,7 +167,7 @@ class BenchmarkDb:
             by benchmark.
         node
             If provided, return only iterations with `node=node`, otherwise no filtering by node.
-        node
+        lookup_days
             If provided, return only recent iterations with `date > (today() - lookup_days)`
             otherwise no filtering by date.
         """

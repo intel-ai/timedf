@@ -4,7 +4,7 @@ from collections import OrderedDict
 from itertools import islice
 from pathlib import Path
 
-from timedf import BenchmarkResults, BaseBenchmark, tm
+from timedf import BenchmarkResults, BaseBenchmark, tm, cs
 from timedf.backend import pd, Backend
 from timedf.benchmark_utils import load_data_pandas, load_data_modin_on_hdk, print_results
 
@@ -174,6 +174,8 @@ def q1(df):
         q1_output = df.groupby("cab_type").size()
         Backend.trigger_execution(q1_output)
 
+    with cs.check("q1") as c:
+        c.set(q1_output.sum())
     return q1_output
 
 
@@ -190,6 +192,8 @@ def q2(df):
         q2_output = df.groupby("passenger_count").agg({"total_amount": "mean"})
         Backend.trigger_execution(q2_output)
 
+    with cs.check("q2") as c:
+        c.set(q2_output.sum()["total_amount"])
     return q2_output
 
 
@@ -215,6 +219,12 @@ def q3(df):
         q3_output = df.groupby(["passenger_count", "pickup_datetime"]).size()
         Backend.trigger_execution(q3_output)  # to trigger real execution
 
+    with cs.check("q3") as c:
+        if check_hdk():
+            val = q3_output.mean()
+        else:
+            val = q3_output["size"].mean()
+        c.set(val)
     return q3_output
 
 
@@ -256,6 +266,7 @@ def q4(df):
             .size()
             .sort_values(by=["pickup_datetime", "size"], ascending=[True, False])
         )
+        col = "size"
     else:
         df["pickup_datetime"] = df["pickup_datetime"].dt.year
         df["trip_distance"] = df["trip_distance"].astype("int64")
@@ -265,8 +276,11 @@ def q4(df):
             .reset_index()
             .sort_values(by=["pickup_datetime", 0], ignore_index=True, ascending=[True, False])
         )
+        col = 0
         Backend.trigger_execution(q4_output)  # to trigger real execution
 
+    with cs.check("q4") as c:
+        c.set(q4_output[col].mean())
     return q4_output
 
 
@@ -355,10 +369,13 @@ class Benchmark(BaseBenchmark):
             run_benchmark(params)
 
         task2time = tm.get_results()
+        checksums = cs.get_results()
         print_results(task2time)
 
         return BenchmarkResults(
-            task2time, params={"dataset_size": get_ny_taxi_dataset_size(params["dfiles_num"])}
+            task2time,
+            checksums=checksums,
+            params={"dataset_size": get_ny_taxi_dataset_size(params["dfiles_num"])},
         )
 
     def load_data(self, target_dir, reload=False):

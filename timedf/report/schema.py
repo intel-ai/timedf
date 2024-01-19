@@ -43,6 +43,7 @@ Iteration = type(
         # date of the current iteration
         "date": Column(DateTime(), nullable=False, server_default=func.now()),
         "measurements": relationship("Measurement", back_populates="iteration"),
+        "checksums": relationship("Checksum", back_populates="iteration"),
         # host info
         **{name: make_string() for name in HostParams.fields},
         # run params
@@ -70,6 +71,20 @@ class Measurement(Base):
     params = Column(JSON)
 
 
+class Checksum(Base):
+    __tablename__ = "checksum"
+    id = Column(Integer, primary_key=True)
+    # Name of the checksum
+    name = Column(String(LARGE_STRING_LENGTH), nullable=False)
+    # Value of this checksum
+    value = Column(Float, nullable=False)
+    # Duration in seconds
+    duration_s = Column(Float, nullable=False)
+
+    iteration_id = Column(Integer, ForeignKey("iteration.id"))
+    iteration = relationship("Iteration", back_populates="checksums")
+
+
 def make_iteration(
     run_id: int,
     benchmark: str,
@@ -77,11 +92,16 @@ def make_iteration(
     iteration_no: int,
     run_params,
     name2time: Dict[str, float],
+    checksums: Dict[str, Dict],
     backend_params,
     params=None,
 ) -> Iteration:
     measurements_orm = [
         Measurement(name=name, duration_s=time) for name, time in name2time.items()
+    ]
+    checksums_orm = [
+        Checksum(name=k, duration_s=float(v["duration_s"]), value=float(v["value"]))
+        for k, v in checksums.items()
     ]
     return Iteration(
         run_id=run_id,
@@ -93,4 +113,5 @@ def make_iteration(
         **HostParams().prepare_report_dict(),
         **RunParams().prepare_report_dict(run_params),
         measurements=measurements_orm,
+        checksums=checksums_orm,
     )
