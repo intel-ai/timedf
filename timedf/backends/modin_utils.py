@@ -8,6 +8,7 @@ import pandas as pd
 
 from timedf.benchmark_utils import LaunchedProcesses
 
+
 def import_pandas_into_module_namespace(
     namespace, mode, ray_tmpdir=None, ray_memory=None, num_threads=None
 ):
