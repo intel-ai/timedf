@@ -164,8 +164,8 @@ class LaunchedProcesses:
     """
     Keep track of processes launched for running the timedf benchmark.
     The process list would contain a single process for all backends
-    except for Modin_on_unidist_mpi which would contain multiple processes
-    as unidist is backend is launched in SPMD mode.
+    except for `Modin_on_unidist_mpi`, which would contain multiple processes
+    if unidist on MPI is launched in SPMD mode.
     """
 
     __instance = None
