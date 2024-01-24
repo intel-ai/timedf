@@ -2,11 +2,11 @@ import os
 from typing import Union
 from configparser import ConfigParser
 
-from timedf.benchmark_utils import LaunchedProcesses
 import numpy as np
 import psutil
 import pandas as pd
 
+from timedf.benchmark_utils import LaunchedProcesses
 
 def import_pandas_into_module_namespace(
     namespace, mode, ray_tmpdir=None, ray_memory=None, num_threads=None
@@ -69,7 +69,7 @@ def import_pandas_into_module_namespace(
 
             import unidist
 
-            if unidist.config.MpiSpawn.get() is False:
+            if not unidist.config.MpiSpawn.get():
                 from mpi4py import MPI
 
                 comm = MPI.COMM_WORLD
