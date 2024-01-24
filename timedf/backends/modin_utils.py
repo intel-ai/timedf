@@ -2,7 +2,9 @@ import os
 from typing import Union
 from configparser import ConfigParser
 
+from timedf.benchmark_utils import LaunchedProcesses
 import numpy as np
+import psutil
 import pandas as pd
 
 
@@ -64,9 +66,19 @@ def import_pandas_into_module_namespace(
         elif mode == "Modin_on_unidist_mpi":
             os.environ["MODIN_ENGINE"] = "unidist"
             os.environ["UNIDIST_BACKEND"] = "mpi"
+
+            import unidist
+
+            if unidist.config.MpiSpawn.get() is False:
+                from mpi4py import MPI
+
+                comm = MPI.COMM_WORLD
+                process_ids = comm.allgather(os.getpid())
+                launched_process_list = [psutil.Process(pid) for pid in process_ids]
+                LaunchedProcesses.get_instance().set_process_list(launched_process_list)
+
             if "MODIN_CPUS" in os.environ:
                 os.environ["UNIDIST_CPUS"] = os.environ["MODIN_CPUS"]
-            import unidist
 
             unidist.init()
             print(f"Pandas backend: Modin on Unidist with MPI with number of CPUs {num_threads}")

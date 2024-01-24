@@ -169,7 +169,7 @@ class LaunchedProcesses:
     """
 
     __instance = None
-    process_list = []
+    process_list = [psutil.Process()]
 
     @classmethod
     def get_instance(cls):
