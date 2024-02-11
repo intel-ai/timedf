@@ -1,4 +1,5 @@
 """Argument parsing"""
+
 import argparse
 from dataclasses import dataclass
 from typing import Callable
