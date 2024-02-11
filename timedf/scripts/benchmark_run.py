@@ -5,6 +5,7 @@ from timedf.timer import tm
 from timedf.arg_parser import parse_args, prepare_general_parser
 from timedf.benchmark import BaseBenchmark, create_benchmark
 from timedf.backend import Backend
+from timedf.benchmark_utils import MemoryTracker
 
 
 def legacy_get_backend_params(args):
@@ -87,7 +88,7 @@ def main():
 
     run_id = int(round(time.time()))
     print(run_parameters)
-
+    MemoryTracker.get_instance().start()
     for iter_num in range(1, args.iterations + 1):
         print(f"Iteration #{iter_num}")
         results = benchmark.run(run_parameters)

@@ -4,7 +4,7 @@ import platform
 import re
 import socket
 import subprocess
-from timedf.benchmark_utils import LaunchedProcesses
+from timedf.benchmark_utils import LaunchedProcesses, MemoryTracker
 from typing import Dict, Any, Union, Pattern
 import warnings
 
@@ -85,6 +85,8 @@ def _get_host_info() -> Dict[str, str]:
             for proc in LaunchedProcesses.get_instance().get_process_list()
         ]
     )
+    max_memory_system, max_memory_rss = MemoryTracker.get_instance().get_result()
+    print(f"max_memory_system = {max_memory_system}, max_memory_rss = {max_memory_rss}")
     if max_memory_mb is not None:
         max_memory_mb = str(int(max_memory_mb))
 

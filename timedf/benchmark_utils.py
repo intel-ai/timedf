@@ -1,7 +1,9 @@
 """Utils to be used by inividual benchmarks"""
 import os
 import re
+import multiprocessing
 import platform
+import time
 import warnings
 
 import psutil
@@ -159,6 +161,134 @@ def memory_usage():
     process = psutil.Process(os.getpid())
     return process.memory_info().rss / (1024**3)  # GB units
 
+class MemoryTracker:
+    __instance = None
+    stop_event = multiprocessing.Event()
+    data_queue = multiprocessing.Queue()
+    tracking_in_progress = False
+
+        
+    
+    @classmethod
+    def get_instance(cls):
+        """
+        Get instance of ``MemoryTracker``.
+
+        Returns
+        -------
+        MemoryTracker
+        """
+        if cls.__instance is None:
+            cls.__instance = MemoryTracker()
+        return cls.__instance
+    
+    def start(self):         
+        self.child = multiprocessing.Process(target=self.track_in_child)
+        self.child.start()
+        self.tracking_in_progress = True
+        
+    def track_in_child(self):
+        max_memory_system = 0
+        while not self.stop_event.is_set():
+            time.sleep(1)            
+            meminfo_values = self._read_meminfo()
+            current_max_memory_system = self._calculate_used_memory(meminfo_values)
+            max_memory_system=max(current_max_memory_system,max_memory_system)
+            print(current_max_memory_system)
+        self.data_queue.put(max_memory_system)  
+    
+    @staticmethod
+    def _read_meminfo():
+        meminfo_values = {}
+        with open('/proc/meminfo') as meminfo_file:
+            for line in meminfo_file:
+                key, value = line.split(':')
+                key = key.strip()
+                value = int(value.split()[0])  # Extract the numeric value and convert to int
+                meminfo_values[key] = value
+        return meminfo_values
+    
+    @staticmethod
+    def _calculate_used_memory(meminfo_values):
+        total_mem = meminfo_values.get('MemTotal', 0)
+        cached_mem = meminfo_values.get('Cached', 0)
+        sreclaimable_mem = meminfo_values.get('SReclaimable', 0)
+        free_mem = meminfo_values.get('MemFree', 0)
+        buffers_mem = meminfo_values.get('Buffers', 0)
+        used_diff = free_mem + cached_mem + sreclaimable_mem + buffers_mem
+        usedMem = total_mem - used_diff if total_mem >= used_diff else total_mem - free_mem
+        used_mem_gb = usedMem/1024**2
+        return used_mem_gb
+
+    def _calculate_pss_total(self,pid):
+        try:
+            # Open the smaps file and read line by line
+            with open(f'/proc/{pid}/smaps', 'r') as smaps_file:
+                total_pss = 0
+
+                for line in smaps_file:
+                    # Check if the line starts with 'Pss'
+                    if line.startswith('Pss'):
+                        # Split the line and add the second field (index 1) to the total
+                        total_pss += float(line.split()[1])
+
+                return total_pss
+
+        except FileNotFoundError:
+            print("/proc/smaps not found. Make sure you're running on a Linux-like system.")
+            return None
+
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
+
+    
+    def get_result(self):
+        if self.tracking_in_progress:
+            self.stop_event.set()
+            self.child.join()
+            self.tracking_in_progress = False
+            max_memory_rss,max_memory_system = self.data_queue.get()
+            print(f"finaly max_memory_system ={max_memory_system}, max_memory_rss={max_memory_rss} ")
+        else:
+            max_memory_rss = sum([self._calculate_pss_total(process.pid)  for process in LaunchedProcesses.get_instance().process_list])
+            max_memory_system = psutil.virtual_memory().total - psutil.virtual_memory().free
+            
+         
+        return max_memory_system, max_memory_rss 
+
+class LaunchedProcesses:
+    """
+    Keep track of processes launched for running the timedf benchmark.
+    The process list would contain a single process for all backends
+    except for `Modin_on_unidist_mpi`, which would contain multiple processes
+    if unidist on MPI is launched in SPMD mode.
+    """
+
+    __instance = None
+    process_list = [psutil.Process()]
+    
+    
+
+    @classmethod
+    def get_instance(cls):
+        """
+        Get instance of ``LaunchedProcesses``.
+
+        Returns
+        -------
+        LaunchedProcesses
+        """
+        if cls.__instance is None:
+            cls.__instance = LaunchedProcesses()
+        return cls.__instance
+
+    def set_process_list(self, process_list):
+        self.process_list = process_list
+
+    def get_process_list(self):
+        return self.process_list
+
 
 class LaunchedProcesses:
     """
@@ -210,6 +340,33 @@ def get_max_memory_usage(proc=psutil.Process()):
         return 0
 
     return max_mem + sum(get_max_memory_usage(c) for c in proc.children())
+
+def get_pss_usage(proc):
+    """Reads maximum memory usage in MB from process history. Returns 0 on non-linux systems
+    or if the process is not alive."""
+    max_mem = 0
+    try:
+            # Open the smaps file and read line by line
+        with open(f'/proc/{proc.pid}/smaps', 'r') as smaps_file:
+            total_pss = 0
+
+            for line in smaps_file:
+                # Check if the line starts with 'Pss'
+                if line.startswith('Pss'):
+                    # Split the line and add the second field (index 1) to the total
+                    total_pss += float(line.split()[1])
+
+            return total_pss
+
+    except FileNotFoundError:
+        print("/proc/smaps not found. Make sure you're running on a Linux-like system.")
+        return None
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+    return max_mem + sum(get_pss_usage(c) for c in proc.children())
 
 
 def getsize(filename: str):
