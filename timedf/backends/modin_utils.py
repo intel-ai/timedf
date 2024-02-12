@@ -3,10 +3,7 @@ from typing import Union
 from configparser import ConfigParser
 
 import numpy as np
-import psutil
 import pandas as pd
-
-from timedf.benchmark_utils import LaunchedProcesses
 
 
 def import_pandas_into_module_namespace(
@@ -69,14 +66,6 @@ def import_pandas_into_module_namespace(
             os.environ["UNIDIST_BACKEND"] = "mpi"
 
             import unidist
-
-            if not unidist.config.MpiSpawn.get():
-                from mpi4py import MPI
-
-                comm = MPI.COMM_WORLD
-                process_ids = comm.allgather(os.getpid())
-                launched_process_list = [psutil.Process(pid) for pid in process_ids]
-                LaunchedProcesses.get_instance().set_process_list(launched_process_list)
 
             if "MODIN_CPUS" in os.environ:
                 os.environ["UNIDIST_CPUS"] = os.environ["MODIN_CPUS"]

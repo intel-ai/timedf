@@ -3,7 +3,6 @@
     2. Get pandas in each benchmark module with `from backends.pandas_backend import pd`, this will use
      correct version of pandas from [pandas, modin-on-hdk, modin-on-ray].
 """
-
 from pathlib import Path
 
 # This will be replaced by modin.pandas after Backend.init() call

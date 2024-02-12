@@ -5,11 +5,9 @@ import platform
 import re
 import socket
 import subprocess
-from timedf.benchmark_utils import LaunchedProcesses, MemoryTracker
+from timedf.benchmark_utils import MemoryTracker
 from typing import Dict, Any, Union, Pattern
 import warnings
-
-from timedf.benchmark_utils import get_max_memory_usage
 
 
 def _get_host_info() -> Dict[str, str]:
@@ -80,12 +78,6 @@ def _get_host_info() -> Dict[str, str]:
 
         return {t: match_and_assign(p, output) for t, p in proc_meminfo_patterns.items()}
 
-    # max_memory_mb = sum(
-    #     [
-    #         get_max_memory_usage(proc)
-    #         for proc in LaunchedProcesses.get_instance().get_process_list()
-    #     ]
-    # )
     max_memory_system = MemoryTracker.get_instance().get_result()
     print(f"max_memory_system = {max_memory_system}")
     if max_memory_system is not None:
