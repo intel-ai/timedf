@@ -78,10 +78,10 @@ def _get_host_info() -> Dict[str, str]:
 
         return {t: match_and_assign(p, output) for t, p in proc_meminfo_patterns.items()}
 
-    max_memory_system = MemoryTracker.get_instance().get_result()
-    print(f"max_memory_system = {max_memory_system}")
-    if max_memory_system is not None:
-        max_memory_mb = str(int(max_memory_system))
+    max_system_memory = MemoryTracker.get_instance().get_memory_used()
+    print(f"max_system_memory = {max_system_memory}")
+    if max_system_memory is not None:
+        max_memory_mb = str(int(max_system_memory))
 
     return {
         **get_basic_host_dict(),

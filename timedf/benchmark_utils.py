@@ -189,18 +189,18 @@ class MemoryTracker:
 
     def track_in_child(self):
         """
-        Function to track memory periodically
+        Function to track memory periodically.
 
         Tracks memory periodically, when tracking ends peak memory put to data queue.
         """
-        max_memory_system = 0
+        max_system_memory = 0
         while not self.stop_event.is_set():
             time.sleep(0.001)
             meminfo_values = self._read_meminfo()
-            current_max_memory_system = self._calculate_used_memory(meminfo_values)
-            max_memory_system = max(current_max_memory_system, max_memory_system)
-            # Htop would show value of (current_max_memory_system / 1024)Gb in Memory bar.
-        self.data_queue.put(max_memory_system)
+            current_max_system_memory = self._calculate_used_memory(meminfo_values)
+            max_system_memory = max(current_max_system_memory, max_system_memory)
+            # Htop would show value of (current_max_system_memory / 1024)Gb in Memory bar.
+        self.data_queue.put(max_system_memory)
 
     @staticmethod
     def _read_meminfo():
@@ -238,11 +238,11 @@ class MemoryTracker:
         free_mem = meminfo_values.get("MemFree", 0)
         buffers_mem = meminfo_values.get("Buffers", 0)
         used_diff = free_mem + cached_mem + sreclaimable_mem + buffers_mem
-        usedMem = total_mem - used_diff if total_mem >= used_diff else total_mem - free_mem
-        used_mem_mb = usedMem / (1024)
+        used_mem = total_mem - used_diff if total_mem >= used_diff else total_mem - free_mem
+        used_mem_mb = used_mem / (1024)
         return used_mem_mb
 
-    def get_result(self):
+    def get_memory_used(self):
         """
         Get results of system memory.
 
@@ -255,11 +255,11 @@ class MemoryTracker:
             self.stop_event.set()
             self.child.join()
             self.tracking_in_progress = False
-            max_memory_system = self.data_queue.get()
+            max_system_memory = self.data_queue.get()
         else:
             meminfo_values = self._read_meminfo()
-            max_memory_system = self._calculate_used_memory(meminfo_values)
-        return max_memory_system
+            max_system_memory = self._calculate_used_memory(meminfo_values)
+        return max_system_memory
 
 
 def getsize(filename: str):
