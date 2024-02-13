@@ -1,14 +1,13 @@
 """Module with classes that encapsulate generation and extraction of benchmark run parameters."""
+
 import os
 import platform
 import re
 import socket
 import subprocess
-from timedf.benchmark_utils import LaunchedProcesses
+from timedf.benchmark_utils import MemoryTracker
 from typing import Dict, Any, Union, Pattern
 import warnings
-
-from timedf.benchmark_utils import get_max_memory_usage
 
 
 def _get_host_info() -> Dict[str, str]:
@@ -79,14 +78,10 @@ def _get_host_info() -> Dict[str, str]:
 
         return {t: match_and_assign(p, output) for t, p in proc_meminfo_patterns.items()}
 
-    max_memory_mb = sum(
-        [
-            get_max_memory_usage(proc)
-            for proc in LaunchedProcesses.get_instance().get_process_list()
-        ]
-    )
-    if max_memory_mb is not None:
-        max_memory_mb = str(int(max_memory_mb))
+    max_system_memory = MemoryTracker.get_instance().get_memory_used()
+    print(f"max_system_memory = {max_system_memory}")
+    if max_system_memory is not None:
+        max_memory_mb = str(int(max_system_memory))
 
     return {
         **get_basic_host_dict(),

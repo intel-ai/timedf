@@ -5,6 +5,7 @@ from timedf.timer import tm
 from timedf.arg_parser import parse_args, prepare_general_parser
 from timedf.benchmark import BaseBenchmark, create_benchmark
 from timedf.backend import Backend
+from timedf.benchmark_utils import MemoryTracker
 
 
 def legacy_get_backend_params(args):
@@ -87,25 +88,34 @@ def main():
 
     run_id = int(round(time.time()))
     print(run_parameters)
+    memoryTracker = MemoryTracker.get_instance()
+    memoryTracker.start()
+    # Wrapping in try-catch to join child process in case of exception.
+    try:
+        for iter_num in range(1, args.iterations + 1):
+            print(f"Iteration #{iter_num}")
+            results = benchmark.run(run_parameters)
+            tm.reset()
 
-    for iter_num in range(1, args.iterations + 1):
-        print(f"Iteration #{iter_num}")
-        results = benchmark.run(run_parameters)
-        tm.reset()
-
-        if benchmarkDb is not None:
-            benchmarkDb.report(
-                iteration_no=iter_num,
-                name2time=results.measurements,
-                params=results.params,
-                benchmark=args.save_benchmark_name or args.bench_name,
-                backend=args.save_backend_name or args.backend,
-                run_id=run_id,
-                backend_params=backend_params,
-                run_params=legacy_remove_new_fields(
-                    {**run_parameters, **report_args, **legacy_report}
-                ),
-            )
+            if benchmarkDb is not None:
+                benchmarkDb.report(
+                    iteration_no=iter_num,
+                    name2time=results.measurements,
+                    params=results.params,
+                    benchmark=args.save_benchmark_name or args.bench_name,
+                    backend=args.save_backend_name or args.backend,
+                    run_id=run_id,
+                    backend_params=backend_params,
+                    run_params=legacy_remove_new_fields(
+                        {**run_parameters, **report_args, **legacy_report}
+                    ),
+                )
+    except Exception as e:
+        print(f"Exception while running benchmark: {e}")
+    finally:
+        if memoryTracker.tracking_in_progress:
+            memoryTracker.stop_event.set()
+            memoryTracker.child.join()
 
 
 if __name__ == "__main__":

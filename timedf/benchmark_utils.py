@@ -1,8 +1,8 @@
 """Utils to be used by inividual benchmarks"""
+
 import os
-import re
-import platform
-import warnings
+import multiprocessing
+import time
 
 import psutil
 
@@ -160,56 +160,106 @@ def memory_usage():
     return process.memory_info().rss / (1024**3)  # GB units
 
 
-class LaunchedProcesses:
-    """
-    Keep track of processes launched for running the timedf benchmark.
-    The process list would contain a single process for all backends
-    except for `Modin_on_unidist_mpi`, which would contain multiple processes
-    if unidist on MPI is launched in SPMD mode.
-    """
-
+class MemoryTracker:
     __instance = None
-    process_list = [psutil.Process()]
+    stop_event = multiprocessing.Event()
+    data_queue = multiprocessing.Queue()
+    tracking_in_progress = False
 
     @classmethod
     def get_instance(cls):
         """
-        Get instance of ``LaunchedProcesses``.
+        Get instance of ``MemoryTracker``.
 
         Returns
         -------
-        LaunchedProcesses
+        MemoryTracker
         """
         if cls.__instance is None:
-            cls.__instance = LaunchedProcesses()
+            cls.__instance = MemoryTracker()
         return cls.__instance
 
-    def set_process_list(self, process_list):
-        self.process_list = process_list
+    def start(self):
+        """
+        Starts tracking memory in a child process.
+        """
+        self.child = multiprocessing.Process(target=self.track_in_child)
+        self.child.start()
+        self.tracking_in_progress = True
 
-    def get_process_list(self):
-        return self.process_list
+    def track_in_child(self):
+        """
+        Function to track memory periodically.
 
+        Tracks memory periodically, when tracking ends peak memory put to data queue.
+        """
+        max_system_memory = 0
+        while not self.stop_event.is_set():
+            time.sleep(0.001)
+            meminfo_values = self._read_meminfo()
+            current_max_system_memory = self._calculate_used_memory(meminfo_values)
+            max_system_memory = max(current_max_system_memory, max_system_memory)
+            # Htop would show value of (current_max_system_memory / 1024)Gb in Memory bar.
+        self.data_queue.put(max_system_memory)
 
-def get_max_memory_usage(proc=psutil.Process()):
-    """Reads maximum memory usage in MB from process history. Returns 0 on non-linux systems
-    or if the process is not alive."""
-    max_mem = 0
-    try:
-        with open(f"/proc/{proc.pid}/status", "r") as stat:
-            for match in re.finditer(_VM_PEAK_PATTERN, stat.read()):
-                max_mem = float(match.group(1))
-                # MB conversion
-                max_mem = int(max_mem / 1024)
-                break
-    except FileNotFoundError:
-        if platform.system() == "Linux":
-            warnings.warn(f"Couldn't open `/proc/{proc.pid}/status` file. Is the process alive?")
+    @staticmethod
+    def _read_meminfo():
+        """
+        Read contents of /proc/meminfo.
+        """
+        meminfo_values = {}
+        with open("/proc/meminfo") as meminfo_file:
+            for line in meminfo_file:
+                key, value = line.split(":")
+                key = key.strip()
+                value = int(value.split()[0])  # Extract the numeric value and convert to int
+                meminfo_values[key] = value
+        return meminfo_values
+
+    @staticmethod
+    def _calculate_used_memory(meminfo_values):
+        """
+        Calculate used memory with the logic used in htop
+        https://github.com/htop-dev/htop/blob/main/linux/LinuxMachine.c
+
+        Parameters
+        ----------
+        meminfo_values : dict
+            Content of /proc/meminfo
+
+        Returns
+        -------
+        float
+            Calculated used memory.
+        """
+        total_mem = meminfo_values.get("MemTotal", 0)
+        cached_mem = meminfo_values.get("Cached", 0)
+        sreclaimable_mem = meminfo_values.get("SReclaimable", 0)
+        free_mem = meminfo_values.get("MemFree", 0)
+        buffers_mem = meminfo_values.get("Buffers", 0)
+        used_diff = free_mem + cached_mem + sreclaimable_mem + buffers_mem
+        used_mem = total_mem - used_diff if total_mem >= used_diff else total_mem - free_mem
+        used_mem_mb = used_mem / (1024)
+        return used_mem_mb
+
+    def get_memory_used(self):
+        """
+        Get results of system memory.
+
+        Returns
+        -------
+        float
+            Calculated used memory.
+        """
+        if self.tracking_in_progress:
+            self.stop_event.set()
+            self.child.join()
+            self.tracking_in_progress = False
+            max_system_memory = self.data_queue.get()
         else:
-            warnings.warn("Couldn't get the max memory usage on a non-Linux platform.")
-        return 0
-
-    return max_mem + sum(get_max_memory_usage(c) for c in proc.children())
+            meminfo_values = self._read_meminfo()
+            max_system_memory = self._calculate_used_memory(meminfo_values)
+        return max_system_memory
 
 
 def getsize(filename: str):
